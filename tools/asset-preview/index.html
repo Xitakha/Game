@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Preview - Ember Flock</title>
+<style>
+  :root { --bg:#14101c; --panel:#1e1830; --line:#3a2e55; --txt:#e8e0f0; --dim:#9a90b0; --acc:#ff8a2a; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--txt); font:14px/1.4 system-ui, sans-serif; }
+  h1 { margin:0 0 4px; font-size:20px; } h2 { margin:24px 0 8px; font-size:15px; color:var(--acc); text-transform:uppercase; letter-spacing:.08em; }
+  p.sub { margin:0; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  .card h3 { margin:0 0 2px; font-size:13px; } .card small { color:var(--dim); }
+  .strip { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; align-items:flex-end; }
+  .strip figure { margin:0; text-align:center; font-size:10px; color:var(--dim); }
+  canvas { image-rendering:pixelated; background:repeating-conic-gradient(#2a2240 0 25%, #221b36 0 50%) 0 0/16px 16px; display:block; }
+  .anim { margin-top:8px; display:flex; gap:10px; align-items:center; font-size:12px; color:var(--dim); }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; }
+  button { background:#2b2147; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:8px 12px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--acc); } button.on { background:var(--acc); color:#1a1224; }
+  label { color:var(--dim); margin-right:12px; }
+  #arena { width:100%; max-width:960px; height:auto; image-rendering:pixelated; border:1px solid var(--line); }
+  .tiles { display:flex; flex-wrap:wrap; gap:4px; }
+</style>
+</head>
+<body>
+<h1>Asset Preview - Ember Flock</h1>
+<p class="sub">Recursos generados en runtime por <code>games/survival-lamb/src/assets.js</code>. Sin ficheros externos.</p>
+
+<h2>Arena de prueba (960x540)</h2>
+<canvas id="arena" width="960" height="540"></canvas>
+
+<h2>Sprites</h2>
+<div class="grid" id="sprites"></div>
+
+<h2>Sonido</h2>
+<div class="btns" style="margin-bottom:10px">
+  <button id="unlock">Activar audio</button>
+  <button id="mstart">Musica ON</button>
+  <button id="mstop">Musica OFF</button>
+  <button id="mboss">Intensidad jefe: off</button>
+</div>
+<div style="margin-bottom:10px">
+  <label>Volumen <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+  <label>Pitch <input id="pitch" type="range" min="0.6" max="1.8" step="0.05" value="1"></label>
+</div>
+<div class="btns" id="sfx"></div>
+
+<script src="../../games/survival-lamb/src/assets.js"></script>
+<script>
+(function () {
+  var A = window.Assets, $ = function (id) { return document.getElementById(id); };
+  var ANIMS = [];
+
+  // --- tarjetas de sprites
+  A.list().forEach(function (it) {
+    var card = document.createElement('div'); card.className = 'card';
+    var h = document.createElement('h3'); h.textContent = it.name;
+    var s = document.createElement('small'); s.textContent = it.w + 'x' + it.h + ' px, ' + it.frames + ' frame(s)';
+    card.appendChild(h); card.appendChild(s);
+    var strip = document.createElement('div'); strip.className = 'strip';
+    for (var i = 0; i < it.frames; i++) {
+      var fig = document.createElement('figure'), c = document.createElement('canvas'), src = A.sprite(it.name, i);
+      c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0);
+      var z = it.w <= 24 ? 3 : it.w <= 50 ? 2 : 1; c.style.width = c.width * z + 'px'; c.style.height = c.height * z + 'px';
+      fig.appendChild(c); fig.appendChild(document.createTextNode(String(i))); strip.appendChild(fig);
+    }
+    card.appendChild(strip);
+    if (it.anims) {
+      var row = document.createElement('div'); row.className = 'anim';
+      Object.keys(it.anims).forEach(function (an) {
+        var box = document.createElement('div'), c2 = document.createElement('canvas');
+        c2.width = it.w; c2.height = it.h; box.appendChild(c2); box.appendChild(document.createElement('br')); box.appendChild(document.createTextNode(an));
+        row.appendChild(box); ANIMS.push({ name: it.name, anim: an, ctx: c2.getContext('2d'), w: it.w, h: it.h });
+      });
+      card.appendChild(row);
+    }
+    $('sprites').appendChild(card);
+  });
+  function tick(t) {
+    ANIMS.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); a.ctx.drawImage(A.animFrame(a.name, a.anim, t), 0, 0); });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // --- arena de prueba
+  (function () {
+    var cv = $('arena'), x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
+    var seed = 12345; function r() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+    for (var ty = 0; ty < 540; ty += 32) for (var tx = 0; tx < 960; tx += 32) {
+      var k = r(); x.drawImage(A.sprite('ground' + (k < 0.55 ? 0 : 1 + ((r() * 5) | 0))), tx, ty);
+    }
+    x.drawImage(A.sprite('ritual_circle'), 480 - 64, 270 - 64);
+    var decos = [];
+    for (var i = 0; i < 26; i++) {
+      var kind = ['rock0', 'rock1', 'rock2', 'grass0', 'grass1', 'grass2', 'mushroom', 'rune0', 'rune1'][(r() * 9) | 0];
+      var px = r() < 0.5 ? r() * 960 : (r() < 0.5 ? r() * 90 : 870 + r() * 80), py = 20 + r() * 480;
+      if (Math.hypot(px - 480, py - 270) < 150) continue;
+      decos.push([kind, px, py]);
+    }
+    decos.forEach(function (d) { var c = A.sprite(d[0]); x.drawImage(c, d[1] | 0, d[2] | 0); });
+    function put(name, f, cx, cy, flip) {
+      var c = A.sprite(name, f), w = c.width, h = c.height;
+      var sh = A.sprite('shadow'); x.drawImage(sh, cx - sh.width / 2, cy + h / 2 - sh.height / 2 - 2);
+      x.save(); x.translate(cx, cy); if (flip) x.scale(-1, 1); x.drawImage(c, -w / 2, -h / 2); x.restore();
+    }
+    put('player', 'idle', 480, 300);
+    var sl = A.sprite('slash', 1); x.drawImage(sl, 480 + 4 - 4, 300 - sl.height / 2);
+    put('worm', 0, 300, 200, true); put('worm', 1, 640, 380, true);
+    put('archer', 0, 760, 130, true); put('boar', 0, 200, 400); put('bomb', 2, 360, 140); put('warlock', 0, 700, 250, true);
+    put('boss', 0, 250, 250);
+    x.drawImage(A.sprite('arrow', 0), 560, 180); x.drawImage(A.sprite('thorn'), 420, 380); x.drawImage(A.sprite('fireball', 0), 560, 300);
+    x.drawImage(A.sprite('explosion', 1), 350, 120);
+    x.drawImage(A.sprite('flame', 1), 530, 330); x.drawImage(A.sprite('spark', 0), 600, 320); x.drawImage(A.sprite('ember', 0), 612, 330); x.drawImage(A.sprite('smoke', 1), 620, 340);
+    // vineta
+    var g = x.createRadialGradient(480, 270, 200, 480, 270, 560); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(8,4,16,0.55)');
+    x.fillStyle = g; x.fillRect(0, 0, 960, 540);
+  })();
+
+  // --- sonido
+  A.sfxNames().forEach(function (n) {
+    var b = document.createElement('button'); b.textContent = n;
+    b.onclick = function () { A.unlock().then(function () { A.sfx(n, { pitch: +$('pitch').value }); }); };
+    $('sfx').appendChild(b);
+  });
+  $('unlock').onclick = function () { A.unlock().then(function (ok) { $('unlock').textContent = ok ? 'Audio activo' : 'Audio no disponible'; $('unlock').classList.toggle('on', ok); }); };
+  $('mstart').onclick = function () { A.unlock().then(function () { A.music.start(); }); };
+  $('mstop').onclick = function () { A.music.stop(); };
+  var boss = 0;
+  $('mboss').onclick = function () { boss = 1 - boss; A.music.setIntensity(boss); $('mboss').textContent = 'Intensidad jefe: ' + (boss ? 'on' : 'off'); $('mboss').classList.toggle('on', !!boss); };
+  $('vol').oninput = function () { A.setVolume({ master: +$('vol').value }); };
+})();
+</script>
+</body>
+</html>
