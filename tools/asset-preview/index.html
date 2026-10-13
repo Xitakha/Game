@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Preview - Ember Flock</title>
+<style>
+  :root { --bg:#14101c; --panel:#1e1830; --line:#3a2e55; --txt:#e8e0f0; --dim:#9a90b0; --acc:#ff8a2a; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--txt); font:14px/1.4 system-ui, sans-serif; }
+  h1 { margin:0 0 4px; font-size:20px; } h2 { margin:24px 0 8px; font-size:15px; color:var(--acc); text-transform:uppercase; letter-spacing:.08em; }
+  p.sub { margin:0; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  .card h3 { margin:0 0 2px; font-size:13px; } .card small { color:var(--dim); }
+  .strip { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; align-items:flex-end; }
+  .strip figure { margin:0; text-align:center; font-size:10px; color:var(--dim); }
+  canvas { image-rendering:pixelated; background:repeating-conic-gradient(#2a2240 0 25%, #221b36 0 50%) 0 0/16px 16px; display:block; }
+  .anim { margin-top:8px; display:flex; gap:10px; align-items:center; font-size:12px; color:var(--dim); }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; }
+  button { background:#2b2147; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:8px 12px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--acc); } button.on { background:var(--acc); color:#1a1224; }
+  label { color:var(--dim); margin-right:12px; }
+  #arena { width:100%; max-width:960px; height:auto; image-rendering:pixelated; border:1px solid var(--line); }
+  .tiles { display:flex; flex-wrap:wrap; gap:4px; }
+  button.sm { padding:2px 8px; font-size:11px; margin-top:6px; }
+  select, input[type=range] { vertical-align:middle; }
+  .sfxrow { display:inline-flex; gap:2px; }
+</style>
+</head>
+<body>
+<h1>Asset Preview - Ember Flock</h1>
+<p class="sub">Recursos generados en runtime por <code>games/survival-lamb/src/assets.js</code>. Sin ficheros externos.</p>
+
+<h2>Arena de prueba (960x540, animada)</h2>
+<div style="margin-bottom:8px">
+  <label>Bioma <select id="biome"></select></label>
+  <label><input type="checkbox" id="fogOn" checked> niebla</label>
+  <label><input type="checkbox" id="vigOn" checked> vineta</label>
+  <label>Animacion <select id="anim"><option>walk</option><option>attack</option><option>die</option><option>idle</option></select></label>
+</div>
+<canvas id="arena" width="960" height="540"></canvas>
+
+<h2>Sprites</h2>
+<div class="btns" style="margin-bottom:10px"><button id="expAll">Exportar atlas PNG (todos los sprites)</button><span id="expMsg" style="color:var(--dim)"></span></div>
+<div class="grid" id="sprites"></div>
+
+<h2>Sonido</h2>
+<div class="btns" style="margin-bottom:10px">
+  <button id="unlock">Activar audio</button>
+  <button id="mstart">Musica ON</button>
+  <button id="mstop">Musica OFF</button>
+  <button id="mwav">Exportar musica WAV</button>
+</div>
+<div style="margin-bottom:10px">
+  <label>Volumen SFX <input id="vol" type="range" min="0" max="1" step="0.05" value="0.9"></label>
+  <label>Volumen master <input id="mvol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+  <label>Pitch <input id="pitch" type="range" min="0.5" max="2" step="0.05" value="1"><output id="pitchv">1.00</output></label>
+  <label>Variacion <input id="vary" type="range" min="0" max="0.3" step="0.01" value="0.07"></label>
+</div>
+<div style="margin-bottom:10px">
+  <label>Intensidad musica <input id="inten" type="range" min="0" max="1" step="0.01" value="0.3"><output id="intenv">0.30</output></label>
+  <label>Pista <select id="track"></select></label>
+  <span id="layers" style="color:var(--dim)"></span>
+</div>
+<div class="btns" id="sfx"></div>
+
+<script src="../../games/survival-lamb/src/assets.js"></script>
+<script>
+(function () {
+  var A = window.Assets, $ = function (id) { return document.getElementById(id); };
+  var ANIMS = [];
+  function download(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  function sheet(name) { // spritesheet: todos los frames en una fila
+    var it = A.info(name), c = document.createElement('canvas'); c.width = it.w * it.frames; c.height = it.h;
+    var x = c.getContext('2d'); for (var i = 0; i < it.frames; i++) x.drawImage(A.sprite(name, i), i * it.w, 0);
+    return c;
+  }
+  function toBlob(c, cb) { c.toBlob(cb, 'image/png'); }
+
+  // --- tarjetas de sprites
+  function buildCards() {
+    $('sprites').innerHTML = ''; ANIMS = [];
+    A.list().forEach(function (it) {
+      var card = document.createElement('div'); card.className = 'card';
+      var h = document.createElement('h3'); h.textContent = it.name;
+      var s = document.createElement('small'); s.textContent = it.w + 'x' + it.h + ' px, ' + it.frames + ' frame(s)';
+      card.appendChild(h); card.appendChild(s);
+      var strip = document.createElement('div'); strip.className = 'strip';
+      for (var i = 0; i < it.frames; i++) {
+        var fig = document.createElement('figure'), c = document.createElement('canvas'), src = A.sprite(it.name, i);
+        c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0);
+        var z = it.w <= 24 ? 3 : it.w <= 50 ? 2 : 1; c.style.width = c.width * z + 'px'; c.style.height = c.height * z + 'px';
+        fig.appendChild(c); fig.appendChild(document.createTextNode(String(i))); strip.appendChild(fig);
+      }
+      card.appendChild(strip);
+      if (it.anims) {
+        var row = document.createElement('div'); row.className = 'anim';
+        Object.keys(it.anims).forEach(function (an) {
+          var box = document.createElement('div'), c2 = document.createElement('canvas');
+          c2.width = it.w; c2.height = it.h; box.appendChild(c2); box.appendChild(document.createElement('br')); box.appendChild(document.createTextNode(an));
+          row.appendChild(box); ANIMS.push({ name: it.name, anim: an, ctx: c2.getContext('2d'), w: it.w, h: it.h, t0: 0 });
+        });
+        card.appendChild(row);
+      }
+      var b = document.createElement('button'); b.className = 'sm'; b.textContent = 'PNG spritesheet'; b.dataset.name = it.name;
+      b.onclick = function () { toBlob(sheet(it.name), function (bl) { download(bl, it.name + '_sheet_' + it.frames + 'x_' + it.w + 'x' + it.h + '.png'); }); };
+      card.appendChild(b);
+      $('sprites').appendChild(card);
+    });
+  }
+  $('expAll').onclick = function () { // atlas: una fila por sprite + JSON en consola/mensaje
+    var list = A.list(), W = 0, H = 0; list.forEach(function (it) { W = Math.max(W, it.w * it.frames); H += it.h; });
+    var c = document.createElement('canvas'); c.width = W; c.height = H; var x = c.getContext('2d'), y = 0, meta = {};
+    list.forEach(function (it) { x.drawImage(sheet(it.name), 0, y); meta[it.name] = { x: 0, y: y, w: it.w, h: it.h, frames: it.frames, anims: it.anims }; y += it.h; });
+    toBlob(c, function (bl) { download(bl, 'atlas_' + A.getBiome() + '.png'); download(new Blob([JSON.stringify(meta, null, 1)], { type: 'application/json' }), 'atlas_' + A.getBiome() + '.json'); $('expMsg').textContent = ' ' + W + 'x' + H + ' px'; });
+  };
+  function tick(t) {
+    ANIMS.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); a.ctx.drawImage(A.animFrame(a.name, a.anim, t), 0, 0); });
+    drawArena(t);
+    requestAnimationFrame(tick);
+  }
+
+  // --- arena de prueba (suelo cacheado + entidades animadas + antorchas + niebla + vineta)
+  var cv = $('arena'), x = cv.getContext('2d'), ground = null, torches = [];
+  var ritualInfo = null;
+  function buildArena() { // arena completa generada por Assets.arena (escalada a 960x540 de vista previa)
+    var ar = A.arena(960, 540, { seed: 99, wall: 20 });
+    ground = ar.canvas; torches = ar.torches; ritualInfo = ar.ritual;
+  }
+  var who = [['player', 480, 300, 0], ['worm', 300, 200, 1], ['worm', 640, 380, 1], ['archer', 760, 130, 1], ['boar', 200, 400, 0], ['bomb', 360, 140, 0], ['warlock', 700, 250, 1], ['boss', 250, 250, 0]];
+  function drawArena(t) {
+    x.imageSmoothingEnabled = false; x.drawImage(ground, 0, 0);
+    var an = $('anim').value, loopT = t % 2400;
+    who.forEach(function (w) {
+      var name = w[0], a = A.hasAnim(name, an) ? an : (A.hasAnim(name, 'walk') ? 'walk' : 'idle'), c = A.animFrame(name, a, a === 'die' ? loopT : t);
+      var sh = A.sprite('shadow'); x.drawImage(sh, w[1] - sh.width / 2, w[2] + c.height / 2 - sh.height / 2 - 4, sh.width * (name === 'boss' ? 2.5 : 1), sh.height);
+      x.save(); x.translate(w[1], w[2]); if (w[3]) x.scale(-1, 1); x.drawImage(c, -c.width / 2, -c.height / 2); x.restore();
+    });
+    var u = (t % 700) / 700, pv = A.sprite('slash_' + (1 + Math.floor(t / 700) % 3), Math.min(3, Math.floor(u * 4)));
+    x.drawImage(pv, 480 + 2, 300 - pv.height / 2);
+    x.drawImage(A.sprite('arrow', 0), 560, 180); x.drawImage(A.sprite('thorn'), 420, 380); x.drawImage(A.sprite('fireball', (t / 80) | 0), 560, 300);
+    x.drawImage(A.animFrame('explosion', 'boom', t % 1500), 330, 100);
+    x.drawImage(A.animFrame('shockwave', 'boom', t % 1200), 600, 400);
+    x.drawImage(A.animFrame('hitspark', 'burst', t % 600), 540, 250);
+    x.drawImage(A.animFrame('curse_flame', 'burn', t), 640, 300); x.drawImage(A.animFrame('curse_flame', 'burn', t + 200), 656, 306);
+    x.drawImage(A.animFrame('smoke_big', 'puff', t % 1000), 380, 330);
+    if (ritualInfo) A.drawRitualGlow(x, ritualInfo.x, ritualInfo.y, t, ritualInfo.r);
+    torches.forEach(function (to) { A.drawTorchFire(x, to.x, to.y, t, to.o); });
+    A.drawFireflies(x, 960, 540, t, { count: 70 });
+    if ($('fogOn').checked) A.drawFog(x, 960, 540, t, { alpha: 0.5 });
+    if ($('vigOn').checked) x.drawImage(A.vignette(960, 540, { strength: 0.8 }), 0, 0);
+  }
+
+  A.biomes().forEach(function (b) { var o = document.createElement('option'); o.value = b; o.textContent = A.biomeInfo(b).label; $('biome').appendChild(o); });
+  $('biome').onchange = function () { A.setBiome($('biome').value); buildCards(); buildArena(); };
+  buildCards(); buildArena(); requestAnimationFrame(tick);
+
+  // --- sonido
+  function opts() { return { pitch: +$('pitch').value, vol: +$('vol').value, vary: +$('vary').value }; }
+  A.sfxNames().forEach(function (n) {
+    var wrap = document.createElement('span'); wrap.className = 'sfxrow';
+    var b = document.createElement('button'); b.textContent = n;
+    b.onclick = function () { A.unlock().then(function () { A.sfx(n, opts()); }); };
+    var w = document.createElement('button'); w.textContent = 'WAV'; w.className = 'sm'; w.style.marginTop = '0'; w.title = 'Exportar ' + n + '.wav (pitch/volumen actuales, sin variacion)';
+    w.onclick = function () { var o = opts(); o.vary = 0; A.exportSfxWav(n, o).then(function (bl) { download(bl, n + '.wav'); }); };
+    wrap.appendChild(b); wrap.appendChild(w); $('sfx').appendChild(wrap);
+  });
+  A.music.tracks().forEach(function (t) { var o = document.createElement('option'); o.textContent = t; $('track').appendChild(o); });
+  function showLayers() { $('layers').textContent = ' capas: ' + A.music.layers().join(' / '); }
+  showLayers();
+  $('pitch').oninput = function () { $('pitchv').textContent = (+$('pitch').value).toFixed(2); };
+  $('inten').oninput = function () { $('intenv').textContent = (+$('inten').value).toFixed(2); A.music.setIntensity(+$('inten').value); };
+  $('track').onchange = function () { A.music.setTrack($('track').value); };
+  $('unlock').onclick = function () { A.unlock().then(function (ok) { $('unlock').textContent = ok ? 'Audio activo' : 'Audio no disponible'; $('unlock').classList.toggle('on', ok); }); };
+  $('mstart').onclick = function () { A.unlock().then(function () { A.music.setIntensity(+$('inten').value); A.music.start(); }); };
+  $('mstop').onclick = function () { A.music.stop(); };
+  $('mwav').onclick = function () { $('mwav').textContent = 'Renderizando...'; A.exportMusicWav({ track: $('track').value, intensity: +$('inten').value }).then(function (bl) { download(bl, 'music_' + $('track').value + '.wav'); $('mwav').textContent = 'Exportar musica WAV'; }); };
+  $('vol').oninput = function () { A.setVolume({ sfx: +$('vol').value }); };
+  $('mvol').oninput = function () { A.setVolume({ master: +$('mvol').value }); };
+})();
+</script>
+</body>
+</html>

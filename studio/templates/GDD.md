@@ -1,0 +1,11 @@
+# <Nombre del juego> — GDD
+- **Género / plataforma:**
+- **Pitch (1 frase):**
+- **Bucle central:**
+- **Controles:**
+- **Mecánicas clave:**
+- **Progresión / dificultad:**
+- **Estilo visual y audio:**
+- **Recursos necesarios** (y fuente prevista):
+- **Alcance mínimo jugable (MVP):**
+- **Fuera de alcance:**
