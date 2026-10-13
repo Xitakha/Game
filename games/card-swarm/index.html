@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swarm Hand</title>
+<link rel="icon" href="data:,">
+<style>
+  html,body{margin:0;height:100%;background:#07050c;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  canvas{width:min(100vw,calc(100vh*16/9));height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#0d0a14;outline:none}
+</style>
+</head>
+<body>
+<canvas id="game" width="960" height="540" tabindex="0"></canvas>
+<script src="src/assets.js"></script>
+<script src="src/main.js"></script>
+<script src="src/fx.js"></script>
+<script src="src/sfx.js"></script>
+<script src="src/player.js"></script>
+<script src="src/combat.js"></script>
+<script src="src/enemies.js"></script>
+<script src="src/weapons.js"></script>
+<script src="src/waves.js"></script>
+<script src="src/cards.js"></script>
+<script src="src/hud.js"></script>
+<script>window.addEventListener('load', function () { G.init(); });</script>
+</body>
+</html>
