@@ -47,7 +47,7 @@
 
   function explode(e) {
     fx.ring(e.x, e.y, 8, 60, 300, '#ff6a2a', 5);
-    fx.part('explosion', e.x, e.y, 0, 0, 350, { sc: 1.1, add: true });
+    fx.part('explosion', e.x, e.y, 0, 0, 350, { sc: 1.1, add: true, anim: true }); fx.shockwave(e.x, e.y, 130);
     fx.flames(e.x, e.y, 10, 40); fx.shake(7, 180); G.sfx('explosion');
     var p = PL();
     if (!p.dead && G.dist(e.x, e.y, p.x, p.y) <= 60 + p.r) G.Player.hurt(p, e.dmg, e.x, e.y);
@@ -58,6 +58,7 @@
     e.dead = true;
     if (silent) { fx.smoke(e.x, e.y, 4); return; }
     var p = PL();
+    fx.corpse(B.enemy[e.type].spr, e.x, e.y, e.face < 0); fx.puff(e.x, e.y, 2);
     fx.smoke(e.x, e.y, 6); fx.ember(e.x, e.y, 5, 10); G.sfx('enemy_die');
     if (e.type === 'bomb' && e.st === 'lit') explode(e);
     G.kills++; p.kills++;
@@ -309,7 +310,7 @@
       var z = G.zones[i];
       c.save(); c.globalAlpha = 0.25 * Math.min(1, z.life / 400); c.fillStyle = '#ff6a2a';
       c.beginPath(); c.arc(z.x, z.y, z.r, 0, 6.283); c.fill(); c.restore();
-      fx.spr(c, Assets.sprite('flame', Math.floor((z.life / 120)) % 3), z.x, z.y - 4, { alpha: Math.min(1, z.life / 400) });
+      fx.spr(c, Assets.sprite('curse_flame', Math.floor((z.life / 80)) % 6), z.x, z.y - 6, { alpha: Math.min(1, z.life / 400), sx: 1.3, sy: 1.3 });
     }
     for (i = 0; i < G.enemies.length; i++) {
       e = G.enemies[i];
@@ -363,11 +364,23 @@
     return 0;
   }
 
+  // frame animado con mas fases (caminar a 6 frames, idle con parpadeo) cuando existen
+  function animOf(e) {
+    var s = B.enemy[e.type].spr, w = Math.floor(e.anim / 110);
+    if (e.type === 'worm' && e.st === 'move') return 'walk:' + w;
+    if ((e.type === 'archer' || e.type === 'boar' || e.type === 'bomb') && e.st === 'move') return 'walk:' + w;
+    if (e.type === 'warlock' && e.st !== 'cast') return 'idle:' + Math.floor(e.anim / 250);
+    if (e.type === 'boss' && (e.st === 'move' || e.st === 'idle')) return 'idle:' + Math.floor(e.anim / 330);
+    if (e.type === 'boar' && e.st === 'wind') return 'attack:' + Math.min(1, Math.floor(e.t / 250));
+    return frameOf(e);
+  }
+
   E.draw = function (c, e) {
     var cv = Assets.sprite(B.enemy[e.type].spr, frameOf(e));
     var jump = e.jump || 0;
     G.fx.spr(c, Assets.sprite('shadow', 0), e.x, e.y + cv.height / 2 - 6, { alpha: 0.6, sx: e.type === 'boss' ? 2.5 : (e.type === 'boar' ? 1.4 : 1) });
     var o = { flip: e.face < 0 };
+    cv = Assets.sprite(B.enemy[e.type].spr, animOf(e));
     if (e.spawnT > 0) { o.alpha = 0.25 + 0.4 * (1 - e.spawnT / B.spawnTelegraph); }
     else if (e.flash > 0) { o.tint = '#ffffff'; o.tintA = 1; }
     else if (e.type === 'archer' && e.st === 'aim') { o.tint = '#ffe27a'; o.tintA = 0.35 + 0.3 * Math.sin(e.t / 25); }

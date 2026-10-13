@@ -30,8 +30,8 @@
     W.queue = W.isBoss ? ['boss'] : W.build(n);
     W.total = W.queue.length; W.spawnT = 0; W.bossT = 15000;
     G.Hud.banner(W.isBoss ? '¡JEFE!' : 'OLEADA ' + n, W.t, W.isBoss ? '#ff5a5a' : '#ffd27a');
-    if (W.isBoss) { G.sfx('boss_roar'); try { Assets.music.setIntensity(1); } catch (e) { /* audio */ } }
-    else G.sfx('wave_start');
+    if (W.isBoss) { G.sfx('boss_roar'); try { Assets.music.setTrack('boss'); Assets.music.setIntensity(1); } catch (e) { /* audio */ } }
+    else { G.sfx('wave_start'); try { Assets.music.setIntensity(Math.min(0.9, 0.2 + 0.09 * n)); } catch (e) { /* audio */ } }
   };
 
   W.remaining = function () { return W.queue.length + G.Enemies.aliveCount(); };
@@ -68,7 +68,7 @@
         G.Hud.banner('Oleada superada', 1500, '#9dff9d');
         G.Player.heal(G.player, W.isBoss ? B.player.healBoss : B.player.healWave);
         G.sfx('pickup');
-        if (W.isBoss) { try { Assets.music.setIntensity(0); } catch (e) { /* audio */ } }
+        if (W.isBoss) { try { Assets.music.setTrack('normal'); Assets.music.setIntensity(0.3); } catch (e) { /* audio */ } }
       }
     } else if (W.phase === 'clear') {
       W.t -= dt;

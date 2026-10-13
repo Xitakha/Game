@@ -97,7 +97,7 @@
 
   function doNova(p) {
     var S = B.special, st = p.stats, R = S.r * st.novaR, dmg = S.dmg + st.novaDmg;
-    G.fx.ring(p.x, p.y, 10, R, 350, '#ff8a3c', 6); G.fx.ring(p.x, p.y, 5, R * 0.7, 280, '#ffd27a', 3);
+    G.fx.shockwave(p.x, p.y, R * 2.3); G.fx.curse(p.x, p.y, 14, R * 0.8); G.sfx('shockwave'); G.fx.ring(p.x, p.y, 10, R, 350, '#ff8a3c', 6); G.fx.ring(p.x, p.y, 5, R * 0.7, 280, '#ffd27a', 3);
     G.fx.flames(p.x, p.y, 26, R * 0.9); G.fx.ember(p.x, p.y, 14, R * 0.6);
     G.fx.shake(10, 250); G.sfx('special');
     var list = G.enemies.slice();
@@ -243,15 +243,15 @@
     var shadow = Assets.sprite('shadow', 0);
     G.fx.spr(c, shadow, p.x, p.y + 14, { alpha: 0.6 });
     var frame;
-    if (p.dead) frame = 13;
+    if (p.dead) frame = 'die:' + Math.floor((G.deadT || 0) / 110);
     else if (p.hurtT > 400 && p.state === 'free') frame = 13;
     else if (p.state === 'attack') {
       var cb = B.combo[p.step];
       frame = p.t < cb.wind ? 6 : (p.t < cb.wind + cb.act ? 7 : 8);
     } else if (p.state === 'cast') frame = p.t < B.special.wind ? 6 : 7;
     else if (p.state === 'roll') frame = 9 + Math.min(3, Math.floor(p.t / B.roll.dur * 4));
-    else if (p.moving) frame = 2 + Math.floor(p.animT / 90) % 4;
-    else frame = Math.floor(p.animT / 450) % 2;
+    else if (p.moving) frame = 'walk:' + Math.floor(p.animT / 80);
+    else frame = 'idle:' + Math.floor(p.animT / 166);
     var cv = Assets.sprite('player', frame);
     var sq = p.squash > 0 ? 1 + 0.15 * (p.squash / 80) : 1;
     var alpha = 1;
@@ -265,7 +265,7 @@
     if (p.state === 'attack' && p.t >= B.combo[p.step].wind - 10) {
       var cc = B.combo[p.step], u = (p.t - cc.wind) / (cc.act + 80);
       if (u >= 0 && u <= 1.2) {
-        var sl = Assets.sprite('slash', Math.min(2, Math.floor(u * 3)));
+        var sl = Assets.sprite('slash_' + (p.step + 1), Math.min(3, Math.floor(u * 4)));
         var sc = cc.range / 44;
         c.save(); c.translate(Math.round(p.x), Math.round(p.y)); c.rotate(p.atkAng);
         c.scale(sc, (p.atkFlip ? -1 : 1) * (p.step === 2 && p.stats.heavy ? sc * 1.3 : sc));

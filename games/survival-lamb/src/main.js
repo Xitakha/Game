@@ -156,7 +156,7 @@
     function r() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
     var x, y, i;
     for (y = 0; y < G.AH; y += 32) for (x = 0; x < G.AW; x += 32) {
-      var k = r() < 0.72 ? 0 : 1 + Math.floor(r() * 5);
+      var k = r() < 0.72 ? 0 : 1 + Math.floor(r() * 9);
       g.drawImage(Assets.sprite('ground' + k, 0), x, y);
     }
     g.drawImage(Assets.sprite('ritual_circle', 0), G.AW / 2 - 128, G.AH / 2 - 128, 256, 256);
@@ -193,6 +193,7 @@
       g.drawImage(Assets.sprite(rk2, 0), 0 + r() * 6, y + r() * 8);
       g.drawImage(Assets.sprite(rk2, 0), G.AW - 30 + r() * 6, y + r() * 8);
     }
+    G.torches = Assets.decorate(g, G.AW, G.AH, { seed: 777, wall: G.WALL, torches: 6 }).torches;
     return c;
   }
 
@@ -204,6 +205,7 @@
     ctx.translate(-Math.round(G.cam.x + off.x), -Math.round(G.cam.y + off.y));
     ctx.drawImage(G.ground, 0, 0);
     G.Enemies.drawGround(ctx);
+    G.fx.drawCorpses(ctx);
     var items = G.enemies.slice(); items.push(G.player);
     items.sort(function (a, b) { return a.y - b.y; });
     for (var i = 0; i < items.length; i++) {
@@ -211,7 +213,11 @@
     }
     G.Enemies.drawProjectiles(ctx);
     G.fx.draw(ctx);
+    var tt = performance.now();
+    for (var ti = 0; ti < G.torches.length; ti++) Assets.drawTorchFire(ctx, G.torches[ti].x, G.torches[ti].y, tt);
+    Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.5, layers: 2 });
     ctx.restore();
+    ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.65 }), 0, 0);
     G.Hud.draw(ctx);
   }
 
@@ -230,6 +236,7 @@
     canvas = document.getElementById('game'); ctx = canvas.getContext('2d');
     G.ctx = ctx; canvas.focus();
     bindInput();
+    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) Assets.setBiome(bq[1]);
     G.ground = buildGround();
     G.reset();
     requestAnimationFrame(function (t) { last = t; frame(t); });

@@ -2,9 +2,9 @@
 (function () {
   'use strict';
   var G = window.G;
-  var fx = G.fx = { hitstop: 0, shakeAmp: 0, shakeT: 0, shakeMax: 1, parts: [], nums: [], rings: [], _tint: new Map() };
+  var fx = G.fx = { hitstop: 0, shakeAmp: 0, shakeT: 0, shakeMax: 1, parts: [], nums: [], rings: [], corpses: [], _tint: new Map() };
 
-  fx.clear = function () { fx.hitstop = 0; fx.shakeT = 0; fx.parts.length = 0; fx.nums.length = 0; fx.rings.length = 0; };
+  fx.clear = function () { fx.hitstop = 0; fx.shakeT = 0; fx.parts.length = 0; fx.nums.length = 0; fx.rings.length = 0; fx.corpses.length = 0; };
 
   // Hit-stop: congela la simulación unos ms
   fx.hit = function (ms) { if (ms > fx.hitstop) fx.hitstop = ms; };
@@ -52,10 +52,24 @@
   function part(name, x, y, vx, vy, life, o) {
     o = o || {};
     fx.parts.push({ name: name, f: Math.floor(Math.random() * 3), x: x, y: y, vx: vx, vy: vy, life: life, max: life,
-      g: o.g || 0, drag: o.drag || 0, sc: o.sc || 1, grow: o.grow || 0, add: !!o.add });
+      g: o.g || 0, drag: o.drag || 0, sc: o.sc || 1, grow: o.grow || 0, add: !!o.add, anim: !!o.anim, rot: o.rot || 0 });
   }
   fx.part = part;
+  // VFX nuevos (animados): chispa de impacto, onda de choque, humo grande, llama de maldicion, cadaver con animacion de muerte
+  fx.hitspark = function (x, y, sc) { part('hitspark', x, y, 0, 0, 160, { sc: sc || 1.2, add: true, anim: true, rot: G.rnd(0, 6.28) }); };
+  fx.shockwave = function (x, y, r) { part('shockwave', x, y, 0, 0, 380, { sc: (r || 90) / 48, add: true, anim: true }); };
+  fx.puff = function (x, y, n) { for (var i = 0; i < n; i++) part('smoke_big', x + G.rnd(-8, 8), y + G.rnd(-8, 8), G.rnd(-25, 25), G.rnd(-45, -10), G.rnd(500, 800), { drag: 1.5, anim: true, sc: 1.1 }); };
+  fx.curse = function (x, y, n, rad) { for (var i = 0; i < n; i++) { var a = G.rnd(0, 6.28), d = G.rnd(0, rad || 10); part('curse_flame', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40 - 40, G.rnd(350, 650), { drag: 3, sc: 1.3, add: true, anim: true }); } };
+  fx.corpse = function (spr, x, y, flip) { if (Assets.hasAnim(spr, 'die')) fx.corpses.push({ spr: spr, x: x, y: y, t: 0, flip: flip }); };
+  fx.drawCorpses = function (c) {
+    for (var i = 0; i < fx.corpses.length; i++) {
+      var p = fx.corpses[i], cv = Assets.animFrame(p.spr, 'die', p.t), dur = Assets.animDuration(p.spr, 'die');
+      fx.spr(c, Assets.sprite('shadow', 0), p.x, p.y + cv.height / 2 - 6, { alpha: Math.max(0, 0.6 * (1 - p.t / (dur + 300))) });
+      fx.spr(c, cv, p.x, p.y, { flip: p.flip, alpha: p.t > dur ? Math.max(0, 1 - (p.t - dur) / 300) : 1 });
+    }
+  };
   fx.spark = function (x, y, n, ang) {
+    fx.hitspark(x, y, 1.1);
     for (var i = 0; i < n; i++) {
       var a = ang != null ? ang + G.rnd(-0.9, 0.9) : G.rnd(0, 6.28), s = G.rnd(80, 240);
       part('spark', x, y, Math.cos(a) * s, Math.sin(a) * s, G.rnd(180, 320), { drag: 4, sc: 1.3, add: true });
@@ -93,6 +107,10 @@
       p.vy += p.g * s; var k = Math.exp(-p.drag * s); p.vx *= k; p.vy *= k;
       p.x += p.vx * s; p.y += p.vy * s; p.sc += p.grow * s;
     }
+    for (i = fx.corpses.length - 1; i >= 0; i--) {
+      p = fx.corpses[i]; p.t += dt;
+      if (p.t > Assets.animDuration(p.spr, 'die') + 300) fx.corpses.splice(i, 1);
+    }
     for (i = fx.nums.length - 1; i >= 0; i--) {
       p = fx.nums[i]; p.t += dt; p.y -= 40 * s;
       if (p.t >= p.max) fx.nums.splice(i, 1);
@@ -112,11 +130,11 @@
     }
     for (i = 0; i < fx.parts.length; i++) {
       p = fx.parts[i];
-      var cv = Assets.sprite(p.name, p.f);
+      var cv = Assets.sprite(p.name, p.anim ? Math.min(Assets.frames(p.name) - 1, Math.floor((1 - p.life / p.max) * Assets.frames(p.name))) : p.f);
       c.save();
       if (p.add) c.globalCompositeOperation = 'lighter';
       c.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
-      c.translate(Math.round(p.x), Math.round(p.y)); c.scale(p.sc, p.sc);
+      c.translate(Math.round(p.x), Math.round(p.y)); if (p.rot) c.rotate(p.rot); c.scale(p.sc, p.sc);
       c.drawImage(cv, -cv.width / 2, -cv.height / 2);
       c.restore();
     }
