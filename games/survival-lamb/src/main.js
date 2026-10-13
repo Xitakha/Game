@@ -150,51 +150,10 @@
 
   // ---------------------------------------------------------------- Render
   function buildGround() {
-    var c = document.createElement('canvas'); c.width = G.AW; c.height = G.AH;
-    var g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-    var seed = 12345;
-    function r() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
-    var x, y, i;
-    for (y = 0; y < G.AH; y += 32) for (x = 0; x < G.AW; x += 32) {
-      var k = r() < 0.72 ? 0 : 1 + Math.floor(r() * 9);
-      g.drawImage(Assets.sprite('ground' + k, 0), x, y);
-    }
-    g.drawImage(Assets.sprite('ritual_circle', 0), G.AW / 2 - 128, G.AH / 2 - 128, 256, 256);
-    for (i = 0; i < 70; i++) {
-      var nm = ['grass0', 'grass1', 'grass2', 'mushroom'][Math.floor(r() * 4)];
-      g.drawImage(Assets.sprite(nm, 0), 40 + r() * (G.AW - 80), 40 + r() * (G.AH - 80));
-    }
-    for (i = 0; i < 14; i++) {
-      g.globalAlpha = 0.7;
-      g.drawImage(Assets.sprite('rune' + Math.floor(r() * 2), 0), 60 + r() * (G.AW - 120), 60 + r() * (G.AH - 120));
-    }
-    g.globalAlpha = 1;
-    // borde oscuro + rocas
-    var grad;
-    g.fillStyle = 'rgba(8,5,14,0.82)';
-    g.fillRect(0, 0, G.AW, G.WALL - 6); g.fillRect(0, G.AH - G.WALL + 6, G.AW, G.WALL);
-    g.fillRect(0, 0, G.WALL - 6, G.AH); g.fillRect(G.AW - G.WALL + 6, 0, G.WALL, G.AH);
-    var edge = 'rgba(8,5,14,0.5)';
-    grad = g.createLinearGradient(0, 0, 0, 90); grad.addColorStop(0, edge); grad.addColorStop(1, 'rgba(8,5,14,0)');
-    g.fillStyle = grad; g.fillRect(0, 0, G.AW, 90);
-    grad = g.createLinearGradient(0, G.AH, 0, G.AH - 90); grad.addColorStop(0, edge); grad.addColorStop(1, 'rgba(8,5,14,0)');
-    g.fillStyle = grad; g.fillRect(0, G.AH - 90, G.AW, 90);
-    grad = g.createLinearGradient(0, 0, 90, 0); grad.addColorStop(0, edge); grad.addColorStop(1, 'rgba(8,5,14,0)');
-    g.fillStyle = grad; g.fillRect(0, 0, 90, G.AH);
-    grad = g.createLinearGradient(G.AW, 0, G.AW - 90, 0); grad.addColorStop(0, edge); grad.addColorStop(1, 'rgba(8,5,14,0)');
-    g.fillStyle = grad; g.fillRect(G.AW - 90, 0, 90, G.AH);
-    for (x = 0; x < G.AW; x += 30) {
-      var rk = 'rock' + Math.floor(r() * 3);
-      g.drawImage(Assets.sprite(rk, 0), x + r() * 10, 2 + r() * 8);
-      g.drawImage(Assets.sprite(rk, 0), x + r() * 10, G.AH - 28 + r() * 6);
-    }
-    for (y = 20; y < G.AH; y += 30) {
-      var rk2 = 'rock' + Math.floor(r() * 3);
-      g.drawImage(Assets.sprite(rk2, 0), 0 + r() * 6, y + r() * 8);
-      g.drawImage(Assets.sprite(rk2, 0), G.AW - 30 + r() * 6, y + r() * 8);
-    }
-    G.torches = Assets.decorate(g, G.AW, G.AH, { seed: 777, wall: G.WALL, torches: 6 }).torches;
-    return c;
+    // Fondo completo generado por Assets.arena (suelo de piedra, circulo ritual, decoracion, velas/antorchas, oscurecimiento exterior)
+    var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL });
+    G.torches = A.torches; G.ritual = A.ritual;
+    return A.canvas;
   }
 
   function draw() {
@@ -214,10 +173,12 @@
     G.Enemies.drawProjectiles(ctx);
     G.fx.draw(ctx);
     var tt = performance.now();
-    for (var ti = 0; ti < G.torches.length; ti++) Assets.drawTorchFire(ctx, G.torches[ti].x, G.torches[ti].y, tt);
+    if (G.ritual) Assets.drawRitualGlow(ctx, G.ritual.x, G.ritual.y, tt, G.ritual.r);
+    for (var ti = 0; ti < G.torches.length; ti++) Assets.drawTorchFire(ctx, G.torches[ti].x, G.torches[ti].y, tt, G.torches[ti].o);
+    Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: 110, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.H } });
     Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.5, layers: 2 });
     ctx.restore();
-    ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.65 }), 0, 0);
+    ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     G.Hud.draw(ctx);
   }
 

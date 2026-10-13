@@ -1,14 +1,14 @@
 /*!
  * assets.js - Generador de recursos 100% originales para "Ember Flock" (survival-lamb).
- * Sin dependencias, sin ficheros externos: sprites pixel-art por codigo (canvas) y audio WebAudio.
+ * Sin dependencias, sin ficheros externos: sprites vectoriales dibujados por codigo (canvas, trazo grueso estilo cuaderno) y audio WebAudio.
  * Script clasico (sin modulos). Expone `window.Assets`. Licencia: propia/libre (ver studio/assets/ASSETS.md).
  * Documentacion completa (nombres, frames, animaciones, audio, biomas, VFX): games/survival-lamb/ASSETS_API.md
  *
  * Resumen: Assets.sprite(name, frame|'anim:n') | animFrame(name, anim, tMs) | list/info/frames | addToPhaser
- *          Assets.setBiome('bosque'|'cripta') | vignette | drawFog | drawTorch | decorate
+ *          Assets.setBiome('bosque'|'cripta'|'asfodelo') | arena(w,h) | drawFireflies | drawRitualGlow | vignette | drawFog | drawTorch | decorate
  *          Assets.sfx(name,{pitch,vol,vary}) | music.start/stop/setIntensity(0..1)/setTrack('normal'|'boss')
  *          Assets.exportSfxWav / exportMusicWav (OfflineAudioContext)
- * Los personajes miran a la DERECHA. Todo sprite se dibuja a resolucion base y se escala x2 (nearest-neighbor).
+ * Los personajes miran a la DERECHA. Todo sprite se dibuja con coordenadas base y se rasteriza a x2 (contorno oscuro grueso, 1 sombra + 1 brillo, v3).
  * Los frames ya existentes conservan su indice; las mejoras se anaden al final (los nuevos frames/anims/nombres son aditivos).
  */
 (function () {
@@ -16,7 +16,7 @@
   var SCALE = 2;
   var reg = {};          // sprites compartidos: name -> {w,h,frames:[canvas],anims}
   var order = [];
-  var biomes = { bosque: {}, cripta: {} }, bnames = [], curBiome = 'bosque';
+  var biomes = { bosque: {}, cripta: {}, asfodelo: {} }, bnames = [], curBiome = 'bosque';
 
   // ------------------------------------------------------------------ utilidades
   function rng(seed) { // mulberry32
@@ -127,159 +127,252 @@
     if (bnames.indexOf(name) < 0) bnames.push(name);
   }
 
-  // Paleta cohesiva: fondos violeta-negro, lana crema, acentos rojo/naranja (cultista tierno vs horror)
-  var C = {
-    ol: '#120c1a',
-    wool: '#f5f0e8', woolS: '#c9bfd8', woolH: '#ffffff',
-    face: '#6b5478', faceS: '#4a3a58', ear: '#e58fa0', eye: '#1a1224', nose: '#7a3b4e',
-    cape: '#d1342c', capeD: '#8f1d28', capeH: '#f05a45',
-    steel: '#dfe8f2', steelS: '#8fa0b8', gold: '#f0b238', goldS: '#b87a22',
-    leg: '#3b2f48', hoof: '#221a2c',
-    ember: '#ff8a2a', fire: '#ffc83d', hot: '#fff0a8'
-  };
+  // ================================================================== v3: DIBUJO VECTORIAL ESTILO "CUADERNO" (trazo grueso, colores planos, 1 sombra + 1 brillo)
+  // Cada sprite se dibuja en un canvas (w*2 x h*2) con ctx.scale(2): las coordenadas siguen siendo las "base" de siempre.
+  var OLC = '#1b1124';
+  var C = { ol: OLC };
+  function rrand(seed) { return rng(seed * 2654435761 >>> 0); }
+  // --- trazados (funciones que anaden un subpath cerrado al path actual)
+  function Pclosed(pts) {           // curva suave cerrada por los puntos
+    return function (c) {
+      var n = pts.length, m = [(pts[n - 1][0] + pts[0][0]) / 2, (pts[n - 1][1] + pts[0][1]) / 2], i;
+      c.moveTo(m[0], m[1]);
+      for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n]; c.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); }
+      c.closePath();
+    };
+  }
+  function Ppoly(pts) { return function (c) { c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }; }
+  // elipse irregular "a mano"
+  function Pblob(cx, cy, rx, ry, seed, jit, n, rot) {
+    jit = jit == null ? 0.05 : jit; n = n || 9; var r = rrand(seed || 1), pts = [], i, co = Math.cos(rot || 0), si = Math.sin(rot || 0);
+    for (i = 0; i < n; i++) {
+      var a = i / n * 6.2832, k = 1.07 + (r() * 2 - 1) * jit, px = Math.cos(a) * rx * k, py = Math.sin(a) * ry * k;
+      pts.push([cx + px * co - py * si, cy + px * si + py * co]);
+    }
+    return Pclosed(pts);
+  }
+  function Prr(x, y, w, h, rad) {
+    return function (c) {
+      rad = Math.min(rad, w / 2, h / 2);
+      c.moveTo(x + rad, y); c.lineTo(x + w - rad, y); c.quadraticCurveTo(x + w, y, x + w, y + rad); c.lineTo(x + w, y + h - rad);
+      c.quadraticCurveTo(x + w, y + h, x + w - rad, y + h); c.lineTo(x + rad, y + h); c.quadraticCurveTo(x, y + h, x, y + h - rad);
+      c.lineTo(x, y + rad); c.quadraticCurveTo(x, y, x + rad, y); c.closePath();
+    };
+  }
+  function Pcirc(cx, cy, r) { return function (c) { c.moveTo(cx + r, cy); c.arc(cx, cy, r, 0, 6.2832); c.closePath(); }; }
+  var BIG = 2000;
 
-  // Genera frames de muerte a partir de una funcion de dibujo: destello -> caida/aplastado -> disolucion en brasas -> ceniza.
-  // o: {rot:[...5 angulos], sy:[...], dis:[...5 umbrales de disolucion 0..1], ash:bool}
+  function V(x) {
+    var v = { ctx: x, lw: 1.7, ol: OLC };
+    v.path = function (p) { x.beginPath(); p(x); };
+    // relleno plano con 1 sombra (abajo-derecha) y 1 brillo (arriba-izquierda), sin contorno
+    v.flat = function (p, base, o) {
+      o = o || {};
+      var so = o.so == null ? 0.9 : o.so;
+      x.save(); x.beginPath(); p(x); x.clip();
+      if (o.sh) {
+        x.fillStyle = o.sh; x.fillRect(-BIG, -BIG, BIG * 2, BIG * 2);
+        x.fillStyle = base; x.save(); x.translate(-so * 0.8, -so); x.beginPath(); p(x); x.fill(); x.restore();
+      } else { x.fillStyle = base; x.fillRect(-BIG, -BIG, BIG * 2, BIG * 2); }
+      x.restore();
+      if (o.hi) { // crescent de brillo: forma original menos la forma desplazada
+        x.save(); x.beginPath(); p(x); x.clip(); x.fillStyle = o.hi;
+        x.beginPath(); x.rect(-BIG, -BIG, BIG * 2, BIG * 2); x.save(); x.translate(so * 0.55, so * 0.65); p(x); x.restore(); x.fill('evenodd');
+        x.restore();
+      }
+    };
+    // parte con contorno grueso irregular
+    v.part = function (p, base, o) {
+      o = o || {};
+      var lw = o.lw == null ? v.lw : o.lw, ol = o.ol || v.ol;
+      if (lw > 0) v.outline(p, lw, ol);
+      v.flat(p, base, o);
+      return v;
+    };
+    v.outline = function (p, lw, ol) {
+      x.strokeStyle = ol; x.lineWidth = lw; x.beginPath(); p(x); x.stroke();
+      x.save(); x.translate(0.13, 0.1); x.lineWidth = lw * 0.82; x.beginPath(); p(x); x.stroke(); x.restore();
+    };
+    // varias formas que comparten un unico contorno exterior (nubes de lana, matas)
+    v.cluster = function (ps, base, o) {
+      o = o || {};
+      var lw = o.lw == null ? v.lw : o.lw, i;
+      for (i = 0; i < ps.length; i++) { x.fillStyle = o.ol || v.ol; v.outline(ps[i], lw, o.ol || v.ol); x.beginPath(); ps[i](x); x.fill(); }
+      for (i = 0; i < ps.length; i++) v.flat(ps[i], base, o);
+    };
+    v.line = function (x0, y0, x1, y1, w, col) { x.strokeStyle = col; x.lineWidth = w; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
+    // trazo grueso con contorno (cuernos, ramas, palos)
+    v.stick = function (pts, w, col, o) {
+      o = o || {}; var lw = o.lw == null ? v.lw : o.lw, i;
+      function tr() { x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); if (o.curve) { for (i = 1; i < pts.length - 1; i++) x.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2); x.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]); } else for (i = 1; i < pts.length; i++) x.lineTo(pts[i][0], pts[i][1]); }
+      x.strokeStyle = o.ol || v.ol; x.lineWidth = w + lw; tr(); x.stroke();
+      x.strokeStyle = col; x.lineWidth = w; tr(); x.stroke();
+      if (o.hi) { x.save(); x.translate(-w * 0.18, -w * 0.18); x.strokeStyle = o.hi; x.lineWidth = Math.max(0.3, w * 0.28); tr(); x.stroke(); x.restore(); }
+    };
+    v.dot = function (cx, cy, r, col) { x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, 6.2832); x.fill(); };
+    v.circ = function (cx, cy, r, base, o) { return v.part(Pcirc(cx, cy, r), base, o); };
+    // ojo grande y expresivo: blanco con contorno, pupila que mira a (lx,ly)
+    v.eye = function (cx, cy, r, o) {
+      o = o || {};
+      v.part(Pblob(cx, cy, r, r * (o.sy || 1), cx * 7 + 3, 0.03, 8), o.white || '#fffdf2', { lw: o.lw == null ? 0.55 : o.lw, sh: o.sh === false ? null : (o.shc || '#d8d2c4'), so: 0.4 });
+      if (o.closed) { x.strokeStyle = v.ol; x.lineWidth = 0.7; x.beginPath(); x.arc(cx, cy - r * 0.1, r * 0.7, 0.15, 3.0); x.stroke(); return; }
+      var lx = o.lx == null ? 0.35 : o.lx, ly = o.ly || 0, pr = r * (o.pr || 0.52);
+      v.dot(cx + lx * r * 0.5, cy + ly * r * 0.5, pr, o.pc || v.ol);
+      if (!o.nohl) v.dot(cx + lx * r * 0.5 - pr * 0.3, cy + ly * r * 0.5 - pr * 0.35, pr * 0.32, '#ffffff');
+    };
+    return v;
+  }
+  function vframe(w, h, draw, opt) {
+    opt = opt || {};
+    var c = mkCanvas(w * SCALE, h * SCALE), x = c.getContext('2d', { willReadFrequently: true });
+    x.scale(SCALE, SCALE); x.lineJoin = 'round'; x.lineCap = 'round';
+    var v = V(x); v.lw = opt.lw || 1.7; v.ol = opt.ol || OLC; v.w = w; v.h = h;
+    draw(v, w, h);
+    return c;
+  }
+  function vmk(name, w, h, fns, opt, anims) {
+    var fr = [], i;
+    for (i = 0; i < fns.length; i++) fr.push(vframe(w, h, fns[i], opt));
+    return { name: name, w: w * SCALE, h: h * SCALE, frames: fr, anims: anims || null };
+  }
+  function addV(name, w, h, fns, opt, anims) { reg[name] = vmk(name, w, h, fns, opt, anims); order.push(name); return reg[name]; }
+  var add2 = addV;
+  function addBV(biome, name, w, h, fns, opt, anims) {
+    var bl = biome === '*' ? ['bosque', 'cripta', 'asfodelo'] : (Array.isArray(biome) ? biome : [biome]);
+    bl.forEach(function (b) { biomes[b][name] = vmk(name, w, h, fns, opt, anims); });
+    if (bnames.indexOf(name) < 0) bnames.push(name);
+  }
+
+  // Frames de muerte: render vectorial del frame fuente -> caida/aplastado -> disolucion en brasas (a resolucion final)
   function dyingFrames(srcDraw, w, h, srcOpt, o) {
     o = o || {};
-    var n = 5, out = [];
+    var out = [], S = SCALE, W = w * S, H = h * S, srcC = null;
     var sxs = o.sx || [1.12, 1.15, 1.2, 1.2, 1.1], sys = o.sy || [0.95, 0.78, 0.6, 0.45, 0.3];
-    var rots = o.rot || [0, 0.05, 0.1, 0.12, 0.1], dis = o.dis || [0, 0.04, 0.3, 0.6, 0.9];
-    var dy = o.dy || [0, 0, 0, 0, 0];
+    var rots = o.rot || [0, 0.05, 0.1, 0.12, 0.1], dis = o.dis || [0, 0.04, 0.3, 0.6, 0.9], dy = o.dy || [0, 0, 0, 0, 0];
+    var cw = Math.ceil(W / 2), nz = rng(555 + w * 3 + h), noise = [], i;
+    for (i = 0; i < cw * Math.ceil(H / 2); i++) noise.push(nz());
     function make(k) {
       return function (g) {
-        var b = baseFrame(w, h, srcDraw, srcOpt);
-        var t = mkCanvas(w, h), tx = t.getContext('2d', { willReadFrequently: true }), by = h - 2;
-        tx.imageSmoothingEnabled = false; tx.translate(w / 2 + (o.dx ? o.dx[k] : 0), by + dy[k]); tx.rotate(rots[k]); tx.scale(sxs[k], sys[k]); tx.drawImage(b, -w / 2, -by);
-        var im = tx.getImageData(0, 0, w, h), d = im.data, rr = rng(97 + k * 13 + w), x, y, i;
-        var nz = rng(555 + w * 3 + h), noise = [];
-        for (i = 0; i < w * h; i++) noise.push(nz());
-        function A(a, bb) { return a < 0 || bb < 0 || a >= w || bb >= h ? 0 : d[(bb * w + a) * 4 + 3]; }
-        var gone = [];
-        for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
-          i = (y * w + x); var q = noise[i] * 0.72 + (1 - y / h) * 0.28;
-          gone.push(q < dis[k] ? 1 : 0);
-        }
+        if (!srcC) srcC = vframe(w, h, srcDraw, srcOpt);
+        var t = mkCanvas(W, H), tx = t.getContext('2d', { willReadFrequently: true }), by = (h - 2) * S;
+        tx.translate(W / 2 + (o.dx ? o.dx[k] : 0) * S, by + dy[k] * S); tx.rotate(rots[k]); tx.scale(sxs[k], sys[k]); tx.drawImage(srcC, -W / 2, -by);
+        var im = tx.getImageData(0, 0, W, H), d = im.data, rr = rng(97 + k * 13 + w), x, y, p;
+        var gone = new Uint8Array(W * H);
+        for (y = 0; y < H; y++) for (x = 0; x < W; x++) { var q = noise[(y >> 1) * cw + (x >> 1)] * 0.72 + (1 - y / H) * 0.28; gone[y * W + x] = q < dis[k] ? 1 : 0; }
         var res = new Uint8ClampedArray(d);
-        for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
-          i = (y * w + x); var p = i * 4;
+        for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+          p = (y * W + x) * 4;
           if (d[p + 3] < 20) continue;
-          if (gone[i]) { res[p + 3] = 0; continue; }
-          // flash blanco al inicio, rojizo despues
+          if (gone[y * W + x]) { res[p + 3] = 0; continue; }
           if (k === 0) { res[p] = d[p] + (255 - d[p]) * 0.6; res[p + 1] = d[p + 1] + (255 - d[p + 1]) * 0.6; res[p + 2] = d[p + 2] + (255 - d[p + 2]) * 0.6; }
           else if (k === 1) { res[p] = Math.min(255, d[p] * 1.1 + 60); res[p + 1] = d[p + 1] * 0.55; res[p + 2] = d[p + 2] * 0.55; }
           else if (k >= 3 && o.ash !== false) { var l = (d[p] + d[p + 1] + d[p + 2]) / 3; res[p] = l * 0.55 + 24; res[p + 1] = l * 0.5 + 20; res[p + 2] = l * 0.6 + 30; }
-          // borde de disolucion: brasa naranja
-          if (k >= 2) {
-            var edge = false, nb = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-            for (var m = 0; m < 4; m++) { var nx = x + nb[m][0], ny = y + nb[m][1]; if (nx < 0 || ny < 0 || nx >= w || ny >= h || gone[ny * w + nx]) { edge = true; break; } }
-            if (edge && A(x, y) > 100 && rr() < 0.55) { var cc = rr() < 0.5 ? [255, 138, 42] : [255, 200, 61]; res[p] = cc[0]; res[p + 1] = cc[1]; res[p + 2] = cc[2]; }
+          if (k >= 2 && d[p + 3] > 100) {
+            var edge = false, nb = [[2, 0], [-2, 0], [0, 2], [0, -2]];
+            for (var m = 0; m < 4; m++) { var nx = x + nb[m][0], ny = y + nb[m][1]; if (nx < 0 || ny < 0 || nx >= W || ny >= H || gone[ny * W + nx]) { edge = true; break; } }
+            if (edge && ((x >> 1) * 7 + (y >> 1) * 13 + k) % 9 < 5) { var cc = ((x >> 1) + (y >> 1)) % 2 ? [255, 138, 42] : [255, 200, 61]; res[p] = cc[0]; res[p + 1] = cc[1]; res[p + 2] = cc[2]; }
           }
         }
         im.data.set(res); tx.putImageData(im, 0, 0);
-        // brasas que suben
-        var ctx2 = tx; ctx2.fillStyle = '#ffc83d';
-        if (k >= 2) for (i = 0; i < 3 + k * 2; i++) { ctx2.fillStyle = rr() < 0.5 ? '#ff8a2a' : '#ffc83d'; ctx2.fillRect((rr() * w) | 0, (h * 0.15 + rr() * h * (0.9 - k * 0.12)) | 0, 1, 1); }
-        g.ctx.drawImage(t, 0, 0);
+        if (k >= 2) for (i = 0; i < 3 + k * 2; i++) { tx.fillStyle = rr() < 0.5 ? '#ff8a2a' : '#ffc83d'; tx.fillRect(((rr() * W) | 0) & ~1, ((H * 0.15 + rr() * H * (0.9 - k * 0.12)) | 0) & ~1, 2, 2); }
+        g.ctx.drawImage(t, 0, 0, w, h);
       };
     }
-    for (var k = 0; k < n; k++) { var fn = make(k); fn.noPost = true; out.push(fn); }
+    for (var k = 0; k < 5; k++) out.push(make(k));
     return out;
   }
-  var DIE_OPT = { outline: false, shade: false };
   var DIE_ANIM = function (idx) { return { f: idx, fps: 9, loop: false }; };
+  var PH = []; for (var pk = 0; pk < 6; pk++) PH.push(pk * Math.PI / 3);
 
-  // ------------------------------------------------------------------ helpers de animacion
-  var PH = []; for (var pk = 0; pk < 6; pk++) PH.push(pk * Math.PI / 3);   // 6 fases de caminar
-  // Orden de fases en las animaciones: indices originales (fase 0 y fase 3 = frames 0/1 del ciclo antiguo)
-  function walkSeq(f) { return f; }
-
-  // ------------------------------------------------------------------ JUGADOR
-  function sword(g, hx, hy, tx, ty) {
-    g.ln(hx, hy, tx, ty, C.steel);
+  // ------------------------------------------------------------------ JUGADOR (cordero con capa roja)
+  var K = {
+    wool: '#f7f0dc', woolS: '#cfc2a8', woolH: '#ffffff', face: '#4f4d5c', faceS: '#363441', faceH: '#6e6c80',
+    leg: '#5e5c6c', legS: '#3e3c4b', cape: '#d6302b', capeS: '#8e1a28', capeH: '#ff6350', trim: '#fbf3df',
+    gold: '#f3b836', goldS: '#b87a22', steel: '#eef2fa', steelS: '#98a4c0'
+  };
+  function sword(v, hx, hy, tx, ty) {
     var dx = tx - hx, dy = ty - hy, len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len;
-    g.px(hx + ux * 2, hy + uy * 2, C.steelS);
-    g.px(hx + ux * 4, hy + uy * 4, C.steelS);
-    g.px(tx, ty, C.hot);
-    var gx = hx + ux * 1.2, gy = hy + uy * 1.2;
-    g.px(gx - uy * 1.5, gy + ux * 1.5, C.gold); g.px(gx, gy, C.gold); g.px(gx + uy * 1.5, gy - ux * 1.5, C.gold);
-    g.px(hx - ux, hy - uy, C.goldS);
+    v.line(hx - ux * 1.2, hy - uy * 1.2, tx, ty, 3.3, OLC);
+    v.line(hx + ux * 1.2, hy + uy * 1.2, tx - ux * 0.2, ty - uy * 0.2, 1.7, K.steel);
+    v.line(hx + ux * 2.4 + uy * 0.35, hy + uy * 2.4 - ux * 0.35, tx - ux * 0.8 + uy * 0.35, ty - uy * 0.8 - ux * 0.35, 0.45, K.steelS);
+    var gx = hx + ux * 1.4, gy = hy + uy * 1.4;
+    v.line(gx - uy * 2.2, gy + ux * 2.2, gx + uy * 2.2, gy - ux * 2.2, 2.8, OLC);
+    v.line(gx - uy * 2, gy + ux * 2, gx + uy * 2, gy - ux * 2, 1.2, K.gold);
   }
-  function lamb(g, o) {
-    var by = o.by || 0, L = o.legs || [0, 0], fl = o.fl || 0, lf = o.lift || [0, 0];
+  function lamb(v, o) {
+    var x = v.ctx, by = o.by || 0, L = o.legs || [0, 0], fl = o.fl || 0, lf = o.lift || [0, 0], ea = o.ear || 0, i;
     // patas
-    for (var li = 0; li < 2; li++) {
-      var lx = (li ? 13 : 8) + L[li];
-      g.r(lx, 17 + by, 2, 3 - Math.max(0, by) - lf[li], C.leg);
-      g.r(lx, 19 - lf[li], 2, 1, C.hoof);
+    for (i = 0; i < 2; i++) v.part(Prr((i ? 14 : 8.8) + L[i], 19.3 - lf[i], 2.7, 3.7, 1.2), K.leg, { sh: K.legS, so: 0.6 });
+    // brazo trasero
+    v.part(Pblob(5.4, 16.6 + by, 1.7, 1.6, 4), K.leg, { sh: K.legS, so: 0.5 });
+    // capa
+    v.part(Pclosed([[8, 14.2 + by], [16.6, 14.2 + by], [19.4 + fl * 0.2, 19.4 + by], [19 + fl * 0.3, 21.4 + by], [14.5, 20.5 + by + fl * 0.2], [11.5, 21.6 + by], [8.5, 20.5 + by - fl * 0.2], [5, 21.4 + by], [4.6 - fl * 0.2, 19.4 + by]]), K.cape, { sh: K.capeS, hi: K.capeH, so: 1.1 });
+    x.strokeStyle = K.trim; x.lineWidth = 0.75; x.beginPath(); x.moveTo(5.4, 20.4 + by); x.quadraticCurveTo(8.5, 21.2 + by - fl * 0.2, 11.5, 20.7 + by); x.quadraticCurveTo(15, 21 + by + fl * 0.2, 18.8, 20.6 + by); x.stroke();
+    x.strokeStyle = K.trim; x.lineWidth = 0.7; x.beginPath(); x.moveTo(8.2, 14.8 + by); x.lineTo(10.4, 19.4 + by); x.moveTo(16.4, 14.8 + by); x.lineTo(14.4, 19.4 + by); x.stroke();
+    // cascabel con calavera
+    v.part(Pcirc(12.4, 16.3 + by, 1.65), K.gold, { sh: K.goldS, so: 0.4, lw: 0.9 });
+    v.dot(11.8, 16.1 + by, 0.3, OLC); v.dot(13, 16.1 + by, 0.3, OLC); v.line(12.4, 16.8 + by, 12.4, 17.2 + by, 0.35, OLC);
+    // orejas
+    v.part(Pclosed([[7.2, 8 + by], [3.2, 9.2 + by + ea], [2.8, 11.2 + by + ea], [7.4, 11.6 + by]]), K.leg, { sh: K.legS, hi: '#8a889b', so: 0.5, lw: 1.2 });
+    v.part(Pclosed([[17.6, 8 + by], [21.8, 9.2 + by + ea], [22.2, 11.2 + by + ea], [17.4, 11.6 + by]]), K.leg, { sh: K.legS, hi: '#8a889b', so: 0.5, lw: 1.2 });
+    // lana en nube
+    var tf = [[12, 9.2, 5.8], [7.6, 9, 3.2], [8.6, 5.6, 3.3], [12.2, 4.5, 3.4], [15.8, 5.5, 3.3], [17.2, 9, 3.2], [16.6, 12.6, 3], [7.8, 12.4, 2.9], [12.2, 13.4, 3.2]];
+    v.cluster(tf.map(function (t, k) { return Pcirc(t[0], t[1] + by + (k % 2 ? 0.1 : 0), t[2]); }), K.wool, { sh: K.woolS, hi: K.woolH, so: 0.8, lw: 1.5 });
+    // corona: ojo rojo
+    v.part(Ppoly([[9.6, 4.2], [9.8, 0.9], [11.6, 2.3], [12.4, 0.4], [13.2, 2.3], [15, 0.9], [15.2, 4.2]]), '#2c2234', { sh: '#1a1222', lw: 1.1, so: 0.5 });
+    v.part(Pblob(12.4, 3 + by * 0.3, 1.5, 0.95, 9), '#f33a30', { lw: 0.35, sh: '#a31824', so: 0.3 });
+    v.dot(12.6, 3 + by * 0.3, 0.38, '#2c0a10');
+    // cara
+    v.part(Pblob(12.4, 11.3 + by, 5.5, 4.2, 12, 0.025, 10), K.face, { sh: K.faceS, hi: K.faceH, so: 0.7, lw: 0.9 });
+    var eyeL = 9.9, eyeR = 14.9, ey = 10.7 + by;
+    if (o.hurt) {
+      [eyeL, eyeR].forEach(function (ex) { v.line(ex - 1.2, ey - 1.2, ex + 1.2, ey + 1.2, 0.8, '#fffdf2'); v.line(ex + 1.2, ey - 1.2, ex - 1.2, ey + 1.2, 0.8, '#fffdf2'); });
+    } else if (o.blink) {
+      [eyeL, eyeR].forEach(function (ex) { v.line(ex - 1.5, ey, ex + 1.5, ey, 0.8, '#fffdf2'); });
+    } else {
+      var wc = o.fury ? '#ffd9a0' : '#fffdf2';
+      v.eye(eyeL, ey, 2.15, { white: wc, lx: 0.5, pr: 0.5, lw: 0.4, sh: false }); v.eye(eyeR, ey, 2.15, { white: wc, lx: 0.5, pr: 0.5, lw: 0.4, sh: false });
+      if (o.fury) { v.line(eyeL - 2, ey - 2.4, eyeL + 1.8, ey - 1.5, 0.9, OLC); v.line(eyeR + 2, ey - 2.4, eyeR - 1.8, ey - 1.5, 0.9, OLC); }
     }
-    // capa (atras)
-    g.d(7, 12 + by, 4, C.cape);
-    g.r(2, 10 + by + fl, 5, 5, C.cape); g.r(1, 11 + by + fl, 2, 4, C.capeD);
-    g.r(3, 14 + by + fl, 4, 1, C.capeD); g.r(4, 9 + by, 3, 1, C.capeH);
-    g.px(1, 15 + by + fl, C.capeD); g.px(4, 15 + by + fl, C.capeD);
-    // lana: sombra primero (1px abajo), luego color
-    var tufts = [[8, 10, 3], [11, 8, 3], [12, 13, 3], [8, 14, 3], [13, 11, 3], [10, 11, 3]];
-    var i;
-    for (i = 0; i < tufts.length; i++) g.d(tufts[i][0], tufts[i][1] + by + 1, tufts[i][2], C.woolS);
-    for (i = 0; i < tufts.length; i++) g.d(tufts[i][0], tufts[i][1] + by, tufts[i][2], C.wool);
-    g.px(9, 8 + by, C.woolH); g.px(12, 6 + by, C.woolH); g.px(10, 9 + by, C.woolH); g.px(7, 11 + by, C.woolS); g.px(11, 15 + by, C.woolS);
-    g.px(9, 13 + by, C.woolS); g.px(12, 15 + by, C.woolS);
-    // bufanda de la capa
-    g.r(13, 9 + by, 2, 5, C.cape); g.px(13, 9 + by, C.capeH); g.r(13, 13 + by, 2, 1, C.capeD);
-    // cabeza (orejas caidas un pixel con "ear")
-    var ea = o.ear || 0;
-    g.r(15, 7 + by + ea, 2, 3, C.ear); g.r(18, 7 + by + ea, 2, 2, C.ear);
-    g.d(17, 11 + by, 3, C.face);
-    g.px(17, 14 + by, C.faceS); g.px(18, 14 + by, C.faceS); g.px(15, 12 + by, C.faceS);
-    if (o.hurt) { g.px(18, 10 + by, C.eye); g.px(19, 11 + by, C.eye); g.px(18, 11 + by, C.eye); g.px(19, 10 + by, C.eye); g.px(18, 13 + by, C.eye); }
-    else if (o.blink) { g.r(18, 11 + by, 2, 1, C.eye); g.px(17, 11 + by, C.faceS); }
-    else if (o.fury) { g.r(18, 10 + by, 2, 2, '#ff9a3c'); g.px(19, 11 + by, C.eye); g.px(18, 9 + by, C.eye); g.px(19, 9 + by, C.eye); }
-    else { g.r(18, 10 + by, 2, 2, '#ffd36a'); g.px(19, 11 + by, C.eye); g.px(18, 10 + by, '#fff6d0'); }
-    g.px(19, 13 + by, C.ear); g.px(20, 12 + by, '#c98b9a');
+    // boca
+    v.part(Pblob(12.7, 13.4 + by, 0.9, o.hurt || o.fury ? 1.0 : 0.65, 5), '#1a0c14', { lw: 0.3 });
+    if (o.hurt || o.fury) v.dot(12.7, 13.8 + by, 0.45, '#ff6a8a');
     // espada + pezuña
-    if (o.sword) { var s = o.sword; sword(g, s[0], s[1], s[2], s[3]); g.r(s[0] - 1, s[1], 2, 2, C.face); }
+    if (o.sword) { var s = o.sword; sword(v, s[0], s[1], s[2], s[3]); v.part(Pblob(s[0], s[1], 1.7, 1.6, 7), K.leg, { sh: K.legS, so: 0.5, lw: 1 }); }
   }
   function ball(k) {
-    return function (g) {
-      var cx = 11, cy = 12, a = k * Math.PI / 2;
-      function patch(an, rr, rad, col) { g.d(cx + Math.cos(an) * rr, cy + Math.sin(an) * rr, rad, col); }
-      g.d(cx, cy + 1, 6, C.woolS); g.d(cx, cy, 6, C.wool);
-      g.px(cx - 2, cy - 4, C.woolH); g.px(cx + 3, cy - 3, C.woolH);
-      patch(a, 4, 2, C.cape); patch(a + 0.55, 4.6, 1, C.capeD); patch(a - 0.5, 4.5, 1, C.capeH);
-      patch(a + 2.2, 4.4, 2, C.face); patch(a + 2.2, 4.4, 0, C.eye);
-      patch(a + 4.1, 5, 1, C.steel); patch(a + 4.1, 6, 0, C.gold);
+    return function (v) {
+      var cx = 12, cy = 12.5, a = k * Math.PI / 2;
+      function at(an, rr) { return [cx + Math.cos(an) * rr, cy + Math.sin(an) * rr]; }
+      v.cluster([Pcirc(cx, cy, 7.4), Pcirc(cx - 2.5, cy - 4, 4.4), Pcirc(cx + 3.5, cy - 3.6, 4.2), Pcirc(cx - 4, cy + 3, 4), Pcirc(cx + 4, cy + 3.5, 4)], K.wool, { sh: K.woolS, hi: K.woolH, lw: 1.6 });
+      var p = at(a, 5); v.part(Pblob(p[0], p[1], 2.9, 2.2, 3, 0.05, 8, a), K.cape, { sh: K.capeS, hi: K.capeH, lw: 0.8, so: 0.6 });
+      p = at(a + 2.2, 5); v.part(Pblob(p[0], p[1], 2.6, 2.2, 4, 0.04, 8, a + 2.2), K.face, { sh: K.faceS, lw: 0.8, so: 0.5 }); v.dot(p[0], p[1], 0.8, '#fffdf2');
+      p = at(a + 4.2, 5.4); v.circ(p[0], p[1], 1.4, K.gold, { sh: K.goldS, lw: 0.8, so: 0.4 });
+      p = at(a + 5.4, 5.6); v.part(Pcirc(p[0], p[1], 1.3), K.leg, { sh: K.legS, lw: 0.8, so: 0.4 });
     };
   }
-  // fase de caminar k (0..5) -> opciones de pose
   function walkPose(k) {
     var p = PH[k], c = Math.round(1.3 * Math.cos(p)), s = Math.sin(p), by = Math.abs(s) > 0.8 ? -1 : 0;
     return { by: by, legs: [-c, c], lift: [s > 0.5 ? 1 : 0, s < -0.5 ? 1 : 0], fl: [0, 1, 1, 0, -1, -1][k], ear: by ? 0 : 1 };
   }
   function plWalk(k) { var o = walkPose(k); o.sword = [20, 16 + o.by, 23, 8 + o.by]; return function (g) { lamb(g, o); }; }
-  var plDraw = {
-    hurt: function (g) { lamb(g, { by: 1, hurt: true, sword: [16, 16, 18, 10], fl: -1 }); }
-  };
+  var plDraw = { hurt: function (g) { lamb(g, { by: 1, hurt: true, sword: [16, 16, 18, 10], fl: -1 }); } };
   var pl = [];
-  pl.push(function (g) { lamb(g, { by: 0, sword: [20, 16, 23, 8] }); });                                         // 0 idle
-  pl.push(function (g) { lamb(g, { by: 1, sword: [20, 17, 23, 9], legs: [0, 0], ear: 1 }); });                   // 1 idle (respira)
-  pl.push(plWalk(0)); pl.push(plWalk(1)); pl.push(plWalk(3)); pl.push(plWalk(4));                                // 2-5 walk
-  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [14, 11, 10, 1], fl: -1 }); });                  // 6 windup
-  pl.push(function (g) { lamb(g, { by: 0, legs: [-1, 2], sword: [17, 13, 23, 13], fl: 2, fury: true }); });     // 7 golpe
-  pl.push(function (g) { lamb(g, { by: 1, legs: [-1, 1], sword: [17, 15, 22, 20], fl: 1 }); });                  // 8 recuperacion
-  for (var ri = 0; ri < 4; ri++) pl.push(ball(ri));                                                              // 9-12 roll
-  pl.push(plDraw.hurt);                                                                                          // 13 hurt
-  pl.push(plWalk(2)); pl.push(plWalk(5));                                                                        // 14-15 walk
-  pl.push(function (g) { lamb(g, { by: 1, legs: [1, -1], sword: [13, 12, 7, 3], fl: -2, ear: 1 }); });           // 16 anticipacion
-  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [19, 17, 21, 23], fl: 0 }); });                   // 17 estela / retorno
-  pl.push(function (g) { lamb(g, { by: 0, blink: true, sword: [20, 16, 23, 8] }); });                            // 18 parpadeo
+  pl.push(function (g) { lamb(g, { by: 0, sword: [20, 16, 23, 8] }); });
+  pl.push(function (g) { lamb(g, { by: 1, sword: [20, 17, 23, 9], legs: [0, 0], ear: 1 }); });
+  pl.push(plWalk(0)); pl.push(plWalk(1)); pl.push(plWalk(3)); pl.push(plWalk(4));
+  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [14, 11, 10, 1], fl: -1 }); });
+  pl.push(function (g) { lamb(g, { by: 0, legs: [-1, 2], sword: [17, 13, 23, 13], fl: 2, fury: true }); });
+  pl.push(function (g) { lamb(g, { by: 1, legs: [-1, 1], sword: [17, 15, 22, 20], fl: 1 }); });
+  for (var ri = 0; ri < 4; ri++) pl.push(ball(ri));
+  pl.push(plDraw.hurt);
+  pl.push(plWalk(2)); pl.push(plWalk(5));
+  pl.push(function (g) { lamb(g, { by: 1, legs: [1, -1], sword: [13, 12, 7, 3], fl: -2, ear: 1 }); });
+  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [19, 17, 21, 23], fl: 0 }); });
+  pl.push(function (g) { lamb(g, { by: 0, blink: true, sword: [20, 16, 23, 8] }); });
   var plDie0 = pl.length;
-  dyingFrames(plDraw.hurt, 24, 24, null, {
-    rot: [-0.1, -0.55, -1.25, -1.5, -1.55], sx: [1, 1, 1, 1, 1], sy: [1, 0.96, 0.92, 0.9, 0.85], dx: [0, 2, 7, 11, 11], dy: [0, 0, 0, 0, 0],
-    dis: [0, 0, 0, 0.3, 0.75], ash: false
-  }).forEach(function (f) { pl.push(f); });                                                                      // 19-23 muerte
-  var idleSeq = []; (function () { var i; for (i = 0; i < 24; i++) idleSeq.push(i < 12 ? 0 : (i < 23 ? 1 : 18)); idleSeq[5] = 1; idleSeq[17] = 0; idleSeq[10] = 18; }());
-  add('player', 24, 24, pl, null, {
+  dyingFrames(plDraw.hurt, 24, 24, null, { rot: [-0.1, -0.55, -1.25, -1.5, -1.55], sx: [1, 1, 1, 1, 1], sy: [1, 0.96, 0.92, 0.9, 0.85], dx: [0, 2, 7, 11, 11], dy: [0, 0, 0, 0, 0], dis: [0, 0, 0, 0.3, 0.75], ash: false }).forEach(function (f) { pl.push(f); });
+  addV('player', 24, 24, pl, null, {
     idle: { f: [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 18, 0, 0, 1, 1, 1, 1, 1, 1, 0], fps: 6 },
     walk: { f: [2, 3, 14, 4, 5, 15], fps: 12 },
     attack: { f: [16, 6, 7, 8, 17], fps: 18 }, attack_hit: { f: [7], fps: 1 },
@@ -287,62 +380,63 @@
     die: DIE_ANIM([13, plDie0, plDie0 + 1, plDie0 + 2, plDie0 + 3, plDie0 + 4])
   });
 
-  // ------------------------------------------------------------------ ENEMIGOS
-  // --- Gusano (16x16) ---
+  // ------------------------------------------------------------------ ENEMIGOS (formas blandas, ojos grandes, colores vivos)
+  // --- Gusano: larva morada con cuernitos rojos (16x16)
   function worm(ph, o) {
     o = o || {};
-    return function (g) {
-      var cols = ['#44662a', '#5a8236', '#6f9a3c', '#86b64a'];
-      var seg = [[3, 0], [6, 1], [9, 2], [12, 3]], hx = o.hx || 0, hy = o.hy || 0;
-      for (var i = 0; i < 4; i++) {
-        var s = seg[i], oy = Math.round(Math.sin(ph + i * 1.3) * 1.4), r = i === 3 ? 3 : 2 + (i > 0 ? 1 : 0);
-        var sx = s[0] + (i === 3 ? hx : (i === 2 ? Math.round(hx / 2) : 0)); oy += (i === 3 ? hy : (i === 2 ? Math.round(hy / 2) : 0));
-        g.d(sx, 10 + oy, r, cols[i]);
-        g.px(sx - 1, 8 + oy, '#a9d46a'); g.px(sx + 1, 12 + oy, '#8a5ab0'); // brillo + mancha corrupta
-        if (i === 3) {
-          g.px(sx + 1, 8 + oy, '#ff3b30'); g.px(sx + 2, 8 + oy, '#ffd36a');
-          if (o.open) { g.r(sx + 1, 10 + oy, 3, 3, '#5a1a2a'); g.px(sx + 2, 10 + oy, '#ffffff'); g.px(sx + 2, 12 + oy, '#ffffff'); g.px(sx + 1, 11 + oy, '#ff5a6a'); }
-          else { g.px(sx + 2, 11 + oy, '#ffffff'); g.px(sx, 12 + oy, '#ffffff'); g.px(sx + 1, 12 + oy, '#5a1a2a'); }
-        }
+    return function (v) {
+      var hx = o.hx || 0, hy = o.hy || 0, pos = [[3.4, 11], [6.6, 10.6], [9.6, 10.4]], i;
+      for (i = 0; i < 3; i++) {
+        var oy = Math.round(Math.sin(ph + i * 1.3) * 1.2) + (i === 2 ? hy * 0.5 : 0), sx = pos[i][0] + (i === 2 ? hx * 0.5 : 0), r = 2.5 + i * 0.35;
+        v.part(Pblob(sx, pos[i][1] + oy, r, r * 0.95, 20 + i), '#9a58e0', { sh: '#6230a8', hi: '#c394f5', so: 0.7, lw: 1.3 });
+        v.line(sx - 0.2, pos[i][1] + oy - r * 0.5, sx + 0.5, pos[i][1] + oy + r * 0.5, 0.5, '#d9c1ff');
       }
+      var hxx = 12.2 + hx, hyy = 9.2 + hy + Math.round(Math.sin(ph + 3.9) * 0.8);
+      v.part(Ppoly([[hxx - 2.6, hyy - 2.8], [hxx - 3.4, hyy - 5.8], [hxx - 1, hyy - 3.6]]), '#ff4a3a', { sh: '#b0202a', lw: 0.9, so: 0.3 });
+      v.part(Ppoly([[hxx + 1.2, hyy - 3.4], [hxx + 2.6, hyy - 6.2], [hxx + 3.2, hyy - 2.8]]), '#ff4a3a', { sh: '#b0202a', lw: 0.9, so: 0.3 });
+      v.part(Pblob(hxx, hyy, 4.1, 3.7, 25), '#a866ee', { sh: '#6a34b0', hi: '#cfa4fb', so: 0.8, lw: 1.4 });
+      v.eye(hxx - 0.4, hyy - 0.8, 1.55, { lx: 0.7, pr: 0.55, lw: 0.4 }); v.eye(hxx + 2.8, hyy - 0.8, 1.55, { lx: 0.7, pr: 0.55, lw: 0.4 });
+      if (o.open) { v.part(Pblob(hxx + 1.8, hyy + 2, 1.6, 1.2, 8), '#5a0e22', { lw: 0.5 }); v.dot(hxx + 1.2, hyy + 1.2, 0.4, '#fff'); v.dot(hxx + 2.5, hyy + 1.2, 0.4, '#fff'); }
+      else v.line(hxx + 0.2, hyy + 2.1, hxx + 2.4, hyy + 2.1, 0.6, OLC);
     };
   }
   var wF = [worm(PH[0]), worm(PH[3]), worm(PH[1]), worm(PH[2]), worm(PH[4]), worm(PH[5]),
     worm(PH[0], { hx: -2, hy: -3 }), worm(PH[0], { hx: 2, hy: 1, open: true }), worm(PH[3], { hx: 0, hy: 1 })];
   var wDie = wF.length;
   dyingFrames(worm(PH[0]), 16, 16).forEach(function (f) { wF.push(f); });
-  add('worm', 16, 16, wF, null, {
+  addV('worm', 16, 16, wF, { lw: 1.4 }, {
     walk: { f: [0, 2, 3, 1, 4, 5], fps: 9 }, attack: { f: [6, 7, 8], fps: 10 },
     die: DIE_ANIM([wDie, wDie + 1, wDie + 2, wDie + 3, wDie + 4])
   });
 
-  // --- Arquero (20x20) ---
+  // --- Arquero: cultista azul encapuchado con cuernitos (20x20)
   function archer(o) {
-    return function (g) {
-      var by = o.by || 0, robe = '#5b3a82', robeD = '#3c2459', hh = o.hem || 0;
-      for (var y = 8; y <= 18; y++) {
-        var hw = 2 + Math.floor((y - 8) * 0.5);
-        g.r(9 - hw + (y > 16 ? hh : 0), y + by, hw * 2 + 1, 1, y > 14 ? robeD : robe);
-      }
-      g.r(6, 13 + by, 7, 1, '#e0a63a'); // cinturon
-      g.px(9, 13 + by, '#fff0a8');
-      g.r(9, 8 + by, 1, 9, '#7a56a8'); // pliegue
-      // capucha
-      g.d(9, 6 + by, 4, robe); g.d(10, 7 + by, 2, '#0c0814'); g.r(12, 5 + by, 1, 4, robeD);
-      var eyeC = o.blink ? '#3c2459' : '#ff9a2a';
-      g.px(10, 6 + by, eyeC); g.px(12, 6 + by, eyeC); if (!o.blink) g.px(11, 6 + by, '#ffd36a');
-      g.px(7, 3 + by, '#7a56a8'); g.px(8, 2 + by, '#7a56a8');
+    return function (v) {
+      var x = v.ctx, by = o.by || 0, hh = o.hem || 0, rb = '#2f74dc', rbS = '#1c3f9a', rbH = '#6aa4ff';
+      v.part(Pclosed([[6.4, 9 + by], [11.6, 9 + by], [14.4, 15.5 + by], [13.4 + hh, 18.4], [9, 17.4], [4.8 + hh, 18.4], [3.8, 15.5 + by]]), rb, { sh: rbS, hi: rbH, so: 1.1, lw: 1.4 });
+      v.part(Prr(4.4, 12.6 + by, 9.2, 1.5, 0.7), '#f2c133', { lw: 0.6, sh: '#b8801e', so: 0.3 });
+      x.strokeStyle = '#f7f1e0'; x.lineWidth = 0.55;
+      for (var i = 0; i < 3; i++) { x.beginPath(); x.moveTo(7.3, 14.4 + by + i * 1.0); x.lineTo(10.7, 14.4 + by + i * 1.0); x.stroke(); }
+      v.line(9, 13.8 + by, 9, 17 + by, 0.5, '#f7f1e0');
       // arco
-      var bx = o.draw ? 15 : 16;
-      g.ln(14, 4 + by, 17, 8 + by, '#a0693a'); g.ln(17, 8 + by, 17, 12 + by, '#a0693a'); g.ln(17, 12 + by, 14, 16 + by, '#a0693a');
-      if (o.rel) { g.ln(14, 4 + by, 14, 16 + by, '#e8e0f0'); g.px(18, 7 + by, '#ffd36a'); g.px(19, 10 + by, '#fff0a8'); g.px(18, 13 + by, '#ffd36a'); }
-      else {
-        g.ln(14, 4 + by, o.draw ? 12 : (o.nock ? 13 : 14), o.draw ? 10 + by : (o.nock ? 10 + by : 4 + by), '#e8e0f0');
-        g.ln(o.draw ? 12 : (o.nock ? 13 : 14), o.draw ? 10 + by : (o.nock ? 10 + by : 16 + by), 14, 16 + by, '#e8e0f0');
-      }
-      if (o.draw) { g.ln(12, 10 + by, 19, 10 + by, '#d9b0ff'); g.px(19, 10 + by, '#ff9a2a'); g.px(18, 9 + by, '#ffd36a'); g.px(18, 11 + by, '#ffd36a'); }
-      if (o.nock) { g.ln(13, 10 + by, 17, 10 + by, '#d9b0ff'); g.px(16, 9 + by, '#7a56a8'); }
-      g.px(bx - 3, 10 + by, robe); g.r(11, 10 + by, 3, 2, '#3c2459');
+      var bw = o.draw ? 15 : 16.4;
+      x.strokeStyle = OLC; x.lineWidth = 2.6; x.beginPath(); x.moveTo(13.6, 3 + by); x.quadraticCurveTo(bw + 4.4, 10 + by, 13.6, 17 + by); x.stroke();
+      x.strokeStyle = '#c4712c'; x.lineWidth = 1.2; x.stroke();
+      x.strokeStyle = '#f7f1e0'; x.lineWidth = 0.45; x.beginPath(); x.moveTo(13.6, 3 + by);
+      if (o.draw) x.lineTo(11.4, 10 + by); else if (o.nock) x.lineTo(12.4, 10 + by);
+      if (o.draw || o.nock) x.lineTo(13.6, 17 + by); else x.lineTo(13.6, 17 + by); x.stroke();
+      if (o.rel) { v.dot(18.6, 6.8 + by, 0.7, '#ffd34a'); v.dot(19, 10.4 + by, 0.8, '#fff3b0'); v.dot(18.4, 13.2 + by, 0.7, '#ffd34a'); }
+      if (o.draw) { v.line(11.4, 10 + by, 18.6, 10 + by, 1.5, OLC); v.line(11.8, 10 + by, 18.4, 10 + by, 0.7, '#e8dcff'); v.part(Ppoly([[18.2, 8.8 + by], [19.9, 10 + by], [18.2, 11.2 + by]]), '#ff9a2a', { lw: 0.5 }); }
+      if (o.nock) { v.line(12.4, 10 + by, 17.2, 10 + by, 1.5, OLC); v.line(12.6, 10 + by, 17, 10 + by, 0.7, '#e8dcff'); }
+      v.part(Pblob(11.8, 10.2 + by, 1.5, 1.4, 6), '#1c3f9a', { lw: 0.9, so: 0.4 });
+      // capucha + cuernitos
+      v.part(Ppoly([[4.4, 3.4 + by], [3.2, 0.4 + by], [6.2, 2.4 + by]]), '#f4e8c8', { sh: '#c9b78e', lw: 0.9, so: 0.3 });
+      v.part(Ppoly([[12.6, 3.4 + by], [14.2, 0.2 + by], [10.8, 2.2 + by]]), '#f4e8c8', { sh: '#c9b78e', lw: 0.9, so: 0.3 });
+      v.part(Pblob(8.6, 6.6 + by, 5, 4.6, 31, 0.03), rb, { sh: rbS, hi: rbH, so: 0.9, lw: 1.4 });
+      v.part(Pblob(9.8, 7.1 + by, 3.4, 3, 32, 0.03), '#150c2a', { lw: 0.5 });
+      var ec = o.blink ? '#2a2a66' : '#ffd23a';
+      if (o.blink) { v.line(8, 7 + by, 9.6, 7 + by, 0.6, ec); v.line(10.8, 7 + by, 12.4, 7 + by, 0.6, ec); }
+      else { v.eye(8.7, 6.9 + by, 1.2, { white: '#ffe45a', lx: 0.8, pr: 0.5, lw: 0.1, sh: false, nohl: true }); v.eye(11.5, 6.9 + by, 1.2, { white: '#ffe45a', lx: 0.8, pr: 0.5, lw: 0.1, sh: false, nohl: true }); }
     };
   }
   function arWalk(k) { var c = (1 - Math.cos(PH[k])) / 2; return archer({ by: -Math.round(c), hem: Math.round(c) }); }
@@ -350,61 +444,68 @@
     arWalk(1), arWalk(2), arWalk(4), arWalk(5), archer({ nock: true }), archer({ rel: true, by: 0 }), archer({ by: 1, hem: 0 }), archer({ blink: true })];
   var aDie = aF.length;
   dyingFrames(archer({ by: 0 }), 20, 20).forEach(function (f) { aF.push(f); });
-  add('archer', 20, 20, aF, null, {
+  addV('archer', 20, 20, aF, { lw: 1.4 }, {
     walk: { f: [0, 3, 4, 1, 5, 6], fps: 8 }, shoot: { f: [7, 2, 8, 9], fps: 10 }, aim: { f: [2], fps: 1 },
     idle: { f: [0, 0, 0, 1, 1, 1, 10], fps: 4 },
     die: DIE_ANIM([aDie, aDie + 1, aDie + 2, aDie + 3, aDie + 4])
   });
 
-  // --- Jabali (24x18) ---
+  // --- Jabali: naranja con cuernos y colmillos (24x18)
   function boar(o) {
-    return function (g) {
-      var by = o.by || 0, body = '#7a4a32', dark = '#563222', light = '#97613f', hy = (o.low ? 2 : 0) + (o.hy || 0);
-      var lg = o.legs || [0, 0, 0, 0], lx = [5, 8, 14, 17], rs = o.raise || [0, 0, 0, 0];
-      for (var i = 0; i < 4; i++) { g.r(lx[i] + lg[i], 13 + by - rs[i], 2, 3 - (i % 2 ? 0 : 0), i % 2 ? dark : '#3d2418'); g.px(lx[i] + lg[i], 15 - rs[i], '#1a0f0a'); }
-      g.e(11, 9 + by, 8, 5, body); g.e(11, 11 + by, 7, 3, dark); g.e(11, 7 + by, 6, 2, light);
-      for (var k = 0; k < 7; k++) { g.px(5 + k * 2, 3 + by + (k % 2), '#2b1810'); g.px(5 + k * 2, 4 + by, '#3d2418'); }
-      g.d(18, 9 + by + hy, 3, light); g.r(20, 10 + by + hy, 3, 3, '#c98b86'); g.px(22, 10 + by + hy, '#3a1a1f'); g.px(22, 12 + by + hy, '#3a1a1f');
-      g.px(20, 8 + by + hy, o.rage || o.angry ? '#ff3b30' : (o.blink ? '#563222' : '#ffe08a')); g.px(19, 8 + by + hy, '#14101c');
-      g.px(21, 13 + by + hy, '#ffffff'); g.px(21, 14 + by + hy, '#ffffff'); g.px(19, 13 + by + hy, '#ffffff');
-      g.r(16, 5 + by + hy, 2, 3, dark); g.px(16, 5 + by + hy, '#c98b86');
-      if (o.rage) { g.r(0, 6 + by, 3, 1, 'rgba(255,200,120,0.7)'); g.r(1, 10 + by, 3, 1, 'rgba(255,200,120,0.6)'); }
-      if (o.hit) { g.px(23, 9 + by + hy, '#ffffff'); g.px(23, 14 + by + hy, '#ffd36a'); g.px(22, 8 + by + hy, '#ffd36a'); }
-      if (o.paw) { g.px(18, 17, '#6b5a50'); g.px(20, 16, '#6b5a50'); g.px(16, 17, '#6b5a50'); }
+    return function (v) {
+      var x = v.ctx, by = o.by || 0, body = '#f08030', dark = '#b04a1c', light = '#ffae5a', hy = (o.low ? 2 : 0) + (o.hy || 0);
+      var lg = o.legs || [0, 0, 0, 0], lx = [5.4, 8.4, 14.2, 17], rs = o.raise || [0, 0, 0, 0];
+      for (var i = 0; i < 4; i++) v.part(Prr(lx[i] + lg[i], 13 + by - rs[i], 2.4, 3.6 + rs[i] * 0 - (by > 0 ? 0 : 0), 1), i % 2 ? '#8a3a18' : '#a8481c', { sh: '#5a2210', lw: 1, so: 0.4 });
+      // cresta
+      v.part(Ppoly([[4.5, 6 + by], [5.4, 1.8 + by], [7.4, 4.6 + by], [9, 0.8 + by], [11, 4.2 + by], [13.2, 1 + by], [14.4, 5 + by], [15.5, 6.5 + by]]), '#7a1a2a', { sh: '#4a0e1c', lw: 1.1, so: 0.3 });
+      v.part(Pblob(10.6, 9.6 + by, 8.6, 5.7, 41, 0.03), body, { sh: dark, hi: light, so: 1.2, lw: 1.5 });
+      v.part(Pblob(7.5, 10.5 + by, 3, 2, 42), '#ffc890', { lw: 0, so: 0.2 });
+      // cabeza
+      v.part(Ppoly([[15.6, 5 + by + hy], [16.4, 1.6 + by + hy], [18.6, 5 + by + hy]]), '#f6e6b8', { sh: '#c9b078', lw: 0.9, so: 0.3 });
+      v.part(Pblob(18, 9.4 + by + hy, 4.3, 4, 43, 0.03), body, { sh: dark, hi: light, so: 0.9, lw: 1.4 });
+      v.part(Pblob(21.2, 11 + by + hy, 2.6, 2.2, 44), '#ffc7a0', { sh: '#d98a68', so: 0.5, lw: 1.1 });
+      v.dot(21.4, 10.3 + by + hy, 0.4, OLC); v.dot(22.4, 11.5 + by + hy, 0.4, OLC);
+      x.strokeStyle = OLC; x.lineWidth = 2.2; x.beginPath(); x.moveTo(19.4, 12.6 + by + hy); x.quadraticCurveTo(19.2, 15.4 + by + hy, 20.8, 15.2 + by + hy); x.stroke();
+      x.strokeStyle = '#fbf3df'; x.lineWidth = 1; x.stroke();
+      var ang = o.rage || o.angry;
+      if (o.blink) v.line(17.4, 8.4 + by + hy, 19.8, 8.4 + by + hy, 0.7, OLC);
+      else { v.eye(18.4, 8.3 + by + hy, 1.6, { lx: 0.8, pr: 0.55, lw: 0.45, white: ang ? '#ffe9d0' : '#fffdf2' }); if (ang) v.line(16.4, 6 + by + hy, 20, 7.2 + by + hy, 1, '#5a1010'); }
+      if (o.rage) { v.line(0.6, 6 + by, 3.4, 6 + by, 0.8, 'rgba(255,220,150,0.9)'); v.line(1.4, 10 + by, 4, 10 + by, 0.8, 'rgba(255,220,150,0.8)'); }
+      if (o.hit) { v.dot(23.2, 9 + by + hy, 0.7, '#fff'); v.dot(22.6, 14.4 + by + hy, 0.6, '#ffd36a'); v.dot(21.6, 7.4 + by + hy, 0.6, '#ffd36a'); }
+      if (o.paw) { v.dot(18, 17.2, 0.6, '#8a7a90'); v.dot(20.4, 16.4, 0.5, '#8a7a90'); v.dot(16, 17.2, 0.5, '#8a7a90'); }
     };
   }
-  function boWalk(k) {
-    var cs = Math.cos(PH[k]), c = Math.round(cs), by = -Math.round((1 + cs) / 2) * 0 - (Math.abs(Math.sin(PH[k])) > 0.8 ? 1 : 0);
-    return boar({ by: by, legs: [-c, c, c, -c] });
-  }
+  function boWalk(k) { var cs = Math.cos(PH[k]), c = Math.round(cs), by = -(Math.abs(Math.sin(PH[k])) > 0.8 ? 1 : 0); return boar({ by: by, legs: [-c, c, c, -c] }); }
   var bF = [boar({ by: 0, legs: [-1, 1, 1, -1] }), boar({ by: -1, legs: [1, -1, -1, 1] }), boar({ by: 1, low: true, rage: true, legs: [-2, 2, 2, -2] }),
     boWalk(1), boWalk(2), boWalk(4), boWalk(5),
-    boar({ by: 1, low: true, angry: true, legs: [0, 0, 1, -1], raise: [0, 0, 0, 1], paw: true }),            // 7 escarba (anticipacion)
-    boar({ by: 0, low: false, hy: -1, rage: true, legs: [-2, 2, 2, -2], hit: true }),                         // 8 impacto
-    boar({ by: 0, legs: [0, 0, 0, 0], angry: true }),                                                          // 9 recuperacion
-    boar({ by: 0, legs: [-1, 1, 1, -1], blink: true })];                                                       // 10 parpadeo
+    boar({ by: 1, low: true, angry: true, legs: [0, 0, 1, -1], raise: [0, 0, 0, 1], paw: true }),
+    boar({ by: 0, low: false, hy: -1, rage: true, legs: [-2, 2, 2, -2], hit: true }),
+    boar({ by: 0, legs: [0, 0, 0, 0], angry: true }),
+    boar({ by: 0, legs: [-1, 1, 1, -1], blink: true })];
   var bDie = bF.length;
   dyingFrames(boar({ by: 0, legs: [-1, 1, 1, -1] }), 24, 18, null, { dx: [0, 0, 0, 0, 0] }).forEach(function (f) { bF.push(f); });
-  add('boar', 24, 18, bF, null, {
+  addV('boar', 24, 18, bF, { lw: 1.5 }, {
     walk: { f: [0, 3, 4, 1, 5, 6], fps: 10 }, charge: { f: [2], fps: 1 }, attack: { f: [7, 7, 2, 8, 9], fps: 10 },
     idle: { f: [0, 0, 0, 0, 10], fps: 4 },
     die: DIE_ANIM([bDie, bDie + 1, bDie + 2, bDie + 3, bDie + 4])
   });
 
-  // --- Bomba (16x16) ---
+  // --- Bomba: criatura roja con cuernitos y mecha (16x16)
   function bomb(o) {
-    return function (g) {
-      var by = o.by || 0, lit = o.lit, rad = o.big ? 7 : 6;
-      var b = lit ? (o.lit === 2 ? '#ff6a2a' : '#c8281e') : '#2f2b3f', b2 = lit ? '#8f1414' : '#1f1b2c', hi = lit ? '#ffd36a' : '#6a6488';
-      g.r(4 + (o.f || 0), 13, 2, 2, '#14101c'); g.r(10 - (o.f || 0), 13, 2, 2, '#14101c');
-      g.d(8, 9 + by, rad, b2); g.d(8, 8 + by, rad, b); g.d(5, 6 + by, 1, hi);
-      g.px(4, 8 + by, hi);
-      g.r(5, 8 + by, 2, 2, lit ? '#ffffff' : '#ffd36a'); g.r(9, 8 + by, 2, 2, lit ? '#ffffff' : '#ffd36a');
-      g.px(5, 7 + by, C.ol); g.px(6, 7 + by, C.ol); g.px(10, 7 + by, C.ol); g.px(11, 7 + by, C.ol);
-      g.r(6, 12 + by, 4, 1, lit ? '#fff0a8' : '#8a8498');
-      g.r(7, 3 + by, 2, 2, '#6a4a2a'); g.ln(8, 3 + by, 11, 1, '#a0693a');
-      g.px(12, 0, lit ? '#ffffff' : '#ff9a2a'); g.px(11, 1, '#ffd36a'); if (lit) { g.px(13, 1, '#ff9a2a'); g.px(12, 2, '#ff9a2a'); g.px(11, 0, '#ffd36a'); }
-      if (o.big) { g.px(13, 0, '#ffffff'); g.px(10, 2, '#ff9a2a'); g.px(14, 2, '#ffd36a'); g.px(8, 0, '#ffd36a'); }
+    return function (v) {
+      var by = o.by || 0, lit = o.lit, rad = o.big ? 6.8 : 6, f = o.f || 0;
+      var b = lit ? (o.lit === 2 ? '#ffb02a' : '#ff6a22') : '#d8302e', bs = lit ? '#c8341c' : '#8a1428', bh = lit ? '#fff0a0' : '#ff6a58';
+      v.part(Prr(4 + f, 13, 2.6, 2.4, 1), '#5a1428', { lw: 1, sh: '#38081a', so: 0.3 }); v.part(Prr(9.4 - f, 13, 2.6, 2.4, 1), '#5a1428', { lw: 1, sh: '#38081a', so: 0.3 });
+      v.part(Ppoly([[2.6, 6 + by], [1.6, 2.4 + by], [5, 4.2 + by]]), '#2c2234', { lw: 0.9, sh: '#120a18', so: 0.3 });
+      v.part(Ppoly([[13.4, 6 + by], [14.4, 2.4 + by], [11, 4.2 + by]]), '#2c2234', { lw: 0.9, sh: '#120a18', so: 0.3 });
+      v.part(Pblob(8, 8.8 + by, rad, rad * 0.94, 51, 0.03), b, { sh: bs, hi: bh, so: 1, lw: 1.4 });
+      // mecha
+      v.stick([[8, 3.2 + by], [8.8, 1.6 + by], [11.2, 1.2 + by]], 0.9, '#a0693a', { lw: 0.8 });
+      var fx = 11.8, fy = 1 + (o.big ? -0.2 : 0);
+      v.part(Pblob(fx, fy, 1.5, 1.9, 7), lit ? '#fff2a8' : '#ff9a2a', { lw: 0.6, sh: '#ff5a22', so: 0.4 });
+      v.dot(fx, fy + 0.3, 0.5, '#fff'); if (lit) v.dot(fx + 1.8, fy - 1, 0.4, '#ffd34a');
+      v.eye(5.7, 8 + by, 1.9, { lx: 0.4, pr: 0.55, lw: 0.45, white: lit ? '#ffffff' : '#fffdf2' }); v.eye(10.3, 8 + by, 1.9, { lx: 0.4, pr: 0.55, lw: 0.45, white: lit ? '#ffffff' : '#fffdf2' });
+      v.part(Pblob(8, 12 + by, 2.4, 1.1, 8), '#2a0a14', { lw: 0.4 }); v.line(6.8, 11.3 + by, 6.8, 12.4 + by, 0.5, '#fff'); v.line(9.2, 11.3 + by, 9.2, 12.4 + by, 0.5, '#fff');
     };
   }
   function bmWalk(k) { var c = Math.cos(PH[k]); return bomb({ f: Math.round(c), by: -(Math.abs(Math.sin(PH[k])) > 0.8 ? 1 : 0) }); }
@@ -412,70 +513,88 @@
     bomb({ lit: 1, big: true, by: -1 }), bomb({ lit: 2, big: true, by: -1 })];
   var mDie = mF.length;
   dyingFrames(bomb({ f: 1 }), 16, 16).forEach(function (f) { mF.push(f); });
-  add('bomb', 16, 16, mF, null, {
+  addV('bomb', 16, 16, mF, { lw: 1.4 }, {
     walk: { f: [0, 4, 5, 1, 6, 7], fps: 11 }, lit: { f: [2, 3], fps: 8 }, prime: { f: [2, 3, 2, 8, 3, 9], fps: 14 },
     die: DIE_ANIM([mDie, mDie + 1, mDie + 2, mDie + 3, mDie + 4])
   });
 
-  // --- Brujo (20x24) ---
+  // --- Brujo: ciervo amarillo con astas y tunica morada (20x24)
   function warlock(o) {
-    return function (g) {
-      var by = o.by || 0, rb = '#2f5d58', rbD = '#1f3f3f';
-      for (var y = 9; y <= 21; y++) { var hw = 2 + Math.floor((y - 9) * 0.45); g.r(9 - hw, y + by, hw * 2 + 1, 1, y > 17 ? rbD : rb); }
-      g.r(6, 14 + by, 7, 1, '#6a3a82'); g.px(9, 14 + by, '#b980d6');
-      g.r(4, 8 + by, 11, 2, '#2a1f4a'); g.r(6, 5 + by, 7, 3, '#2a1f4a'); g.r(8, 2 + by, 4, 3, '#2a1f4a'); g.r(10, 0 + by, 2, 2, '#2a1f4a');
-      g.r(6, 7 + by, 7, 1, '#b980d6');
-      g.r(7, 10 + by, 5, 3, '#0c0814');
-      if (o.blink) { g.px(8, 11 + by, '#2f5d58'); g.px(11, 11 + by, '#2f5d58'); } else { g.px(8, 11 + by, '#8cff6a'); g.px(11, 11 + by, '#8cff6a'); }
+    return function (v) {
+      v.ctx.translate(0, 1.4);
+      var x = v.ctx, by = o.by || 0, rb = '#8a3fd0', rbS = '#55218f', rbH = '#b574f0';
       var arm = o.arm != null ? o.arm : (o.cast ? -3 : 0), orb = o.orb != null ? o.orb : (o.cast ? 3 : 2);
-      g.ln(16, 8 + by + arm, 16, 20 + by, '#7a5230');
-      g.d(16, 6 + by + arm, orb, '#4fd04a'); g.px(15, 5 + by + arm, '#d6ffb0'); g.px(16, 6 + by + arm, '#8cff6a');
-      g.r(13, 12 + by + arm / 2, 3, 2, rbD);
-      if (o.cast) { g.px(11, 2, '#8cff6a'); g.px(19, 1, '#8cff6a'); g.px(13, 0, '#d6ffb0'); g.px(18, 5 + by, '#8cff6a'); g.px(14, 1, '#8cff6a'); }
-      if (o.wind) { g.px(13, 3 + by + arm, '#8cff6a'); g.px(19, 4 + by + arm, '#8cff6a'); g.px(16, 2 + by + arm, '#d6ffb0'); }
+      // baston + orbe
+      v.stick([[16.4, 20.6 + by], [16.4, 7 + by + arm]], 1.1, '#9a5a2c', { lw: 0.9 });
+      v.part(Pblob(16.4, 5.4 + by + arm, orb + 1.2, orb + 1.2, 61), '#ff5a2a', { sh: '#b82418', hi: '#ffb35a', so: 0.7, lw: 1 });
+      v.dot(16.4 - 0.2, 5.4 + by + arm + 0.2, orb * 0.5, '#ffe27a');
+      v.part(Pclosed([[6.6, 10 + by], [12.4, 10 + by], [15.2, 17.5 + by], [14.6, 21.4 + by], [9.5, 20.4 + by], [4.4, 21.4 + by], [3.8, 17.5 + by]]), rb, { sh: rbS, hi: rbH, so: 1.2, lw: 1.4 });
+      v.part(Prr(4.6, 16.6 + by, 9.8, 1.4, 0.6), '#f2c133', { lw: 0.5, sh: '#b8801e', so: 0.3 });
+      v.line(9.5, 11 + by, 9.5, 16 + by, 0.5, '#f7f1e0');
+      v.part(Pblob(14, 13.4 + by + arm * 0.4, 1.5, 1.4, 9), '#f4c92e', { lw: 0.9, sh: '#c9941a', so: 0.4 });
+      // astas
+      v.stick([[6.4, 5 + by], [4.6, 2.2 + by], [3.2, 0.6 + by]], 1.2, '#d99a46', { lw: 0.9, hi: '#ffd48a' });
+      v.stick([[4.6, 2.2 + by], [2.2, 2.6 + by]], 0.9, '#d99a46', { lw: 0.8 });
+      v.stick([[12.4, 5 + by], [14.2, 2.2 + by], [15.4, 0.4 + by]], 1.2, '#d99a46', { lw: 0.9, hi: '#ffd48a' });
+      v.stick([[14.2, 2.2 + by], [16.6, 2.8 + by]], 0.9, '#d99a46', { lw: 0.8 });
+      // orejas y cabeza
+      v.part(Pblob(4.8, 7.6 + by, 2.1, 1.1, 62, 0.04, 8, 0.5), '#f6cf3e', { sh: '#c9941a', lw: 0.9, so: 0.3 });
+      v.part(Pblob(14.2, 7.6 + by, 2.1, 1.1, 63, 0.04, 8, -0.5), '#f6cf3e', { sh: '#c9941a', lw: 0.9, so: 0.3 });
+      v.part(Pblob(9.4, 8.6 + by, 4.9, 4.3, 64, 0.03), '#f9d444', { sh: '#d79c1a', hi: '#fff09a', so: 0.9, lw: 1.4 });
+      v.part(Pblob(10.6, 10.9 + by, 2.4, 1.6, 65), '#fff0c0', { sh: '#e0c78a', lw: 0.8, so: 0.3 }); v.dot(11.6, 10.5 + by, 0.55, OLC);
+      if (o.blink) { v.line(6.4, 8 + by, 8.2, 8 + by, 0.7, OLC); v.line(10.2, 8 + by, 12, 8 + by, 0.7, OLC); }
+      else { v.eye(7.3, 8 + by, 1.6, { lx: 0.7, pr: 0.55, lw: 0.4 }); v.eye(11.2, 8 + by, 1.6, { lx: 0.7, pr: 0.55, lw: 0.4 }); }
+      if (o.cast) { v.dot(11, 1.4, 0.55, '#ffc83d'); v.dot(19, 1.2, 0.55, '#ff8a2a'); v.dot(18.6, 8.4 + by, 0.55, '#ffc83d'); v.dot(13.6, 0.4, 0.45, '#fff0a8'); }
+      if (o.wind) { v.dot(13.4, 2.6 + by + arm, 0.5, '#ffc83d'); v.dot(19.2, 3.4 + by + arm, 0.5, '#ff8a2a'); }
     };
   }
   var kF = [warlock({}), warlock({ by: 1 }), warlock({ cast: true }), warlock({ arm: -1, orb: 2, wind: true, by: 1 }), warlock({ arm: -2, orb: 2 }), warlock({ blink: true })];
   var kDie = kF.length;
   dyingFrames(warlock({}), 20, 24).forEach(function (f) { kF.push(f); });
-  add('warlock', 20, 24, kF, null, {
+  addV('warlock', 20, 24, kF, { lw: 1.4 }, {
     idle: { f: [0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 5], fps: 4 }, cast: { f: [3, 2, 2, 4], fps: 8 }, cast_hold: { f: [2], fps: 1 },
     die: DIE_ANIM([kDie, kDie + 1, kDie + 2, kDie + 3, kDie + 4])
   });
 
   // ------------------------------------------------------------------ JEFE: PASTOR CORRUPTO (48x48 base)
   function boss(o) {
-    return function (g) {
-      var by = o.by || 0, rb = '#3b2850', rbD = '#241638', rbH = '#58407a', veins = '#6dff7a', sw = o.sway || 0;
-      var lift = o.slam ? (o.lift != null ? o.lift : -6) : (o.lift || 0);
-      g.e(21, 29 + by + lift / 2, 16, 14, rbD); g.e(21, 27 + by + lift / 2, 16, 14, rb);
-      g.e(17, 22 + by + lift / 2, 8, 6, rbH);
-      for (var i = 0; i < 9; i++) { g.r(7 + i * 3.5 + (i % 2 ? sw : -sw), 40 + by + lift / 2 + (i % 2) * 2, 3, 3 - (i % 2), rbD); }
-      g.ln(12, 30 + by, 17, 34 + by, veins); g.ln(17, 34 + by, 19, 40 + by, veins); g.ln(25, 24 + by, 29, 31 + by, veins);
-      g.ln(29, 31 + by, 27, 38 + by, veins); g.ln(13, 22 + by, 10, 28 + by, '#41c05a');
-      g.px(24, 35 + by, '#b6ffbe'); g.px(15, 31 + by, '#b6ffbe');
-      var wl = [[30, 21], [27, 24], [31, 25], [26, 19], [29, 28], [34, 24]];
-      for (var j = 0; j < wl.length; j++) g.d(wl[j][0], wl[j][1] + by + lift, 3, '#8f8aa0');
-      for (var j2 = 0; j2 < wl.length; j2++) g.d(wl[j2][0], wl[j2][1] + by + lift - 1, 2, '#bdb6cc');
-      var hy = 14 + by + lift;
-      g.ln(31, hy - 2, 26, hy - 7, '#9c8a5e'); g.ln(26, hy - 7, 28, hy - 11, '#9c8a5e'); g.ln(28, hy - 11, 32, hy - 11, '#9c8a5e'); g.px(32, hy - 10, '#d6c690');
-      g.ln(33, hy - 3, 33, hy - 9, '#7d6c46'); g.ln(33, hy - 9, 37, hy - 11, '#7d6c46'); g.px(38, hy - 10, '#d6c690');
-      g.ln(36, hy - 2, 41, hy - 5, '#b8a674');
-      g.e(34, hy + 1, 7, 6, '#e8dcc2'); g.e(35, hy + 3, 6, 4, '#d3c5a4');
-      g.r(39, hy + 2, 6, 4, '#e8dcc2'); g.r(42, hy + 5, 3, 2, '#bba98a'); g.px(44, hy + 3, '#2a1f1a'); g.px(44, hy + 5, '#2a1f1a');
-      g.r(32, hy - 1, 3, 3, '#14101c'); g.r(37, hy - 1, 3, 3, '#14101c');
-      var eye = o.flare ? '#ffffff' : (o.rage ? '#ff3b30' : '#ff9a2a');
-      g.px(33, hy, eye); g.px(38, hy, eye); g.px(34, hy, '#ffe08a'); g.px(39, hy, '#ffe08a');
-      if (o.flare) { g.px(33, hy + 1, '#ff9a2a'); g.px(38, hy + 1, '#ff9a2a'); g.px(32, hy - 2, '#ff6a2a'); g.px(40, hy - 2, '#ff6a2a'); }
-      g.px(31, hy + 4, '#8a7a5a'); g.px(30, hy + 2, '#8a7a5a');
-      var s = o.staff;
-      g.ln(s[0], s[1] + by, s[2], s[3] + by, '#8b5a30'); g.ln(s[0] + 1, s[1] + by, s[2] + 1, s[3] + by, '#5c381d');
-      var tx = s[2], ty = s[3] + by;
-      if (o.hook === 'up') { g.d(tx - 2, ty - 2, 3, '#8b5a30'); g.d(tx - 2, ty - 2, 1, C.ol); g.r(tx - 1, ty, 2, 4, '#8b5a30'); }
-      g.d(s[0], s[1] + by, 2, '#2b1f3a');
-      g.px(s[0] + 1, s[1] + by - 1, '#6dff7a');
-      if (o.orb) g.d(tx - 3, ty - 3, 1, '#6dff7a');
-      if (o.glow) { g.px(tx - 3, ty - 5, '#b6ffbe'); g.px(tx + 1, ty - 4, '#6dff7a'); g.px(tx - 5, ty - 2, '#6dff7a'); }
+    return function (v) {
+      v.ctx.translate(0, 1.5);
+      var x = v.ctx, by = o.by || 0, rb = '#7a34b8', rbS = '#44166e', rbH = '#a468dc', sw = o.sway || 0;
+      var lift = o.slam ? (o.lift != null ? o.lift : -6) : (o.lift || 0), hy = 14 + by + lift;
+      var s = o.staff, tx = s[2], ty = s[3] + by, i;
+      // baston (detras)
+      v.stick([[s[0], s[1] + by], [s[2], s[3] + by]], 2.4, '#b8742e', { lw: 1.5, hi: '#e8a455' });
+      if (o.hook === 'up') {
+        x.strokeStyle = OLC; x.lineWidth = 4.2; x.beginPath(); x.arc(tx - 3, ty - 1, 3.6, Math.PI * 0.05, Math.PI * 1.2, true); x.stroke();
+        x.strokeStyle = '#b8742e'; x.lineWidth = 2.4; x.stroke();
+      }
+      if (o.orb || o.glow) v.part(Pcirc(tx - 3, ty - 6, 2.4), '#ff4a3a', { sh: '#a31824', hi: '#ffb06a', lw: 1, so: 0.6 });
+      // tunica
+      v.part(Pblob(21, 29 + by + lift / 2, 16.5, 14.6, 71, 0.03, 12), rb, { sh: rbS, hi: rbH, so: 2, lw: 2 });
+      for (i = 0; i < 8; i++) v.part(Ppoly([[7 + i * 4 + (i % 2 ? sw : -sw), 40 + by + lift / 2], [9 + i * 4 + (i % 2 ? sw : -sw), 45.6 + by + lift / 2 - (i % 2) * 1.6], [11 + i * 4 + (i % 2 ? sw : -sw), 40 + by + lift / 2]]), rbS, { lw: 1.3, so: 0.3 });
+      v.part(Pblob(21, 29 + by + lift / 2, 15, 12.8, 73, 0.02, 12), rb, { sh: rbS, hi: rbH, so: 2, lw: 0 });
+      // banda roja con simbolo
+      v.part(Ppoly([[9, 22 + by], [14, 21 + by], [30, 40 + by], [24, 41.5 + by]]), '#d6302b', { sh: '#8e1a28', hi: '#ff6350', lw: 1.3, so: 1 });
+      v.circ(20, 32 + by, 2.4, '#fbf3df', { lw: 0.8, sh: '#c9b78e', so: 0.5 }); v.dot(20, 32 + by, 0.9, '#a31824');
+      // lana raida del cuello
+      var wl = [[29, 21], [26, 25], [31, 26], [25, 19.6], [28.6, 29], [34, 24.4]];
+      v.cluster(wl.map(function (p) { return Pcirc(p[0], p[1] + by + lift, 3.6); }), '#efe7d4', { sh: '#bdb09a', hi: '#fff', lw: 1.5, so: 1 });
+      // astas de carnero
+      function horn(p0, p1, p2, p3) { v.stick([p0, p1, p2, p3], 4.2, '#e9d9b2', { lw: 1.6, curve: true, hi: '#fffbe8' }); }
+      horn([31, hy - 2], [24, hy - 9], [21.4, hy - 2], [26.5, hy + 1.5]);
+      horn([37, hy - 3], [41.4, hy - 12], [47, hy - 6], [43.6, hy - 2]);
+      // cabeza: craneo de carnero
+      v.part(Pblob(35, hy + 1.6, 8.2, 7.4, 74, 0.02, 11), '#f2e6c8', { sh: '#c6b48a', hi: '#fffbe8', so: 1.3, lw: 1.8 });
+      v.part(Pblob(41, hy + 5, 4.6, 3.6, 75), '#e6d6b2', { sh: '#b8a47a', so: 0.8, lw: 1.5 });
+      v.dot(42.8, hy + 4.4, 0.7, OLC); v.dot(44.6, hy + 5.2, 0.7, OLC); v.line(40, hy + 7, 44, hy + 7.4, 0.6, OLC);
+      v.part(Pblob(32, hy + 0.2, 2.7, 2.6, 76), '#1a0e24', { lw: 0.8 }); v.part(Pblob(38.4, hy + 0.2, 2.7, 2.6, 77), '#1a0e24', { lw: 0.8 });
+      var eye = o.flare ? '#ffffff' : (o.rage ? '#ff3b30' : '#ffb02a');
+      v.dot(32.5, hy + 0.2, 1.5, eye); v.dot(38.9, hy + 0.2, 1.5, eye); v.dot(33, hy - 0.2, 0.55, '#fff');  v.dot(39.4, hy - 0.2, 0.55, '#fff');
+      if (o.flare) { v.dot(32, hy - 3, 0.7, '#ff9a2a'); v.dot(40.4, hy - 3, 0.7, '#ff6a2a'); v.dot(35, hy - 5, 0.6, '#ffd36a'); }
+      v.line(31, hy - 2.6, 34.2, hy - 1.4, 0.9, o.rage ? '#a31824' : OLC); v.line(40.2, hy - 2.6, 37, hy - 1.4, 0.9, o.rage ? '#a31824' : OLC);
+      v.part(Pcirc(s[0], s[1] + by, 2.4), '#2c2234', { lw: 1, sh: '#120a18', so: 0.5 });
+      if (o.glow) { v.dot(tx - 6, ty - 8, 0.8, '#ffd36a'); v.dot(tx - 0.4, ty - 8.5, 0.7, '#ff9a2a'); v.dot(tx - 8, ty - 4, 0.7, '#ff9a2a'); }
     };
   }
   var sF = [
@@ -483,463 +602,552 @@
     boss({ staff: [40, 44, 42, 9], hook: 'up', by: 1, orb: true }),
     boss({ staff: [34, 26, 46, 34], rage: true, by: 0 }),
     boss({ staff: [38, 30, 40, 2], hook: 'up', slam: true, rage: true, by: 0 }),
-    boss({ staff: [40, 44, 42, 8], hook: 'up', by: 0, sway: 1, orb: true }),                                  // 4 balanceo
-    boss({ staff: [40, 44, 42, 9], hook: 'up', by: 1, flare: true, glow: true }),                              // 5 ojos brillan
-    boss({ staff: [30, 28, 23, 5], hook: 'up', by: 1, lift: -2, rage: true, glow: true }),                    // 6 anticipacion del golpe
-    boss({ staff: [38, 36, 45, 42], by: 1, rage: true }),                                                      // 7 recuperacion
-    boss({ staff: [38, 24, 40, 1], hook: 'up', slam: true, lift: -10, rage: true, flare: true, glow: true }),  // 8 anticipacion del aplastamiento
-    boss({ staff: [38, 40, 40, 46], slam: true, lift: 2, by: 2, rage: true })                                  // 9 recuperacion del aplastamiento
+    boss({ staff: [40, 44, 42, 8], hook: 'up', by: 0, sway: 1, orb: true }),
+    boss({ staff: [40, 44, 42, 9], hook: 'up', by: 1, flare: true, glow: true }),
+    boss({ staff: [30, 28, 23, 5], hook: 'up', by: 1, lift: -2, rage: true, glow: true }),
+    boss({ staff: [38, 36, 45, 42], by: 1, rage: true }),
+    boss({ staff: [38, 24, 40, 1], hook: 'up', slam: true, lift: -10, rage: true, flare: true, glow: true }),
+    boss({ staff: [38, 40, 40, 46], slam: true, lift: 2, by: 2, rage: true })
   ];
   var sDie = sF.length;
   dyingFrames(boss({ staff: [40, 44, 42, 8], hook: 'up', by: 0 }), 48, 48, null, { sy: [0.97, 0.85, 0.7, 0.5, 0.3], dis: [0, 0.03, 0.25, 0.55, 0.85] }).forEach(function (f) { sF.push(f); });
-  add('boss', 48, 48, sF, null, {
+  addV('boss', 48, 48, sF, { lw: 2 }, {
     idle: { f: [0, 4, 1, 4, 0, 4, 1, 5], fps: 3 }, swing: { f: [6, 6, 2, 7], fps: 8 }, swing_hit: { f: [2], fps: 1 },
     slam: { f: [8, 8, 3, 9], fps: 8 }, slam_hit: { f: [3], fps: 1 },
     die: { f: [sDie, sDie + 1, sDie + 2, sDie + 3, sDie + 4], fps: 6, loop: false }
   });
 
-  // ------------------------------------------------------------------ PROYECTILES / EFECTOS (VFX)
-  add('arrow', 12, 5, [
-    function (g) { g.ln(1, 2, 9, 2, '#e8e0f0'); g.px(10, 2, '#ff9a2a'); g.px(9, 1, '#ffd36a'); g.px(9, 3, '#ffd36a'); g.px(11, 2, '#fff0a8'); g.px(0, 1, '#b980d6'); g.px(0, 3, '#b980d6'); g.px(1, 1, '#7a56a8'); g.px(1, 3, '#7a56a8'); },
-    function (g) { g.ln(1, 2, 9, 2, '#d9b0ff'); g.px(10, 2, '#ffd36a'); g.px(9, 1, '#ff9a2a'); g.px(9, 3, '#ff9a2a'); g.px(11, 2, '#ffffff'); g.px(0, 1, '#b980d6'); g.px(0, 3, '#b980d6'); g.px(1, 1, '#7a56a8'); g.px(1, 3, '#7a56a8'); }
-  ], { outline: false }, { fly: { f: [0, 1], fps: 12 } });
-  add('thorn', 10, 5, [
-    function (g) { g.ln(0, 2, 7, 2, '#e8dcc2'); g.r(1, 1, 4, 3, '#cdbf9c'); g.px(7, 2, '#6dff7a'); g.px(8, 2, '#b6ffbe'); g.px(2, 0, '#8b7a56'); g.px(2, 4, '#8b7a56'); g.px(0, 2, '#5c381d'); }
-  ], null);
-  add('fireball', 10, 10, [
-    function (g) { g.d(5, 5, 4, '#ff6a2a'); g.d(5, 5, 3, '#ff8a2a'); g.d(5, 5, 2, '#ffc83d'); g.d(5, 5, 1, '#fff0a8'); g.px(0, 4, '#ff6a2a'); g.px(1, 6, '#ff6a2a'); },
-    function (g) { g.d(5, 5, 4, '#e0501f'); g.d(5, 5, 3, '#ff7a28'); g.d(5, 5, 2, '#ffd34d'); g.d(5, 5, 1, '#ffffff'); g.px(0, 6, '#ff6a2a'); g.px(1, 3, '#ff6a2a'); }
-  ], { outline: false }, { fly: { f: [0, 1], fps: 12 } });
-
-  // --- Tajos ---
-  var D = Math.PI / 180;
-  function slashFrame(a0, a1, r0, r1, alpha) { // (original, se conserva)
-    return function (g) {
-      var cx = 2, cy = 16;
-      for (var y = 0; y < 32; y++) for (var x = 0; x < 22; x++) {
-        var dx = x - cx, dy = y - cy, r = Math.sqrt(dx * dx + dy * dy), a = Math.atan2(dy, dx);
-        if (r >= r0 && r <= r1 && a >= a0 && a <= a1) {
-          var t = (r - r0) / (r1 - r0);
-          var col = t > 0.72 ? 'rgba(255,250,235,' + alpha + ')' : t > 0.4 ? 'rgba(255,200,90,' + alpha * 0.9 + ')' : 'rgba(255,110,40,' + alpha * 0.7 + ')';
-          g.px(x, y, col);
-        }
-      }
+  // ------------------------------------------------------------------ PROYECTILES / VFX (trazo grueso, naranja/blanco, contorno rojo oscuro)
+  var FO = '#7a1424'; // contorno de fuego
+  add2('arrow', 12, 5, [0, 1].map(function (k) {
+    return function (v) {
+      v.line(1.4, 2.5, 8.6, 2.5, 2.6, OLC); v.line(1.6, 2.5, 8.6, 2.5, 1.1, k ? '#d9c4ff' : '#f4ecff');
+      v.part(Ppoly([[8.2, 0.6], [11.6, 2.5], [8.2, 4.4]]), k ? '#ffd34a' : '#ff8a2a', { lw: 0.8, sh: '#c8341c', so: 0.3 });
+      v.part(Ppoly([[0.4, 0.4], [2.4, 2.5], [0.4, 4.6], [1.2, 2.5]]), '#b574f0', { lw: 0.7, sh: '#6a34b0', so: 0.2 });
+    };
+  }), { lw: 0.7 }, { fly: { f: [0, 1], fps: 12 } });
+  add2('thorn', 10, 5, [function (v) {
+    v.part(Ppoly([[0.6, 0.8], [7.6, 2.5], [0.6, 4.2], [1.8, 2.5]]), '#f2e8c8', { lw: 0.8, sh: '#bfae82', so: 0.3 });
+    v.part(Ppoly([[6, 1.2], [9.4, 2.5], [6, 3.8]]), '#e8283a', { lw: 0.7, sh: '#8e1a28', so: 0.2 });
+  }], { lw: 0.7 });
+  function flamePath(cx, by, w, h, k, ph) {   // gota de fuego ondulante: base en by, punta arriba
+    var t = k * 1.05 + ph, tip = Math.sin(t) * w * 0.28, sd = Math.cos(t * 1.3) * w * 0.12;
+    return Pclosed([[cx - w * 0.5, by - h * 0.18], [cx - w * 0.52 + sd, by - h * 0.55], [cx - w * 0.2 + tip * 0.5, by - h * 0.82], [cx + tip, by - h], [cx + w * 0.22 + tip * 0.5, by - h * 0.74], [cx + w * 0.52 - sd, by - h * 0.5], [cx + w * 0.5, by - h * 0.2], [cx, by + h * 0.04]]);
+  }
+  function flameV(w, h, k, pal, ph, extra) {
+    return function (v) {
+      var cx = w / 2, by = h - 0.6, tw = w * 0.9, th = h * 0.92;
+      if (extra) v.part(flamePath(cx + w * 0.22, by, w * 0.46, h * 0.62, k + 2, ph + 1), pal[0], { lw: v.lw * 0.7, ol: pal[4], sh: pal[1], so: 0.3 });
+      v.part(flamePath(cx, by, tw, th, k, ph), pal[0], { ol: pal[4], sh: pal[1], so: Math.max(0.3, h * 0.07) });
+      v.flat(flamePath(cx, by - h * 0.04, tw * 0.62, th * 0.66, k + 1, ph), pal[2], { sh: pal[1], so: 0.2 });
+      v.flat(flamePath(cx, by - h * 0.07, tw * 0.3, th * 0.38, k + 2, ph), pal[3]);
     };
   }
-  add('slash', 22, 32, [slashFrame(-40 * D, 22 * D, 11, 18, 1), slashFrame(-58 * D, 58 * D, 10, 19, 1), slashFrame(-58 * D, 58 * D, 15, 19, 0.45)],
-    { outline: false }, { swing: { f: [0, 1, 2], fps: 24 } });
-  // Estela en media luna con cola afilada. o: a0,a1 (rad), R (radio exterior), T (grosor), dir (+1 baja / -1 sube), head, tail, alpha
-  function crescent(o) {
-    return function (g) {
-      var cx = 2, cy = 16, x, y;
-      for (y = 0; y < 32; y++) for (x = 0; x < 22; x++) {
-        var dx = x + 0.5 - cx, dy = y + 0.5 - cy, r = Math.sqrt(dx * dx + dy * dy), a = Math.atan2(dy, dx);
-        if (a < o.a0 || a > o.a1 || r > o.R) continue;
-        var s = (a - o.a0) / (o.a1 - o.a0); if (o.dir < 0) s = 1 - s;
-        if (s > o.head || s < o.tail) continue;
-        var vs = (s - o.tail) / Math.max(0.001, o.head - o.tail);
-        var thick = o.T * Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, vs * 0.96 + 0.02))), 0.62);
-        if (r < o.R - thick) continue;
-        var d = (o.R - r) / Math.max(0.5, thick), al = o.alpha * (0.5 + 0.5 * vs);
-        var col = d < 0.2 ? '255,255,255' : d < 0.45 ? '255,243,196' : d < 0.75 ? '255,196,92' : '255,110,40';
-        g.px(x, y, 'rgba(' + col + ',' + al.toFixed(2) + ')');
-      }
-      if (o.sparks) for (var k = 0; k < o.sparks.length; k++) g.px(o.sparks[k][0], o.sparks[k][1], 'rgba(255,230,170,' + o.alpha.toFixed(2) + ')');
+  var PAL_FIRE = ['#ff4a1e', '#ff7a22', '#ffb830', '#fff3b0', '#7a1424'], PAL_CURSE = ['#e0283c', '#ff5a28', '#ff9a30', '#ffe27a', '#4a0e2c'];
+  var PAL_GREEN = ['#2fd04a', '#6ae83a', '#b8ff6a', '#f2ffd0', '#0e4a2a'];
+  add2('flame', 8, 10, [0, 2, 4].map(function (k) { return flameV(8, 10, k, PAL_FIRE, 1, true); }), { lw: 0.8 }, { burn: { f: [0, 1, 2, 1], fps: 12 } });
+  add2('curse_flame', 10, 14, [0, 1, 2, 3, 4, 5].map(function (k) { return flameV(10, 14, k * 1.3, PAL_CURSE, 2, true); }), { lw: 0.9 }, { burn: { f: [0, 1, 2, 3, 4, 5], fps: 14 } });
+  var TF = { bosque: PAL_FIRE, cripta: ['#ff5a1a', '#ff8a22', '#ffc83d', '#fff3b0', '#6a1420'], asfodelo: PAL_GREEN };
+  Object.keys(TF).forEach(function (b) {
+    addBV(b, 'torch_flame', 10, 14, [0, 1, 2, 3, 4, 5].map(function (k) { return flameV(10, 14, k * 1.4, TF[b], 3, true); }), { lw: 0.9 }, { burn: { f: [0, 1, 2, 3, 4, 5], fps: 12 } });
+  });
+  add2('fireball', 10, 10, [0, 1].map(function (k) {
+    return function (v) {
+      var x = v.ctx;
+      v.part(Ppoly([[0.4, 5 + (k ? 1.2 : -1)], [4, 2.8], [4, 7.4]]), '#ff5a22', { lw: 0.8, ol: FO, sh: '#c8281e', so: 0.2 });
+      v.part(Ppoly([[0.2, 5 + (k ? -1.5 : 1.6)], [4, 4.2], [4, 6.4]]), '#ff8a2a', { lw: 0, sh: null });
+      v.part(Pblob(6, 5, 3.8, 3.8, 90 + k), '#ff6a22', { lw: 1, ol: FO, sh: '#d03a1a', hi: '#ffb35a', so: 0.7 });
+      v.dot(6.2, 5.2, 1.9, '#ffc83d'); v.dot(6.4, 5.2, 1, '#fff3b0');
+    };
+  }), { lw: 1 }, { fly: { f: [0, 1], fps: 12 } });
+
+  // --- Tajos: media luna gruesa, naranja con nucleo blanco, contorno rojo oscuro, chispas y lineas de velocidad
+  var D = Math.PI / 180;
+  function crescentPts(o, R, T, hf) {
+    var N = 22, outer = [], inner = [], i;
+    for (i = 0; i <= N; i++) {
+      var s = o.tail + (o.head - o.tail) * i / N, vs = i / N;
+      var th = T * Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, vs * 0.94 + 0.03))), 0.6) * hf;
+      var sa = o.dir < 0 ? 1 - s : s, a = o.a0 + (o.a1 - o.a0) * sa;
+      outer.push([2 + Math.cos(a) * R, 16 + Math.sin(a) * R]); inner.push([2 + Math.cos(a) * (R - th), 16 + Math.sin(a) * (R - th)]);
+    }
+    return outer.concat(inner.reverse());
+  }
+  function crescentV(o) {
+    return function (v) {
+      var x = v.ctx; x.globalAlpha = o.alpha;
+      var pts = crescentPts(o, o.R, o.T, 1);
+      v.part(Ppoly(pts), '#ff8a2a', { lw: 1.1, ol: '#b02a1c', sh: '#e8501e', hi: '#ffd04a', so: 0.9 });
+      v.flat(Ppoly(crescentPts(o, o.R - o.T * 0.12, o.T, 0.52)), '#fff4d8');
+      if (o.extra) { v.part(Ppoly(crescentPts({ a0: o.extra.a0, a1: o.extra.a1, head: o.head, tail: o.tail, dir: o.dir }, o.extra.R, o.extra.T, 1)), '#ffb02a', { lw: 0.8, ol: '#b02a1c' }); }
+      var k;
+      if (o.sparks) for (k = 0; k < o.sparks.length; k++) { v.dot(o.sparks[k][0], o.sparks[k][1], 0.7, k % 2 ? '#fff4d8' : '#ffb02a'); }
+      if (o.lines) for (k = 0; k < o.lines.length; k++) { var l = o.lines[k]; v.line(l[0], l[1], l[2], l[3], 0.55, 'rgba(26,16,34,' + (0.8 * o.alpha).toFixed(2) + ')'); }
+      x.globalAlpha = 1;
     };
   }
   function slashSet(base) {
-    var ph = [{ head: 0.45, tail: 0, alpha: 1 }, { head: 1, tail: 0, alpha: 1 }, { head: 1, tail: 0.3, alpha: 0.8 }, { head: 1, tail: 0.65, alpha: 0.45 }];
-    return ph.map(function (p) {
-      var o = {}, k; for (k in base) o[k] = base[k]; for (k in p) o[k] = p[k];
-      if (base.extra) {
-        var o2 = {}; for (k in base.extra) o2[k] = base.extra[k]; for (k in p) o2[k] = p[k]; o2.alpha = p.alpha * 0.7;
-        var f1 = crescent(o), f2 = crescent(o2);
-        return function (g) { f2(g); f1(g); };
-      }
-      return crescent(o);
-    });
+    var ph = [{ head: 0.45, tail: 0, alpha: 1 }, { head: 1, tail: 0, alpha: 1 }, { head: 1, tail: 0.3, alpha: 0.85 }, { head: 1, tail: 0.65, alpha: 0.5 }];
+    return ph.map(function (p) { var o = {}, k; for (k in base) o[k] = base[k]; for (k in p) o[k] = p[k]; return crescentV(o); });
   }
-  // slash_1: tajo descendente rapido | slash_2: tajo de vuelta (ascendente) | slash_3: remate pesado, ancho, doble arco con chispas
-  add('slash_1', 22, 32, slashSet({ a0: -62 * D, a1: 34 * D, R: 19, T: 10, dir: 1 }), { outline: false }, { swing: { f: [0, 1, 2, 3], fps: 28 } });
-  add('slash_2', 22, 32, slashSet({ a0: -34 * D, a1: 62 * D, R: 19, T: 10, dir: -1 }), { outline: false }, { swing: { f: [0, 1, 2, 3], fps: 28 } });
-  add('slash_3', 22, 32, slashSet({ a0: -78 * D, a1: 78 * D, R: 20, T: 13, dir: 1, sparks: [[20, 3], [21, 29], [19, 16], [17, 1], [18, 31]], extra: { a0: -70 * D, a1: 70 * D, R: 14, T: 4, dir: 1 } }),
-    { outline: false }, { swing: { f: [0, 1, 2, 3], fps: 22 } });
+  add2('slash', 22, 32, [{ a0: -40 * D, a1: 22 * D, R: 19, T: 7, head: 1, tail: 0, alpha: 1, dir: 1 }, { a0: -58 * D, a1: 58 * D, R: 19, T: 8, head: 1, tail: 0, alpha: 1, dir: 1 }, { a0: -58 * D, a1: 58 * D, R: 19, T: 4, head: 1, tail: 0.3, alpha: 0.5, dir: 1 }].map(crescentV), { lw: 0 }, { swing: { f: [0, 1, 2], fps: 24 } });
+  add2('slash_1', 22, 32, slashSet({ a0: -56 * D, a1: 32 * D, R: 18, T: 11, dir: 1, lines: [[16, 2, 21, 6], [18, 29, 21, 25]] }), { lw: 0 }, { swing: { f: [0, 1, 2, 3], fps: 28 } });
+  add2('slash_2', 22, 32, slashSet({ a0: -32 * D, a1: 56 * D, R: 18, T: 11, dir: -1, lines: [[16, 30, 21, 26], [18, 3, 21, 7]] }), { lw: 0 }, { swing: { f: [0, 1, 2, 3], fps: 28 } });
+  add2('slash_3', 22, 32, slashSet({ a0: -62 * D, a1: 62 * D, R: 18.4, T: 13, dir: 1, sparks: [[20, 3], [21, 29], [19.4, 16], [17, 1], [18, 31]], extra: { a0: -55 * D, a1: 55 * D, R: 12, T: 4 }, lines: [[12, 3, 19, 5], [12, 29, 19, 27]] }), { lw: 0 }, { swing: { f: [0, 1, 2, 3], fps: 22 } });
 
-  // --- Onda de choque (48x48 -> 96x96), centrada ---
-  add('shockwave', 48, 48, [5, 11, 16, 20, 23].map(function (R, k) {
-    var T = [5, 4.5, 3.5, 2.5, 1.5][k], al = [1, 0.95, 0.8, 0.55, 0.3][k];
-    return function (g) {
-      var rr = rng(40 + k), x, y;
-      for (y = 0; y < 48; y++) for (x = 0; x < 48; x++) {
-        var d = Math.hypot(x + 0.5 - 24, y + 0.5 - 24);
-        if (d < R - T) { if (k < 3 && d > R - T - 5) g.px(x, y, 'rgba(255,110,40,' + (0.13 * (1 - (R - T - d) / 5) * al).toFixed(2) + ')'); continue; }
-        if (d > R + 0.6) continue;
-        if (k >= 2 && rr() > 0.9 - k * 0.09 && d < R - 0.8) continue;      // anillo roto
-        var u = (R - d) / T;
-        var c = u < 0.18 ? '255,250,235' : u < 0.5 ? '255,205,110' : '255,106,42';
-        g.px(x, y, 'rgba(' + c + ',' + al.toFixed(2) + ')');
-      }
-      for (var i = 0; i < 6 + k * 2; i++) { var a = rr() * 6.283, rd = R + 1.5 + rr() * (2 + k * 1.2); g.px(24 + Math.cos(a) * rd, 24 + Math.sin(a) * rd, 'rgba(255,200,120,' + (al * 0.8).toFixed(2) + ')'); }
+  // --- Onda de choque (48x48 -> 96x96), centrada: anillo grueso naranja/blanco
+  add2('shockwave', 48, 48, [5, 11, 16, 20, 23].map(function (R, k) {
+    var T = [5, 4.6, 3.8, 2.8, 1.8][k], al = [1, 0.95, 0.85, 0.6, 0.35][k];
+    return function (v) {
+      var x = v.ctx, rr = rrand(40 + k), i; x.globalAlpha = al;
+      if (k < 3) { var gr = x.createRadialGradient(24, 24, 0, 24, 24, R); gr.addColorStop(0, 'rgba(255,110,40,0)'); gr.addColorStop(1, 'rgba(255,110,40,0.35)'); x.fillStyle = gr; x.beginPath(); x.arc(24, 24, R, 0, 6.2832); x.fill(); }
+      function ring(r, w, col, dash) { x.strokeStyle = col; x.lineWidth = w; x.setLineDash(dash || []); x.beginPath(); x.arc(24, 24, r, 0, 6.2832); x.stroke(); x.setLineDash([]); }
+      var dash = k >= 2 ? [R * 0.9, 2 + k] : null;
+      ring(R, T + 1.6, '#7a1424', dash); ring(R, T, '#ff8a2a', dash); ring(R - T * 0.05, T * 0.5, '#fff1c8', dash);
+      for (i = 0; i < 6 + k * 2; i++) { var a = rr() * 6.283, rd = R + 2 + rr() * (2 + k * 1.2); v.dot(24 + Math.cos(a) * rd, 24 + Math.sin(a) * rd, 0.8, i % 2 ? '#ffb02a' : '#fff1c8'); }
+      x.globalAlpha = 1;
     };
-  }), { outline: false }, { boom: { f: [0, 1, 2, 3, 4], fps: 18 } });
+  }), { lw: 0 }, { boom: { f: [0, 1, 2, 3, 4], fps: 18 } });
 
-  // --- Chispas de impacto (16x16, centrado) ---
-  add('hitspark', 16, 16, [0, 1, 2, 3].map(function (k) {
-    var gap = [0, 1.5, 3.5, 5], len = [4, 7, 7.5, 6.5], core = [3, 2, 1, 0], cols = [['#ffffff', '#fff0a8'], ['#fff0a8', '#ffc83d'], ['#ffc83d', '#ff8a2a'], ['#ff8a2a', '#c8281e']][k];
-    return function (g) {
-      var i, a;
+  // --- Chispas de impacto (16x16, centrado): estrella de picos gruesos
+  add2('hitspark', 16, 16, [0, 1, 2, 3].map(function (k) {
+    var gap = [0, 1.5, 3.2, 4.6], len = [4.4, 7.4, 7.6, 6.8], core = [3, 2.2, 1.2, 0], cols = [['#ffffff', '#fff0a8'], ['#fff3b0', '#ffc83d'], ['#ffc83d', '#ff8a2a'], ['#ff8a2a', '#c8281e']][k];
+    return function (v) {
+      var i;
       for (i = 0; i < 8; i++) {
-        a = i * Math.PI / 4 + 0.2; var l = len[k] * (i % 2 ? 0.6 : 1);
-        if (l > gap[k]) g.ln(8 + Math.cos(a) * gap[k], 8 + Math.sin(a) * gap[k], 8 + Math.cos(a) * l, 8 + Math.sin(a) * l, cols[i % 2]);
+        var a = i * Math.PI / 4 + 0.2, l = len[k] * (i % 2 ? 0.58 : 1), w = i % 2 ? 0.42 : 0.55;
+        if (l <= gap[k]) continue;
+        var ca = Math.cos(a), sa = Math.sin(a), px = -sa, py = ca;
+        v.part(Ppoly([[8 + ca * gap[k] + px * w * 2.2, 8 + sa * gap[k] + py * w * 2.2], [8 + ca * l, 8 + sa * l], [8 + ca * gap[k] - px * w * 2.2, 8 + sa * gap[k] - py * w * 2.2]]), cols[i % 2], { lw: 0.6, ol: '#a8281e' });
       }
-      if (core[k] > 0) { g.d(8, 8, core[k], '#ffffff'); }
+      if (core[k] > 0) v.part(Pcirc(8, 8, core[k]), '#ffffff', { lw: 0.6, ol: '#e8501e' });
     };
-  }), { outline: false }, { burst: { f: [0, 1, 2, 3], fps: 30 } });
+  }), { lw: 0.6 }, { burst: { f: [0, 1, 2, 3], fps: 30 } });
 
-  add('explosion', 32, 32, [
-    function (g) { g.d(16, 16, 8, '#ff8a2a'); g.d(16, 16, 6, '#ffc83d'); g.d(16, 16, 3, '#ffffff'); },
-    function (g) { g.d(16, 16, 14, 'rgba(255,90,30,0.85)'); g.d(16, 16, 11, '#ff8a2a'); g.d(16, 16, 7, '#ffd34d'); g.d(16, 16, 3, '#fff0a8'); },
-    function (g) {
-      var rr = rng(7);
-      for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) {
-        var d = Math.hypot(x - 16, y - 16);
-        if (d > 11 && d < 15.5 && rr() < 0.75) g.px(x, y, d > 13.5 ? 'rgba(90,40,50,0.55)' : 'rgba(255,100,40,0.6)');
-      }
-    },
-    function (g) {
-      var rr = rng(9);
-      for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) {
-        var d = Math.hypot(x - 16, y - 16);
-        if (d > 7 && d < 15 && rr() < 0.5) g.px(x, y, d > 12 ? 'rgba(60,40,62,0.5)' : 'rgba(120,70,60,0.45)');
-        else if (d <= 7 && rr() < 0.35) g.px(x, y, 'rgba(255,150,60,0.5)');
-      }
-    },
-    function (g) {
-      var rr = rng(11);
-      for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) { var d = Math.hypot(x - 16, y - 15); if (d < 14 && rr() < 0.22) g.px(x, y, 'rgba(70,60,86,0.35)'); }
-    }
-  ], { outline: false }, { boom: { f: [0, 1, 2, 3, 4], fps: 14 } });
-
-  add('spark', 3, 3, [
-    function (g) { g.r(0, 1, 3, 1, '#ffffff'); g.r(1, 0, 1, 3, '#ffffff'); },
-    function (g) { g.r(0, 1, 3, 1, '#ffc83d'); g.r(1, 0, 1, 3, '#ff8a2a'); }
-  ], { outline: false });
-  add('ember', 3, 3, [
-    function (g) { g.r(0, 0, 2, 2, '#ff8a2a'); g.px(1, 1, '#ffd34d'); },
-    function (g) { g.r(1, 1, 2, 2, '#c8281e'); g.px(1, 1, '#ff6a2a'); }
-  ], { outline: false });
-  add('smoke', 8, 8, [
-    function (g) { g.d(4, 4, 2, 'rgba(70,64,86,0.8)'); },
-    function (g) { g.d(4, 4, 3, 'rgba(70,64,86,0.55)'); },
-    function (g) { g.d(4, 4, 3, 'rgba(70,64,86,0.28)'); g.px(2, 2, 'rgba(70,64,86,0.2)'); }
-  ], { outline: false }, { puff: { f: [0, 1, 2], fps: 6 } });
-  // humo grande, 3 tonos (luz arriba-izquierda, sombra violeta abajo-derecha) que se disipa
-  add('smoke_big', 16, 16, [0, 1, 2, 3, 4].map(function (k) {
-    var R = [3, 4.5, 5.8, 6.8, 7.4][k], al = [0.85, 0.75, 0.55, 0.35, 0.16][k];
-    return function (g) {
-      var rr = rng(300 + k), b = [[0, 0, 1], [-2.2, 0.8, 0.7], [2.2, 1, 0.65], [-0.5, -2, 0.7], [1.5, -1.6, 0.55]];
-      b.forEach(function (p, i) {
-        if (i > 0 && k === 0) return;
-        var cx = 8 + p[0] * (0.6 + k * 0.2), cy = 8 + p[1] * (0.6 + k * 0.2) - k * 0.4, rad = Math.max(1, Math.round(R * p[2]));
-        g.d(cx + 0.5, cy + 1, rad, 'rgba(46,40,64,' + al.toFixed(2) + ')');
-        g.d(cx, cy, rad, 'rgba(74,66,92,' + al.toFixed(2) + ')');
-        g.d(cx - 1, cy - 1, Math.max(0, rad - 2), 'rgba(110,100,134,' + (al * 0.9).toFixed(2) + ')');
-      });
-      for (var i = 0; i < k * 4; i++) { var a = rr() * 6.283, d = rr() * R * 1.3; g.px(8 + Math.cos(a) * d, 8 + Math.sin(a) * d, 'rgba(0,0,0,0)'); }
-    };
-  }), { outline: false }, { puff: { f: [0, 1, 2, 3, 4], fps: 7 } });
-  add('dust', 6, 6, [
-    function (g) { g.d(3, 3, 1, 'rgba(150,130,120,0.8)'); g.px(1, 2, 'rgba(150,130,120,0.6)'); },
-    function (g) { g.d(3, 3, 2, 'rgba(150,130,120,0.4)'); }
-  ], { outline: false }, { puff: { f: [0, 1], fps: 8 } });
-
-  // --- Llamas animadas ---
-  // flameGen: llama con ondulacion, 4 tonos de calor (borde->nucleo), punta con brasas
-  function flameGen(w, h, k, pal, seed, wisp) {
-    return function (g) {
-      var rr = rng(seed * 31 + k * 7 + 1), t = k * 1.05 + seed, y, x;
-      for (y = 0; y < h; y++) {
-        var u = y / (h - 1), prof = Math.pow(Math.sin(Math.PI * (0.1 + 0.85 * u)), 0.8);
-        var hw = (w * 0.42) * prof * (1 + 0.2 * Math.sin(t * 1.3 + y * 0.6));
-        var cx = (w - 1) / 2 + Math.sin(t + y * 0.35) * (1 - u) * (w * 0.16);
-        for (x = 0; x < w; x++) {
-          var dist = Math.abs(x - cx);
-          if (dist > hw + 0.2) continue;
-          if (u < 0.22 && rr() < 0.3) continue;
-          var heat = (1 - dist / Math.max(0.5, hw)) * 0.7 + u * 0.45;
-          g.px(x, y, heat > 0.88 ? pal[3] : heat > 0.6 ? pal[2] : heat > 0.33 ? pal[1] : pal[0]);
-        }
-      }
-      if (wisp) for (var i = 0; i < 3; i++) g.px(((w - 1) / 2 + Math.sin(t * 2 + i * 2) * w * 0.25) | 0, (rr() * h * 0.25) | 0, wisp);
-    };
+  function puff(v, pts, al, pal) {
+    v.ctx.globalAlpha = al;
+    v.cluster(pts.map(function (p) { return Pcirc(p[0], p[1], p[2]); }), pal[0], { sh: pal[1], hi: pal[2], lw: v.lw, ol: pal[3], so: 0.9 });
+    v.ctx.globalAlpha = 1;
   }
-  var PAL_FIRE = ['#a31f22', '#ff5a22', '#ffa534', '#fff0a8'], PAL_CURSE = ['#3a1f4a', '#b01e32', '#ff6a2a', '#ffd56a'];
-  add('flame', 8, 10, [0, 2, 4].map(function (k) { return flameGen(8, 10, k, PAL_FIRE, 1); }), { outline: false }, { burn: { f: [0, 1, 2, 1], fps: 12 } });
-  add('curse_flame', 10, 14, [0, 1, 2, 3, 4, 5].map(function (k) { return flameGen(10, 14, k * 1.3, PAL_CURSE, 2, '#8a3fa8'); }), { outline: false }, { burn: { f: [0, 1, 2, 3, 4, 5], fps: 14 } });
-  add('torch_flame', 8, 12, [0, 1, 2, 3, 4, 5].map(function (k) { return flameGen(8, 12, k * 1.4, PAL_FIRE, 3, '#ffc83d'); }), { outline: false }, { burn: { f: [0, 1, 2, 3, 4, 5], fps: 12 } });
+  add2('explosion', 32, 32, [
+    function (v) { puff(v, [[16, 16, 7]], 1, ['#ffc83d', '#ff8a2a', '#fff3b0', '#a8281e']); v.dot(16, 16, 3, '#ffffff'); },
+    function (v) { puff(v, [[16, 16, 12], [9, 12, 5], [23, 11, 5], [10, 22, 5], [22, 22, 5]], 1, ['#ff8a2a', '#e8501e', '#ffd34a', '#7a1424']); v.circ(16, 16, 6.5, '#ffd34a', { lw: 0, sh: '#ff9a2a', hi: '#fff3b0' }); v.dot(16, 16, 3, '#fff6c0'); },
+    function (v) { puff(v, [[16, 16, 13], [7, 13, 6], [25, 12, 6], [9, 24, 6], [24, 24, 6], [16, 6, 5]], 0.92, ['#e8501e', '#a8281e', '#ff8a2a', '#4a0e1c']); v.circ(16, 16, 7, '#ff9a2a', { lw: 0, sh: '#e8501e', hi: '#ffd34a' }); },
+    function (v) { puff(v, [[16, 15, 12], [7, 12, 6], [25, 11, 6], [9, 23, 6], [23, 23, 6]], 0.8, ['#7a5a6e', '#4e3a58', '#a0869a', '#2a1c34']); },
+    function (v) { puff(v, [[16, 14, 10], [8, 12, 5], [24, 11, 5], [10, 21, 5]], 0.4, ['#6a5a78', '#4a3c5c', '#8c7ca0', '#2a1c34']); }
+  ], { lw: 1.2 }, { boom: { f: [0, 1, 2, 3, 4], fps: 14 } });
 
-  // --- Sombra suave (3 capas de alfa -> borde difuso) ---
-  add('shadow', 14, 6, [function (g) { g.e(7, 3, 6, 2, 'rgba(8,4,16,0.16)'); g.e(7, 3, 5, 2, 'rgba(8,4,16,0.16)'); g.e(7, 3, 3, 1, 'rgba(8,4,16,0.2)'); g.e(7, 3, 6, 1, 'rgba(8,4,16,0.1)'); }], { outline: false });
-
-  // --- Luz de antorcha (halo radial; usar con 'lighter') ---
-  add('torch_light', 32, 32, [15, 16, 14.2].map(function (R) {
-    return function (g) {
-      for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) {
-        var d = Math.hypot(x + 0.5 - 16, y + 0.5 - 16) / R;
-        if (d < 1) { var a = Math.pow(1 - d, 2) * 0.55; g.px(x, y, 'rgba(255,' + Math.round(150 - d * 40) + ',60,' + a.toFixed(3) + ')'); }
-      }
+  add2('spark', 3, 3, [
+    function (v) { v.part(Ppoly([[1.5, 0], [2, 1], [3, 1.5], [2, 2], [1.5, 3], [1, 2], [0, 1.5], [1, 1]]), '#ffffff', { lw: 0.4, ol: '#ff8a2a' }); },
+    function (v) { v.part(Ppoly([[1.5, 0], [2, 1], [3, 1.5], [2, 2], [1.5, 3], [1, 2], [0, 1.5], [1, 1]]), '#ffc83d', { lw: 0.4, ol: '#c8281e' }); }
+  ], { lw: 0.4 });
+  add2('ember', 3, 3, [
+    function (v) { v.part(Pblob(1.5, 1.5, 1, 1, 3, 0.1, 6), '#ff8a2a', { lw: 0.4, ol: '#a8281e' }); v.dot(1.5, 1.5, 0.4, '#ffd34a'); },
+    function (v) { v.part(Pblob(1.5, 1.5, 1, 1, 4, 0.1, 6), '#e8321e', { lw: 0.4, ol: '#5a0e1a' }); v.dot(1.5, 1.5, 0.35, '#ff7a2a'); }
+  ], { lw: 0.4 });
+  add2('smoke', 8, 8, [[2.4, 0.85], [3.2, 0.6], [3.4, 0.3]].map(function (p, k) { return function (v) { puff(v, k === 0 ? [[4, 4, p[0]]] : [[4, 4, p[0]], [2.6, 3, 1.6], [5.4, 3.2, 1.5]], p[1], ['#6a5f82', '#4a4062', '#9a8fb4', '#2a1f3a']); }; }), { lw: 0.8 }, { puff: { f: [0, 1, 2], fps: 6 } });
+  add2('smoke_big', 16, 16, [0, 1, 2, 3, 4].map(function (k) {
+    var R = [3, 4.4, 5.6, 6.4, 7][k], al = [0.9, 0.85, 0.65, 0.42, 0.2][k];
+    return function (v) {
+      var b = [[0, 0, 1], [-2.6, 1, 0.7], [2.6, 1, 0.66], [-0.6, -2.4, 0.7], [1.8, -2, 0.56]], pts = [];
+      b.forEach(function (p, i) { if (i > 0 && k === 0) return; pts.push([8 + p[0] * (0.6 + k * 0.2), 8 + p[1] * (0.6 + k * 0.2) - k * 0.3, Math.max(1, R * p[2])]); });
+      puff(v, pts, al, ['#6e6286', '#4a4062', '#a094bc', '#2a1f3a']);
     };
-  }), { outline: false }, { flicker: { f: [0, 1, 2, 1], fps: 9 } });
+  }), { lw: 0.9 }, { puff: { f: [0, 1, 2, 3, 4], fps: 7 } });
+  add2('dust', 6, 6, [
+    function (v) { puff(v, [[3, 3.4, 1.6], [1.8, 3.8, 1.1], [4.2, 3.8, 1.1]], 0.85, ['#b09a8c', '#8a7468', '#d8c8b8', '#3a2c34']); },
+    function (v) { puff(v, [[3, 3, 2.2], [1.4, 3.6, 1.2], [4.6, 3.6, 1.2]], 0.45, ['#b09a8c', '#8a7468', '#d8c8b8', '#3a2c34']); }
+  ], { lw: 0.5 }, { puff: { f: [0, 1], fps: 8 } });
+  add2('shadow', 14, 6, [function (v) {
+    var x = v.ctx, g = x.createRadialGradient(7, 3, 0.5, 7, 3, 7);
+    g.addColorStop(0, 'rgba(8,4,16,0.55)'); g.addColorStop(0.65, 'rgba(8,4,16,0.4)'); g.addColorStop(1, 'rgba(8,4,16,0)');
+    x.save(); x.translate(7, 3); x.scale(1, 0.43); x.translate(-7, -3); x.fillStyle = g; x.fillRect(0, -4, 14, 14); x.restore();
+  }], { lw: 0 });
+  // halo de luz de fuego (aditivo), por bioma
+  var LC = { bosque: '255,150,60', cripta: '255,130,50', asfodelo: '110,255,120' };
+  Object.keys(LC).forEach(function (b) {
+    addBV(b, 'torch_light', 32, 32, [15, 16, 14.2].map(function (R) {
+      return function (v) {
+        var x = v.ctx, g = x.createRadialGradient(16, 16, 0, 16, 16, R);
+        g.addColorStop(0, 'rgba(' + LC[b] + ',0.6)'); g.addColorStop(0.35, 'rgba(' + LC[b] + ',0.28)'); g.addColorStop(1, 'rgba(' + LC[b] + ',0)');
+        x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+      };
+    }), { lw: 0 }, { flicker: { f: [0, 1, 2, 1], fps: 9 } });
+  });
+  // vela (decoracion): cera, goteo y mecha; la llama se anima en runtime
+  add2('candle', 6, 10, [function (v) {
+    v.part(Prr(1.2, 3.2, 3.6, 5.4, 1), '#f7efd8', { lw: 0.9, sh: '#cdbd9c', hi: '#ffffff', so: 0.5 });
+    v.part(Pblob(3, 8.7, 2.6, 1, 4), '#e6d8b8', { lw: 0.7, sh: '#b8a680', so: 0.2 });
+    v.line(3, 3.2, 3, 2, 0.5, OLC);
+  }], { lw: 0.9 });
 
-  // ------------------------------------------------------------------ ESCENARIO POR BIOMAS ('bosque' | 'cripta')
-  function dots(g, rr, n, cols, x0, y0, x1, y1) { for (var i = 0; i < n; i++) g.px(x0 + ((rr() * (x1 - x0)) | 0), y0 + ((rr() * (y1 - y0)) | 0), cols[(rr() * cols.length) | 0]); }
-
-  // --- BOSQUE: suelo oscuro con musgo, raices, hojas rojizas y grietas con brasas
-  function groundBosque(seed, kind) {
-    return function (g) {
-      var rr = rng(seed * 9973 + 11), x, y, i;
-      var base = ['#1e2a25', '#202c27', '#1c2823'][seed % 3];
-      g.r(0, 0, 16, 16, base);
-      dots(g, rr, 70, ['#18221e', '#26352d'], 0, 0, 16, 16);
-      dots(g, rr, 5, ['#2a2438'], 0, 0, 16, 16);
-      if (kind === 'dirt' || kind === 'both') dots(g, rr, 14, ['#2c2622', '#352c25'], 0, 0, 16, 16);
-      if (kind === 'grass' || kind === 'both') {
-        for (i = 0; i < 3; i++) {
-          x = 1 + ((rr() * 14) | 0); y = 2 + ((rr() * 12) | 0);
-          g.px(x, y, '#3a5a40'); g.px(x, y - 1, '#4a7550'); if (rr() < 0.5) g.px(x + 1, y, '#34513a');
-        }
-      }
-      if (kind === 'pebble') { x = 3 + ((rr() * 9) | 0); y = 3 + ((rr() * 9) | 0); g.px(x, y, '#4a4658'); g.px(x + 1, y, '#3a3648'); g.px(x, y + 1, '#2a2634'); }
-      if (kind === 'moss') { for (i = 0; i < 4; i++) { x = 2 + ((rr() * 11) | 0); y = 2 + ((rr() * 11) | 0); g.d(x, y, 1, '#2c4a38'); g.px(x - 1, y - 1, '#3e6445'); g.px(x + 1, y, '#243d2f'); } }
-      if (kind === 'roots') {
-        x = 2 + ((rr() * 4) | 0); y = 3 + ((rr() * 8) | 0);
-        for (i = 0; i < 9; i++) { g.px(x + i, y + Math.round(Math.sin(i * 0.7 + seed) * 1.5), '#33271e'); g.px(x + i, y + 1 + Math.round(Math.sin(i * 0.7 + seed) * 1.5), '#241a14'); }
-        g.px(x + 4, y + 3, '#33271e'); g.px(x + 5, y + 4, '#241a14'); g.px(x + 6, y - 2, '#33271e');
-      }
-      if (kind === 'leaves') { for (i = 0; i < 6; i++) { x = (rr() * 15) | 0; y = (rr() * 15) | 0; g.px(x, y, rr() < 0.5 ? '#5a2a24' : '#7a3a22'); g.px(x + 1, y, '#3a1c1c'); } }
-      if (kind === 'cracked') {
-        x = 3 + ((rr() * 3) | 0); y = 3;
-        for (i = 0; i < 10; i++) { g.px(x, y, '#120c10'); if (i % 3 === 1) x += (rr() < 0.5 ? 1 : -1); y++; if (i === 4) g.px(x, y, '#ff8a2a'); }
-        g.px(x + 1, 9, '#c8281e'); g.px(x - 2, 6, '#120c10');
-      }
-    };
-  }
-  var gk = ['plain', 'grass', 'dirt', 'both', 'pebble', 'grass', 'moss', 'roots', 'leaves', 'cracked'];
-  for (var gi = 0; gi < 10; gi++) addB('bosque', 'ground' + gi, 16, 16, [groundBosque(gi, gk[gi])], { outline: false });
-
-  // --- CRIPTA: losas con aparejo, grietas, sangre, runas grabadas
-  function groundCripta(seed, kind) {
-    return function (g) {
-      var rr = rng(seed * 7919 + 3), x, y, i;
-      g.r(0, 0, 16, 16, ['#231e2d', '#252030', '#211c2b'][seed % 3]);
-      dots(g, rr, 60, ['#1c1825', '#2c2638'], 0, 0, 16, 16);
-      // juntas (aparejo a soga, siempre encajan al repetir)
-      g.r(0, 0, 16, 1, '#120e19'); g.r(0, 8, 16, 1, '#120e19'); g.r(0, 0, 1, 8, '#120e19'); g.r(8, 8, 1, 8, '#120e19');
-      g.r(1, 1, 15, 1, '#322b40'); g.r(9, 9, 7, 1, '#322b40'); g.r(1, 1, 1, 7, '#2e2839'); g.r(9, 9, 1, 7, '#2e2839');
-      g.r(1, 7, 15, 1, '#1a1522'); g.r(9, 15, 7, 1, '#1a1522'); g.r(0, 15, 8, 1, '#1a1522');
-      if (kind === 'cracked') { x = 3 + ((rr() * 4) | 0); y = 2; for (i = 0; i < 6; i++) { g.px(x, y, '#0e0a14'); y++; if (rr() < 0.5) x += rr() < 0.5 ? 1 : -1; } g.px(x + 1, y, '#0e0a14'); }
-      if (kind === 'moss') { for (i = 0; i < 4; i++) { x = 2 + ((rr() * 12) | 0); y = 2 + ((rr() * 12) | 0); g.px(x, y, '#3a3556'); g.px(x + 1, y, '#2c2842'); g.px(x, y + 1, '#4a4468'); } }
-      if (kind === 'blood') { x = 5 + ((rr() * 5) | 0); y = 4 + ((rr() * 5) | 0); g.d(x, y, 2, '#4a1620'); g.px(x - 1, y - 1, '#6a1e2a'); g.px(x + 2, y + 1, '#4a1620'); g.px(x, y + 3, '#3a1018'); }
-      if (kind === 'rune') { g.ln(5, 11, 11, 11, 'rgba(255,138,42,0.35)'); g.ln(8, 10, 8, 14, 'rgba(255,138,42,0.35)'); g.px(8, 12, 'rgba(255,200,120,0.6)'); }
-      if (kind === 'bones') { g.px(10, 4, '#a89e8c'); g.px(11, 4, '#c9c0ac'); g.px(12, 5, '#a89e8c'); g.px(4, 12, '#8a8070'); g.px(5, 12, '#a89e8c'); }
-      if (kind === 'water') { g.r(3, 11, 5, 2, '#1a2a40'); g.px(4, 11, '#2f4a6a'); g.px(6, 12, '#2f4a6a'); }
-    };
-  }
-  var ck = ['plain', 'cracked', 'plain', 'moss', 'blood', 'rune', 'bones', 'cracked', 'water', 'plain'];
-  for (var ci = 0; ci < 10; ci++) addB('cripta', 'ground' + ci, 16, 16, [groundCripta(ci, ck[ci])], { outline: false });
-
-  // --- rocas
-  function rock(w, h, seed, pal, mossy) {
-    return function (g) {
-      var rr = rng(seed);
-      var cx = w / 2 - 0.5, cy = h / 2 + 1, rx = w / 2 - 1.5, ry = h / 2 - 2;
-      g.e(cx, cy + 1, rx, ry, pal[0]);
-      g.e(cx, cy, rx, ry, pal[1]);
-      g.e(cx - 1, cy - 2, Math.max(2, rx - 3), Math.max(1, ry - 3), pal[2]);
-      for (var i = 0; i < w; i++) if (rr() < 0.25) g.px(2 + ((rr() * (w - 4)) | 0), 2 + ((rr() * (h - 4)) | 0), pal[4]);
-      g.px(Math.round(cx - 2), Math.round(cy - ry + 1), pal[3]);
-      if (mossy) { for (var k = 0; k < 5; k++) g.px(Math.round(cx - 3 + k * 1.5), Math.round(cy - ry + 1 + (k % 2)), mossy[0]); g.px(Math.round(cx), Math.round(cy - ry), mossy[1]); }
-    };
-  }
-  var ROCK_B = ['#3b3548', '#625b74', '#7a738d', '#a59fb8', '#4a4459'], ROCK_C = ['#2c2638', '#4a4458', '#5c566e', '#8a849c', '#3a3446'];
-  addB('bosque', 'rock0', 14, 11, [rock(14, 11, 3, ROCK_B, ['#4a7550', '#6a9a62'])], { ol: C.ol });
-  addB('bosque', 'rock1', 18, 13, [rock(18, 13, 5, ROCK_B, null)], { ol: C.ol });
-  addB('bosque', 'rock2', 9, 7, [rock(9, 7, 8, ROCK_B, ['#4a7550', '#6a9a62'])], { ol: C.ol });
-  addB('cripta', 'rock0', 14, 11, [rock(14, 11, 3, ROCK_C, ['#5a4a78', '#7a68a0'])], { ol: C.ol });
-  addB('cripta', 'rock1', 18, 13, [rock(18, 13, 5, ROCK_C, null)], { ol: C.ol });
-  addB('cripta', 'rock2', 9, 7, [rock(9, 7, 8, ROCK_C, ['#5a4a78', '#7a68a0'])], { ol: C.ol });
-
-  // --- hierba / hongos
-  function grassB(seed) {
-    return function (g) {
-      var rr = rng(seed * 31 + 5), cols = ['#2f5a3c', '#3f7a4a', '#5aa05a', '#264a33'];
-      for (var i = 0; i < 6; i++) {
-        var x = 1 + ((i * 1.2 + rr() * 1.2) | 0), h = 2 + ((rr() * 4) | 0), lean = ((rr() * 3) | 0) - 1;
-        g.ln(x, 6, x + lean, 6 - h, cols[(rr() * 4) | 0]);
-      }
-      g.r(1, 6, 6, 1, '#1f3a2c');
-    };
-  }
-  function grassC(seed) { // hierba seca y espinosa de cripta
-    return function (g) {
-      var rr = rng(seed * 17 + 9), cols = ['#5a5040', '#7a6e52', '#8f8264', '#40382c'];
-      for (var i = 0; i < 5; i++) {
-        var x = 1 + ((i * 1.4 + rr()) | 0), h = 2 + ((rr() * 4) | 0), lean = ((rr() * 3) | 0) - 1;
-        g.ln(x, 6, x + lean * 2, 6 - h, cols[(rr() * 4) | 0]);
-      }
-      g.r(1, 6, 6, 1, '#2c261e');
-    };
-  }
-  for (var hi = 1; hi <= 3; hi++) { addB('bosque', 'grass' + (hi - 1), 8, 8, [grassB(hi)], { ol: '#0f1c14' }); addB('cripta', 'grass' + (hi - 1), 8, 8, [grassC(hi)], { ol: '#17120e' }); }
-  addB('bosque', 'mushroom', 8, 8, [function (g) {
-    g.r(3, 4, 2, 3, '#d8cfe0'); g.e(4, 3, 3, 2, '#8a3fa8'); g.r(1, 4, 6, 1, '#6a2a88'); g.px(3, 2, '#e9b3ff'); g.px(5, 3, '#e9b3ff'); g.px(4, 1, '#c880e6');
-  }], { ol: C.ol });
-  addB('cripta', 'mushroom', 8, 8, [function (g) {
-    g.r(3, 4, 2, 3, '#b8d0d8'); g.e(4, 3, 3, 2, '#2f7f9a'); g.r(1, 4, 6, 1, '#1f5f78'); g.px(3, 2, '#b8f0ff'); g.px(5, 3, '#8ad8f0'); g.px(4, 1, '#6ac0dc');
-  }], { ol: C.ol });
-
-  // --- arbustos (14x10)
-  function bush(seed, dead) {
-    return function (g) {
-      var rr = rng(seed * 101 + 7), i;
-      if (!dead) {
-        var bl = [[4, 6, 3], [8, 5, 4], [11, 6, 3], [6, 4, 3], [9, 3, 2]];
-        bl.forEach(function (b) { g.d(b[0], b[1] + 1, b[2], '#16301f'); });
-        bl.forEach(function (b) { g.d(b[0], b[1], b[2], '#24472f'); });
-        bl.forEach(function (b) { g.d(b[0] - 1, b[1] - 1, Math.max(1, b[2] - 2), '#3a7048'); });
-        dots(g, rr, 8, ['#4f9058', '#2f5a3c'], 2, 1, 12, 8);
-        g.px(5, 6, '#d1342c'); g.px(9, 4, '#d1342c'); g.px(11, 7, '#8f1d28'); g.px(4, 3, '#f05a45');
-      } else {
-        for (i = 0; i < 7; i++) {
-          var x0 = 3 + i * 1.3, a = -1.2 + i * 0.4 + rr() * 0.3, L = 4 + rr() * 4;
-          g.ln(x0, 9, x0 + Math.cos(a - 1.57) * L * 0.8 + (i - 3) * 0.6, 9 - L, i % 2 ? '#3a3042' : '#5a4a52');
-          g.px(x0 + (i - 3) * 0.6, 9 - L, '#8a7a82');
-        }
-        g.px(6, 3, '#ff8a2a'); g.px(10, 5, '#c8281e');
-      }
-    };
-  }
-  addB('bosque', 'bush0', 14, 10, [bush(1, false)], { ol: '#0f1c14' }); addB('bosque', 'bush1', 14, 10, [bush(2, false)], { ol: '#0f1c14' });
-  addB('cripta', 'bush0', 14, 10, [bush(1, true)], { ol: C.ol }); addB('cripta', 'bush1', 14, 10, [bush(2, true)], { ol: C.ol });
-
-  // --- huesos (iguales en ambos biomas)
-  var BONE = '#d8cfc0', BONE_S = '#a89e8c';
-  var boneFns = {
-    bones0: [12, 9, function (g) { // costillar
-      g.ln(2, 1, 2, 7, BONE_S);
-      for (var i = 0; i < 4; i++) { g.ln(2, 1 + i * 2, 8 - i % 2, 2 + i * 2 - (i === 0 ? 0 : 0), BONE); g.px(8 - i % 2, 2 + i * 2, BONE_S); }
-      g.px(1, 0, BONE); g.px(3, 0, BONE_S);
-    }],
-    bones1: [8, 7, function (g) { // craneo de cordero
-      g.e(4, 3, 3, 2, BONE); g.r(2, 5, 5, 2, BONE_S); g.px(3, 3, '#14101c'); g.px(5, 3, '#14101c'); g.px(4, 5, '#14101c');
-      g.px(1, 1, BONE_S); g.px(0, 2, BONE); g.px(7, 1, BONE_S); g.px(8, 2, BONE); g.px(3, 1, '#ffffff');
-    }],
-    bones2: [12, 6, function (g) { // huesos sueltos
-      g.ln(1, 1, 8, 3, BONE); g.px(0, 1, BONE_S); g.px(0, 0, BONE_S); g.px(9, 3, BONE_S); g.px(9, 4, BONE_S);
-      g.ln(3, 5, 10, 4, BONE_S); g.px(2, 5, BONE); g.px(11, 4, BONE);
-    }]
+  // ------------------------------------------------------------------ ESCENARIO POR BIOMAS
+  // bosque = claro de piedra musgosa (Cult of the Lamb) | cripta = inframundo de huesos, brasas y lava (Hades) | asfodelo = losas esmeralda y fuegos verdes
+  var BP = {
+    bosque: { floor: '#586079', floorH: '#6f7894', floorS: '#40465c', gap: '#33364d', moss: '#4f8f5a', mossH: '#82bd6c', mossS: '#2e6446', acc: '#ee2a3c', accG: 'rgba(255,40,60,0.9)',
+      rock: '#7c8399', rockH: '#a0a8bf', rockS: '#555b72', grass: '#2e6a56', grassH: '#58a878', grassS: '#1c4440', bone: '#f1e8d0', boneS: '#c2b490', boneH: '#ffffff',
+      stone: '#a39d90', stoneH: '#cfc8b8', stoneS: '#746e66', out: '#150e22', label: 'Claro del bosque corrupto' },
+    cripta: { floor: '#45304a', floorH: '#62445c', floorS: '#2a1a30', gap: '#1d1020', moss: '#6a4a3a', mossH: '#8a6450', mossS: '#3e281e', acc: '#ff6a22', accG: 'rgba(255,110,30,0.9)',
+      rock: '#6a4a5a', rockH: '#8c6678', rockS: '#3e2a3c', grass: '#8a6a58', grassH: '#b08c70', grassS: '#4e382e', bone: '#ecd5a0', boneS: '#b08e5c', boneH: '#fff2cc',
+      stone: '#5a4258', stoneH: '#7c5c78', stoneS: '#352236', out: '#0e0610', label: 'Inframundo de huesos' },
+    asfodelo: { floor: '#2f6258', floorH: '#438472', floorS: '#1d4040', gap: '#123533', moss: '#3aa08a', mossH: '#7ae0b0', mossS: '#1e6458', acc: '#6ae83a', accG: 'rgba(110,255,70,0.9)',
+      rock: '#3e7468', rockH: '#62a894', rockS: '#25504c', grass: '#2fb878', grassH: '#8affb0', grassS: '#16704c', bone: '#d8f0dc', boneS: '#9cc4aa', boneH: '#ffffff',
+      stone: '#4a7a70', stoneH: '#78b4a0', stoneS: '#2a5250', out: '#06141a', label: 'Asfodelo esmeralda' }
   };
-  Object.keys(boneFns).forEach(function (n) { ['bosque', 'cripta'].forEach(function (b) { addB(b, n, boneFns[n][0], boneFns[n][1], [boneFns[n][2]], { ol: C.ol }); }); });
+  var BIOS = ['bosque', 'cripta', 'asfodelo'];
+  function mixh(h, t, k) { var a = hex(h), b = t === 'w' ? [255, 255, 255] : t === 'k' ? [0, 0, 0] : hex(t); return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * k) + ',' + Math.round(a[1] + (b[1] - a[1]) * k) + ',' + Math.round(a[2] + (b[2] - a[2]) * k) + ')'; }
+  function glow(x, col, blur, fn) { x.save(); x.shadowColor = col; x.shadowBlur = blur; fn(); x.restore(); }
 
-  // --- tocones (bosque) / columnas rotas (cripta)
-  function stump(w, h, seed) {
-    return function (g) {
-      var rr = rng(seed), cx = w / 2 - 0.5;
-      g.r(1, 4, w - 2, h - 5, '#4a3222'); g.r(w - 4, 4, 3, h - 5, '#33231a');
-      g.px(0, h - 1, '#33231a'); g.px(w - 1, h - 1, '#33231a'); g.px(1, h - 1, '#4a3222');
-      for (var y = 4; y < h - 1; y += 2) g.px(2 + ((rr() * (w - 5)) | 0), y, '#5c4230');
-      g.e(cx, 3.5, w / 2 - 1.5, 2.5, '#7a5a3a'); g.e(cx, 3.5, w / 2 - 3, 1, '#9a7a52'); g.px(cx, 3.5, '#6a4a2e');
-      g.px(2, 5, '#5aa05a'); g.px(3, 6, '#3f7a4a');
-    };
-  }
-  function pillar(w, h, seed) {
-    return function (g) {
-      var rr = rng(seed), cx = w / 2 - 0.5;
-      g.r(1, 3, w - 2, h - 4, '#5c566e'); g.r(w - 4, 3, 3, h - 4, '#443e56'); g.r(2, 4, 2, h - 6, '#7a738d');
-      g.r(0, h - 2, w, 2, '#4a4458'); g.r(0, 2, w, 1, '#6c6682');
-      g.e(cx, 2.5, w / 2 - 1.5, 2, '#847d9a'); g.px(cx - 1, 2, '#a59fb8');
-      g.ln(4, h - 3, 6, 5, '#2c2638'); g.px(5, 7, '#2c2638');
-      for (var i = 0; i < 4; i++) g.px(1 + ((rr() * (w - 2)) | 0), 4 + ((rr() * (h - 8)) | 0), '#7a6aa0');
-    };
-  }
-  addB('bosque', 'stump0', 12, 10, [stump(12, 10, 1)], { ol: C.ol }); addB('bosque', 'stump1', 9, 8, [stump(9, 8, 2)], { ol: C.ol });
-  addB('cripta', 'stump0', 12, 10, [pillar(12, 10, 1)], { ol: C.ol }); addB('cripta', 'stump1', 9, 8, [pillar(9, 8, 2)], { ol: C.ol });
-
-  // --- tumba / marcador
-  addB('bosque', 'grave', 10, 14, [function (g) {
-    g.r(4, 0, 2, 13, '#5c4230'); g.r(1, 3, 8, 2, '#5c4230'); g.r(5, 0, 1, 13, '#7a5a3a'); g.r(1, 3, 8, 1, '#7a5a3a');
-    g.r(3, 12, 4, 1, '#2c2638'); g.px(2, 12, '#3f7a4a'); g.px(7, 12, '#4a7550'); g.px(4, 6, '#d1342c');
-  }], { ol: C.ol });
-  addB('cripta', 'grave', 10, 14, [function (g) {
-    g.r(1, 4, 8, 9, '#5c566e'); g.e(5, 4, 4, 3, '#5c566e'); g.r(7, 5, 2, 8, '#443e56'); g.r(2, 4, 2, 8, '#7a738d');
-    g.px(5, 4, '#14101c'); g.px(4, 5, '#14101c'); g.px(6, 5, '#14101c'); g.px(5, 7, '#14101c'); g.px(4, 8, '#14101c'); g.px(6, 8, '#14101c');
-    g.r(0, 12, 10, 2, '#3a3446'); g.px(3, 6, '#ff8a2a'); g.px(8, 3, '#a59fb8');
-  }], { ol: C.ol });
-
-  // --- runas de suelo (4 variantes)
-  function runeFn(v, pal) {
-    return function (g) {
-      var c1 = pal[0], c2 = pal[1];
-      g.d(8, 8, 6, pal[2]);
-      if (v === 0) { g.ln(8, 3, 8, 13, c1); g.ln(8, 5, 4, 9, c1); g.ln(8, 5, 12, 9, c1); g.ln(5, 12, 11, 12, c2); }
-      else if (v === 1) { g.ln(4, 4, 12, 12, c1); g.ln(12, 4, 4, 12, c1); g.ln(8, 2, 8, 14, c2); g.px(8, 8, 'rgba(255,230,160,0.95)'); }
-      else if (v === 2) { for (var a = 0; a < 16; a++) g.px(8 + Math.cos(a / 16 * 6.283) * 5, 8 + Math.sin(a / 16 * 6.283) * 5, a % 2 ? c1 : c2); g.px(8, 8, c1); g.ln(8, 6, 8, 10, c2); }
-      else { g.ln(4, 12, 8, 3, c1); g.ln(8, 3, 12, 12, c1); g.ln(4, 12, 12, 12, c2); g.ln(6, 8, 10, 8, c2); g.px(8, 10, 'rgba(255,230,160,0.9)'); }
-    };
-  }
-  var RP_B = ['rgba(255,138,42,0.75)', 'rgba(185,128,214,0.55)', 'rgba(255,100,40,0.10)'], RP_C = ['rgba(200,120,255,0.75)', 'rgba(255,138,42,0.6)', 'rgba(150,80,220,0.10)'];
-  for (var rv = 0; rv < 4; rv++) { addB('bosque', 'rune' + rv, 16, 16, [runeFn(rv, RP_B)], { outline: false }); addB('cripta', 'rune' + rv, 16, 16, [runeFn(rv, RP_C)], { outline: false }); }
-
-  // --- antorcha (poste/brasero). La llama es el sprite 'torch_flame' y el halo 'torch_light'
-  addB('bosque', 'torch', 8, 16, [function (g) {
-    g.r(3, 5, 2, 10, '#5c4230'); g.r(3, 5, 1, 10, '#7a5a3a'); g.r(2, 14, 4, 2, '#33231a');
-    g.r(1, 3, 6, 3, '#2c2638'); g.r(2, 2, 4, 1, '#3a3446'); g.px(2, 3, '#6a6488'); g.r(2, 5, 4, 1, '#9a4a22');
-    g.px(3, 4, '#ff8a2a'); g.px(4, 4, '#c8281e');
-  }], { ol: C.ol });
-  addB('cripta', 'torch', 8, 16, [function (g) {
-    g.r(3, 6, 2, 9, '#2c2638'); g.r(3, 6, 1, 9, '#4a4458'); g.r(1, 14, 6, 2, '#1a1522'); g.px(2, 13, '#4a4458');
-    g.r(0, 3, 8, 2, '#3a3446'); g.r(1, 5, 6, 1, '#2c2638'); g.r(2, 6, 4, 1, '#2c2638'); g.px(1, 3, '#7a738d'); g.px(0, 2, '#4a4458'); g.px(7, 2, '#4a4458');
-    g.px(3, 4, '#ff8a2a'); g.px(5, 4, '#c8281e');
-  }], { ol: C.ol });
-
-  // --- niebla (capas suaves, translucidas; dibujar desplazando lentamente)
-  function fogFn(seed, tint) {
-    return function (g) {
-      var rr = rng(seed), x, y;
-      for (y = 0; y < 24; y++) for (x = 0; x < 48; x++) {
-        var dx = (x - 23.5) / 23.5, dy = (y - 11.5) / 11.5, d = dx * dx + dy * dy;
-        if (d >= 1) continue;
-        var n = 0.5 + 0.5 * Math.sin(x * 0.45 + seed) * Math.cos(y * 0.6 - seed) + (rr() - 0.5) * 0.35;
-        var a = Math.max(0, (1 - d)) * 0.16 * (0.4 + n);
-        if (a > 0.012) g.px(x, y, 'rgba(' + tint + ',' + a.toFixed(3) + ')');
+  // --- tiles de suelo 16x16 base (32x32), sin costuras
+  function groundFn(b, k) {
+    var P = BP[b], kinds = { bosque: ['plain', 'crack', 'moss', 'pebbles', 'rune', 'grass', 'moss', 'crack', 'leaves', 'crack'], cripta: ['plain', 'crack', 'bits', 'pebbles', 'rune', 'cones', 'blood', 'crack', 'bits', 'ember'], asfodelo: ['plain', 'crack', 'moss', 'pebbles', 'rune', 'grass', 'moss', 'crack', 'pebbles', 'crack'] }[b][k];
+    return function (v) {
+      var x = v.ctx, r = rrand(k * 131 + b.length * 17 + 5), tr = rrand(k * 71 + b.length), i, j;
+      x.fillStyle = P.gap; x.fillRect(0, 0, 16, 16);
+      function tone(c) { var t = (tr() * 2 - 1) * 0.09; return t > 0 ? mixh(c, 'w', t) : mixh(c, 'k', -t); }
+      if (b === 'bosque') {
+        [[0, 0, 10, 8], [10, 0, 6, 8], [0, 8, 5, 8], [5, 8, 11, 8]].forEach(function (s, n) {
+          var g = rrand(n + 3);
+          v.flat(Prr(s[0] + 0.55, s[1] + 0.55, s[2] - 1.1, s[3] - 1.1, 1.3), tone(P.floor), { sh: P.floorS, hi: P.floorH, so: 0.7 });
+          for (i = 0; i < 3; i++) v.dot(s[0] + 1.5 + g() * (s[2] - 3), s[1] + 1.5 + g() * (s[3] - 3), 0.28, P.floorS);
+        });
+      } else if (b === 'cripta') {
+        [[4, 4, 0], [12, 4, 1], [0, 12, 2], [8, 12, 3]].forEach(function (c, n) {
+          var g = rrand(n * 13 + 9), rx = 3.7 + g() * 0.5, ry = 3.3 + g() * 0.4, col = tone(P.floor);
+          [-16, 0, 16].forEach(function (dx) { if (c[0] + dx > -5 && c[0] + dx < 21) v.flat(Pblob(c[0] + dx, c[1], rx, ry, 100 + n, 0.07, 9), col, { sh: P.floorS, hi: P.floorH, so: 0.8 }); });
+        });
+      } else {
+        [[0, 0], [8, 0], [0, 8], [8, 8]].forEach(function (s) {
+          v.flat(Prr(s[0] + 0.5, s[1] + 0.5, 7, 7, 0.8), tone(P.floor), { sh: P.floorS, hi: P.floorH, so: 0.7 });
+          v.flat(Prr(s[0] + 1.6, s[1] + 1.6, 4.8, 4.8, 0.6), tone(P.floor), { sh: P.floorH, hi: null, so: 0.3 });
+        });
+      }
+      var cx = 4 + r() * 8, cy = 4 + r() * 8;
+      if (kinds === 'crack' || kinds === 'ember') {
+        var px = cx - 3 + r() * 2, py = 2 + r() * 2, pts = [[px, py]];
+        for (i = 0; i < 6; i++) { px += (r() - 0.5) * 3; py += 1.8 + r(); pts.push([Math.max(1.2, Math.min(14.8, px)), Math.min(14.8, py)]); }
+        if (kinds === 'ember') glow(x, 'rgba(255,110,30,1)', 5, function () { x.strokeStyle = 'rgba(255,120,30,0.9)'; x.lineWidth = 0.7; x.beginPath(); pts.forEach(function (p, n) { n ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.stroke(); });
+        x.strokeStyle = P.gap; x.lineWidth = 0.75; x.beginPath(); pts.forEach(function (p, n) { n ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.stroke();
+        x.beginPath(); x.moveTo(pts[3][0], pts[3][1]); x.lineTo(pts[3][0] + 2.5, pts[3][1] + 1); x.lineWidth = 0.5; x.stroke();
+      } else if (kinds === 'moss') {
+        for (i = 0; i < 2; i++) { var mx = 3.5 + r() * 9, my = 3.5 + r() * 9; v.flat(Pblob(mx, my, 2 + r() * 1.2, 1.4 + r(), 200 + i, 0.15, 8), P.moss, { sh: P.mossS, hi: P.mossH, so: 0.6 }); v.dot(mx + 1.2, my - 1, 0.3, P.mossH); }
+      } else if (kinds === 'pebbles') {
+        for (i = 0; i < 3; i++) v.part(Pblob(3.5 + r() * 9, 3.5 + r() * 9, 1 + r() * 0.6, 0.8 + r() * 0.4, 300 + i, 0.1, 7), P.rock, { lw: 0.5, sh: P.rockS, hi: P.rockH, so: 0.4, ol: P.gap });
+      } else if (kinds === 'rune') {
+        x.globalAlpha = 0.55; glow(x, P.accG, 6, function () {
+          x.strokeStyle = P.acc; x.lineWidth = 0.75; x.beginPath(); x.arc(8, 8, 3.3, 0, 6.2832); x.moveTo(8, 3.8); x.lineTo(8, 12.2); x.moveTo(5.2, 6.4); x.lineTo(10.8, 9.6); x.moveTo(10.8, 6.4); x.lineTo(5.2, 9.6); x.stroke();
+        }); x.globalAlpha = 1;
+      } else if (kinds === 'grass') {
+        for (i = 0; i < 4; i++) { var gx = 3 + r() * 10, gy = 6 + r() * 6; x.strokeStyle = i % 2 ? P.grassH : P.grass; x.lineWidth = 0.6; x.beginPath(); x.moveTo(gx, gy); x.quadraticCurveTo(gx + (r() - 0.5) * 1.6, gy - 1.6, gx + (r() - 0.5) * 2, gy - 3.4); x.stroke(); }
+      } else if (kinds === 'leaves') {
+        for (i = 0; i < 4; i++) v.part(Pblob(2.5 + r() * 11, 2.5 + r() * 11, 0.9, 0.55, 400 + i, 0.1, 6, r() * 3), i % 2 ? '#c8402a' : '#e8803a', { lw: 0.35, ol: P.gap });
+      } else if (kinds === 'cones') {
+        for (i = 0; i < 3; i++) { var kx = 4 + r() * 8, ky = 7 + r() * 5, kh = 2 + r() * 1.6; v.part(Ppoly([[kx - 0.9, ky], [kx, ky - kh], [kx + 0.9, ky]]), P.rock, { lw: 0.4, ol: P.gap, sh: P.rockS, hi: P.rockH, so: 0.3 }); }
+      } else if (kinds === 'bits') {
+        for (i = 0; i < 4; i++) { var bx = 3 + r() * 10, by = 3 + r() * 10, ba = r() * 3; v.line(bx, by, bx + Math.cos(ba) * 1.6, by + Math.sin(ba) * 1.6, 1.2, P.gap); v.line(bx, by, bx + Math.cos(ba) * 1.6, by + Math.sin(ba) * 1.6, 0.6, P.bone); }
+      } else if (kinds === 'blood') {
+        for (i = 0; i < 6; i++) v.dot(4 + r() * 8, 4 + r() * 8, 0.35 + r() * 0.9, i % 2 ? '#a81830' : '#d6283a');
       }
     };
   }
-  addB('bosque', 'fog0', 48, 24, [fogFn(1, '120,150,140')], { outline: false }); addB('bosque', 'fog1', 48, 24, [fogFn(2, '110,130,130')], { outline: false });
-  addB('cripta', 'fog0', 48, 24, [fogFn(1, '130,110,170')], { outline: false }); addB('cripta', 'fog1', 48, 24, [fogFn(2, '110,100,150')], { outline: false });
+  BIOS.forEach(function (b) { for (var gi = 0; gi < 10; gi++) addBV(b, 'ground' + gi, 16, 16, [groundFn(b, gi)], { lw: 0 }); });
 
-  add('ritual_circle', 64, 64, [function (g) {
-    var cx = 31.5, cy = 31.5, c1 = 'rgba(255,138,42,0.30)', c2 = 'rgba(185,128,214,0.26)', c3 = 'rgba(255,200,120,0.5)';
-    var x, y, d, a;
-    for (y = 0; y < 64; y++) for (x = 0; x < 64; x++) {
-      d = Math.hypot(x - cx, y - cy); a = Math.atan2(y - cy, x - cx);
-      if (Math.abs(d - 30) < 0.7 || Math.abs(d - 22) < 0.6) g.px(x, y, c1);
-      else if (Math.abs(d - 27) < 0.5 && ((Math.floor((a + Math.PI) / (Math.PI * 2) * 48)) % 2 === 0)) g.px(x, y, c2);
-      else if (d < 22 && Math.abs(d - 10) < 0.5) g.px(x, y, c2);
-    }
-    for (var k = 0; k < 5; k++) {
-      var a0 = -Math.PI / 2 + k * 2 * Math.PI / 5, a1 = -Math.PI / 2 + ((k + 2) % 5) * 2 * Math.PI / 5;
-      g.ln(cx + Math.cos(a0) * 21, cy + Math.sin(a0) * 21, cx + Math.cos(a1) * 21, cy + Math.sin(a1) * 21, c1);
-    }
-    for (var m = 0; m < 10; m++) {
-      var an = m * Math.PI / 5, rx = cx + Math.cos(an) * 26, ry = cy + Math.sin(an) * 26;
-      g.d(rx, ry, 2, 'rgba(255,120,40,0.18)');
-      g.px(rx, ry, c3); g.px(rx + 1, ry - 1, c3); g.px(rx - 1, ry + 1, c3);
-      if (m % 2) g.px(rx - 1, ry - 1, c3);
-    }
-    g.d(cx, cy, 2, 'rgba(255,170,70,0.35)'); g.px(cx, cy, c3);
-  }], { outline: false });
+  // --- rocas redondeadas (musgo en bosque)
+  function rockFn(b, w, h, seed, moss) {
+    var P = BP[b];
+    return function (v) {
+      v.part(Pblob(w / 2, h / 2 + 0.8, w / 2 - 1.1, h / 2 - 1.4, seed, 0.07, 9), P.rock, { sh: P.rockS, hi: P.rockH, so: 1, lw: 1.3 });
+      v.line(w * 0.4, h * 0.55, w * 0.52, h * 0.78, 0.45, P.rockS); v.line(w * 0.52, h * 0.78, w * 0.64, h * 0.72, 0.45, P.rockS);
+      if (moss && b !== 'cripta') { v.flat(Pblob(w * 0.42, h * 0.3, w * 0.28, h * 0.17, seed + 5, 0.15, 8), P.moss, { sh: P.mossS, hi: P.mossH, so: 0.4 }); v.dot(w * 0.3, h * 0.4, 0.4, P.moss); }
+    };
+  }
+  BIOS.forEach(function (b) {
+    addBV(b, 'rock0', 14, 11, [rockFn(b, 14, 11, 3, true)], { lw: 1.3 });
+    addBV(b, 'rock1', 18, 13, [rockFn(b, 18, 13, 5, false)], { lw: 1.4 });
+    addBV(b, 'rock2', 9, 7, [rockFn(b, 9, 7, 8, true)], { lw: 1 });
+  });
 
+  // --- hierba / conos / brotes (8x8) y hongos
+  function tuft(b, seed) {
+    var P = BP[b];
+    return function (v) {
+      var x = v.ctx, r = rrand(seed * 31 + 5), i;
+      if (b === 'cripta') {
+        [[2.4, 7, 2.4], [4.6, 7.2, 3.8], [6.2, 7, 2.2]].forEach(function (c, n) { v.part(Ppoly([[c[0] - 1.1, c[1]], [c[0] + (n - 1) * 0.2, c[1] - c[2] - (seed % 2)], [c[0] + 1.1, c[1]]]), P.grass, { lw: 0.6, sh: P.grassS, hi: P.grassH, so: 0.35 }); });
+        return;
+      }
+      for (i = 0; i < 6; i++) {
+        var bx = 1.2 + i * 1.1, hh = 3 + r() * 3.4, lean = (r() - 0.5) * 2.6;
+        x.strokeStyle = P.out; x.lineWidth = 1.5; x.beginPath(); x.moveTo(bx, 7.4); x.quadraticCurveTo(bx + lean * 0.3, 7.4 - hh * 0.6, bx + lean, 7.4 - hh); x.stroke();
+        x.strokeStyle = i % 3 === 0 ? P.grassH : P.grass; x.lineWidth = 0.8; x.stroke();
+        if (b === 'asfodelo') v.dot(bx + lean, 7.4 - hh, 0.45, '#d8ffc0');
+      }
+    };
+  }
+  BIOS.forEach(function (b) { for (var hi = 1; hi <= 3; hi++) addBV(b, 'grass' + (hi - 1), 8, 8, [tuft(b, hi)], { lw: 0.6 }); });
+  var MUSH = { bosque: ['#a85ad8', '#6a2aa0', '#e0a8ff'], cripta: ['#d8b078', '#9a7448', '#f4dcae'], asfodelo: ['#38e0d0', '#1c8a90', '#c8fff4'] };
+  BIOS.forEach(function (b) {
+    var m = MUSH[b];
+    addBV(b, 'mushroom', 8, 8, [function (v) {
+      v.part(Prr(3.1, 4, 1.9, 3.2, 0.8), '#f1e8d0', { lw: 0.8, sh: '#c2b490', so: 0.3 });
+      v.part(Pblob(4, 3.6, 3.2, 2.1, 7, 0.05, 8), m[0], { lw: 0.9, sh: m[1], hi: m[2], so: 0.5 });
+      v.dot(3, 3.2, 0.35, m[2]); v.dot(5, 3.9, 0.3, m[2]);
+    }], { lw: 0.9 });
+  });
+
+  // --- matas altas (bosque) / costillas (cripta) / helechos (asfodelo): 14x10
+  function bushFn(b, seed) {
+    var P = BP[b];
+    return function (v) {
+      var x = v.ctx, r = rrand(seed * 101 + 7), i;
+      if (b === 'cripta') {
+        for (i = 0; i < 4; i++) { var rx = 3 + i * 2.6; x.strokeStyle = P.out; x.lineWidth = 2.4; x.beginPath(); x.moveTo(rx, 9.4); x.quadraticCurveTo(rx - 1 + seed, 0.8 + (i % 2) * 1.6, rx + 3.2, 1.8 + (i % 2)); x.stroke(); x.strokeStyle = i % 2 ? P.bone : P.boneS; x.lineWidth = 1.3; x.stroke(); }
+        v.part(Pblob(7, 9.2, 5.6, 1.1, seed, 0.05, 8), P.boneS, { lw: 0.8, sh: '#6a4a38', so: 0.3 });
+        return;
+      }
+      for (i = 0; i < 11; i++) {
+        var bx = 1.8 + i * 1.05 + r() * 0.5, hh = 4.4 + r() * 5, lean = (r() - 0.5) * 4;
+        x.strokeStyle = P.out; x.lineWidth = 1.8; x.beginPath(); x.moveTo(bx, 9.4); x.quadraticCurveTo(bx + lean * 0.2, 9.4 - hh * 0.55, bx + lean, 9.4 - hh); x.stroke();
+        x.strokeStyle = i % 4 === 0 ? P.grassH : (i % 2 ? P.grass : P.grassS); x.lineWidth = 1.05; x.stroke();
+        if (b === 'asfodelo' && i % 3 === 0) v.dot(bx + lean, 9.4 - hh, 0.55, '#d8ffc0');
+      }
+      if (b === 'bosque') { v.dot(4.5, 4.6, 0.7, '#e8283a'); v.dot(9.6, 3.8, 0.6, '#ff6a58'); }
+    };
+  }
+  BIOS.forEach(function (b) { addBV(b, 'bush0', 14, 10, [bushFn(b, 1)], { lw: 0 }); addBV(b, 'bush1', 14, 10, [bushFn(b, 2)], { lw: 0 }); });
+
+  // --- huesos (costillar, craneo, sueltos)
+  BIOS.forEach(function (b) {
+    var P = BP[b];
+    function bone(v, x0, y0, x1, y1, wd) { v.line(x0, y0, x1, y1, wd + 1.1, OLC); v.line(x0, y0, x1, y1, wd, P.bone); v.dot(x0, y0, wd * 0.8, P.bone); v.dot(x1, y1, wd * 0.8, P.bone); }
+    function boneKnob(v, x0, y0, x1, y1, wd) { // contorno primero, luego relleno -> sin costuras
+      v.dot(x0, y0, wd * 0.8 + 0.55, OLC); v.dot(x1, y1, wd * 0.8 + 0.55, OLC); v.line(x0, y0, x1, y1, wd + 1.1, OLC);
+      v.line(x0, y0, x1, y1, wd, P.bone); v.dot(x0, y0, wd * 0.8, P.bone); v.dot(x1, y1, wd * 0.8, P.bone);
+    }
+    addBV(b, 'bones0', 12, 9, [function (v) {
+      var x = v.ctx, i; v.stick([[2.4, 0.8], [2.4, 7.6]], 1.2, P.boneS, { lw: 0.9 });
+      for (i = 0; i < 4; i++) { x.strokeStyle = OLC; x.lineWidth = 2; x.beginPath(); x.moveTo(2.6, 1.4 + i * 1.9); x.quadraticCurveTo(9, 0.6 + i * 1.9, 9.4 - (i % 2), 3 + i * 1.8); x.stroke(); x.strokeStyle = P.bone; x.lineWidth = 0.95; x.stroke(); }
+    }], { lw: 0.9 });
+    addBV(b, 'bones1', 8, 7, [function (v) {
+      v.part(Pblob(4, 3, 3.3, 2.7, 5, 0.04, 8), P.bone, { lw: 0.9, sh: P.boneS, hi: P.boneH, so: 0.5 });
+      v.part(Prr(2.4, 4.8, 3.2, 1.8, 0.6), P.boneS, { lw: 0.7, sh: '#7a6244', so: 0.2 });
+      v.dot(2.9, 3.3, 0.8, '#1a0c14'); v.dot(5.1, 3.3, 0.8, '#1a0c14'); v.dot(4, 4.6, 0.35, '#1a0c14');
+      v.line(3.2, 5.6, 3.2, 6.3, 0.35, OLC); v.line(4.8, 5.6, 4.8, 6.3, 0.35, OLC);
+    }], { lw: 0.9 });
+    addBV(b, 'bones2', 12, 6, [function (v) { boneKnob(v, 1.8, 1.6, 8.6, 2.8, 0.9); boneKnob(v, 3.4, 4.6, 10.2, 4, 0.8); }], { lw: 0.8 });
+  });
+
+  // --- columnas con hiedra (bosque) / urnas y totems de hueso (cripta) / pedestales (asfodelo)
+  function ivy(v, pts, col, colH) {
+    pts.forEach(function (p, i) { v.part(Pblob(p[0], p[1], 1.5, 0.95, 60 + i, 0.1, 7, p[2] || 0.6), i % 2 ? col : colH, { lw: 0.5, sh: BP.bosque.mossS, so: 0.3, ol: '#143020' }); });
+  }
+  addBV('bosque', 'stump0', 12, 10, [function (v) {
+    var P = BP.bosque;
+    v.part(Prr(1.4, 3, 9.2, 6.4, 1), P.stone, { lw: 1.2, sh: P.stoneS, hi: P.stoneH, so: 0.9 });
+    v.part(Pblob(6, 3, 4.8, 1.8, 3, 0.04, 8), P.stoneH, { lw: 1.1, sh: P.stone, so: 0.5 });
+    v.line(4, 5.4, 4, 8.8, 0.4, P.stoneS); v.line(7.4, 4.6, 7.4, 8.4, 0.4, P.stoneS);
+    ivy(v, [[3.2, 5.2], [4.4, 7], [2.8, 8.4], [9.2, 6], [8.2, 4.4]], P.moss, P.mossH);
+  }], { lw: 1.2 });
+  addBV('bosque', 'stump1', 9, 8, [function (v) {
+    var P = BP.bosque;
+    v.part(Prr(1.2, 3, 6.6, 4.4, 0.9), P.stone, { lw: 1.1, sh: P.stoneS, hi: P.stoneH, so: 0.7 });
+    v.part(Pblob(4.5, 3, 3.3, 1.3, 4, 0.04, 8), P.stoneH, { lw: 1, so: 0.4 });
+    ivy(v, [[2.6, 5.2], [3.6, 6.8], [6.8, 5.4]], P.moss, P.mossH);
+  }], { lw: 1.1 });
+  addBV('cripta', 'stump0', 12, 10, [function (v) { // urna
+    var P = BP.cripta, x = v.ctx;
+    v.part(Pclosed([[4.6, 1.2], [7.4, 1.2], [8.2, 3], [10.6, 5], [9.8, 8.4], [6, 9.6], [2.2, 8.4], [1.4, 5], [3.8, 3]]), '#e4d4b8', { lw: 1.2, sh: '#a89478', hi: '#fff6e0', so: 1 });
+    v.part(Prr(4.2, 0.4, 3.6, 1.3, 0.5), '#f1e4cc', { lw: 0.9, sh: '#bba88a', so: 0.3 });
+    x.strokeStyle = '#3a6aa8'; x.lineWidth = 0.9; x.beginPath(); x.moveTo(2, 5.6); x.quadraticCurveTo(6, 6.6, 10, 5.6); x.stroke();
+    v.line(3, 7.2, 9, 7.2, 0.5, '#3a6aa8'); v.dot(6, 6.2, 0.6, '#3a6aa8');
+  }], { lw: 1.2 });
+  addBV('cripta', 'stump1', 9, 8, [function (v) { // craneo sobre pedestal
+    var P = BP.cripta;
+    v.part(Prr(1.4, 4.6, 6.2, 3, 0.7), P.stone, { lw: 1, sh: P.stoneS, hi: P.stoneH, so: 0.6 });
+    v.part(Pblob(4.5, 2.8, 2.8, 2.4, 5, 0.04, 8), P.bone, { lw: 0.9, sh: P.boneS, hi: P.boneH, so: 0.5 });
+    v.dot(3.5, 2.9, 0.65, '#1a0c14'); v.dot(5.5, 2.9, 0.65, '#1a0c14');
+  }], { lw: 1 });
+  addBV('asfodelo', 'stump0', 12, 10, [function (v) {
+    var P = BP.asfodelo;
+    v.part(Prr(1.4, 3, 9.2, 6.4, 1), P.stone, { lw: 1.2, sh: P.stoneS, hi: P.stoneH, so: 0.9 });
+    v.part(Pblob(6, 3, 4.8, 1.8, 3, 0.04, 8), P.stoneH, { lw: 1.1, so: 0.5 });
+    for (var i = 0; i < 3; i++) v.line(3.4 + i * 2.6, 5, 3.4 + i * 2.6, 8.8, 0.45, P.stoneS);
+    v.dot(6, 2.6, 0.6, '#b8ff8a');
+  }], { lw: 1.2 });
+  addBV('asfodelo', 'stump1', 9, 8, [function (v) {
+    var P = BP.asfodelo;
+    v.part(Prr(1.2, 3, 6.6, 4.4, 0.9), P.stone, { lw: 1.1, sh: P.stoneS, hi: P.stoneH, so: 0.7 });
+    v.part(Pblob(4.5, 3, 3.3, 1.3, 4, 0.04, 8), P.stoneH, { lw: 1, so: 0.4 });
+  }], { lw: 1.1 });
+
+  // --- lapidas con simbolo
+  BIOS.forEach(function (b) {
+    var P = BP[b];
+    addBV(b, 'grave', 10, 14, [function (v) {
+      var x = v.ctx, base = b === 'cripta' ? '#4a3a52' : P.rock;
+      v.part(Pclosed([[1.2, 13], [1.2, 5.4], [2, 2.6], [5, 0.8], [8, 2.6], [8.8, 5.4], [8.8, 13]]), base, { lw: 1.3, sh: P.rockS, hi: P.rockH, so: 1 });
+      v.part(Pblob(5, 13, 5, 1, 2, 0.05, 8), P.rockS, { lw: 0.8, so: 0.2 });
+      if (b === 'cripta') {
+        v.part(Pblob(5, 5.4, 1.9, 1.7, 4, 0.04, 8), P.bone, { lw: 0.6, sh: P.boneS, so: 0.3 }); v.dot(4.3, 5.4, 0.45, '#1a0c14'); v.dot(5.7, 5.4, 0.45, '#1a0c14'); v.line(4.2, 6.9, 5.8, 6.9, 0.4, '#1a0c14');
+        glow(x, P.accG, 4, function () { x.strokeStyle = P.acc; x.lineWidth = 0.6; x.beginPath(); x.moveTo(5, 8.8); x.lineTo(5, 11.8); x.moveTo(3.6, 10); x.lineTo(6.4, 10); x.stroke(); });
+      } else {
+        glow(x, P.accG, 5, function () {
+          x.strokeStyle = P.acc; x.lineWidth = 0.7; x.beginPath(); x.ellipse(5, 6.2, 2, 1.4, 0, 0, 6.2832); x.moveTo(5, 8.2); x.lineTo(5, 11.4); x.moveTo(3.2, 10.2); x.lineTo(6.8, 10.2); x.stroke();
+          x.fillStyle = P.acc; x.beginPath(); x.arc(5, 6.2, 0.6, 0, 6.2832); x.fill();
+        });
+        if (b === 'bosque') v.flat(Pblob(3, 2.4, 2.4, 1.1, 8, 0.15, 7), P.moss, { sh: P.mossS, hi: P.mossH, so: 0.3 });
+      }
+    }], { lw: 1.3 });
+  });
+
+  // --- runas del suelo (4 variantes, brillantes)
+  BIOS.forEach(function (b) {
+    var P = BP[b];
+    for (var rv = 0; rv < 4; rv++) addBV(b, 'rune' + rv, 16, 16, [(function (rv) { return function (v) {
+      var x = v.ctx, a;
+      glow(x, P.accG, 7, function () {
+        x.strokeStyle = P.acc; x.lineWidth = 0.9; x.beginPath();
+        if (rv === 0) { x.moveTo(8, 3); x.lineTo(8, 13); x.moveTo(8, 5); x.lineTo(4, 9); x.moveTo(8, 5); x.lineTo(12, 9); x.moveTo(5, 12); x.lineTo(11, 12); }
+        else if (rv === 1) { x.moveTo(4, 4); x.lineTo(12, 12); x.moveTo(12, 4); x.lineTo(4, 12); x.moveTo(8, 2); x.lineTo(8, 14); }
+        else if (rv === 2) { x.arc(8, 8, 5, 0, 6.2832); x.moveTo(8, 6); x.lineTo(8, 10); x.moveTo(6, 8); x.lineTo(10, 8); }
+        else { x.moveTo(4, 12); x.lineTo(8, 3); x.lineTo(12, 12); x.closePath(); x.moveTo(6, 8); x.lineTo(10, 8); x.ellipse(8, 10, 1, 0.8, 0, 0, 6.2832); }
+        x.stroke();
+      });
+      x.globalAlpha = 0.5; v.dot(8, 8, 1, '#fff4d0'); x.globalAlpha = 1;
+    }; })(rv)], { lw: 0 });
+  });
+
+  // --- antorchas/braseros: poste (base en el centro inferior). La llama es 'torch_flame' y el halo 'torch_light'
+  addBV('bosque', 'torch', 8, 16, [function (v) {
+    v.part(Prr(2.9, 6, 2.2, 9.4, 0.8), '#7a4a2a', { lw: 1.1, sh: '#4a2a18', hi: '#b07a48', so: 0.5 });
+    v.part(Prr(1.4, 13.6, 5.2, 2.2, 1), '#4a4a5e', { lw: 1, sh: '#2a2a3a', so: 0.3 });
+    v.part(Pclosed([[0.6, 3.6], [7.4, 3.6], [6.4, 6.8], [4, 7.4], [1.6, 6.8]]), '#3a3a4e', { lw: 1.1, sh: '#1e1e2c', hi: '#6a6a82', so: 0.6 });
+  }], { lw: 1.1 });
+  addBV('cripta', 'torch', 8, 16, [function (v) { // columna de huesos con cuenco dorado
+    var P = BP.cripta;
+    v.part(Prr(1.6, 13.4, 4.8, 2.4, 0.9), P.stone, { lw: 1, sh: P.stoneS, hi: P.stoneH, so: 0.4 });
+    for (var i = 0; i < 3; i++) { v.part(Prr(2.7, 6.4 + i * 2.4, 2.6, 2.6, 1), P.bone, { lw: 0.9, sh: P.boneS, hi: P.boneH, so: 0.4 }); }
+    v.part(Pclosed([[0.4, 3.4], [7.6, 3.4], [6.6, 6.2], [4, 7], [1.4, 6.2]]), '#c98a2a', { lw: 1.1, sh: '#7a4a1a', hi: '#ffd070', so: 0.6 });
+  }], { lw: 1.1 });
+  addBV('asfodelo', 'torch', 8, 16, [function (v) { // poste con serpiente
+    var P = BP.asfodelo, x = v.ctx;
+    v.part(Prr(1.6, 13.4, 4.8, 2.4, 0.9), P.stone, { lw: 1, sh: P.stoneS, hi: P.stoneH, so: 0.4 });
+    v.part(Prr(2.9, 6, 2.2, 8, 0.8), P.stone, { lw: 1.1, sh: P.stoneS, hi: P.stoneH, so: 0.5 });
+    x.strokeStyle = OLC; x.lineWidth = 1.9; x.beginPath(); x.moveTo(2, 8); x.quadraticCurveTo(6, 9.4, 2.4, 11); x.quadraticCurveTo(6, 12.4, 3, 13.6); x.stroke(); x.strokeStyle = '#2a8a5a'; x.lineWidth = 0.9; x.stroke();
+    v.part(Pclosed([[0.4, 3.4], [7.6, 3.4], [6.6, 6.2], [4, 7], [1.4, 6.2]]), '#2e4a4a', { lw: 1.1, sh: '#16282c', hi: '#5a8a80', so: 0.6 });
+  }], { lw: 1.1 });
+
+  // --- niebla (capas suaves, translucidas)
+  var FOGC = { bosque: ['120,150,170', '110,130,160'], cripta: ['200,90,50', '150,70,70'], asfodelo: ['90,200,160', '70,160,150'] };
+  BIOS.forEach(function (b) {
+    [0, 1].forEach(function (n) {
+      addBV(b, 'fog' + n, 48, 24, [function (v) {
+        var x = v.ctx, r = rrand(n + 3), i;
+        for (i = 0; i < 5; i++) {
+          var cx = 8 + r() * 32, cy = 7 + r() * 10, rr = 7 + r() * 9, g = x.createRadialGradient(cx, cy, 0, cx, cy, rr);
+          g.addColorStop(0, 'rgba(' + FOGC[b][n] + ',0.09)'); g.addColorStop(1, 'rgba(' + FOGC[b][n] + ',0)');
+          x.fillStyle = g; x.fillRect(0, 0, 48, 24);
+        }
+      }], { lw: 0 });
+    });
+  });
+
+  // --- circulo ritual (independiente de la resolucion: se dibuja en cualquier ctx con radio R)
+  var RING = { bosque: ['#8a92aa', '#5c6480', '#2e5a52'], cripta: ['#5e4258', '#3a2638', '#1a0c18'], asfodelo: ['#4a8a7c', '#2c5a58', '#0f3a38'] };
+  function ritual(x, cx, cy, R, b, haloR) {
+    var P = BP[b], u = R / 100, r = rrand(11), k, a;
+    x.save(); x.translate(cx, cy); x.lineJoin = 'round'; x.lineCap = 'round';
+    // halo rojo detras
+    haloR = haloR || R * 1.45; var hg = x.createRadialGradient(0, 0, R * 0.6, 0, 0, haloR); hg.addColorStop(0, P.accG.replace('0.9', '0.34')); hg.addColorStop(1, P.accG.replace('0.9', '0'));
+    x.fillStyle = hg; x.beginPath(); x.arc(0, 0, haloR, 0, 6.2832); x.fill();
+    // anillo de piedra
+    x.fillStyle = P.out; x.beginPath(); x.arc(0, 0, R + 3.2 * u, 0, 6.2832); x.fill();
+    var lg = x.createLinearGradient(-R, -R, R, R); lg.addColorStop(0, RING[b][0]); lg.addColorStop(1, RING[b][1]);
+    x.fillStyle = lg; x.beginPath(); x.arc(0, 0, R, 0, 6.2832); x.fill();
+    x.strokeStyle = P.gap; x.lineWidth = 1.5 * u;
+    for (k = 0; k < 22; k++) { a = k / 22 * 6.2832 + (r() - 0.5) * 0.05; x.beginPath(); x.moveTo(Math.cos(a) * 70 * u, Math.sin(a) * 70 * u); x.lineTo(Math.cos(a + (r() - 0.5) * 0.04) * R, Math.sin(a) * R); x.stroke(); }
+    // brillo del borde superior-izquierdo
+    x.strokeStyle = 'rgba(255,255,255,0.18)'; x.lineWidth = 3 * u; x.beginPath(); x.arc(0, 0, R - 2 * u, Math.PI * 0.95, Math.PI * 1.55); x.stroke();
+    // disco interior
+    x.fillStyle = P.out; x.beginPath(); x.arc(0, 0, 71 * u, 0, 6.2832); x.fill();
+    x.fillStyle = RING[b][2]; x.beginPath(); x.arc(0, 0, 67.5 * u, 0, 6.2832); x.fill();
+    var ig = x.createRadialGradient(0, 0, 0, 0, 0, 67 * u); ig.addColorStop(0, 'rgba(0,0,0,0)'); ig.addColorStop(1, 'rgba(0,0,0,0.35)'); x.fillStyle = ig; x.beginPath(); x.arc(0, 0, 67.5 * u, 0, 6.2832); x.fill();
+    // musgo (bosque/asfodelo) o craneos incrustados (cripta)
+    for (k = 0; k < 11; k++) {
+      a = r() * 6.2832; var rd = (b === 'cripta' ? 85 : (r() < 0.5 ? 92 : 72)) * u, mx = Math.cos(a) * rd, my = Math.sin(a) * rd, s = (7 + r() * 9) * u;
+      if (b === 'cripta') { if (k > 7) continue; a = k / 8 * 6.2832; mx = Math.cos(a) * 85 * u; my = Math.sin(a) * 85 * u; x.fillStyle = P.out; x.beginPath(); x.arc(mx, my, 7.4 * u, 0, 6.2832); x.fill(); x.fillStyle = P.bone; x.beginPath(); x.arc(mx, my, 5.6 * u, 0, 6.2832); x.fill(); x.fillStyle = '#1a0c14'; x.beginPath(); x.arc(mx - 2 * u, my - 0.5 * u, 1.5 * u, 0, 6.2832); x.arc(mx + 2 * u, my - 0.5 * u, 1.5 * u, 0, 6.2832); x.fill(); glow(x, P.accG, 4 * u, function () { x.fillStyle = P.acc; x.beginPath(); x.arc(mx - 2 * u, my - 0.5 * u, 0.7 * u, 0, 6.2832); x.arc(mx + 2 * u, my - 0.5 * u, 0.7 * u, 0, 6.2832); x.fill(); }); continue; }
+      x.fillStyle = P.out; x.beginPath(); x.ellipse(mx, my, s + 1.4 * u, s * 0.62 + 1.4 * u, a, 0, 6.2832); x.fill();
+      x.fillStyle = P.moss; x.beginPath(); x.ellipse(mx, my, s, s * 0.62, a, 0, 6.2832); x.fill();
+      x.fillStyle = P.mossH; x.beginPath(); x.ellipse(mx - s * 0.2, my - s * 0.2, s * 0.55, s * 0.28, a, 0, 6.2832); x.fill();
+    }
+    // pentagrama rojo brillante
+    var pr = 54 * u, pts = [];
+    for (k = 0; k < 5; k++) pts.push([Math.cos(-Math.PI / 2 + k * 1.2566) * pr, Math.sin(-Math.PI / 2 + k * 1.2566) * pr]);
+    var draw5 = function (col, lw) {
+      x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); x.arc(0, 0, pr, 0, 6.2832); x.stroke(); x.beginPath(); x.arc(0, 0, pr * 1.13, 0, 6.2832); x.lineWidth = lw * 0.45; x.stroke(); x.lineWidth = lw;
+      x.beginPath(); for (k = 0; k < 6; k++) { var p = pts[(k * 2) % 5]; k ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); } x.stroke();
+    };
+    glow(x, P.accG, 14 * u, function () { draw5(P.acc, 3 * u); });
+    draw5(mixh(P.acc, 'w', 0.35), 1.1 * u);
+    // lineas que salen de las puntas hacia el anillo
+    x.strokeStyle = P.acc; x.globalAlpha = 0.85; x.lineWidth = 1.5 * u;
+    for (k = 0; k < 5; k++) { x.beginPath(); x.moveTo(pts[k][0] * 1.13, pts[k][1] * 1.13); x.lineTo(pts[k][0] * 1.82, pts[k][1] * 1.82); x.stroke(); }
+    x.globalAlpha = 1;
+    // pozo central
+    var pg = x.createRadialGradient(0, 0, 0, 0, 0, 20 * u); pg.addColorStop(0, '#12000a'); pg.addColorStop(0.55, 'rgba(120,6,24,0.95)'); pg.addColorStop(1, P.accG.replace('0.9', '0'));
+    x.fillStyle = pg; x.beginPath(); x.arc(0, 0, 20 * u, 0, 6.2832); x.fill();
+    x.restore();
+  }
+  BIOS.forEach(function (b) { addBV(b, 'ritual_circle', 64, 64, [function (v) { ritual(v.ctx, 32, 32, 29.5, b, 31.8); }], { lw: 0 }); });
+
+  // --- columna grande (28x44): bosque = hiedra, cripta = totem de huesos, asfodelo = columna griega
+  BIOS.forEach(function (b) {
+    var P = BP[b];
+    addBV(b, 'column', 28, 44, [function (v) {
+      var x = v.ctx, i;
+      if (b === 'cripta') {
+        v.part(Prr(4, 36, 20, 7, 1.5), P.stone, { lw: 1.6, sh: P.stoneS, hi: P.stoneH, so: 1 });
+        v.part(Prr(8, 14, 12, 24, 1.5), '#4a3248', { lw: 1.6, sh: '#2a1a2c', hi: '#7a5a78', so: 1.2 });
+        glow(x, P.accG, 6, function () { x.strokeStyle = P.acc; x.lineWidth = 1; x.beginPath(); x.moveTo(14, 18); x.lineTo(14, 34); x.moveTo(11, 24); x.lineTo(17, 24); x.stroke(); });
+        for (i = 0; i < 2; i++) { var sx = i ? 1 : -1; x.strokeStyle = OLC; x.lineWidth = 4.6; x.beginPath(); x.moveTo(14 + sx * 4, 16); x.quadraticCurveTo(14 + sx * 13, 14, 14 + sx * 11, 26); x.stroke(); x.strokeStyle = P.bone; x.lineWidth = 2.6; x.stroke(); }
+        v.part(Pblob(14, 9, 7, 6.2, 5, 0.04, 10), P.bone, { lw: 1.5, sh: P.boneS, hi: P.boneH, so: 1 });
+        v.part(Prr(10, 12, 8, 4, 1.2), P.boneS, { lw: 1, sh: '#7a5a38', so: 0.4 });
+        v.part(Pblob(11, 8.6, 1.9, 1.7, 3), '#1a0c14', { lw: 0.5 }); v.part(Pblob(17, 8.6, 1.9, 1.7, 4), '#1a0c14', { lw: 0.5 });
+        glow(x, P.accG, 5, function () { v.dot(11, 8.6, 0.8, P.acc); v.dot(17, 8.6, 0.8, P.acc); });
+        return;
+      }
+      var st = b === 'bosque' ? [P.stone, P.stoneS, P.stoneH] : [P.stone, P.stoneS, P.stoneH];
+      v.part(Prr(3, 37, 22, 6.4, 1.4), st[0], { lw: 1.6, sh: st[1], hi: st[2], so: 1 });
+      v.part(Prr(6, 9, 16, 29, 1.3), st[0], { lw: 1.6, sh: st[1], hi: st[2], so: 1.4 });
+      v.line(10, 12, 10, 36, 0.5, st[1]); v.line(14, 12, 14, 36, 0.5, st[1]); v.line(18, 12, 18, 36, 0.5, st[1]);
+      v.part(Prr(2.4, 3.4, 23.2, 6.6, 1.6), st[0], { lw: 1.6, sh: st[1], hi: st[2], so: 1 });
+      if (b === 'asfodelo') { v.part(Pcirc(5.4, 6.6, 2.2), st[2], { lw: 1, sh: st[0], so: 0.4 }); v.part(Pcirc(22.6, 6.6, 2.2), st[2], { lw: 1, sh: st[0], so: 0.4 }); glow(x, P.accG, 8, function () { v.dot(14, 0.8, 1.1, '#b8ff8a'); }); return; }
+      // grietas + hiedra
+      v.line(17, 14, 15, 20, 0.5, '#3a3430'); v.line(15, 20, 18, 26, 0.5, '#3a3430');
+      var pts = [[7, 12], [8.4, 16], [6.6, 20], [8, 25], [7, 30], [9.4, 34], [20, 14], [21.4, 20], [19.6, 27], [4.6, 5], [9, 4.4], [16, 4], [22, 5.4], [5, 38], [11, 40]];
+      pts.forEach(function (p, n) { v.part(Pblob(p[0], p[1], 2.4, 1.5, 20 + n, 0.1, 7, n * 0.9), n % 3 ? P.moss : P.mossH, { lw: 0.7, sh: P.mossS, so: 0.4, ol: '#143020' }); });
+      x.strokeStyle = '#143020'; x.lineWidth = 0.6; x.beginPath(); x.moveTo(7, 10); x.quadraticCurveTo(9, 24, 7, 36); x.stroke();
+    }], { lw: 1.6 });
+  });
+  // --- piezas de borde grandes (40x28): bosque = muro en ruinas con hiedra, cripta = costillas gigantes, asfodelo = muro con greca
+  BIOS.forEach(function (b) {
+    var P = BP[b];
+    [0, 1].forEach(function (n) {
+      addBV(b, 'edge' + n, 40, 28, [function (v) {
+        var x = v.ctx, i;
+        if (b === 'cripta') {
+          for (i = 0; i < (n ? 4 : 5); i++) { var bx = 4 + i * 7.4, hh = 18 + ((i * 7) % 5); v.part(Pclosed([[bx, 27], [bx + 0.6, 27 - hh], [bx + 3.6, 27 - hh - 2.2], [bx + 6.4, 27 - hh + 1.2], [bx + 6, 27]]), '#d8b078', { lw: 1.6, sh: '#8a5e36', hi: '#fff0c8', so: 1.3 }); v.line(bx + 2, 25, bx + 2.4, 27 - hh + 3, 0.5, '#8a5e36'); }
+          v.part(Pblob(20, 27, 19, 1.6, 4, 0.05, 10), '#2a1a2c', { lw: 1.2, so: 0.2 });
+          if (n) { v.part(Pblob(33.4, 8, 4.6, 4, 5, 0.04, 9), P.bone, { lw: 1.3, sh: P.boneS, hi: P.boneH, so: 0.8 }); v.dot(32, 8, 1.2, '#1a0c14'); v.dot(35, 8, 1.2, '#1a0c14'); }
+          return;
+        }
+        var blocks = n ? [[2, 14, 12, 12], [14, 14, 10, 12], [26, 17, 11, 9], [6, 3, 11, 11], [19, 7, 9, 7]] : [[1, 15, 13, 11], [14, 15, 12, 11], [26, 15, 13, 11], [3, 4, 12, 11], [15, 4, 13, 11], [28, 6, 10, 9]];
+        blocks.forEach(function (bk) { v.part(Prr(bk[0], bk[1], bk[2], bk[3], 2), P.stone, { lw: 1.4, sh: P.stoneS, hi: P.stoneH, so: 1 }); });
+        if (b === 'asfodelo') { glow(x, P.accG, 5, function () { x.strokeStyle = P.acc; x.lineWidth = 0.6; x.beginPath(); for (i = 0; i < 12; i++) { x.moveTo(3 + i * 3, 20); x.lineTo(3 + i * 3, 23); x.lineTo(5 + i * 3, 23); } x.stroke(); }); return; }
+        [[4, 14], [11, 14.4], [20, 14], [30, 15], [9, 5], [22, 5.4], [32, 7]].forEach(function (p, k) { v.part(Pblob(p[0], p[1], 3, 1.6, 40 + k, 0.1, 7, k), k % 2 ? P.moss : P.mossH, { lw: 0.8, sh: P.mossS, so: 0.4, ol: '#143020' }); });
+      }], { lw: 1.4 });
+    });
+  });
   // ------------------------------------------------------------------ API SPRITES
   function ent(name) { return biomes[curBiome][name] || reg[name]; }
   function pickFrame(e, name, f) {
@@ -955,8 +1163,9 @@
     return e.frames[i];
   }
   var BIOME_INFO = {
-    bosque: { label: 'Bosque corrupto', vignette: '8,4,16', fog: '120,150,140', light: '255,150,60', bg: '#0d0a14' },
-    cripta: { label: 'Cripta ritual', vignette: '6,3,18', fog: '130,110,170', light: '255,130,70', bg: '#0b0912' }
+    bosque: { label: 'Bosque corrupto (claro de piedra musgosa)', vignette: '6,6,34', fog: '120,150,170', light: '255,150,60', bg: '#0a0920' },
+    cripta: { label: 'Cripta: inframundo de huesos y lava', vignette: '34,6,12', fog: '200,90,50', light: '255,130,50', bg: '#1a0a14' },
+    asfodelo: { label: 'Asfodelo esmeralda', vignette: '2,20,18', fog: '90,200,160', light: '110,255,120', bg: '#05100f' }
   };
   var Assets = {
     scale: SCALE,
@@ -986,7 +1195,7 @@
     biomes: function () { return Object.keys(biomes); },
     getBiome: function () { return curBiome; },
     setBiome: function (name) { if (!biomes[name]) return false; curBiome = name; vigCache = {}; return true; },
-    biomeInfo: function (name) { var i = BIOME_INFO[name || curBiome]; return i && { name: name || curBiome, label: i.label, bg: i.bg, decor: ['rock0', 'rock1', 'rock2', 'grass0', 'grass1', 'grass2', 'mushroom', 'bush0', 'bush1', 'bones0', 'bones1', 'bones2', 'stump0', 'stump1', 'grave', 'rune0', 'rune1', 'rune2', 'rune3', 'torch'], tiles: 10 }; }
+    biomeInfo: function (name) { var i = BIOME_INFO[name || curBiome]; return i && { name: name || curBiome, label: i.label, bg: i.bg, decor: ['rock0', 'rock1', 'rock2', 'grass0', 'grass1', 'grass2', 'mushroom', 'bush0', 'bush1', 'bones0', 'bones1', 'bones2', 'stump0', 'stump1', 'grave', 'rune0', 'rune1', 'rune2', 'rune3', 'torch', 'column', 'edge0', 'edge1'], tiles: 10 }; }
   };
 
   // ---- ambiente: vineta, niebla, antorchas con luz animada
@@ -999,7 +1208,7 @@
     if (vigCache[key]) return vigCache[key];
     var c = mkCanvas(w, h), x = c.getContext('2d'), R = Math.hypot(w, h) / 2;
     var g = x.createRadialGradient(w / 2, h / 2, R * inn, w / 2, h / 2, R);
-    g.addColorStop(0, 'rgba(' + tint + ',0)'); g.addColorStop(0.7, 'rgba(' + tint + ',' + (st * 0.55).toFixed(2) + ')'); g.addColorStop(1, 'rgba(' + tint + ',' + st.toFixed(2) + ')');
+    g.addColorStop(0, 'rgba(' + tint + ',0)'); g.addColorStop(0.5, 'rgba(' + tint + ',' + (st * 0.3).toFixed(2) + ')'); g.addColorStop(0.78, 'rgba(' + tint + ',' + (st * 0.72).toFixed(2) + ')'); g.addColorStop(1, 'rgba(' + tint + ',' + Math.min(1, st * 1.12).toFixed(2) + ')');
     x.fillStyle = g; x.fillRect(0, 0, w, h);
     vigCache[key] = c;
     return c;
@@ -1032,8 +1241,15 @@
   Assets.drawTorchFire = function (ctx2, x, y, tMs, o) {
     o = o || {};
     var f = Assets.animFrame('torch_flame', 'burn', (tMs || 0) + (x * 31 + y * 17) % 500);
-    if (o.light !== false) Assets.drawLight(ctx2, x, y - 34, tMs, o.lightScale || 3.4);
-    ctx2.drawImage(f, Math.round(x - f.width / 2), Math.round(y - 32 + 10 - f.height));
+    if (o.candle) { // vela: llama pequena sobre la mecha (base de la vela en x,y)
+      var cs = o.scale || 0.55, fw = f.width * cs, fh = f.height * cs, wob = Math.sin((tMs || 0) / 120 + x) * 0.6;
+      Assets.drawLight(ctx2, x, y - 26, tMs, o.lightScale || 1.7);
+      ctx2.drawImage(f, Math.round(x - fw / 2 + wob), Math.round(y - 25 - fh + 3), fw, fh);
+      return;
+    }
+    var sc = o.scale || 1, fw = f.width * sc, fh = f.height * sc;
+    if (o.light !== false) Assets.drawLight(ctx2, x, y - 34 * sc, tMs, o.lightScale || 3.4);
+    ctx2.drawImage(f, Math.round(x - fw / 2), Math.round(y - 22 * sc - fh), fw, fh);
   };
   // Antorcha completa (poste + llama + luz) con base en (x,y)
   Assets.drawTorch = function (ctx2, x, y, tMs, o) {
@@ -1053,12 +1269,15 @@
         if (ok(x, y)) items.push({ n: names[(rr() * names.length) | 0], x: x, y: y });
       }
     }
-    var crypt = curBiome === 'cripta';
-    put(['bush0', 'bush1'], crypt ? 10 : 22, 14);
-    put(['bones0', 'bones1', 'bones2'], crypt ? 22 : 12, 10);
-    put(['stump0', 'stump1'], crypt ? 12 : 10, 16);
-    put(['grave'], crypt ? 9 : 4, 20);
-    put(['rune2', 'rune3'], 10, 24);
+    var crypt = curBiome !== 'bosque', hell = curBiome === 'cripta';
+    put(['bush0', 'bush1'], crypt ? 9 : 26, 14);
+    put(['rock0', 'rock1', 'rock2'], 18, 12);
+    put(['grass0', 'grass1', 'grass2'], crypt ? 40 : 30, 8);
+    put(['mushroom'], hell ? 10 : 14, 8);
+    put(['bones0', 'bones1', 'bones2'], hell ? 26 : 8, 10);
+    put(['stump0', 'stump1'], crypt ? 14 : 6, 16);
+    put(['grave'], crypt ? 8 : 5, 20);
+    put(['rune2', 'rune3'], crypt ? 6 : 3, 24);
     items.sort(function (a, b) { return a.y - b.y; });
     for (i = 0; i < items.length; i++) {
       var it = items[i], cv = Assets.sprite(it.n);
@@ -1075,6 +1294,192 @@
     }
     return { torches: torches, items: items.length };
   };
+
+    // ================================================================== ARENA (fondo completo del nivel) + AMBIENTE
+  // Assets.arena(w,h,{seed,wall}) -> {canvas, torches:[{x,y,o}]}: claro de piedra con circulo ritual central, decoracion y bordes que enmarcan el combate.
+  function bigBlob(cx, cy, rx, ry, seed, n) {
+    var pts = [], r = rrand(seed), p1 = r() * 6, p2 = r() * 6, p3 = r() * 6, i;
+    for (i = 0; i < n; i++) {
+      var a = i / n * 6.2832, ca = Math.cos(a), sa = Math.sin(a), w = 1 + 0.018 * Math.sin(5 * a + p1) + 0.012 * Math.sin(9 * a + p2) + 0.008 * Math.sin(17 * a + p3);
+      pts.push([cx + (ca < 0 ? -1 : 1) * Math.pow(Math.abs(ca), 0.42) * rx * w, cy + (sa < 0 ? -1 : 1) * Math.pow(Math.abs(sa), 0.42) * ry * w]);
+    }
+    return pts;
+  }
+  function ptsPath(pts) { return function (c) { c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }; }
+  function handFn(x, hx, hy, s, rot, col) {
+    x.save(); x.translate(hx, hy); x.rotate(rot); x.scale(s, s); x.fillStyle = col; x.strokeStyle = col; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); x.ellipse(0, 0, 9, 11, 0, 0, 6.2832); x.fill();
+    var i, fa = [-0.55, -0.2, 0.15, 0.5];
+    for (i = 0; i < 4; i++) { x.lineWidth = 4.2; x.beginPath(); x.moveTo(Math.sin(fa[i]) * 6, -8); x.quadraticCurveTo(Math.sin(fa[i]) * 11, -17, Math.sin(fa[i]) * 14 + (i - 1.5) * 1.5, -26 + Math.abs(i - 1.5) * 3); x.stroke(); }
+    x.lineWidth = 4.4; x.beginPath(); x.moveTo(-7, 2); x.quadraticCurveTo(-17, -4, -18, -13); x.stroke();
+    x.restore();
+  }
+  Assets.arena = function (w, h, o) {
+    o = o || {};
+    var b = curBiome, P = BP[b], rr = rrand(o.seed || 777), wall = o.wall == null ? 28 : o.wall, torches = [], i, j, k;
+    var c = mkCanvas(w, h), x = c.getContext('2d'), v = V(x), cx = w / 2, cy = h / 2;
+    x.lineJoin = 'round'; x.lineCap = 'round'; v.lw = 3; v.ol = P.out;
+    function R(a, bb) { return a + rr() * (bb - a); }
+    var inset = b === 'bosque' ? 14 : 30, rx = w / 2 - inset, ry = h / 2 - inset + (b === 'bosque' ? 2 : 0);
+    var pts = bigBlob(cx, cy, rx, ry, 5, 120), plat = ptsPath(pts);
+    function dnorm(px, py) { return Math.pow(Math.pow(Math.abs(px - cx) / rx, 2.4) + Math.pow(Math.abs(py - cy) / ry, 2.4), 1 / 2.4); }
+    function sprite(n, px, py, sc, al) { // base en (px,py)
+      var s = Assets.sprite(n), sh = Assets.sprite('shadow'); sc = sc || 1;
+      x.save(); x.imageSmoothingEnabled = true;
+      x.globalAlpha = 0.55; x.drawImage(sh, px - sh.width * sc * 0.55, py - sh.height * sc * 0.5 - 2, sh.width * sc * 1.1, sh.height * sc);
+      x.globalAlpha = al == null ? 1 : al; x.drawImage(s, px - s.width * sc / 2, py - s.height * sc, s.width * sc, s.height * sc); x.restore();
+    }
+    // ---------- 1. exterior
+    var g;
+    if (b === 'bosque') {
+      g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#0f0c34'); g.addColorStop(1, '#070622'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      for (i = 0; i < 700; i++) {
+        var gx = R(0, w), gy = R(0, h), hh = R(24, 56), lean = R(-14, 14);
+        x.strokeStyle = '#080a22'; x.lineWidth = 5; x.beginPath(); x.moveTo(gx, gy); x.quadraticCurveTo(gx + lean * 0.3, gy - hh * 0.6, gx + lean, gy - hh); x.stroke();
+        x.strokeStyle = i % 5 === 0 ? '#2a7a7a' : (i % 2 ? '#14385a' : '#1b4d62'); x.lineWidth = 2.6; x.stroke();
+      }
+    } else if (b === 'cripta') {
+      g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#d8340c'); g.addColorStop(0.5, '#ff7a1a'); g.addColorStop(1, '#c82a0a'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      for (i = 0; i < 90; i++) { x.fillStyle = ['rgba(255,214,70,0.28)', 'rgba(150,20,10,0.35)', 'rgba(255,150,30,0.3)'][i % 3]; x.beginPath(); x.ellipse(R(0, w), R(0, h), R(30, 130), R(10, 40), R(-0.4, 0.4), 0, 6.2832); x.fill(); }
+      x.strokeStyle = 'rgba(70,10,6,0.55)'; x.lineWidth = 6;
+      for (i = 0; i < 40; i++) { var lx = R(0, w), ly = R(0, h); x.beginPath(); x.moveTo(lx, ly); x.quadraticCurveTo(lx + R(20, 60), ly - R(8, 20), lx + R(60, 140), ly + R(-6, 6)); x.stroke(); }
+      for (i = 0; i < 14; i++) handFn(x, R(0, w), R(0, h), R(0.9, 1.6), R(-0.5, 0.5), 'rgba(110,16,10,0.35)');
+    } else {
+      g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#4a0812'); g.addColorStop(1, '#7a0e1c'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      for (i = 0; i < 40; i++) handFn(x, R(0, w), R(0, h), R(0.9, 1.7), R(-0.6, 0.6), 'rgba(240,40,56,' + R(0.35, 0.65).toFixed(2) + ')');
+    }
+    // ---------- 2. plataforma: cara de acantilado + suelo de losas
+    if (b !== 'bosque') { x.save(); x.translate(0, 18); x.fillStyle = b === 'cripta' ? '#1c0f1e' : '#0c2224'; x.strokeStyle = P.out; x.lineWidth = 12; x.beginPath(); plat(x); x.stroke(); x.fill(); x.restore(); }
+    x.fillStyle = P.out; x.strokeStyle = P.out; x.lineWidth = 16; x.beginPath(); plat(x); x.stroke(); x.fill();
+    x.save(); x.beginPath(); plat(x); x.clip(); x.imageSmoothingEnabled = false;
+    x.fillStyle = P.gap; x.fillRect(0, 0, w, h);
+    for (j = 0; j < h; j += 32) for (i = 0; i < w; i += 32) { var kk = rr() < 0.5 ? 0 : 1 + Math.floor(rr() * 9); x.drawImage(Assets.sprite('ground' + kk), i, j); }
+    x.imageSmoothingEnabled = true;
+    // parches grandes: musgo (bosque/asfodelo) o sombras calidas (cripta)
+    for (i = 0; i < 26; i++) {
+      var mx = R(0, w), my = R(0, h), dn = dnorm(mx, my), edge = dn > 0.78;
+      if (b === 'cripta') { var gg = x.createRadialGradient(mx, my, 0, mx, my, 150); gg.addColorStop(0, i % 3 ? 'rgba(8,2,12,0.3)' : 'rgba(255,120,40,0.08)'); gg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gg; x.fillRect(mx - 150, my - 150, 300, 300); continue; }
+      if (!edge && i % 2) continue;
+      v.lw = 2.4; v.part(Pblob(mx, my, R(22, 60), R(12, 28), i, 0.12, 11), P.moss, { sh: P.mossS, hi: P.mossH, so: 3 });
+      if (i % 3 === 0) { v.dot(mx + 10, my - 4, 3, P.mossH); }
+    }
+    // grietas largas
+    for (i = 0; i < 14; i++) {
+      var px = R(60, w - 60), py = R(60, h - 60), cp = [[px, py]];
+      for (j = 0; j < 7; j++) { px += R(-26, 26); py += R(10, 30); cp.push([px, py]); }
+      if (b === 'cripta') { x.strokeStyle = 'rgba(255,100,20,0.35)'; x.lineWidth = 7; x.beginPath(); cp.forEach(function (p, n) { n ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.stroke(); }
+      x.strokeStyle = P.out; x.lineWidth = 2.6; x.beginPath(); cp.forEach(function (p, n) { n ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.stroke();
+    }
+    // resplandor calido/frio del borde
+    var edgeCol = b === 'bosque' ? 'rgba(10,20,50,0.5)' : (b === 'cripta' ? 'rgba(255,90,20,0.30)' : 'rgba(90,255,150,0.18)');
+    for (i = 1; i <= 9; i++) { x.strokeStyle = edgeCol; x.lineWidth = i * 14; x.globalAlpha = 0.16; x.beginPath(); plat(x); x.stroke(); } x.globalAlpha = 1;
+    x.restore();
+    // borde de piedra de la plataforma
+    x.strokeStyle = P.out; x.lineWidth = 14; x.beginPath(); plat(x); x.stroke();
+    x.strokeStyle = b === 'cripta' ? '#6a4a5e' : (b === 'bosque' ? '#7f87a0' : '#4a8a7c'); x.lineWidth = 7; x.beginPath(); plat(x); x.stroke();
+    x.strokeStyle = 'rgba(255,255,255,0.22)'; x.lineWidth = 2; x.save(); x.translate(-1.5, -1.5); x.beginPath(); plat(x); x.stroke(); x.restore();
+    if (b === 'asfodelo') { // greca verde brillante a lo largo del borde
+      glow(x, P.accG, 8, function () { x.strokeStyle = P.acc; x.lineWidth = 1.6; x.setLineDash([10, 5, 3, 5]); x.save(); x.scale(0.985, 0.975); x.translate(cx * 0.015 / 0.985, cy * 0.025 / 0.975); x.beginPath(); plat(x); x.stroke(); x.restore(); x.setLineDash([]); });
+    }
+    // musgo que rebosa el borde (bosque)
+    if (b === 'bosque') for (i = 0; i < 70; i++) { var q = pts[(rr() * pts.length) | 0]; v.lw = 2; v.part(Pblob(q[0] + R(-8, 8), q[1] + R(-8, 8), R(10, 26), R(6, 13), i + 40, 0.15, 9), P.moss, { sh: P.mossS, hi: P.mossH, so: 2 }); }
+    // ---------- 3. circulo ritual central
+    var RR = Math.min(200, ry * 0.52);
+    ritual(x, cx, cy, RR, b);
+    // velas (bosque) alrededor del anillo
+    if (b === 'bosque') {
+      for (i = 0; i < 12; i++) {
+        var ca = i / 12 * 6.2832 + 0.26, ex = cx + Math.cos(ca) * RR * 1.2, ey = cy + Math.sin(ca) * RR * 1.2 * 0.98 + 10;
+        var gl = x.createRadialGradient(ex, ey - 22, 0, ex, ey - 22, 60); gl.addColorStop(0, 'rgba(255,170,70,0.28)'); gl.addColorStop(1, 'rgba(255,170,70,0)'); x.fillStyle = gl; x.fillRect(ex - 60, ey - 82, 120, 120);
+        sprite('candle', ex, ey, 1.35); torches.push({ x: ex, y: ey, o: { candle: true, scale: 0.6, lightScale: 1.8 } });
+      }
+    }
+    // ---------- 4. decoracion enmarcando el combate
+    function onEdge(n, sc, count, dmin, dmax, ymin, ymax) {
+      for (var t = 0, tries = 0; t < count && tries < count * 40; tries++) {
+        var px2 = R(wall + 30, w - wall - 30), py2 = R(ymin == null ? wall + 20 : ymin, ymax == null ? h - wall : ymax), dd = dnorm(px2, py2);
+        if (dd < dmin || dd > dmax) continue;
+        if (Math.hypot(px2 - cx, py2 - cy) < RR * 1.45) continue;
+        sprite(Array.isArray(n) ? n[(rr() * n.length) | 0] : n, px2, py2, sc); t++;
+      }
+    }
+    var dec = [];
+    if (b === 'bosque') {
+      // ruinas con columnas con hiedra + lapidas con simbolo rojo
+      [[0.09, 0.2], [0.91, 0.2], [0.28, 0.12], [0.72, 0.12], [0.06, 0.62], [0.94, 0.62]].forEach(function (p) { dec.push(['column', w * p[0], h * p[1] + 70, 1.15]); });
+      [[0.18, 0.3], [0.82, 0.3], [0.42, 0.1], [0.6, 0.1], [0.12, 0.8], [0.88, 0.8], [0.3, 0.9], [0.7, 0.9]].forEach(function (p) { dec.push(['grave', w * p[0], h * p[1] + 20, 1.6]); });
+      [[0.36, 0.1], [0.5, 0.1], [0.2, 0.9], [0.6, 0.92]].forEach(function (p) { dec.push([rr() < 0.5 ? 'edge0' : 'edge1', w * p[0], h * p[1] + 20, 1.5]); });
+    } else if (b === 'cripta') {
+      for (i = 0; i < 9; i++) dec.push(['grave', w * (0.08 + i * 0.105) + R(-12, 12), 110 + R(-10, 14) + (i % 2) * 18, 1.9]);  // muro de lapidas al fondo
+      [[0.05, 0.3], [0.95, 0.3], [0.5, 0.075]].forEach(function (p) { dec.push(['column', w * p[0], h * p[1] + 80, 1.35]); });
+      for (i = 0; i < 6; i++) dec.push(['edge' + (i % 2), w * (0.08 + i * 0.17) + R(-20, 20), h - 18 + R(-6, 10), 1.9]);       // costillas gigantes abajo
+      for (i = 0; i < 3; i++) { dec.push(['edge' + (i % 2), 70 + R(-6, 6), h * (0.4 + i * 0.22), 1.6]); dec.push(['edge' + (i % 2), w - 70 + R(-6, 6), h * (0.4 + i * 0.22), 1.6]); }
+      for (i = 0; i < 6; i++) dec.push(['stump0', w * (0.14 + i * 0.145), 142 + R(-8, 8), 1.7]);          // urnas
+    } else {
+      [[0.06, 0.18], [0.94, 0.18], [0.3, 0.1], [0.7, 0.1], [0.05, 0.7], [0.95, 0.7], [0.5, 0.08]].forEach(function (p) { dec.push(['column', w * p[0], h * p[1] + 80, 1.3]); });
+      for (i = 0; i < 6; i++) dec.push(['edge' + (i % 2), w * (0.1 + i * 0.16), h - 18, 1.8]);
+      for (i = 0; i < 6; i++) dec.push(['stump0', w * (0.16 + i * 0.13), 150 + R(-6, 6), 1.6]);
+    }
+    dec.sort(function (a, c2) { return a[2] - c2[2]; });
+    dec.forEach(function (d) { sprite(d[0], d[1], d[2], d[3]); });
+    // hierba alta oscura en los bordes (bosque y asfodelo), conos y costillas (cripta)
+    if (b === 'bosque' || b === 'asfodelo') {
+      var gb = [];
+      for (i = 0, k = 0; i < 4000 && k < (b === 'bosque' ? 330 : 190); i++) { var gx2 = R(0, w), gy2 = R(0, h), d2 = dnorm(gx2, gy2); if (d2 < 0.9 || (d2 < 0.98 && rr() < 0.5)) continue; gb.push([gx2, gy2]); k++; }
+      gb.sort(function (a, c2) { return a[1] - c2[1]; });
+      gb.forEach(function (p) { var s = Assets.sprite('bush' + ((rr() * 2) | 0)); x.save(); x.imageSmoothingEnabled = true; x.drawImage(s, p[0] - s.width * 0.8, p[1] - s.height * 1.6, s.width * 1.6, s.height * 1.6); x.restore(); });
+    } else { onEdge(['bush0', 'bush1'], 1.5, 16, 0.86, 1.2); }
+    // decoracion pequena de suelo (rocas, huesos, setas...) fuera del circulo
+    Assets.decorate(x, w, h, { seed: o.seed || 777, wall: wall, torches: 0, density: 0.85, avoid: [{ x: cx, y: cy, r: RR * 1.5 }] });
+    // antorchas altas con llama animada (cripta / asfodelo)
+    if (b !== 'bosque') {
+      [[0.17, 0.2], [0.83, 0.2], [0.12, 0.62], [0.88, 0.62], [0.33, 0.84], [0.67, 0.84], [0.35, 0.12], [0.65, 0.12]].forEach(function (p) {
+        var tx = Math.round(w * p[0]), ty = Math.round(h * p[1]) + 20; sprite('torch', tx, ty, 1.6); torches.push({ x: tx, y: ty, o: { scale: 1.6, lightScale: 4.6, big: true } });
+      });
+    }
+    // ---------- 5. oscurecimiento exterior (azul/morado muy oscuro)
+    x.save(); x.translate(cx, cy); x.scale(1, h / w);
+    var tint = BIOME_INFO[b].vignette, vg = x.createRadialGradient(0, 0, w * 0.34, 0, 0, w * 0.64);
+    vg.addColorStop(0, 'rgba(' + tint + ',0)'); vg.addColorStop(0.7, 'rgba(' + tint + ',' + (b === 'bosque' ? 0.55 : 0.42) + ')'); vg.addColorStop(1, 'rgba(' + tint + ',' + (b === 'bosque' ? 0.9 : 0.7) + ')');
+    x.fillStyle = vg; x.fillRect(-w, -w, w * 2, w * 2); x.restore();
+    return { canvas: c, torches: torches, ritual: { x: cx, y: cy, r: RR } };
+  };
+
+  // ---------- luciernagas / brasas flotantes (en coordenadas del mundo; o.view = camara para recortar)
+  var ffSpr = {};
+  function ffSprite(col) {
+    if (ffSpr[col]) return ffSpr[col];
+    var c = mkCanvas(24, 24), x = c.getContext('2d'), g = x.createRadialGradient(12, 12, 0, 12, 12, 12);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.18, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 24, 24); ffSpr[col] = c; return c;
+  }
+  Assets.drawFireflies = function (ctx2, w, h, tMs, o) {
+    o = o || {};
+    var n = o.count || 90, t = (tMs || 0) / 1000, cols = { bosque: ['rgba(214,255,120,0.9)', 'rgba(255,250,220,0.9)', 'rgba(150,255,200,0.9)'], cripta: ['rgba(255,150,40,0.9)', 'rgba(255,210,80,0.9)'], asfodelo: ['rgba(140,255,170,0.9)', 'rgba(210,255,190,0.9)'] }[curBiome], i;
+    var vw = o.view || { x: 0, y: 0, w: w, h: h };
+    ctx2.save(); ctx2.globalCompositeOperation = 'lighter'; ctx2.imageSmoothingEnabled = true;
+    for (i = 0; i < n; i++) {
+      var h1 = Math.sin(i * 12.9898) * 43758.5453; h1 -= Math.floor(h1); var h2 = Math.sin(i * 78.233 + 1.7) * 24634.6345; h2 -= Math.floor(h2);
+      var px = h1 * w, py = h2 * h, sp = 0.4 + h1 * 0.8;
+      if (curBiome === 'bosque') { px += Math.sin(t * 0.5 * sp + i) * 46; py += Math.cos(t * 0.37 * sp + i * 2) * 32; }
+      else { px += Math.sin(t * 0.6 * sp + i) * 22; py = ((py - t * (14 + h1 * 22)) % h + h) % h; }
+      if (px < vw.x - 20 || px > vw.x + vw.w + 20 || py < vw.y - 20 || py > vw.y + vw.h + 20) continue;
+      var al = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * (1.2 + h2 * 2.4) + i * 3.1)), sz = (curBiome === 'bosque' ? 9 : 7) + h2 * 5;
+      ctx2.globalAlpha = al; ctx2.drawImage(ffSprite(cols[i % cols.length]), px - sz / 2, py - sz / 2, sz, sz);
+    }
+    ctx2.restore();
+  };
+  // pulso rojo/naranja/verde sobre el circulo ritual (aditivo)
+  Assets.drawRitualGlow = function (ctx2, x, y, tMs, r) {
+    var t = (tMs || 0) / 1000, k = 0.5 + 0.5 * Math.sin(t * 2.2), col = { bosque: '255,40,60', cripta: '255,110,30', asfodelo: '110,255,80' }[curBiome];
+    r = r || 190;
+    ctx2.save(); ctx2.globalCompositeOperation = 'lighter';
+    var g = ctx2.createRadialGradient(x, y, r * 0.15, x, y, r * (1.05 + 0.05 * k));
+    g.addColorStop(0, 'rgba(' + col + ',' + (0.07 + 0.07 * k).toFixed(3) + ')'); g.addColorStop(0.55, 'rgba(' + col + ',' + (0.03 + 0.03 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + col + ',0)');
+    ctx2.fillStyle = g; ctx2.fillRect(x - r * 1.4, y - r * 1.4, r * 2.8, r * 2.8);
+    ctx2.restore();
+  };
+
 
   // ================================================================== AUDIO
   var ctx = null, chain = null, M;

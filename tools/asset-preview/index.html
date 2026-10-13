@@ -123,18 +123,10 @@
 
   // --- arena de prueba (suelo cacheado + entidades animadas + antorchas + niebla + vineta)
   var cv = $('arena'), x = cv.getContext('2d'), ground = null, torches = [];
-  function buildArena() {
-    ground = document.createElement('canvas'); ground.width = 960; ground.height = 540; var g = ground.getContext('2d');
-    var seed = 12345; function r() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
-    for (var ty = 0; ty < 540; ty += 32) for (var tx = 0; tx < 960; tx += 32) { var k = r(); g.drawImage(A.sprite('ground' + (k < 0.6 ? 0 : 1 + ((r() * 9) | 0))), tx, ty); }
-    g.drawImage(A.sprite('ritual_circle'), 480 - 64, 270 - 64);
-    var decos = [];
-    for (var i = 0; i < 30; i++) {
-      var kind = ['rock0', 'rock1', 'rock2', 'grass0', 'grass1', 'grass2', 'mushroom', 'rune0', 'rune1', 'rune2', 'rune3'][(r() * 11) | 0];
-      var px = r() * 920, py = 20 + r() * 480; if (Math.hypot(px - 480, py - 270) < 150) continue; decos.push([kind, px, py]);
-    }
-    decos.forEach(function (d) { g.drawImage(A.sprite(d[0]), d[1] | 0, d[2] | 0); });
-    torches = A.decorate(g, 960, 540, { seed: 99, wall: 20, torches: 4 }).torches;
+  var ritualInfo = null;
+  function buildArena() { // arena completa generada por Assets.arena (escalada a 960x540 de vista previa)
+    var ar = A.arena(960, 540, { seed: 99, wall: 20 });
+    ground = ar.canvas; torches = ar.torches; ritualInfo = ar.ritual;
   }
   var who = [['player', 480, 300, 0], ['worm', 300, 200, 1], ['worm', 640, 380, 1], ['archer', 760, 130, 1], ['boar', 200, 400, 0], ['bomb', 360, 140, 0], ['warlock', 700, 250, 1], ['boss', 250, 250, 0]];
   function drawArena(t) {
@@ -153,9 +145,11 @@
     x.drawImage(A.animFrame('hitspark', 'burst', t % 600), 540, 250);
     x.drawImage(A.animFrame('curse_flame', 'burn', t), 640, 300); x.drawImage(A.animFrame('curse_flame', 'burn', t + 200), 656, 306);
     x.drawImage(A.animFrame('smoke_big', 'puff', t % 1000), 380, 330);
-    torches.forEach(function (to) { A.drawTorchFire(x, to.x, to.y, t); });
+    if (ritualInfo) A.drawRitualGlow(x, ritualInfo.x, ritualInfo.y, t, ritualInfo.r);
+    torches.forEach(function (to) { A.drawTorchFire(x, to.x, to.y, t, to.o); });
+    A.drawFireflies(x, 960, 540, t, { count: 70 });
     if ($('fogOn').checked) A.drawFog(x, 960, 540, t, { alpha: 0.5 });
-    if ($('vigOn').checked) x.drawImage(A.vignette(960, 540, { strength: 0.65 }), 0, 0);
+    if ($('vigOn').checked) x.drawImage(A.vignette(960, 540, { strength: 0.8 }), 0, 0);
   }
 
   A.biomes().forEach(function (b) { var o = document.createElement('option'); o.value = b; o.textContent = A.biomeInfo(b).label; $('biome').appendChild(o); });

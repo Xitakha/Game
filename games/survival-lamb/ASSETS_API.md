@@ -4,7 +4,7 @@ Generador de recursos 100% original, sin dependencias ni ficheros externos. Scri
 `<script src="src/assets.js"></script>` -> `window.Assets`. Todo se genera al cargar (sprites) o tras un gesto (audio).
 
 ## Sprites
-Pixel-art dibujado por codigo en canvas, escala x2 (`Assets.scale`), nearest-neighbor. Los personajes miran a la DERECHA (voltear con scale -1 o rotar al apuntar). Tamanos = pixeles finales.
+Dibujo vectorial por codigo en canvas (desde v3; antes pixel-art), rasterizado a x2 (`Assets.scale`). Los personajes miran a la DERECHA (voltear con scale -1 o rotar al apuntar). Tamanos = pixeles finales.
 
 `Assets.sprite(name, frame)` -> `HTMLCanvasElement`. `frame`: numero (cicla), `'anim'` o `'anim:n'` (p. ej. `'walk:2'`).
 `Assets.animFrame(name, anim, tMs)` -> canvas segun fps. `Assets.frames(name)`, `Assets.info(name)`, `Assets.list()`.
@@ -98,3 +98,14 @@ fx.js: `hitspark/shockwave/puff/curse/corpse/drawCorpses` (particulas animadas c
 
 ## Herramienta
 `tools/asset-preview/index.html`: exporta PNG spritesheet (por sprite o atlas+JSON) y WAV (por SFX y musica), sliders de volumen/pitch/variacion, selector de bioma/pista e intensidad.
+
+
+---
+# v3: pasada de arte (estilo Cult of the Lamb + Hades). Tamanos, nombres e indices de frame NO cambian
+- Sprites vectoriales: contorno oscuro grueso e irregular, color plano + 1 sombra + 1 brillo (ya no hay shading/contorno automatico por pixel). Jugador: cordero de lana cream, cara gris, ojos grandes, capa roja con ribete y cascabel, corona con ojo rojo. Enemigos: gusano morado, arquero azul, jabali naranja, bomba roja, brujo-ciervo amarillo, jefe carnero morado con astas.
+- VFX: tajos gruesos naranja/blanco con contorno rojo oscuro y lineas de velocidad; llamas rojas/naranjas (verdes en `asfodelo`); explosion/humo con contorno.
+- `ritual_circle` ahora depende del bioma (anillo de piedra + pentagrama brillante; calaveras en cripta). Nuevos sprites por bioma: `column` (28x44 base -> 56x88), `edge0/edge1` (80x56), y compartido `candle` (12x20).
+- Biomas: `bosque` (claro de piedra musgosa, velas, hierba alta, lapidas con simbolo rojo), `cripta` (Hades: adoquin oscuro, huesos, costillas, urnas, antorchas grandes, borde de lava), `asfodelo` (nuevo: losas esmeralda, fuegos verdes). `?biome=asfodelo` funciona; `torch_flame`/`torch_light` cambian de color por bioma.
+- `Assets.arena(w,h,{seed,wall})` -> `{canvas, torches:[{x,y,o}], ritual:{x,y,r}}`: fondo completo (exterior azul oscuro/lava, plataforma, circulo ritual central, decoracion, bordes). main.js lo usa en `buildGround`.
+- Animar en runtime: `Assets.drawTorchFire(ctx,x,y,t,o)` acepta `o` de cada entrada de `torches` (`candle`, `scale`); `Assets.drawRitualGlow(ctx,x,y,t,r)` pulso aditivo del pentagrama; `Assets.drawFireflies(ctx,w,h,t,{count,view})` luciernagas (bosque) / brasas (cripta, asfodelo). `Assets.vignette` mas fuerte, tinte por bioma (azul/morado, rojo oscuro, verde oscuro).
+- Cambios en src/main.js (solo visual): `buildGround` usa `Assets.arena`; draw anade glow ritual, luciernagas y vineta 0.8. Sin cambios de logica ni hitboxes.
