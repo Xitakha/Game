@@ -234,7 +234,7 @@
     fx.part('explosion', m.x, m.y, 0, 0, 380, { sc: 1.2, add: true, anim: true }); fx.shockwave(m.x, m.y, m.r * 2); fx.shake(4, 140); sfx('explosion', { vol: 0.5, pitch: 1.1 });
     fx.burst(m.x, m.y, 8, '#ffb040', 220, 500, 4, { add: true });
     if (!p.dead && Math.hypot(p.x - m.x, p.y - m.y) <= m.r + 2) hurt(e, m.dmg, 'boss_brasas', { kb: 1.1 });
-    if (m.puddles) for (var i = 0; i < 2; i++) a.puddles.push({ x: m.x + (i ? 28 : -28), y: m.y + (i ? -14 : 16), r: 22, t: 0, life: 3000 });
+    if (m.puddles) a.puddles.push({ x: m.x, y: m.y, r: 26, t: 0, life: 3000 });
   }
 
   // ------------------------------------------------------------------ ataques
@@ -314,7 +314,7 @@
         else { var an = Math.random() * TAU, dd = G.rnd(70, 300); m.x = clampX(p.x + Math.cos(an) * dd); m.y = clampY(p.y + Math.sin(an) * dd); }
         m.imp = A0.abs + 900;
       }
-      if (m.st === 1 && A0.abs >= m.imp) { m.st = 2; impact(e, { x: m.x, y: m.y, r: 55, dmg: 18, puddles: true }); }
+      if (m.st === 1 && A0.abs >= m.imp) { m.st = 2; impact(e, { x: m.x, y: m.y, r: 55, dmg: 18, puddles: i < 2 }); }   // deja 2 charcos de brasas en total (los de los 2 primeros impactos)
     }
   }
   ATK.k_brasas = {

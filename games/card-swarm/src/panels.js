@@ -464,9 +464,10 @@
     });
     if (cur.length > 3) G.txt(c, '+' + (cur.length - 3) + ' más', x + 160, y + 72, 10, '#9a8fb0', 'left');
     var set = Object.keys(N).filter(function (t) { return N[t] >= 2 && t !== 'neutral'; });
-    if (set.length) G.txt(c, 'Set de ' + G.TAGS[set[0]].name + ': a 3 cartas +25 % (nodo de Set en el árbol)', x + 10, y + 126, 9, '#c8b8e8', 'left');
+    if (set.length) G.txt(c, 'Set ' + G.TAGS[set[0]].name + ': a 3 cartas +25 %', x + 10, y + 118, 9, '#c8b8e8', 'left');
     var gain = !isAnchor && G.Save.rank(d.id) ? comboNames(ids.concat([d.id])).filter(function (cb) { return cur.indexOf(cb) < 0; }) : [];
-    G.txt(c, gain.length ? 'Con ' + d.short + ': ' + gain.map(function (cb) { return cb.name; }).join(', ') : (isAnchor ? d.short + ' ya es ancla.' : 'Con ' + d.short + ': sin combo nuevo.'), x + 10, y + 142, 10, gain.length ? '#ffe9a0' : '#8a7f96', 'left');
+    var gt = gain.length ? 'Con ' + d.short + ': ' + gain.map(function (cb) { return cb.name; }).join(', ') : (isAnchor ? d.short + ' ya es ancla.' : 'Con ' + d.short + ': sin combo nuevo.');
+    U.wrap(c, gt, 212, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, x + 10, y + 132 + k * 13, 10, gain.length ? '#ffe9a0' : '#8a7f96', 'left'); });
   }
 
   // ============================================================= COCINA de Tía Castaña

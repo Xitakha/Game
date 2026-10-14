@@ -211,7 +211,7 @@
 
   // ------------------------------------------------------------------ ranuras de ataque (3 cabezas + cuerpo en paralelo)
   H.fight = function (e, dt) {
-    var a = A(), p = PL(), PH = e.def.phases[e.phase - 1], k, sl, P = pressure(), maxP = e.phase === 3 ? 3 : 2;
+    var a = A(), p = PL(), PH = e.def.phases[e.phase - 1], k, sl, P = pressure(), maxP = 3;
     var sub = a.slots.body.A && a.slots.body.A.name === 'l_sumersion';
     for (k in a.slots) {
       sl = a.slots[k];
@@ -231,7 +231,7 @@
       var A1 = U.makeAtk(e, n, isBody ? null : { head: k });
       sl.A = A1;
       if (!isBody) a.hd[k].hold = true;
-      sl.cadT = isBody ? (e.phase === 1 ? 4500 : e.phase === 2 ? 3800 : 3200) * (KEYS.every(function (kk) { return e.broken[kk]; }) ? 0.6 : 1) : PH.cad;
+      sl.cadT = isBody ? (e.phase === 1 ? 3800 : e.phase === 2 ? 3300 : 2900) * (KEYS.every(function (kk) { return e.broken[kk]; }) ? 0.6 : 1) : PH.cad;
     }
     // el cuerpo sumergido no puede ser objetivo de las cartas (las cabezas sí)
   };
@@ -244,7 +244,7 @@
       n = opts[i];
       if ((S.cds[n] || 0) > 0) continue;
       if (n === 'l_mordisco' && (d > 320 || P >= 2)) continue;
-      if (n === 'l_aliento' && (d < 90 || d > 400)) continue;
+      if (n === 'l_aliento' && (d < 30 || d > 400)) continue;
       e.lastHead = k + n; return n;
     }
     return null;
@@ -267,7 +267,7 @@
 
   // ------------------------------------------------------------------ ataques
   function def(name, o) { o.b = 'letea'; ATKS[name] = o; }
-  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 4000,  dmg: 22, phases: [1, 2, 3] });
+  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 3200,  dmg: 22, phases: [1, 2, 3] });
   def('l_acido',      { name: 'Escupitajo ácido',    tele: 900,  cd: 10000, dmg: 8,  phases: [1, 2, 3] });
   def('l_aliento',    { name: 'Aliento helado',      tele: 900,  cd: 9000,  dmg: 14, phases: [1, 2, 3] });
   def('l_rayo',       { name: 'Rayo del cielo',      tele: 1000, cd: 10000, dmg: 22, phases: [1, 2, 3] });
@@ -295,7 +295,7 @@
       return false;
     },
     draw: function (c, e, A0) { Assets.drawBossTele(c, 'lane', A0.ox, A0.oy, { w: A0.w, len: A0.len, a: A0.aim, p: A0.t / A0.tele, fix: A0.t >= A0.fixAt, t: G.time }); },
-    haz: function (e, A0, out) { if (A0.step === 'tele') out.push({ k: 'lane', x: A0.ox, y: A0.oy, a: A0.aim, w: A0.w, len: A0.len, t0: A0.tele - A0.t, t1: A0.tele - A0.t + 450 }); }
+    haz: function (e, A0, out) { if (A0.step === 'tele') out.push({ k: 'lane', x: A0.ox, y: A0.oy, a: A0.aim, w: A0.w, len: A0.len, t0: A0.tele - A0.t, t1: A0.tele - A0.t + 700 }); }
   };
 
   // ---- Escupitajo ácido (cabeza verde): 3 charcos ácidos r 50 durante 6 s (Coro: r 65, 4 s)
@@ -577,6 +577,10 @@
   }
   function drawBand(c, x, dir, w, gaps, p, tele) {
     var y0 = G.WALL, y1 = G.AH - G.WALL, i, ys = [y0];
+    if (ART() && !tele) {   // relleno translúcido bajo el arte: la ola se lee mejor sobre el suelo verde
+      var sg0 = [y0]; gaps.slice().sort(function (a1, b1) { return a1 - b1; }).forEach(function (g) { sg0.push(g - 50, g + 50); }); sg0.push(y1);
+      c.save(); c.fillStyle = 'rgba(60,160,230,0.38)'; for (i = 0; i < sg0.length; i += 2) c.fillRect(x - w / 2, sg0[i], w, sg0[i + 1] - sg0[i]); c.restore();
+    }
     if (ART()) {   // (x,y) = centro del borde delantero; para dir < 0 el marco local va girado 180 grados: se espejan los huecos
       var len = y1 - y0;
       Assets.drawBossBand(c, x + dir * w / 2, (y0 + y1) / 2, dir > 0 ? 0 : Math.PI, len, w, { gaps: gaps.map(function (g) { var s0 = g - 50 - y0, s1 = g + 50 - y0; return dir > 0 ? [s0, s1] : [len - s1, len - s0]; }), style: 'water', p: p, tele: !!tele, t: G.time, alpha: 1 }); return;

@@ -70,7 +70,6 @@
   A.applySettings = applySettings;
   function flash(t) { if (toastT > 0 && toast) { toastQ.push(t); } else { toast = t; toastT = 3200; } }
   A.flash = flash;
-  A.onCooked = function () { forgedVisit = forgedVisit; };
   A.onForged = function () { forgedVisit = true; };
   A.setPanel = function (p) { panel = p; mode = p ? 'panel' : 'walk'; };
 

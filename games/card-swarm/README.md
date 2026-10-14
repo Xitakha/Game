@@ -12,22 +12,73 @@ python3 -m http.server 8123
 ```
 (También funciona abriendo `index.html` directamente.)
 
-## Bucle completo (v3: Aldea, Fase 2a)
+## Bucle completo (v3: Aldea, Fases 2a y 2b)
 **Aldea -> Portal -> Expedición -> Botín (R = repetir sin pasar por la aldea) -> Aldea.** La pantalla principal es **Rescoldo** (`src/aldea.js`), una aldea caminable de una pantalla
 (960x540, escala a cualquier tamaño). Marlo se mueve con WASD / flechas (o el joystick táctil flotante de la mitad izquierda), interactúa con **E / Enter** (o el botón táctil
 HABLAR de 96 px) a menos de 56 px de un NPC, y viaja al Portal con **Tab** (o el botón PORTAL) con un fundido de 0,3 s. Colisiones con los rectángulos de `Assets.VILLAGE.colliders`
 y los límites de la zona caminable. Esc abre el menú (Colección, Ajustes, Borrar progreso con doble pulsación). El arte viene de `assets_village.js` (`Assets.drawVillage`);
 si no existe, se dibuja un fallback de rectángulos. Luz: Día al abrir o tras ganar, Ocaso tras una derrota.
-- **Grum (herrero):** abre la **Forja** (`src/tree.js`), un árbol por pestañas: **Fuego** (12 nodos completos), **Tronco** (Rango de forja II/III, Ceniza viva, Tercera ancla,
-  Pezuñas/Imán/Alforja) y **Clásica** (recetas planas rebalanceadas para las cartas de Hielo, Rayo, Veneno, Sangre, Acero y el Reloj; los demás árboles llegan en la Fase 2b).
-- **Vesper (encargos):** Tablón con 3 encargos fijos (tutorial "Huele a chamusquina": 20 Bombas -> 6 Mecha + 40 Brasas + 1 PF; 40 Polillas; el Coloso Escudero). Solo uno activo; el progreso
-  persiste entre expediciones y se ve en el HUD de la run. El enemigo objetivo pesa **x2,5** en el director (`waves.js`) y su entrada se adelanta a 2:30 virtuales. Son repetibles.
+- **Grum (herrero):** abre la **Forja** (`src/tree.js`), un árbol por pestaña: **Fuego, Hielo, Rayo, Veneno, Sangre y Acero** (11-12 nodos cada uno, Fase 2b) y **Tronco** (Rango de forja II/III, Ceniza viva,
+  Tercera ancla, Pezuñas/Imán/Alforja). La pestaña "Clásica" de la 2a desapareció: todas las cartas con nodo se desbloquean en su árbol (solo el Reloj de arena es gratis desde el inicio).
+- **Vesper (encargos):** Tablón con **3 ofertas rotativas** (fácil / media / de condición) de un pool de 21 encargos (ver "Fase 2b"). Solo uno activo; el progreso persiste entre expediciones y se ve en el HUD de la run.
+  El enemigo objetivo de los encargos de caza pesa **x2,5** en el director (`waves.js`) y su entrada se adelanta a 2:30 virtuales. Son repetibles.
 - **Rufo (mercader):** **Trueque** (3 partes comunes por 1; Hebra 6 por 1; cupo de 4 por expedición, se reinicia al volver de una salida), **Vender** (3 Brasas por parte, Hebra 1; v5, antes 6 / 3) y
   **Comprar** (Tónico de ceniza 80: +40 Ceniza; Imán de bolsillo 120: radio x1,5; parte común 24, cupo 3). Las raras no se truecan ni se venden.
 - **Portal:** mano al salir (anclas), selector 7 / 9 / 10 min, encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
-- **Ulalume (provisional):** colección de las 26 cartas y anclas (hasta que la Fase 2b añada loadouts). **Abuelo Lanudo** y **Tía Castaña**: diálogos de ambiente.
+- **Ulalume (archivista):** colección completa con filtros por etiqueta, anclas con vista previa de combos y 3 loadouts. **Tía Castaña:** platos con buff de expedición. **Abuelo Lanudo:** lore, consejos y logros (ver "Fase 2b").
 - **Anclas:** `G.B.anchorSlots` = 2 (3 con el nodo Tercera ancla). Se eligen en el Archivo de Ulalume o en el Portal. Los otros slots se llenan al subir de nivel con cartas desbloqueadas.
 - **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`.
+
+## Fase 2b: árboles completos, Archivista, cocina, Lanudo, encargos y vida en la aldea
+Diseño: `DESIGN-v3-aldea.md` secciones B.4 y D. Arte del árbol en `assets_tree.js` (contrato en `ASSETS_API.md`; `tree.js` usa `Assets.drawTreeNode/Link/Tab/Burst/Icon` si existen y, si no, un dibujo propio).
+
+### Los 6 árboles de forja (`src/tree.js`; efectos en `combat.js`, `weapons.js`, `cards.js`, `player.js`)
+Misma plantilla que Fuego: raíz (carta inicial), mejora A/B de la carta inicial (M, T1), 2.ª carta (C, T1), pasivo numérico +8 % (P, T1), carta rara (C, T2), mejora de la 2.ª carta (M, T2), rama excluyente (X, T2, dos nodos hermanos),
+carta épica (C, T3, 1 Esencia), Set (S, T2), mejora de la épica (M, T2) y Maestría (Ma, T4, 2 Esencias). 20 PF por árbol (Sangre: 17), 3200 Brasas y ~140-170 partes (principal + secundaria) con los multiplicadores v5 (`COST_MUL.node` x `L.TREE_PART_MUL`).
+**Resonancia (GDD):** cada nodo de Set da +25 % de daño de su etiqueta con 3 cartas de esa etiqueta en la mano; con 4+ activa una habilidad (la mano tiene 5 slots: 2-3 anclas y el resto se llena al subir de nivel).
+
+| Árbol (cartas) | M A / B | P | X | S (4+) | Ma |
+|---|---|---|---|---|---|
+| **Hielo** (Esquirla, Nova, Cristal, Ventisca) | Esquirla II: atraviesa / ralentiza +15 pts y +1 s; Nova II: radio +25 % / doble pulso (70 %); Ventisca II: radio +30 % / +40 % dps | Aliento gélido +8 % Hielo | Permafrost (todo slow >= 45 %) o Quebradizo (+25 % de daño de cualquier carta a ralentizados) | Cripta de hielo: ralentizados <15 % de vida mueren | Era glacial: cada 60 s aturde 2 s a toda la pantalla (jefes/élites solo ralentiza) |
+| **Rayo** (raíz virtual; Chispazo, Cascabel, **Bobina**, Tormenta) | Chispazo II: cd -15 % / sin pérdida por salto; Tormenta II: 2.º rayo (60 %) / área x1,5 y +10 % | Pararrayos +8 % Rayo | Cadena larga (+1 salto, alcance 150) o Un solo rayo (x2 daño, -1 salto) | Eco de tormenta: cada 8.º rayo se repite | Ojo de la tormenta: cada 10 s un rayo (150) sobre cada élite y jefe |
+| **Veneno** (Dardo, Charco, Bilis, Nube) | Dardo II: 2 stacks por impacto / daño inicial x2; Charco II: dura 8 s / radio +30 %; Nube II: radio +30 % / dps x1,5 | Savia amarga +8 % | Pandemia (el envenenado que muere pasa 2 stacks a 3 vecinos) o Neurotoxina (máx. 5 stacks; a 5 aturde 1 s) | Foco de infección: charco venenoso al morir un envenenado | Plaga: el veneno no expira en élites ni jefes |
+| **Sangre** (Colmillo, Sangría, Lana, **Murciélago**) | Colmillo II: cura x2 / arco 120 grados; Sangría II: 4 marcas / sangrado 7 dps | Ansia +8 % | Vampiro (12 % de curar 3 HP al matar con Sangre) o Berserker (+35 % de daño con <40 % HP) | Pacto de sed: 3 kills = escudo 10 HP (tope 20) | Pacto de sangre: cada 25 kills +15 HP y +10 % daño 5 s |
+| **Acero** (Daga, Púas, Afilar, Hacha) | Daga II: 5 dagas al 80 % / perforantes; Púas II: 4 escudos / empuje x2; Hacha II: tamaño x1,5 / cd -20 % | Temple +8 % | Filo (+15 % crítico) o Bastión (-10 % de daño recibido) | Filo eterno: cada crítico recorta 0,3 s todos los cooldowns (máx. cada 0,4 s) | Tormenta de acero: las dagas rebotan una vez; el Hacha dobla la ida |
+
+- **Cartas nuevas (equilibrio):** **Bobina** (Rayo, rara): torreta de 5 s (máx. 3) que dispara 7 de daño cada 0,4 s al más cercano (alcance 170), cd 6 s -> ~14,6 dps de media, como Chispa/Dardo; **Murciélago** (Sangre, rara): 13 de daño + sangrado, rebota 1 vez (2 a Nv3), cd 1,6 s -> ~16 dps. Se desbloquean en los nodos "Bobina" (Rayo) y "Murciélago" (Sangre) y entran en el pool de ofertas solo si están desbloqueadas.
+- **Nodos de carta heredados:** una carta ya desbloqueada (guardados antiguos) marca su nodo como heredado (gratis, no se puede deshacer). Deshacer un nodo de carta quita la carta de la colección y de las anclas.
+- **`L.TREE_PART_MUL`** (`loot.js`): multiplicador del coste de la parte principal por etiqueta (Fuego 1, Hielo 0,5, Rayo 0,75, Veneno 1, Sangre 0,8, Acero 0,6) según cuánto cae cada parte, para que todos los árboles tarden parecido.
+- **Runs estimadas para un árbol completo** (bot `?speed=20 ?god=1`, 6 runs por duración en cuenta vacía; simulación greedy con trueque y encargos a 1 PF por expedición; "bot" = partes recogidas x1,0, "humano" = x0,7; incluye Rango de forja II y III):
+  Fuego/Hielo/Rayo/Veneno/Acero **~19-20 (bot) / ~26 (humano)** expediciones de 9 min, 24-26 / ~34 con 7 min; Sangre ~16 / ~23 (17 PF). La build mínima (4 nodos) llega en ~5 (bot) / ~7 (humano) runs. El cuello son las Brasas (3200 + 900 de rangos por árbol ~ 18 runs de 227); los PF (~3,3 por run) y las partes no limitan. Con 24 PF de techo: un árbol completo + 4 PF.
+  Medido con el bot (sin cambios en el balance global): 7 min 104 partes/run y 175 Brasas, 9 min 125 y 227 (como en la tabla v5).
+
+### Ulalume (archivista): colección, anclas y loadouts (`panels.js`)
+Colección completa (28 cartas, candado en las bloqueadas) con **filtros por etiqueta** (chips; Q / Tab los cambian), detalle con rango y cómo se desbloquea, y **FIJAR ANCLA** (E). Abajo: la mano al salir (anclas y slots abiertos), un panel de **sinergias de etiqueta** de las
+anclas (cuenta por etiqueta, combos activos y qué combo nuevo daría la carta señalada) y **3 loadouts** (nombre libre de 12 letras con N / toque en el nombre, anclas, duración y plato): GUARDAR (Z) y APLICAR (X; reaplica anclas y duración y cocina el plato si puedes pagarlo). En táctil el nombre se edita con el cuadro nativo del navegador.
+
+### Tía Castaña (cocinera): platos (`G.Cook`, `panels.js`)
+Un plato por expedición (el cupo se reinicia al volver de una salida; el plato preparado se consume al salir y se ve como chip abajo a la izquierda en la run): **Sopa de hebra** (+0,25 HP/s), **Pan de pluma** (+8 % vel.), **Té de brasas** (+10 % XP),
+**Estofado de púas** (-25 % daño de proyectiles), **Guiso de mecha** (-30 % explosivos), **Caldo de placa** (-20 % cuerpo a cuerpo), **Asado de colmillo** (-15 % élites y jefes). Costes: 4-8 partes y 20-60 Brasas. Las resistencias usan `Player.family(src)` (ranged / blast / melee / big). Un loadout puede incluir plato.
+
+### Abuelo Lanudo: lore, consejos y logros (`aldea.js`, `quests.js` `G.Ach`)
+Cada visita cuenta una historia (rota) y ofrece **Consejo** (contextual: debilidades del Pastor / Karceron / Letea según el siguiente jefe sin vencer, combos aún no vistos con su receta, PF sin gastar, Brasas acumuladas, encargo sin aceptar, racha de derrotas, plato, loadouts) y **Logros** (11 recuerdos con texto propio: primera salida, mano ganadora, los 3 jefes, 5 y 12 combos, 8 nodos forjados, árbol completo, 10 encargos, 3 platos). Al vencer a cada jefe cuenta una escena nueva; el resto de NPC añade líneas por jefe vencido (Grum, Vesper, Rufo, Ulalume, Castaña). Sin recompensas materiales: la economía no cambia.
+
+### Encargos de Vesper (`quests.js`)
+Pool de 21 encargos, 8 tipos: **cazar** un enemigo (Bombas, Polillas, Gusanos, Arqueros, Jabalíes, Escuderos, Espectros, Ascuas), **minijefes** (Coloso, Colmena), **bajas totales** (400), **romper 3 partes de jefe** (hook `Quests.onBossPart(bossId, key)`; `Loot.endRun` lo llama por cada parte rota, ganes o pierdas),
+**ganar con una etiqueta** (3+ cartas de esa etiqueta en la mano final; 6 variantes), **sobrevivir N s sin recibir daño** (45 / 90; `Loot.noteHit` desde `Player.hurt`, progreso en vivo en el HUD) y **ganar con duración de 7 min**. Tiers: fácil (1 PF, 40-60 Brasas, 6-20 partes), medio (1-2 PF, 90-110 Brasas), difícil (2 PF, 150-170 Brasas, +1 Esencia rara la primera vez en los de condición).
+**Rotación:** el Tablón muestra 3 ofertas (una fácil, una media, una de condición) sembradas con el día (UTC) y el nº de expediciones, así que cambia al volver de cada salida y cada día; el encargo activo se queda aparte. El tutorial de las Bombas se ofrece mientras no lo hayas hecho. Repetir: partes y Brasas x0,5, PF a `pfRepeat`.
+
+### Vida en la aldea
+NPC con **emotes** al volver (corazón / '!' / moneda / destello tras ganar, '...' / '?' / gota tras perder; algunos hacen la animación `happy`), **ladridos** contextuales al acercarte (Grum con mejoras listas, Vesper con encargo para cobrar o Tablón nuevo, Castaña con ingredientes, Ulalume sin loadouts, Lanudo con logro nuevo; máx. 1 cada 25 s por NPC),
+**marcas "!"**: Vesper (verde = entregable, dorada = Tablón rotado desde tu última visita), **Grum (verde con el número de mejoras forjables)**, Lanudo (logro nuevo) y Castaña (puedes cocinar); aviso al llegar ("Grum tiene N mejoras listas"), cola de avisos y **Noche** tras 3 derrotas seguidas o cada 5 expediciones.
+Las pestañas de la forja muestran un punto verde con el nº de nodos comprables, los PF usados y "COMPLETO".
+
+### Guardado v3 y migración
+`swarmhand.save` pasa a v3: `loadouts` (3 slots), `pending.dish` / `shop.dish`, `ach`, `combosSeen`, `cooked`, `lossStreak`. Migración v1 -> v2 -> v3 sin perder nada (partes, Brasas, rangos, nodos, PF, encargos, flags, jefes vencidos); antes de migrar copia el guardado antiguo en `swarmhand.save.v<n>`; guardado corrupto = cuenta nueva (try/catch) y los campos que falten se rellenan con valores por defecto.
+
+### Pruebas de la Fase 2b (Playwright + Chromium; capturas en `studio/docs/capturas-aldea-2b/`)
+Flujo aldea -> Vesper -> forja (varias etiquetas, ramas excluyentes, reespecializar) -> Ulalume (filtro, anclas, loadout guardado / renombrado / aplicado) -> Castaña (plato) -> Lanudo -> Portal -> expedición con bot -> botín -> aldea (emotes, marcas) -> nueva expedición con el plato en el HUD, con 0 errores de consola,
+persistencia tras recargar, migración v2 -> v3 y guardado roto, y la versión táctil a 844x390 (joystick, HABLAR, forja, deslizar entre pestañas, deshacer, archivo, cocina, tablón, Portal). Cada árbol completo en sus dos variantes A/B se ha jugado 150 s de partida con el bot (con jefe, `?god=1`), más pruebas unitarias de cada efecto (Era glacial, Cripta, Ojo de la tormenta, Neurotoxina, Plaga, Pandemia, Berserker, Sed, Pacto, Bastión) y las peleas de los 3 jefes con las cartas nuevas.
 
 ### Árbol de forja y Puntos de Forja (PF)
 - Cada nodo cuesta **PF + partes + Brasas** (tabla base `L.NODE_TIER` en `loot.js` x `L.COST_MUL.node` = partes x0,8 y Brasas x5, v5: T1 1 PF 8/4 partes 150 Brasas; T2 2 PF 13/6 300; T3 3 PF 20/8 500 + 1 Esencia; T4 4 PF 28/10 750 + 2 Esencias; Rango II 300 Brasas, Rango III 600).
@@ -37,10 +88,10 @@ si no existe, se dibuja un fallback de rectángulos. Luz: Día al abrir o tras g
   Compensación de 2 PF al migrar de v1.
 - **Reespecializar:** botón DESHACER en un nodo (él y sus dependientes: 60 Brasas por PF devuelto, v5) o REESPECIALIZAR el árbol (400 Brasas); devuelve los PF y el **50 % de las partes**; el
   **primer reespecializado es gratis**. Quitar un nodo de carta quita la carta de la colección y de las anclas. Los nodos heredados de v1 no se pueden deshacer.
-- Efectos reales en la run (`G.Tree.fx`, leídos por `cards.js`, `combat.js`, `weapons.js`, `player.js`): Pavesa (quemadura +2 s y +30 %), Ráfaga (cooldown de Chispa -15 %), Metralla (3 fragmentos de 8),
+- Efectos reales en la run de Fuego (`G.Tree.fx`, leídos por `cards.js`, `combat.js`, `weapons.js`, `player.js`; los de los otros 5 árboles están en la tabla de la Fase 2b): Pavesa (quemadura +2 s y +30 %), Ráfaga (cooldown de Chispa -15 %), Metralla (3 fragmentos de 8),
   Napalm (suelo ardiente 2 s, 4 dps, radio 40), Pulmón (+8 % Fuego), Cenizas ardientes (fuego 3 s al morir un quemado), Fundición (escudo del Escudero x0,5 y +15 % a élites/jefe), Corona (3 llamas),
   Cometa (órbita +25 % y +20 % daño), Emblema (3 cartas Fuego: +25 % daño; 4+: Pira, las quemaduras se propagan), Corazón de brasa, Ceniza viva (+20 Ceniza), Tercera ancla.
-- Teclas del panel: flechas mover, **F** forjar / elegir A, **G** elegir B, **U** deshacer nodo, **R** reespecializar, **Q/E** o 1-3 cambian de pestaña, Esc sale. Táctil: tocar un nodo lo selecciona,
+- Teclas del panel: flechas mover, **F** forjar / elegir A, **G** elegir B, **U** deshacer nodo, **R** reespecializar, **Q/E** o 1-7 cambian de pestaña, Esc sale. Táctil: tocar un nodo lo selecciona,
   deslizar en horizontal cambia de pestaña.
 
 ### Economía (v5; histórico en `DESIGN-v3-aldea.md` sección C)
@@ -52,7 +103,7 @@ y su faucet por run (~175 / 226 / 254 a 7 / 9 / 10 min) alcanza para ~1 craft o 
 - **Brasas por run:** `Brasas = 1,5 % de la Ceniza + 18 x (m + 0,04 m^2)` (m = minutos del reloj de la run, `L.BRASAS_MIN` / `L.BRASAS_GROW`; la run larga rinde más que proporcionalmente) + jefe (`DEFS.pastor.brasas` **12** + 4 por parte rota; antes 150 + 40) + 0 por ganar (`L.BRASAS_WIN`; antes 12 % + 10/min + 40).
 - **PF:** sin cambios en costes ni techo (24); la fuente nueva son los fragmentos de minijefe (+1 PF por run si caen los dos). Con ~3 PF por run el cuello son las Brasas, no los PF.
 - **Trueque y tienda (coherentes con la escasez):** trueque 3:1 (Hebra 6:1) y cupos 4 / 3 sin cambios; **vender** baja a 3 Brasas por parte (Hebra 1; antes 6 / 3) para que vender el sobrante no duplique el faucet; tienda sin cambios (Tónico 80, Imán 120, parte 24); reespecializar 60 Brasas por PF o 400 el árbol (antes 40 / 250). Encargos repetidos: partes y Brasas x0,5 (`Quests.REPEAT_MUL`).
-- **Guardado v2** (`swarmhand.save`, `src/save.js`): partes, Brasas, rangos, anclas, PF (+ `pf.frag`), nodos y elecciones, encargos, cupos de Rufo, compras pendientes, flags. Migración automática desde v1; guardado corrupto = empezar de cero (try/catch).
+- **Guardado v3** (`swarmhand.save`, `src/save.js`; el v2 se migra solo, ver 'Fase 2b'): partes, Brasas, rangos, anclas, PF (+ `pf.frag`), nodos y elecciones, encargos, cupos de Rufo, compras pendientes, flags. Migración automática desde v1; guardado corrupto = empezar de cero (try/catch).
 
 | Medido con el bot (8 runs por duración, mismas condiciones) | 7 min antes | 7 min ahora | 9 min antes | 9 min ahora | 10 min antes | 10 min ahora |
 |---|---|---|---|---|---|---|
@@ -104,7 +155,7 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 | Táctil | toque = clic; joystick flotante a la izquierda (aldea y expedición); botón HABLAR 96 px; deslizar = cambiar pestaña |
 
 ## Contenido
-- 26 cartas (16 de ataque + 10 pasivas; el GDD original listaba 28, Bobina y Murciélago no se implementaron), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
+- **28 cartas** (18 de ataque + 10 pasivas): las 26 de siempre + **Bobina** (Rayo, torreta) y **Murciélago** (Sangre, persigue y rebota) de la Fase 2b (las 28 del GDD original), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
 - 12 combos: VAPOR, GAS EXPLOSIVO, CONGELACIÓN, SOBRECARGA, SANGRE ENVENENADA, FRENESÍ, FILO ELÉCTRICO, FILO GÉLIDO, FORJA, PLAGA CONGELADA, PACTO ARDIENTE, DESCARGA TÓXICA.
 - Estados con tinte: quemado (naranja), ralentizado (azul), veneno (verde, apila), sangrado (rojo), aturdido (amarillo).
 - Enemigos (entrada): Gusano 0:00, Arquero 0:45, Espinoso 1:30 (abanico de 3 espinas), Jabalí 2:00, Escudero 2:45 (escudo frontal x0.2: flanquea o usa área/orbitales/estados),
@@ -132,13 +183,13 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 - Consola: `G.Enemies.spawn('blinker', x, y)` crea cualquier tipo (`fanner shield moth sower blinker scorcher mini_bulwark mini_hive boss`).
 - `?biome=cripta|asfodelo` cambia el fondo (y fuerza el destino).
 - **Jefes v4:** `?boss=pastor` salta directo a la pelea (con intro; `&nointro=1` la omite), `?peligro=<n>` (1-5; solo Peligro I tiene UI), `&phase=2|3` empieza en esa fase, `&hp=0.3` fija el HP (fracción), `&hpcal=<n>` sustituye la calibración de HP, `&hand=spark:3,ember:2` carga una mano de prueba (cartas:nivel), `&dbg=1` cuenta el daño por fuente (`boss_salto`, `boss_pisoton`...). Consola: `G.Boss.info()`, `G.Boss.force('salto')`, `G.Boss.breakKey('cuernos')`, `G.Boss.gate()`, `G.Boss.hazards()` (telegrafías activas, lo que usa el bot).
-- `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
+- `?quests=bombs,boars,clean45` fuerza las 3 ofertas del Tablón (ids en `Quests.DEFS`; pruebas). `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
 - `?view=iso` activa la vista inclinada tipo Hades (`?view=flat` la plana); ver su sección.
 - `?len=7` fuerza la duración de la run en minutos (sin tocar el guardado).
 
 ## Estructura
 `src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
-`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v2 con migración) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo, menú) · `tree.js` (árbol de forja) · `quests.js` (encargos) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `boss.js` (jefes v4: fases, ataques, partes, intro, barra, arena) · `assets_boss.js` (arte del Pastor, solo dibujo) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
+`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v3 con migración v1/v2) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo/loadouts, cocina `G.Cook`, logros, menú) · `tree.js` (7 árboles de forja) · `quests.js` (encargos y logros `G.Ach`) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `boss.js` (jefes v4: fases, ataques, partes, intro, barra, arena) · `assets_boss.js` (arte del Pastor, solo dibujo) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
 
 ## Jefes v4 (fase J1): El Pastor Corrupto
 Lógica en `src/boss.js` (arte en `assets_boss.js`, API en `ASSETS_API.md`). Diseño: `DESIGN-v4-jefes.md`. Cambios en otros módulos: `enemies.js` (el jefe vive en `G.enemies`, sus partes son entidades hijas `type:'bosspart'`; troncos bloquean proyectiles; `G.frozen` en la intro), `combat.js` (hooks `Boss.mulIn/afterHit/dealPart` en `deal` y `dot`), `waves.js` (director por fase), `hud.js`, `loot.js`/`save.js`/`base.js`/`panels.js` (trofeos, recompensas, destino del Portal), `player.js` (troncos, invulnerable en la intro), `main.js` (reloj `G.runT`, cámara con zoom).
