@@ -39,7 +39,7 @@
     },
     weak: [{ tag: 'ice', mul: 1.25, phases: [1, 2] }, { tag: 'lightning', mul: 1.25, phases: [3] }],
     resist: [{ tag: 'fire', mul: 0.6 }, { tag: 'poison', mul: 0.5 }],
-    hpCal: 2.45, // J3: 2,6 -> 2,45 (el bot con 10 % de lapsos ganaba el 48 % a Peligro I; objetivo ~65 %). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 7500 x 2,6 = 19500 a 9 min; p50 aislado ~115 s, partida completa (con horda) ~135 s. Karceron resiste Fuego x0,6 y Veneno x0,5 y las manos de prueba (Chispa/Dardo) los usan: con Hielo/Rayo cae mucho antes
+    hpCal: 2.3, // J3: 2,6 -> 2,3 (el bot con 10 % de lapsos ganaba el 48 % a Peligro I; objetivo ~65 %). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 7500 x 2,6 = 19500 a 9 min; p50 aislado ~115 s, partida completa (con horda) ~135 s. Karceron resiste Fuego x0,6 y Veneno x0,5 y las manos de prueba (Chispa/Dardo) los usan: con Hielo/Rayo cae mucho antes
     brasas: 13, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { plate: 2, wick: 2, static: 1 },
     h: { camW: 0.75 }

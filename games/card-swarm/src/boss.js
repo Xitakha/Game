@@ -64,9 +64,9 @@
   //   troph = trofeos por parte rota (2 desde IV), rare = prob. extra de Esencia al vencer, gmul = multiplicador de partes garantizadas, pfx = PF extra la primera vez (III y V).
   var PEL = S.PELIGRO = [null,
     { n: 1, hp: 1.00, dmg: 1.00, tele: 1.00, adds: 0, cap: 4, fury: 150000, part: 1.0, brasas: 1.00, troph: 1, rare: 0,    gmul: 1.00, pfx: 0 },
-    { n: 2, hp: 1.15, dmg: 1.10, tele: 0.95, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.25, troph: 1, rare: 0.15, gmul: 1.25, pfx: 0 },
-    { n: 3, hp: 1.30, dmg: 1.20, tele: 0.95, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50, troph: 1, rare: 0.30, gmul: 1.50, pfx: 1, v3: true, mets: 9 },
-    { n: 4, hp: 1.50, dmg: 1.30, tele: 0.92, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, troph: 2, rare: 0.45, gmul: 1.75, pfx: 0, v3: true, mets: 9, derr: 0.8, regrow: 14000 },
+    { n: 2, hp: 1.15, dmg: 1.10, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.25, troph: 1, rare: 0.15, gmul: 1.25, pfx: 0 },
+    { n: 3, hp: 1.30, dmg: 1.20, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50, troph: 1, rare: 0.30, gmul: 1.50, pfx: 1, v3: true, mets: 9 },
+    { n: 4, hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, troph: 2, rare: 0.45, gmul: 1.75, pfx: 0, v3: true, mets: 9, derr: 0.8, regrow: 14000 },
     { n: 5, hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, troph: 2, rare: 0.60, gmul: 2.00, pfx: 1, v3: true, mets: 9, derr: 0.8, regrow: 14000, x2: true }];
   S.ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
   if (G.pelx) G.pelx.split(',').forEach(function (kv) {   // calibración: ?pelx=hp:1.1,dmg3:1.05 (sin sufijo: niveles II-V; con sufijo: solo ese nivel)
@@ -82,9 +82,15 @@
   S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
   S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
+  // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
+  // 250 ms de reacción + 1000 x salida / 190 + 100 ms de margen de decisión (DESIGN 1.2: "Peligro puede acortar la telegrafía como máximo -15 %"; aquí además se respeta la regla).
+  var EXIT = S.EXIT = { barrido: 95, embestida: 55, pisoton: 60, salto: 130, abanico: 30, esporas: 70, estampida: 55,
+    k_martillo: 100, k_munon: 90, k_grilletes: 115, k_brasas: 65, k_aliento: 130, k_costillas: 20, k_erupcion: 140, k_marea: 218,
+    l_mordisco: 35, l_acido: 60, l_aliento: 60, l_rayo: 55, l_coletazo: 75 };
   function teleMs(name) {
-    var d = ATKS[name], big = d.dmg >= 25;
-    return Math.round(Math.max(d.tele * pel().tele, Math.min(d.tele, big ? 600 : 400)));
+    var d = ATKS[name], big = d.dmg >= 25, t = Math.max(d.tele * pel().tele, Math.min(d.tele, big ? 600 : 400));
+    if (EXIT[name] != null) t = Math.max(t, Math.min(d.tele, 250 + 1000 * EXIT[name] / 190 + 100));
+    return Math.round(t);
   }
 
   var LOGS = [[520, 260], [920, 260], [360, 450], [1080, 450], [560, 620], [880, 620]];
@@ -153,9 +159,11 @@
 
   // ================================================================= UTILIDADES DE COMBATE
   function dmgMul() { return pel().dmg * S.fury; }
+  var HIT_CAP = 32;   // DESIGN 1.0: "el 1.er golpe de un ataque grande nunca pasa de 30": el daño de Peligro (+10 %/nivel) no lo sube de ~32 (la Furia sí multiplica encima)
   function hurt(e, base, src, o) {
     var p = PL(); if (p.dead || S.noHurt > 0) return false;
-    return G.Player.hurt(p, base * dmgMul(), e.x, e.y, o ? (o.src = src, o) : { src: src });
+    var b = base * pel().dmg; if (base <= HIT_CAP && b > HIT_CAP) b = HIT_CAP;
+    return G.Player.hurt(p, b * S.fury, e.x, e.y, o ? (o.src = src, o) : { src: src });
   }
   S.shoot = function (x, y, ang, speed, dmg) {
     var n = 0, L = G.projectiles;
@@ -302,6 +310,7 @@
     fx.shake(10, 700); sfx('boss_roar', { pitch: 0.8 }); fx.ring(e.x, e.y, 20, 260, 700, '#c060ff', 6);
     G.Hud.banner(second ? 'ÚLTIMO ALIENTO: ' + e.def.despair.toUpperCase() : e.def.despair.toUpperCase(), 2400, '#c060ff');
     S.stinger('despair', e);
+    if (second) { var pl = PL(); for (var hi = 0; hi < 2; hi++) G.Combat.dropGem(pl.x + (hi ? 50 : -50), pl.y + 20, 'heart', B.player.heal); }   // Último aliento: 2 corazones (como en cada puerta de fase)
     if (hk(e, 'onDespair')) e.def.h.onDespair(e); else expose(e, 1.25, 9500, 'despair');
     e.despAng = Math.random() * TAU;
     try { Assets.music.setIntensity(1); } catch (x) { /* audio */ }
