@@ -907,6 +907,9 @@
       c.fillStyle = 'rgba(255,210,58,0.9)'; c.fillRect(bx + bw / 2 - bw * 0.3 * wf, by + bh + 3, bw * 0.6 * wf, 3);
       G.txt(c, 'x' + ex.mul.toFixed(2).replace(/0$/, '') + ' ' + (ex.kind === 'stun' ? 'ATURDIDO' : ex.kind === 'derribo' ? 'DERRIBO' : ex.kind === 'despair' ? 'EXPUESTO' : 'VENTANA'), bx + bw / 2, by + bh + 14, 11, '#ffd24a', 'center');
     }
+    // nombre del ataque en telegrafía (regla 1 del diseño: cada ataque tiene nombre); Letea puede tener varios a la vez
+    var an = e.def.h && e.def.h.attackNames ? e.def.h.attackNames(e) : (e.atk && e.atk.step === 'tele' ? [e.atk.def.name] : []);
+    if (an.length && e.mode !== 'gate') G.txt(c, an.join('  +  ').toUpperCase(), bx + bw / 2, by + bh + (ex.mul > 1 ? 32 : 18), 12, '#ffb0a0', 'center');
     // marcas de partes (bajo la barra, a la izquierda)
     var px = bx + 4, py = by + bh + 10, names = Object.keys(D.parts);
     for (var j = 0; j < names.length; j++) {

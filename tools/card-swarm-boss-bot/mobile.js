@@ -1,6 +1,8 @@
+// uso: node mobile.js [boss=pastor] [puerto=8765]
 // prueba táctil 844x390: joystick flotante con touch events + intro con salto por toque + fps durante la pelea
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
-const OUT = '/home/user/Game/studio/docs/capturas-jefes-j1-logica/';
+const BOSS = process.argv[2] || 'pastor', PORT = process.argv[3] || 8765;
+const OUT = '/home/user/Game/studio/docs/' + (BOSS === 'pastor' ? 'capturas-jefes-j1-logica/' : 'capturas-jefes-j2-logica/');
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
@@ -8,9 +10,9 @@ const OUT = '/home/user/Game/studio/docs/capturas-jefes-j1-logica/';
   const errs = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
-  await pg.goto('http://localhost:8765/index.html?boss=pastor&god=1&reset=1&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1&hpcal=3.5');
+  await pg.goto('http://localhost:' + PORT + '/index.html?boss=' + BOSS + '&god=1&reset=1&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1&hpcal=3.5');
   await pg.waitForTimeout(1500);
-  await pg.screenshot({ path: OUT + 'm1_intro_844x390.png' });
+  await pg.screenshot({ path: OUT + 'm1_intro_844x390_' + BOSS + '.png' });
   await pg.waitForTimeout(3200);
   // joystick: toque en la mitad izquierda y arrastre
   const cdp = await ctx.newCDPSession(pg);
@@ -18,7 +20,7 @@ const OUT = '/home/user/Game/studio/docs/capturas-jefes-j1-logica/';
   const p0 = await pg.evaluate(() => ({ x: G.player.x, y: G.player.y }));
   await tp('touchStart', 100, 250); await tp('touchMove', 160, 250);
   await pg.waitForTimeout(1200);
-  await pg.screenshot({ path: OUT + 'm2_combate_844x390.png' });
+  await pg.screenshot({ path: OUT + 'm2_combate_844x390_' + BOSS + '.png' });
   const p1 = await pg.evaluate(() => ({ x: G.player.x, y: G.player.y }));
   await tp('touchEnd');
   console.log('joystick movio al jugador', JSON.stringify(p0), '->', JSON.stringify(p1));

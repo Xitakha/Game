@@ -39,9 +39,10 @@
     },
     weak: [{ tag: 'ice', mul: 1.25, phases: [1, 2] }, { tag: 'lightning', mul: 1.25, phases: [3] }],
     resist: [{ tag: 'fire', mul: 0.6 }, { tag: 'poison', mul: 0.5 }],
-    hpCal: 4.0, brasas: 13, brasasPart: 4, pf: 2, pfFirst: 3,
+    hpCal: 2.6, // calibrado con el bot (README, Jefes v4 J2): 7500 x 2,6 = 19500 a 9 min; p50 aislado ~115 s, partida completa (con horda) ~135 s. Karceron resiste Fuego x0,6 y Veneno x0,5 y las manos de prueba (Chispa/Dardo) los usan: con Hielo/Rayo cae mucho antes
+    brasas: 13, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { plate: 2, wick: 2, static: 1 },
-    h: { camW: 0.6 }
+    h: { camW: 0.75 }
   };
   var D = S.DEFS.karceron, H = D.h;
   [['mace', 'trophy_karceron_mace', 'Nudillo de Magma'], ['shackle', 'trophy_karceron_shackle', 'Grillete Ardiente'], ['core', 'trophy_karceron_core', 'Núcleo Latente']].forEach(function (t) {
@@ -231,7 +232,8 @@
   };
   function impact(e, m) {   // un meteoro cae
     var p = PL(), a = A();
-    fx.part('explosion', m.x, m.y, 0, 0, 380, { sc: 1.2, add: true, anim: true }); fx.shockwave(m.x, m.y, m.r * 2); fx.shake(4, 140); sfx('explosion', { vol: 0.5, pitch: 1.1 });
+    fx.part('explosion', m.x, m.y, 0, 0, 380, { sc: 1.2, add: true, anim: true }); fx.shockwave(m.x, m.y, m.r * 2);
+    if (G.hasSpr('fx_lava_splash')) fx.part('fx_lava_splash', m.x, m.y - 10, 0, 0, 400, { sc: m.r / 30, anim: true }); fx.shake(4, 140); sfx('explosion', { vol: 0.5, pitch: 1.1 });
     fx.burst(m.x, m.y, 8, '#ffb040', 220, 500, 4, { add: true });
     if (!p.dead && Math.hypot(p.x - m.x, p.y - m.y) <= m.r + 2) hurt(e, m.dmg, 'boss_brasas', { kb: 1.1 });
     if (m.puddles) a.puddles.push({ x: m.x, y: m.y, r: 26, t: 0, life: 3000 });
@@ -257,7 +259,7 @@
     go: function (e, A0) {
       var p = PL(), a = A();
       fx.shake(8, 220); fx.hit(40); sfx('hit_heavy', { pitch: 0.55, vol: 0.9 }); sfx('explosion', { pitch: 0.8, vol: 0.6 });
-      fx.dust(A0.tx, A0.ty, 12); fx.shockwave(A0.tx, A0.ty, 200); fx.burst(A0.tx, A0.ty, 10, '#ff8a2a', 200, 500, 4, { add: true });
+      fx.dust(A0.tx, A0.ty, 12); fx.shockwave(A0.tx, A0.ty, 200); if (G.hasSpr('fx_lava_splash')) fx.part('fx_lava_splash', A0.tx, A0.ty - 10, 0, 0, 450, { sc: 3.2, anim: true }); fx.burst(A0.tx, A0.ty, 10, '#ff8a2a', 200, 500, 4, { add: true });
       a.cracks.push({ x: A0.tx, y: A0.ty, t: G.time, r: A0.r }); a.mace = { x: A0.tx, y: A0.ty };
       if (!p.dead && Math.hypot(p.x - A0.tx, p.y - A0.ty) <= A0.r) hurt(e, A0.def.dmg, 'boss_martillo', { kb: 1.5 });
       pillarsInArc(e, A0.tx, A0.ty, 0, A0.r + 30, 0, TAU, breakPillar);

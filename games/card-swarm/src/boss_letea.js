@@ -37,9 +37,10 @@
     },
     weak: [{ tag: 'blood', mul: 1.25, phases: [1, 2] }, { tag: 'poison', mul: 1.25, phases: [3] }, { tag: 'lightning', mul: 1.1, phases: [1, 2, 3] }],
     resist: [{ tag: 'ice', mul: 0.8 }],
-    hpCal: 4.0, brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3,
+    hpCal: 3.5, // calibrado con el bot (README, Jefes v4 J2): 6600 x 3,5 = 23100 a 9 min; p50 aislado ~122 s, partida completa (con horda) ~140 s
+    brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { spine: 2, frost: 2, fang: 1 },
-    h: { camW: 0.4 }
+    h: { camW: 0.55 }
   };
   var D = S.DEFS.letea, H = D.h;
   [['acid', 'trophy_letea_acid', 'Colmillo Ácido'], ['ice', 'trophy_letea_ice', 'Perla Helada'], ['bolt', 'trophy_letea_bolt', 'Ojo Tormentoso']].forEach(function (t) {
@@ -98,6 +99,11 @@
     var a = A(), m = 0;
     for (var k in a.slots) { var A0 = a.slots[k].A; if (A0 && A0.sig && A0.step === 'tele') m = Math.max(m, Math.min(1, A0.t / A0.tele)); }
     return m;
+  };
+  H.attackNames = function (e) {
+    var a = A(), out = [];
+    for (var k in a.slots) { var A0 = a.slots[k].A; if (A0 && A0.step === 'tele' && A0.def && (A0.def.dmg > 0 || A0.def.name)) out.push(A0.def.name); }
+    return out;
   };
   H.sigNow = function (e) { var a = A(); for (var k in a.slots) { var A0 = a.slots[k].A; if (A0 && A0.sig && A0.step !== 'rec') return true; } return false; };
   H.clear = function (e) {
@@ -243,7 +249,7 @@
     for (i = 0; i < opts.length; i++) {
       n = opts[i];
       if ((S.cds[n] || 0) > 0) continue;
-      if (n === 'l_mordisco' && (d > 320 || P >= 2)) continue;
+      if (n === 'l_mordisco' && (d > 340 || P >= 3)) continue;
       if (n === 'l_aliento' && (d < 30 || d > 400)) continue;
       e.lastHead = k + n; return n;
     }
@@ -267,7 +273,7 @@
 
   // ------------------------------------------------------------------ ataques
   function def(name, o) { o.b = 'letea'; ATKS[name] = o; }
-  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 3200,  dmg: 22, phases: [1, 2, 3] });
+  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 2800,  dmg: 22, phases: [1, 2, 3] });
   def('l_acido',      { name: 'Escupitajo ácido',    tele: 900,  cd: 10000, dmg: 8,  phases: [1, 2, 3] });
   def('l_aliento',    { name: 'Aliento helado',      tele: 900,  cd: 9000,  dmg: 14, phases: [1, 2, 3] });
   def('l_rayo',       { name: 'Rayo del cielo',      tele: 1000, cd: 10000, dmg: 22, phases: [1, 2, 3] });
@@ -403,7 +409,7 @@
     act: function (e, A0) {
       if (A0.t >= A0.actMs) {
         var p = PL();
-        fx.shake(9, 300); fx.hit(40); sfx('explosion', { pitch: 0.8, vol: 0.9 }); fx.shockwave(A0.tx, A0.ty, 300); fx.burst(A0.tx, A0.ty, 24, '#bfeaff', 320, 700, 5, { add: true }); fx.ring(A0.tx, A0.ty, 20, A0.r, 400, '#ffffff', 6);
+        fx.shake(9, 300); fx.hit(40); sfx('explosion', { pitch: 0.8, vol: 0.9 }); fx.shockwave(A0.tx, A0.ty, 300); if (G.hasSpr('fx_water_splash')) fx.part('fx_water_splash', A0.tx, A0.ty - 10, 0, 0, 450, { sc: 4, anim: true }); fx.burst(A0.tx, A0.ty, 24, '#bfeaff', 320, 700, 5, { add: true }); fx.ring(A0.tx, A0.ty, 20, A0.r, 400, '#ffffff', 6);
         if (!p.dead && Math.hypot(p.x - A0.tx, p.y - A0.ty) <= A0.r) hurt(e, A0.def.dmg, 'boss_sumersion', { kb: 1.6 });
         emerge(e, A0); return true;
       }
