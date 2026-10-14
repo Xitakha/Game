@@ -65,8 +65,10 @@
   fx.drawCorpses = function (c) {
     for (var i = 0; i < fx.corpses.length; i++) {
       var p = fx.corpses[i], cv = Assets.animFrame(p.spr, 'die', p.t), dur = Assets.animDuration(p.spr, 'die');
+      G.Proj.up(c, p.x, p.y);
       fx.spr(c, Assets.sprite('shadow', 0), p.x, p.y + cv.height / 2 - 6, { alpha: Math.max(0, 0.6 * (1 - p.t / (dur + 300))) });
       fx.spr(c, cv, p.x, p.y, { flip: p.flip, alpha: p.t > dur ? Math.max(0, 1 - (p.t - dur) / 300) : 1 });
+      G.Proj.down(c);
     }
   };
   fx.spark = function (x, y, n, ang) {
@@ -159,12 +161,15 @@
     for (i = 0; i < fx.parts.length; i++) {
       p = fx.parts[i];
       var cv = Assets.sprite(p.name, p.anim ? Math.min(Assets.frames(p.name) - 1, Math.floor((1 - p.life / p.max) * Assets.frames(p.name))) : p.f);
+      var ground = p.name === 'shockwave';   // la onda de choque es de suelo (se aplasta); el resto de partículas están de pie
+      if (!ground) G.Proj.up(c, p.x, p.y);
       c.save();
       if (p.add) c.globalCompositeOperation = 'lighter';
       c.globalAlpha = Math.max(0, Math.min(1, p.life / p.max));
       c.translate(Math.round(p.x), Math.round(p.y)); if (p.rot) c.rotate(p.rot); c.scale(p.sc, p.sc);
       c.drawImage(cv, -cv.width / 2, -cv.height / 2);
       c.restore();
+      if (!ground) G.Proj.down(c);
     }
     for (i = 0; i < fx.slashes.length; i++) {
       p = fx.slashes[i]; u = p.t / p.max;
@@ -194,9 +199,11 @@
     }
     for (i = 0; i < fx.nums.length; i++) {
       p = fx.nums[i]; u = p.t / p.max;
+      G.Proj.up(c, p.x, p.y);   // los números de daño nunca se aplastan: siguen a la entidad proyectada
       c.save(); c.globalAlpha = u < 0.7 ? 1 : 1 - (u - 0.7) / 0.3;
       G.txt(c, p.text, Math.round(p.x), Math.round(p.y), p.size, p.color, 'center');
       c.restore();
+      G.Proj.down(c);
     }
   };
 })();

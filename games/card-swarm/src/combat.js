@@ -356,9 +356,9 @@
     var t = G.time / 1000;
     for (var i = 0; i < G.gems.length; i++) {
       var g = G.gems[i];
-      if (g.x < G.cam.x - 20 || g.x > G.cam.x + G.W + 20 || g.y < G.cam.y - 20 || g.y > G.cam.y + G.H + 20) continue;
+      if (g.x < G.cam.x - 20 || g.x > G.cam.x + G.W + 20 || g.y < G.cam.y - 20 || g.y > G.cam.y + G.VH + 20) continue;
       var bob = Math.sin(t * 5 + i) * 1.5, x = Math.round(g.x), y = Math.round(g.y + bob);
-      c.save();
+      G.Proj.up(c, g.x, g.y); c.save();
       if (g.kind === 'part' && g.trophy && G.Boss.TROPHY[g.trophy]) {   // trofeo de jefe
         c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = '#ffd27a';
         c.beginPath(); c.arc(x, y, 14, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
@@ -377,7 +377,7 @@
         c.beginPath(); c.moveTo(x, y - r - 1); c.lineTo(x + r, y); c.lineTo(x, y + r + 1); c.lineTo(x - r, y); c.closePath(); c.fill(); c.stroke();
         c.fillStyle = 'rgba(255,255,255,0.7)'; c.fillRect(x - 1, y - r + 1, 2, 2);
       }
-      c.restore();
+      c.restore(); G.Proj.down(c);
     }
   };
 

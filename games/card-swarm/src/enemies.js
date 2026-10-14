@@ -1021,16 +1021,23 @@
   E.drawProjectiles = function (c) {
     for (var i = 0; i < G.projectiles.length; i++) {
       var q = G.projectiles[i];
-      if (q.team === 'p') { G.Weapons.drawProj(c, q); continue; }
+      G.Proj.up(c, q.x, q.y);   // vista inclinada: proyectil de pie, con la dirección visual proyectada (Proj.ang)
+      drawOneProj(c, q);
+      G.Proj.down(c);
+    }
+  };
+  function drawOneProj(c, q) {
+    {
+      if (q.team === 'p') { G.Weapons.drawProj(c, q); return; }
       if (q.orb) {   // orbe de hielo: halo procedural + sprite si existe
         c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(127,212,255,' + (0.35 + 0.1 * Math.sin(q.t / 60)) + ')';
         c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r + 5, 0, 6.283); c.fill(); c.restore();
-        if (!q.spr) { c.save(); c.fillStyle = '#bfeaff'; c.strokeStyle = '#4aa8ff'; c.lineWidth = 2; c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r - 1, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x - 1, q.y - 1, 3, 0, 6.283); c.fill(); c.restore(); continue; }
+        if (!q.spr) { c.save(); c.fillStyle = '#bfeaff'; c.strokeStyle = '#4aa8ff'; c.lineWidth = 2; c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r - 1, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x - 1, q.y - 1, 3, 0, 6.283); c.fill(); c.restore(); return; }
       }
-      if (q.kind === 'shieldbit') { E.shieldBit(c, q.x, q.y, q.t / 60, 0.4); continue; }
-      if (!q.spr) continue;
+      if (q.kind === 'shieldbit') { E.shieldBit(c, q.x, q.y, q.t / 60, 0.4); return; }
+      if (!q.spr) return;
       var cv = Assets.sprite(q.spr, Math.floor(q.t / 100) % 2);
-      G.fx.spr(c, cv, q.x, q.y, { rot: q.orb ? 0 : q.ang });
+      G.fx.spr(c, cv, q.x, q.y, { rot: q.orb ? 0 : G.Proj.ang(q.ang) });
     }
-  };
+  }
 })();

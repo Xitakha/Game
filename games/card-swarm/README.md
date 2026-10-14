@@ -69,6 +69,18 @@ El "antes" (3-4 cartas por run) coincide con lo que contó el dueño; el bot es 
 ## Teclas de la forja anterior
 La Base de una página (`base.js`) ya no existe como pantalla: `base.js` conserva el botín y el lanzador; la colección vive en el Archivo.
 
+## Vista inclinada tipo Hades (Nivel 1, `src/view.js`)
+Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distancias, movimiento e input siguen en el plano plano de siempre (arriba = arriba en pantalla).
+- **Activación:** `?view=iso` (o `?view=flat` para forzar la plana) y **Ajustes > "Vista inclinada (exped.)"** en el menú de Rescoldo (se guarda en `settings.view` del save, con try/catch). Por defecto, la vista plana. La URL gana al save.
+- **Cómo funciona:** el mundo se dibuja con `ctx.scale(1, G.B.isoK)` (`isoK` = 0,62; ajustable 0,5-0,75, constante nombrada en `main.js`/`view.js`). Todo lo que es SUELO (zonas de cartas y enemigas, telegrafías del jefe y minijefes: círculos, conos, arcos, carriles, anillos, ondas, esporas, aura, anillos y rayos de fx, resplandor ritual, niebla) se dibuja igual dentro de esa transformación, así que el borde visual coincide exactamente con el área lógica de daño (elipses, conos y carriles aplastados). Todo lo DE PIE (jugador, enemigos, jefe, troncos, cadáveres, gemas, proyectiles, órbitas, partículas, números de daño, barras de vida, llamas de antorcha) se envuelve en `Proj.up(c, x, y[, foot])` / `Proj.down(c)`, que deshace el aplastado alrededor del punto lógico: el sprite se ve sin deformar, centrado en `(x, y*isoK)`, ordenado por y (`sortY`). Jefe y minijefes usan pivote en los pies (`Proj.footOf`: 88 / 24 px) para que sus pies caigan en `(y+foot)*isoK`.
+- **Suelo:** `Assets.arena` se pre-renderiza UNA vez en un canvas offscreen ya aplastado (`Proj.flatten`, cacheado por canvas de origen; se rehace al cambiar de bioma). Sin trapecio (se priorizó el aplastado simple). Limitación: los props que `Assets.arena` hornea en el suelo (columnas, lápidas, postes de antorcha, velas) quedan aplastados a 0,62; las llamas se bajan para casar con el poste aplastado.
+- **Proyectiles:** de pie, con dirección visual proyectada (`Proj.ang(a) = atan2(sin a * K, cos a)`). Suelo y zonas, en cambio, giran en el plano lógico y se aplastan solas.
+- **Cámara:** la arena aplastada (1440 x 810 x 0,62 = 502 px) cabe en la altura de 540: en vista inclinada la cámara solo se desplaza en horizontal (`G.VH` = alto lógico visible = H / K; `Proj.clampCamY` centra la arena si cabe). `G.VH` lo usan culling de gemas, objetivo automático de armas y la intro del jefe. HUD, cartas, barra del jefe y UI no se proyectan. El apuntado con ratón no existe en la expedición, pero `Proj.unx/uny` (`y_lógica = y_pantalla / isoK`) queda listo.
+- **Aldea (Rescoldo):** NO se proyecta: `Assets.drawVillage` es un fondo pintado con su propia perspectiva lateral (no es un suelo plano), aplastarlo lo estropearía. La opción solo afecta a las expediciones.
+- **Nivel 2 (isométrica 45°):** solo hay que cambiar `Proj.begin` (matriz del mundo), `Proj.up` / `Proj.ang` / `Proj.un*` (la inversa) y `Proj.flatten` (pre-render del suelo); ningún dibujo de juego tendría que tocarse.
+- **Rendimiento (Chromium headless, render por software, 960x540):** horda 60 fps plana / 60 iso; jefe 55,5 / 53,8 (fase 2 con ataque 56,8 / 59,0); estrés con 110 enemigos añadidos ~50 fps en ambas. Sin regresión en la plana (`Proj.up/down` son no-ops).
+- **Herramientas:** `tools/card-swarm-iso/` (`caps.js` capturas plana/iso, `merge.py` las une lado a lado, `perf.js` fps + toggle + táctil, `stress.js`). Capturas en `studio/docs/capturas-vista-iso/*_lado.png`.
+
 ## Cómo se juega
 - Muévete esquivando al enjambre. Las cartas atacan solas; cada una muestra su cooldown girando.
 - Matar suelta gemas verdes (XP), naranjas (Ceniza) y, a veces, corazones. Al subir de nivel eliges 1 de 3 cartas.
@@ -121,6 +133,7 @@ La Base de una página (`base.js`) ya no existe como pantalla: `base.js` conserv
 - `?biome=cripta|asfodelo` cambia el fondo (y fuerza el destino).
 - **Jefes v4:** `?boss=pastor` salta directo a la pelea (con intro; `&nointro=1` la omite), `?peligro=<n>` (1-5; solo Peligro I tiene UI), `&phase=2|3` empieza en esa fase, `&hp=0.3` fija el HP (fracción), `&hpcal=<n>` sustituye la calibración de HP, `&hand=spark:3,ember:2` carga una mano de prueba (cartas:nivel), `&dbg=1` cuenta el daño por fuente (`boss_salto`, `boss_pisoton`...). Consola: `G.Boss.info()`, `G.Boss.force('salto')`, `G.Boss.breakKey('cuernos')`, `G.Boss.gate()`, `G.Boss.hazards()` (telegrafías activas, lo que usa el bot).
 - `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
+- `?view=iso` activa la vista inclinada tipo Hades (`?view=flat` la plana); ver su sección.
 - `?len=7` fuerza la duración de la run en minutos (sin tocar el guardado).
 
 ## Estructura

@@ -684,7 +684,7 @@
     if (!I || !e) { G.cam.zoom = 1; return { x: tx, y: ty }; }
     var t = I.t, w = t < 800 ? ease(t / 800) : t < 2400 ? 1 : 1 - ease((t - 2400) / 900);
     G.cam.zoom = 1 + 0.15 * (1 - ease(t / 800)) * (t < 2400 ? 1 : 0);
-    var bx = G.clamp(e.x - G.W / 2, 0, G.AW - G.W), by = G.clamp(e.y - 40 - G.H / 2, 0, G.AH - G.H);
+    var bx = G.clamp(e.x - G.W / 2, 0, G.AW - G.W), by = G.Proj.clampCamY(e.y - 40 - G.VH / 2);
     return { x: tx + (bx - tx) * w, y: ty + (by - ty) * w };
   };
 
@@ -748,8 +748,8 @@
   };
   // elementos que se ordenan en profundidad con el resto (troncos, fantasma de la muerte)
   S.items = function (list) {
-    for (var i = 0; i < S.obs.length; i++) { var o = S.obs[i]; if (!o.dead) list.push({ y: o.y + 8, draw: drawLog, o: o }); }
-    if (S.dying && S.dying.dt < 3200) list.push({ y: S.dying.y + 88, draw: S.drawGhost });
+    for (var i = 0; i < S.obs.length; i++) { var o = S.obs[i]; if (!o.dead) list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: drawLog, o: o }); }
+    if (S.dying && S.dying.dt < 3200) list.push({ y: S.dying.y + 88, ux: S.dying.x, uy: S.dying.y, foot: 88, draw: S.drawGhost });
   };
   function drawLog(c, it) {
     var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
@@ -757,7 +757,7 @@
   }
   S.drawGround = function (c) {
     var i, e = S.e, t = G.time, cam = G.cam;
-    for (i = 0; i < S.rubble.length; i++) { var rb = S.rubble[i]; c.drawImage(Assets.sprite('obs_log', 2), Math.round(rb.x - 32), Math.round(rb.y - 40)); }
+    for (i = 0; i < S.rubble.length; i++) { var rb = S.rubble[i]; G.Proj.up(c, rb.x, rb.y); c.drawImage(Assets.sprite('obs_log', 2), Math.round(rb.x - 32), Math.round(rb.y - 40)); G.Proj.down(c); }
     for (i = 0; i < S.briers.length; i++) {
       var b = S.briers[i], sp = Assets.sprite('fx_thorn_patch', [0, 1, 2, 1][Math.floor(b.t / 330) % 4]), w = b.r * 2.6, h = w * 0.7;
       c.drawImage(sp, Math.round(b.x - w / 2), Math.round(b.y - h * 0.68), w, h);
@@ -765,8 +765,8 @@
     if (S.insetOn && S.inset > 1) drawInset(c);
     for (i = 0; i < S.spikes.length; i++) {
       var s = S.spikes[i], fr = s.t < 250 ? Math.floor(s.t / 85) : s.t > s.life - 300 ? 3 : 2;
-      c.save(); c.globalAlpha = s.t > s.life - 300 ? (s.life - s.t) / 300 : 1;
-      c.drawImage(Assets.sprite('fx_boss_spike', Math.min(3, fr)), Math.round(s.x - 14), Math.round(s.y - 42)); c.restore();
+      G.Proj.up(c, s.x, s.y); c.save(); c.globalAlpha = s.t > s.life - 300 ? (s.life - s.t) / 300 : 1;
+      c.drawImage(Assets.sprite('fx_boss_spike', Math.min(3, fr)), Math.round(s.x - 14), Math.round(s.y - 42)); c.restore(); G.Proj.down(c);
     }
     for (i = 0; i < S.waves.length; i++) drawWave(c, S.waves[i]);
     if (e && e.atk && e.atk.step !== 'rec') {
@@ -781,7 +781,7 @@
     c.fillStyle = 'rgba(255,90,20,' + (0.18 * pulse + 0.1) + ')';
     c.fillRect(m, m, G.AW - 2 * m, band); c.fillRect(m, G.AH - m - band, G.AW - 2 * m, band); c.fillRect(m, m + band, band, G.AH - 2 * m - 2 * band); c.fillRect(G.AW - m - band, m + band, band, G.AH - 2 * m - 2 * band);
     var T = 44, sprOk = G.hasSpr('fx_fire_cell');
-    function tile(x, y, k) { if (x + T < a.x || x > a.x + G.W || y + T < a.y || y > a.y + G.H) return; if (sprOk) c.drawImage(Assets.sprite('fx_fire_cell', Math.floor(G.time / 110 + k) % 3), Math.round(x), Math.round(y), T, T); }
+    function tile(x, y, k) { if (x + T < a.x || x > a.x + G.W || y + T < a.y || y > a.y + G.VH) return; if (sprOk) c.drawImage(Assets.sprite('fx_fire_cell', Math.floor(G.time / 110 + k) % 3), Math.round(x), Math.round(y), T, T); }
     for (i = 0, n = Math.ceil((G.AW - 2 * m) / T); i < n; i++) { tile(m + i * T, m + band - T * 0.85, i); tile(m + i * T, G.AH - m - band - T * 0.15, i + 3); }
     for (i = 0, n = Math.ceil((G.AH - 2 * m) / T); i < n; i++) { tile(m + band - T * 0.85, m + i * T, i + 1); tile(G.AW - m - band - T * 0.15, m + i * T, i + 5); }
     c.restore();

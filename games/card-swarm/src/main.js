@@ -1,6 +1,6 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
    Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
-   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=. Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
+   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
   var G = window.G = {};
@@ -233,7 +233,7 @@
     G.Waves.reset();
     G.Boss.reset();
     G.cam.x = G.clamp(G.player.x - G.W / 2, 0, G.AW - G.W);
-    G.cam.y = G.clamp(G.player.y - G.H / 2, 0, G.AH - G.H);
+    G.cam.y = G.Proj.clampCamY(G.player.y - G.VH / 2);
   };
 
   G.startGame = function () {
@@ -282,7 +282,7 @@
     G.Hud.update(dt);
     G.fx.update(dt);
     var p = G.player;
-    var tx = G.clamp(p.x - G.W / 2, 0, G.AW - G.W), ty = G.clamp(p.y - G.H / 2, 0, G.AH - G.H);
+    var tx = G.clamp(p.x - G.W / 2, 0, G.AW - G.W), ty = G.Proj.clampCamY(p.y - G.VH / 2);
     var ct = G.Boss.camTarget(tx, ty);   // la intro del jefe desplaza la cámara y hace zoom
     G.cam.x += (ct.x - G.cam.x) * 0.15; G.cam.y += (ct.y - G.cam.y) * 0.15;
     if (p.dead) { G.deadT += dt; if (G.deadT > 900) G.finish(false); return; }
@@ -338,10 +338,9 @@
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
-    var zm = G.cam.zoom || 1;
+    var zm = G.cam.zoom || 1, P = G.Proj, i;
     if (zm !== 1) { ctx.translate(G.W / 2, G.H / 2); ctx.scale(zm, zm); ctx.translate(-G.W / 2, -G.H / 2); }
-    ctx.translate(-Math.round(G.cam.x + off.x), -Math.round(G.cam.y + off.y));
-    ctx.drawImage(G.ground, 0, 0);
+    P.begin(ctx, G.ground, G.cam.x, G.cam.y, off.x, off.y);   // vista inclinada: suelo prerrenderizado aplastado y mundo con scale(1, isoK); plana: como siempre
     G.Combat.drawZones(ctx);
     G.Weapons.drawGround(ctx);
     G.Enemies.drawGround(ctx);
@@ -350,16 +349,25 @@
     G.Combat.drawGems(ctx);
     var items = G.enemies.filter(function (q) { return q.type !== 'bosspart'; }); items.push(G.player); G.Boss.items(items);
     items.sort(function (a, b) { return (a.sortY != null ? a.sortY : a.y) - (b.sortY != null ? b.sortY : b.y); });
-    for (var i = 0; i < items.length; i++) {
-      if (items[i] === G.player) G.Player.draw(ctx, G.player); else if (items[i].draw) items[i].draw(ctx, items[i]); else G.Enemies.draw(ctx, items[i]);
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      P.up(ctx, it.ux != null ? it.ux : it.x, it.uy != null ? it.uy : it.y, P.footOf(it));   // sprites de pie, anclados al punto lógico
+      if (it === G.player) G.Player.draw(ctx, G.player); else if (it.draw) it.draw(ctx, it); else G.Enemies.draw(ctx, it);
+      P.down(ctx);
     }
     G.Weapons.drawAir(ctx);
     G.Enemies.drawProjectiles(ctx);
     G.fx.draw(ctx);
     var tt = performance.now();
     if (G.ritual) Assets.drawRitualGlow(ctx, G.ritual.x, G.ritual.y, tt, G.ritual.r);
-    for (var ti = 0; ti < G.torches.length; ti++) Assets.drawTorchFire(ctx, G.torches[ti].x, G.torches[ti].y, tt, G.torches[ti].o);
-    Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: 60, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.H } });
+    for (var ti = 0; ti < G.torches.length; ti++) {
+      var tq = G.torches[ti];
+      P.up(ctx, tq.x, tq.y);
+      if (P.iso) ctx.translate(0, ((tq.o && tq.o.candle ? Assets.sprite('candle').height * 1.35 : Assets.sprite('torch').height)) * (1 - P.K));   // el poste horneado en el suelo está aplastado: la llama baja con él
+      Assets.drawTorchFire(ctx, tq.x, tq.y, tt, tq.o);
+      P.down(ctx);
+    }
+    Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: 60, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
     Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: 2 });
     ctx.restore();
     ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
@@ -383,6 +391,7 @@
     G.ctx = ctx; canvas.focus();
     bindInput();
     G.Save.applyUrl();
+    G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();
     var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }
