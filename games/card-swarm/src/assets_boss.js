@@ -520,7 +520,7 @@
   function chain() { var m = arguments[0], i; for (i = 1; i < arguments.length; i++) m = mM(m, arguments[i]); return m; }
 
   // ===================================================================== PASTOR: pose (todo en espacio L: origen = suelo bajo el centro del cuerpo, +x = adelante, +y = abajo)
-  var GY = 44;                     // el origen del suelo esta GY px por debajo de la posicion logica (x,y) de la entidad
+  var GY = 88;                     // el origen del suelo esta GY px por debajo de la posicion logica (x,y) de la entidad
   var NAMES = ['barrido', 'embestida', 'pisoton', 'salto', 'abanico', 'llamada', 'esporas', 'estampida', 'extasis'];
   var DEATH_MS = 3200;
   var HS = 0.78;                   // escala de dibujo de los cuernos

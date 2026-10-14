@@ -232,13 +232,13 @@
   function bossDraw(t) {
     if (!A.bossIds) return; var c = $('bossCv'), x = c.getContext('2d'), id = $('bid').value || 'pastor';
     x.imageSmoothingEnabled = false; x.drawImage(ground, 0, 0);
-    var s = bossState(t), bx = 480, by = 270;
+    var s = bossState(t), bx = 480, by = 250;
     if (s.w && $('btele').checked && s.windup) {
       var f = s.facing, k = BCOL[s.w], o = { p: s.pp, a: f > 0 ? 0 : Math.PI, sig: s.w === 'embestida' || s.w === 'salto' || s.w === 'pisoton' };
       if (k === 'arc') { o.r = 190; } if (k === 'rect') { o.w = 90; o.len = 420; } if (k === 'ring') { o.r = 300; o.th = 24; o.gap = Math.PI / 3; o.a = f > 0 ? Math.PI : 0; } if (k === 'circle') { o.r = 120; } if (k === 'cone') { o.r = 300; } if (k === 'summon') { o.r = 150; } if (k === 'spore') { o.r = 60; }
-      A.drawBossTele(x, k, bx, by + 44, o);
+      A.drawBossTele(x, k, bx, by, o);
     }
-    if (s.w === 'pisoton' && s.strike) A.drawBossWave(x, bx, by + 44, 40 + 260 * s.pp, { gap: Math.PI / 3, a: s.facing > 0 ? Math.PI : 0 });
+    if (s.w === 'pisoton' && s.strike) A.drawBossWave(x, bx, by, 40 + 260 * s.pp, { gap: Math.PI / 3, a: s.facing > 0 ? Math.PI : 0 });
     if (s.desperate) A.drawBossArenaTint(x, 960, 540, t, 1);
     if ($('bplayer').checked) { var pl = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl, 250 - 24, 330 - 24); }
     A.drawBoss(id, x, bx, by, s);

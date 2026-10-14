@@ -200,3 +200,115 @@ Ancla = bottom-center salvo cielo/suelo (origen 0,0 a 960x540). Tamano final:
 - Orden de dibujo: cada prop tiene `sort`; los actores usan SUS PIES (`y`). Marlo con `y` > 308 queda delante de los edificios; con y<308 detras.
 - `Assets.drawVillageLight(ctx,t,opts)` incluye vineta y el brillo del portal. Coste medido: ~5 ms/frame para `drawVillage` completo (Chromium headless).
 - Vista previa: `tools/asset-preview/index.html?game=card-swarm` (seccion "Aldea Rescoldo": hora, animacion de NPC, colisiones). Capturas: `studio/docs/capturas-aldea/`.
+
+
+---
+# Jefes v4 (J1): Pastor Corrupto, centauro-carnero (src/assets_boss.js, cargado tras assets_village.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Estilo del juego (contorno grueso, color plano + sombra + brillo). Tamanos "final" = base x2. Todo mira a la DERECHA (el dibujo compuesto voltea con `facing`). `t` SIEMPRE en ms. Diseno: `DESIGN-v4-jefes.md` 3.2. Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> seccion "Jefe" (selector de ataque/progreso, fase, vel., salto, herido/furia/desesperado/ventana/aturdido/inmune/rugido, partes rotas, muerte, anclajes). Capturas: `studio/docs/capturas-jefes-j1/`.
+
+## 1) Dibujar al jefe compuesto (lo unico que necesita la logica)
+`Assets.drawBoss('pastor', ctx, x, y, state)` dibuja sombra grande + aura + jefe + efectos propios (polvo, esporas, estrellas, aro de ventana, campo de inmunidad). Devuelve `{canvas,ox,oy,pose,layout}`.
+- **(x,y) = posicion logica de la entidad = centro del cuerpo (circulo de colision `r` 74)**. El sprite se coloca solo: los pies quedan en `y + 88` (`Assets.BOSS.pastor.gy`), la sombra en `y + 82`. **Ordenar por profundidad con `y + 88`** (pies) contra Marlo.
+- Tamano visual aprox.: 250 de alto x 250 de ancho (incl. cuernos y cayado en reposo: de y-182 a y+88; de x-100 a x+130). El circulo logico `r` 74 cubre el barril; cuernos/cabeza/cayado sobresalen (usar `bossAnchors` para hitboxes hijas).
+- Coste medido: ~2.8 ms/frame en Chromium headless sin GPU (1 canvas 640x470 compartido + 20 drawImage). Cachea sprites una sola vez; no hay `shadowBlur`.
+- `Assets.renderBoss('pastor', state)` -> `{canvas, ox, oy}`: solo el jefe (sin sombra/aura/fx de suelo), el canvas es COMPARTIDO y se sobrescribe en cada llamada (para subirlo a una textura Phaser: origen del suelo en (ox,oy), el pie queda en oy, la posicion logica en (ox, oy-88)).
+- `Assets.drawBossShadow(ctx,x,y,state)` (sombra sola; con `state.lift` se encoge y oscurece = telegrafia del salto). `state.noShadow`/`state.noFx` desactivan sombra / aura+fx.
+
+### state (todo opcional salvo `t`; el jefe no guarda estado propio, lo pintas desde tu IA)
+| campo | tipo | efecto |
+|---|---|---|
+| `t` | ms | reloj para idle/trote/parpadeos (obligatorio) |
+| `facing` | 1 / -1 | 1 mira a la derecha, -1 a la izquierda |
+| `phase` | 1-3 | ojos: F1 naranja, F2 rojo, F3 blanco; F3 suma brasas en el lomo |
+| `moving` | 0..1 o bool | trote de patas (4 frames, diagonales alternas) |
+| `speed` | px/s | velocidad real: marca el ritmo de trote (65 F1 / 80 F2 / 95 F3 = lento y pesado; >=400 = galope) |
+| `hurt` | 0..1 o bool | flash blanco sobre la silueta + retroceso + cabeza "dano" (usar 0.6-1 durante ~100 ms) |
+| `broken` | `{cuernos,cayado,vellon}` bool | cuernos: muñones; cayado: palo astillado y SIN farol (ni brillo); vellon: manto quemado con grietas y brasas que suben |
+| `windup` + `wp` | nombre + 0..1 | **telegrafia** del ataque; `wp` = progreso (tiempo/duracion_telegrafia). Sin `wp` hace bucle de 1,1 s (solo preview) |
+| `strike` + `sp` | nombre + 0..1 | **golpe/ejecucion** del ataque; `sp` = progreso. `strike` tiene prioridad sobre `windup` |
+| `lift` | px | altura del salto (0 = suelo). Con `lift>2` se pliegan las patas, el cuerpo se alza `lift` px y la sombra se achica |
+| `enraged` | bool | Furia: ojos rojos, tinte rojo pulsante y llamas rojas de aura |
+| `desperate` | bool | Exstasis del Rebano: cayado clavado, puas al maximo, ojos blancos, aura morada, anillo de runas, temblor. Equivale a `windup:'extasis'` |
+| `exposed` | bool | ventana de dano: aro dorado en el suelo (fx_window_ring) + tinte dorado pulsante |
+| `stun` | bool | aturdido tras chocar (embestida): cabeza gacha, estrellitas, cayado caido |
+| `immune` | bool | puerta de fase (3 s): tinte azulado + campo de puntos alrededor |
+| `roar` | 0..1 | rugido (intro / cambio de fase): cabeza arriba boca abierta, brazos abiertos, temblor |
+| `dying` + `dt` | bool + ms | muerte (ver 4); `dt` = ms desde que muere; `Assets.BOSS.pastor.deathMs` = 3200 (a partir de ahi no dibuja nada) |
+| `alpha` | 0..1 | transparencia global (p. ej. entrada) |
+
+Nombres de ataque (`windup` / `strike`; `Assets.bossPoseNames()`): `barrido` (arco con cayado), `embestida`, `pisoton`, `salto`, `abanico`, `llamada`, `esporas`, `estampida`, `extasis`. Lectura de cada pose (para que la telegrafia por silueta funcione, regla 1 del doc):
+| ataque | windup (wp 0->1) | strike (sp 0->1) |
+|---|---|---|
+| barrido | cayado se alza hacia atras/arriba sobre la cabeza, torso atras | barrido de 180 grados hacia delante, torso adelante, cabeza ruge |
+| embestida | cabeza y cuernos bajan, agacha el tren delantero, la pata delantera escarba, polvo, ojos rojos, cayado como lanza | galope (`speed` >= 520), cabeza gacha, lineas de velocidad y polvo detras |
+| pisoton | se encabrita (tren delantero arriba, patas plegadas, brazos arriba) | pisa de golpe: cuerpo +8 px, temblor, polvo (la onda la dibujas con `drawBossWave`) |
+| salto | se agacha (cuerpo aplastado), ojos se encienden | aterrizaje: aplasta, cayado se clava hacia delante, polvo |
+| abanico | puas del lomo se erizan y brillan, brazos abiertos, retrocede 3 px | puas al maximo con brillo naranja, rebote |
+| llamada | cayado en vertical, cabeza arriba y aullido, anillo de runas moradas en el suelo, farol brillante | pisotazo con cayado |
+| esporas | se encorva, el vellon tiembla y suelta nubes verdes (fx_spore_puff) | estallido de esporas |
+| estampida | igual que embestida pero mas rapida/agitada | galope |
+| extasis | (estado fijo) cayado clavado, aura morada | - |
+Duraciones de telegrafia: las del doc (barrido 800, embestida 900, pisoton 700, salto 1000, abanico 600, llamada 800, esporas 1000, estampida 700 ms): el dibujo no impone tiempos, solo reparte la pose por `wp`.
+
+## 2) Anclajes y hitboxes hijas
+`Assets.bossAnchors('pastor', state)` -> objeto con `{x,y,r}` en px **relativos a (x,y) de la entidad**, ya con `facing` y `lift` aplicados (sumar a la posicion del jefe). Sigue las animaciones: usa el MISMO state que `drawBoss`.
+| clave | que es | r | reposo (facing 1) |
+|---|---|---|---|
+| `body` | centro del barril (hurtbox de contacto) | 74 | (0, -4) |
+| `head` | cabeza | 26 | (55, -105) |
+| `cuernos` | parte rompible "cuernos" | 30 | (51, -130) |
+| `cayado` | parte rompible "cayado" (farol) | 26 | (87, -58) |
+| `vellon` | parte rompible "vellon" (lomo) | 34 | (-26, -40) |
+| `hand` / `shoulder` / `mouth` / `eyes` / `staffTip` | mano que agarra el cayado, hombro, hocico (origen de esporas/rugido), ojos, punta del cayado | 12/10/10/8/8 | - |
+| `feet` | suelo bajo el cuerpo (orden de profundidad) | 0 | (0, 88) |
+| `groundShadow` | centro de la sombra | 86 | (0, 82) |
+Valores de reposo exactos: llamar a la funcion (cambian con la pose, p. ej. en `embestida` la cabeza avanza a x=104 y en `barrido` el cayado sube a y=-126).
+
+## 3) Piezas sueltas (sprites; anclas y pivotes para quien quiera recomponer)
+Todos en `Assets.sprite(name, frame)`. El dibujo compuesto usa jerarquia cuerpo -> torso -> cabeza/hombros -> cuernos/ojos; mano y cayado por cinematica inversa simple (el brazo se estira 0,7-1,45x hasta la mano). Coordenadas en espacio L: origen = suelo bajo el centro del cuerpo, +x adelante, +y abajo (la entidad esta en (0,-88)).
+| sprite | final | frames | pivote/ancla (px finales, dentro del sprite) -> colocacion en L |
+|---|---|---|---|
+| `boss_pastor_body` | 192x144 | 0-1 idle (respiracion, ~1,6 Hz) | arriba-izq en (-96,-174); rota/aplasta alrededor de los pies traseros (-55,-8) |
+| `boss_pastor_leg` | 40x72 | 0-3 trote lado cercano (contacto, bajo el cuerpo, atras, levantada), 4-7 lado lejano (mas oscuro) | cadera (20,10) -> caderas en x -62 (lejana trasera), -50, 44 (lejana delantera), 56 (cercana delantera), y=-62. Diagonales en fase |
+| `boss_pastor_torso` | 96x112 | 0 idle, 1 windup (puas erizadas), 2 golpe | cintura = centro-abajo (48,112) -> (46,-84); gira alrededor de la cintura |
+| `boss_pastor_head` | 64x64 | 0 neutro, 1 rugido, 2 dano/aturdido | cuello (32,56) -> torso+(8,-80), escala x1,2 al dibujar |
+| `boss_pastor_eyes` | 24x12 | 0 naranja, 1 rojo, 2 blanco | centro (12,6) -> cabeza (0,-33). Brillo aditivo aparte |
+| `boss_pastor_horn_l` / `_r` | 48x64 | 0 entero, 1 roto (muñon) | base (16,60) -> cabeza (-20,-42) rot -0.42 (lejano) y (-6,-44) (cercano), escala 0,78 |
+| `boss_pastor_staff` | 40x176 | 0-1 entero (farol, 6 fps), 2 roto | agarre (20,100) -> en la mano; punta de hierro 76 px bajo el agarre; farol 66 px sobre el agarre |
+| `boss_pastor_arm` | 44x84 | 0 cercano, 1 lejano (oscuro), 2 punyo | hombro (22,12); mano a ~56 px |
+| `boss_pastor_fleece` | 112x80 | 0 entero (manto + 8 puas moradas), 1 roto/brasas | base-centro (56,80) -> (-26,-96); se escala en y con `abanico` |
+| `boss_pastor_portrait` | 96x96 | 0 neutro, 1 furia, 2 herido (marco incluido) | `Assets.drawBossPortrait('pastor', ctx, x, y, {size:96, mood:0|1|2})` (x,y esquina sup. izq.) para barra e intro |
+
+## 4) Muerte espectacular (`dying:true, dt:ms`)
+0-150 ms flash blanco; 0-800 tambalea (parpadeos blancos, temblor, rugido de dolor); 500 ms: cuernos, cayado y vellon salen despedidos girando (solo las piezas que no estuvieran ya rotas); 800-1800 cae de rodillas (patas plegadas, cabeza gacha); 1800-3200 se desintegra en brasas (cuadros + brasas aditivas). A los 3200 no pinta nada (puedes quitar la entidad). Recomendado: `fx.shake(12, 900)`, hit-stop 120 ms, y para "congelado de 400 ms" del Exstasis basta con no avanzar `dt`.
+
+## 5) Telegrafias y ondas (dibujan en `ctx`, coordenadas de juego)
+- `Assets.drawBossTele(ctx, kind, x, y, o)`: `kind` = `circle{r}` | `arc{r,inner,arc}` (barrido: `arc` 180 grados, `inner` 40 = rosquilla) | `cone{r,arc}` (abanico 70 grados) | `rect`/`lane{w,len}` (embestida 90x520, estampida 90x420) | `ring{r,th,gap}` (pisoton: anillo creciente con hueco de 60 grados y chevrones verdes en el hueco) | `donut{r,inner}` | `summon{r}` (llamada, morado con runas) | `spore{r}` (esporas, verde punteado que se cierra).
+  `o`: `p` 0..1 progreso (relleno alfa 0,12->0,40 + capa de progreso), `a` angulo (rad), `color` (`red|green|purple|orange|gold|blue`; por defecto rojo, `summon` morado, `spore` verde), `fix` (por defecto `p>=0.75`: contorno SOLIDO = objetivo fijado; antes es discontinuo y animado), `sig:true` ataque firma (doble contorno), `t` ms. Alfa maximo ~0,4: Marlo siempre se ve debajo.
+- `Assets.drawBossWave(ctx, x, y, r, {th:24, gap:rad (0 = sin hueco), a:centro del hueco, style:0 rojo|1 morado (extasis)|2 verde, alpha})`: onda anular con hueco, hecha con `fx_shockwave_seg` (un segmento por ~46 px).
+- `Assets.drawBossVignette(ctx, W, H, p, '255,30,20')` vineta roja de ataque firma; `Assets.drawBossArenaTint(ctx, W, H, t, a)` tinte morado de arena del Exstasis.
+
+## 6) VFX / proyectiles / arena / iconos nuevos (nombre, tam final, frames, ancla)
+| sprite | final | frames (anim) | notas |
+|---|---|---|---|
+| `proj_boss_thorn` | 32x16 | 0-1 (`loop` 10 fps) | pua grande morada con punta naranja; apunta a la derecha (rotar al angulo); centrada |
+| `fx_shockwave_seg` | 128x32 | 0 rojo, 1 morado, 2 verde | segmento de onda (lo usa `drawBossWave`) |
+| `fx_boss_crack` | 96x96 | 0-2 (`grow`, no cicla) | grieta del suelo (salto, pisoton), centrada |
+| `fx_part_break` | 128x128 | 0-4 (`burst` 14 fps, no cicla) | estallido al romper una parte; centrado en la parte |
+| `fx_window_ring` | 128x128 | 0-3 (`loop` 8 fps) | aro dorado; el dibujo compuesto ya lo usa si `exposed` |
+| `fx_boss_spike` | 28x44 | 0-3 (`rise` [0,1,2] 12 fps; `sink` [3,0]) | estaca de suelo (espinas del Salto, F2); ancla = base-centro (14,42) |
+| `fx_charge_trail` | 96x56 | 0-3 (`puff` 10 fps) | polvo de la embestida; centrado, mira a la derecha (voltear segun direccion) |
+| `fx_spore_puff` | 32x32 | 0-3 (`puff` 8 fps) | nube de espora/vellon, centrada (escalar 1-2,5x) |
+| `obs_log` | 64x64 | 0 entero, 1 agrietado, 2 escombro | tronco de arena; ancla = centro del circulo de colision (32,40) -> dibujar en (x-32, y-40); r de colision 28 |
+| `fx_thorn_patch` | 80x56 | 0-2 (`sway` [0,1,2,1] 3 fps) | zarzal de espinas de borde F2 (verde): ancla centro (40,38); escalable para cubrir la zona lenta |
+| `trophy_pastor_horn` / `_staff` / `_fleece` | 32x32 | 0 normal, 1 ROTO (gris con aspa roja) | icono de parte para la barra (dibujar a 16x16 = escala 0,5) y trofeo de botin |
+| `icon_weak` / `icon_resist` | 24x24 | 1 | flecha verde arriba / gris abajo (12 px a escala 0,5) |
+Reusa existentes: `fx_fire_cell` (44x44, celdas del perimetro ardiendo F3, naranja), `shockwave` (onda sin dano del aterrizaje de la entrada), `smoke_big`, `explosion`.
+
+## 7) Notas para la logica / HUD
+- **No tapar a Marlo**: todas las telegrafias <= 0,4 de alfa y sin relleno solido; el jefe se ordena por `y + 88` (si Marlo esta mas abajo se dibuja delante). El aura/aro de ventana van en el suelo bajo el jefe.
+- Entrada: `drawBoss` con `windup:'salto', wp` (agachado) -> `lift` creciente (aire) -> `strike:'salto'` al aterrizar + `shockwave` + `fx.shake(8,220)`. Rugido de intro/fase: `roar` 0->1 ~600 ms.
+- Partes: hitboxes hijas = `bossAnchors().cuernos/cayado/vellon`; al romperse pon `broken.X=true` y lanza `fx_part_break` en el ancla.
+- Cayado roto: sin farol (la Llamada del rebano pasa a gusanos); cuernos rotos: se ve el muñon; vellon roto: brasas visibles desde cualquier distancia.
+- Nombres de jefes/fases para la barra: `Assets.BOSS.pastor` = `{name:'El Pastor Corrupto', title:'Bestia del Rebaño', phases:['El Rebaño','La Corrupción','Cenizas'], despair:'Éxtasis del Rebaño', r:74, gy:88, w:250, h:250, deathMs:3200}`; `Assets.bossIds()`, `Assets.bossInfo(id)`.
+- Karceron y Letea (J2) usaran la misma API (`drawBoss(id,...)`, `bossAnchors`, `drawBossPortrait`); sus sprites iran en `assets_boss_karceron.js`/`assets_boss_letea.js` segun la lista 6.1 del diseno.
