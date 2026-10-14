@@ -77,9 +77,14 @@
     bar(c, 16, 14, 220, 18, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
     G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, 126, 24, 13, '#fff', 'center');
     // tiempo y jefe
-    G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo
     var boss = G.Enemies.boss();
+    if (G.mode !== 'run') {   // cacería / práctica: sin reloj de run
+      G.txt(c, G.mode === 'practice' ? 'PRÁCTICA  -  intento ' + (G.practiceTries || 1) : 'CACERÍA  -  Peligro ' + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)], G.W / 2, 20, 18, G.mode === 'practice' ? '#9dffb4' : '#6ac8ff', 'center');
+      if (G.mode === 'practice') G.txt(c, 'sin recompensas  -  P y luego R: reiniciar', 16, 47, 10, '#9a8fb0', 'left');
+    } else {
+    G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo
     if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    }
     // kills, ceniza
     G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
     c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();

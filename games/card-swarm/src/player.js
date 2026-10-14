@@ -34,7 +34,7 @@
     // Fase 2b: Bastión (Acero, -10 %), platos de Tía Castaña (resistencia por familia de enemigo), escudo de Sed (set Sangre)
     if (G.Tree.fx.bastion) dmg *= 0.9;
     var rs = G.runBuff && G.runBuff.fx && G.runBuff.fx.res; if (rs) { var fam = P.family(o.src); if (rs[fam]) dmg *= 1 - rs[fam]; }
-    try { G.Loot.noteHit(); } catch (e) { /* racha sin daño */ }
+    try { G.Loot.noteHit(o.src); } catch (e) { /* racha sin daño */ }
     if (p.shield > 0) { var ab = Math.min(p.shield, dmg); p.shield -= ab; dmg -= ab; if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'escudo', '#ff9aa8', true); G.sfx('hit', { pitch: 1.6, vol: 0.5 }); return false; } }
     p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln;
     if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; G.fx.shake(7, 200); G.fx.hit(40); }

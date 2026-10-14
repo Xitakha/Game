@@ -140,7 +140,8 @@
   // ----------------------------------------------------------------- Drops en la run
   L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0, trophies: [], boss: null, clean: 0, lastHit: null }; };
   // Racha sin recibir daño (encargos "Intocable"): player.js llama a noteHit() en cada golpe real; cleanSecs() es la racha actual en segundos
-  L.noteHit = function () { var R = L.run; if (!R) return; var now = G.time; R.clean = Math.max(R.clean || 0, now - (R.lastHit == null ? G.t0 : R.lastHit)); R.lastHit = now; };
+  L.noteHit = function (src) { var R = L.run; if (!R) return; if (src) { R.hitBy = R.hitBy || {}; R.hitBy[src] = (R.hitBy[src] || 0) + 1; }   // J3: qué ataques te alcanzaron (encargo 'sin Salto aplastante')
+     var now = G.time; R.clean = Math.max(R.clean || 0, now - (R.lastHit == null ? G.t0 : R.lastHit)); R.lastHit = now; };
   L.cleanSecs = function () { var R = L.run; if (!R) return 0; return Math.max(0, (G.time - (R.lastHit == null ? G.t0 : R.lastHit)) / 1000); };
   L.resetRun();
 
@@ -151,15 +152,19 @@
     }
   }
   L.onKill = function (e) {
-    if (e.summoned) return;
+    if (e.summoned || G.mode === 'practice') return;   // la práctica no suelta ni cuenta nada
     var t = e.type, R = L.run; R.kills[t] = (R.kills[t] || 0) + 1;
     try { G.Quests.onKill(t); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
     var pityP = L.RARE_P + (G.Save.data.pity || 0);
     var gt = L.GUARANTEED[t];
     if (t === 'boss' && G.Boss.e && G.Boss.e.def.guaranteed) gt = { parts: G.Boss.e.def.guaranteed, rare: gt.rare };   // J2: cada jefe tiene su botín garantizado (Karceron / Letea)
     if (gt) {
-      for (var k in gt.parts) drop(e, k, gt.parts[k]);
+      // Peligro (J3): las partes garantizadas del jefe escalan con el nivel y hay probabilidad extra de Esencia; la cacería no da Esencia segura (DESIGN 4.2)
+      var PD = t === 'boss' ? G.Boss.PELIGRO[G.clamp(Math.round(G.peligro || 1), 1, 5)] : null, gm = PD ? PD.gmul : 1;
+      for (var k in gt.parts) drop(e, k, Math.ceil(gt.parts[k] * gm));
+      if (t === 'boss' && G.mode === 'hunt') return;
       if (Math.random() < gt.rare) drop(e, 'rare', 1);
+      if (PD && PD.rare > 0 && Math.random() < PD.rare) drop(e, 'rare', 1);
       return;
     }
     var d = L.DROPS[t]; if (!d) return;
@@ -181,34 +186,49 @@
   L.endRun = function (won) {
     var i, g, S = G.Save.data, R = L.run, p = G.player;
     for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } }
-    var mins = Math.max(0, (G.runT - G.t0) / 60000);
-    var brasas = Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0));
+    var hunt = G.mode === 'hunt';
+    var mins = hunt ? 0 : Math.max(0, (G.runT - G.t0) / 60000);   // la cacería no tiene reloj de run: solo pagan el jefe y sus partes
+    var brasas = hunt ? 0 : Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0));
     for (var k in R.parts) G.Save.add(k, R.parts[k]);
     // jefe (v4): Brasas por parte rota siempre; las del jefe, los PF y el récord solo si cae
     var bs = R.boss, binfo = null;
     if (bs && G.Boss.DEFS[bs.id]) {
-      var BD = G.Boss.DEFS[bs.id], bm = G.Boss.PELIGRO[G.clamp(Math.round(G.peligro || 1), 1, 5)].brasas, be = G.Boss.e;
-      var bb = Math.round(((bs.won ? BD.brasas : 0) + BD.brasasPart * bs.parts.length) * bm), bpf = 0;
+      var BD = G.Boss.DEFS[bs.id], P = G.clamp(Math.round(G.peligro || 1), 1, 5), PD = G.Boss.PELIGRO[P], bm = PD.brasas, be = G.Boss.e;
+      var bb = Math.round(((bs.won ? BD.brasas : 0) + BD.brasasPart * bs.parts.length) * bm), bpf = 0, unlocked = 0, firstP = false;
       if (bs.won) {
         var kn = S.bossKills[bs.id] || 0; S.bossKills[bs.id] = kn + 1;
-        bpf = G.Tree.addPF(kn === 0 ? BD.pfFirst : BD.pf); R.pf = (R.pf || 0) + bpf;
+        var pw = S.pelWins[bs.id] = S.pelWins[bs.id] || {}; firstP = !(pw[P] > 0); pw[P] = (pw[P] || 0) + 1;
+        // PF: run normal = 2 (3 la 1.a vez que vences al jefe) + extra la 1.a vez en Peligro III y V; cacería = solo la 1.a victoria de ese jefe en ese Peligro (sin farmeo)
+        var basePF = hunt ? (firstP ? BD.pf : 0) : (kn === 0 ? BD.pfFirst : BD.pf);
+        bpf = G.Tree.addPF(basePF + (firstP ? PD.pfx : 0)); R.pf = (R.pf || 0) + bpf;
+        if (P < 5 && G.Save.pelMax(bs.id) <= P) { S.peligro[bs.id] = P + 1; unlocked = P + 1; }   // vencer el Peligro N abre el N+1
+        if (hunt) { var hr = G.Save.hunt(bs.id, P); hr.wins++; var tm = Math.round((bs.time || G.Boss.combatT) / 1000); if (!hr.best || tm < hr.best) hr.best = tm; }
       }
       brasas += bb;
       R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; });
-      binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: bs.won && bpf >= BD.pfFirst };
+      binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && !hunt && kn === 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
     }
-    S.brasas += brasas; S.runs++; if (won) S.wins++;
+    S.brasas += brasas; S.runs++; if (won && !hunt) S.wins++;
     S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);
     S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 };   // cupos de Rufo y plato de Castaña: se reinician al volver de una salida
     S.lossStreak = won ? 0 : (S.lossStreak || 0) + 1;                 // racha de derrotas (la aldea pasa a "noche" a partir de 3)
     R.clean = Math.max(R.clean || 0, G.time - (R.lastHit == null ? G.t0 : R.lastHit));
     var qdone = null;
-    try { qdone = G.Quests.onRunEnd({ won: won, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000) }); } catch (x) { /* encargos opcionales */ }
+    try { qdone = G.Quests.onRunEnd({ won: won && !hunt, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000), hitBy: R.hitBy || {} }); } catch (x) { /* encargos opcionales */ }
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
     L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
+  };
+  // Fin de una PRÁCTICA: ni botín ni progreso; solo el resumen de la pelea y el contador de victorias de práctica
+  L.endPractice = function (won) {
+    var be = G.Boss.e, id = G.bossId, S = G.Save.data, rec = S.practice[id] = S.practice[id] || { tries: 0, wins: 0 };
+    if (won) rec.wins++;
+    G.Save.save();
+    for (var i = G.gems.length - 1; i >= 0; i--) if (G.gems[i].kind === 'part') G.gems.splice(i, 1);
+    L.summary = { practice: true, parts: {}, total: 0, brasas: 0, rare: 0, newCards: [], won: won, kills: G.kills, quest: null, pfGained: 0,
+      boss: { id: id, name: (G.Boss.DEFS[id] || {}).name || id, won: won, parts: be ? be.partsBroken.slice() : [], brasas: 0, pf: 0, trophies: [], time: G.Boss.combatT, hpFrac: won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), peligro: 1, mode: 'practice', tries: rec.tries, wins: rec.wins, phase: be ? be.phase : 1 } };
   };
   L.beginRun = function () { L.resetRun(); L.startAff = L.affordable(); L.summary = null; };
 })();

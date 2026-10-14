@@ -57,7 +57,8 @@
       tone('sine', 130 * p, 260 * p, 0.5, 0.2); hiss('highpass', 6000, 2500, 0.45, 0.07, 0.25);
     }
   };
-  var MIN = { fire: 70, ice: 70, lightning: 70, poison: 70, blood: 70, steel: 70, neutral: 70, gem: 35, hurt: 100 };
+  S.V = V; S.tone = tone; S.hiss = hiss;   // J3: assets_peligro.js registra stingers de jefe en V
+  var MIN = { fire: 70, ice: 70, lightning: 70, poison: 70, blood: 70, steel: 70, neutral: 70, gem: 35, hurt: 100, stg_part: 250 };
 
   S.play = function (name, p) {
     if (!ac || ac.state !== 'running' || !V[name]) return;

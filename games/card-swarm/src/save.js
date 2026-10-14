@@ -1,4 +1,6 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v4 (Jefes J3): Peligro por jefe (peligro[id] = máximo desbloqueado, peligroSel[id] = elegido en el Portal), victorias por Peligro (pelWins), cacería (hunts[id][P] = { wins, tries, best }),
+   intentos de práctica (practice[id]). Migración v3 -> v4 con copia de seguridad en swarmhand.save.v3: quien ya había vencido a un jefe parte con el Peligro II abierto.
    v3 (Aldea 2b): loadouts (3 slots de Ulalume), plato de Tía Castaña (pending.dish / shop.dish), logros (ach), combos vistos (combosSeen), racha de derrotas (lossStreak).
    Migración v2 -> v3 sin perder nada (copia de seguridad del guardado antiguo en swarmhand.save.v2 y try/catch).
    v2 (Aldea): partes, Brasas, rango de forja por carta (0 = bloqueada), anclas, duración, runs, pity de rara, Puntos de Forja (pf),
@@ -8,7 +10,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 3;
+  var KEY = 'swarmhand.save', VERSION = 4;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -27,7 +29,8 @@
       flags: {},
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
-      ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0 };   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
+      peligro: { pastor: 1, karceron: 1, letea: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   S.save = function () {
@@ -41,6 +44,12 @@
     }
     if (d.v === 2) {   // Aldea 2a -> 2b: solo se añaden campos (load() rellena los que faltan con los valores por defecto)
       d.v = 3; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated3 = 1;
+    }
+    if (d.v === 3) {   // Jefes J3: Peligro por jefe, cacería y práctica. Todas las victorias anteriores fueron en Peligro I -> Peligro II abierto
+      d.v = 4; d.peligro = { pastor: 1, karceron: 1, letea: 1 }; d.pelWins = {}; d.hunts = {}; d.practice = {}; d.peligroSel = {};
+      var bk = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {};
+      ['pastor', 'karceron', 'letea'].forEach(function (id) { if ((bk[id] || 0) > 0) { d.peligro[id] = 2; d.pelWins[id] = { 1: bk[id] }; } });
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated4 = 1;
     }
     return d.v === VERSION ? d : null;
   }
@@ -58,7 +67,7 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
@@ -79,6 +88,12 @@
     try { G.Tree.sync(); } catch (e) { /* árbol aún no cargado */ }
   };
 
+  // ---- Peligro (J3): máximo desbloqueado por jefe y nivel elegido en el Portal
+  S.BOSSES = ['pastor', 'karceron', 'letea'];
+  S.pelMax = function (id) { return G.clamp(Math.round((S.data.peligro && S.data.peligro[id]) || 1), 1, 5); };
+  S.pelSel = function (id) { return Math.min(S.pelMax(id), G.clamp(Math.round((S.data.peligroSel && S.data.peligroSel[id]) || 1), 1, 5)); };
+  S.setPelSel = function (id, n) { S.data.peligroSel[id] = G.clamp(n, 1, S.pelMax(id)); S.save(); };
+  S.hunt = function (id, P) { var h = S.data.hunts; h[id] = h[id] || {}; h[id][P] = h[id][P] || { wins: 0, tries: 0, best: 0 }; return h[id][P]; };
   S.add = function (part, n) { S.data.parts[part] = (S.data.parts[part] || 0) + n; };
   S.rank = function (id) { return S.data.cards[id] || 0; };
 

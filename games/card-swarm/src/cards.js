@@ -439,7 +439,7 @@
     var p = G.player, m = G.input.mouse, i, k;
     c.save();
     c.fillStyle = 'rgba(8,4,14,0.82)'; c.fillRect(0, 0, G.W, G.H);
-    var title = O.mode === 'start' ? 'ELIGE TU PRIMERA CARTA' : '¡NIVEL ' + p.level + '!  ELIGE UNA CARTA';
+    var title = O.mode === 'start' ? 'ELIGE TU PRIMERA CARTA' : G.prep ? 'PREPARACIÓN ' + (G.prep.total - G.pendingLevels + 1) + '/' + G.prep.total + '  -  ELIGE UNA CARTA' : '¡NIVEL ' + p.level + '!  ELIGE UNA CARTA';
     G.txt(c, title, G.W / 2, 28, 26, '#ffd27a', 'center');
     var hoverIdx = -1;
     for (i = 0; i < O.cards.length; i++) if (inR(C.offerRect(i), m) && !O.replacing) hoverIdx = i;

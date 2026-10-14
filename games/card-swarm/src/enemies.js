@@ -413,9 +413,13 @@
   }
   function atkLog(t, n) { if (G.dbg) { var A = G.dbg.atk || (G.dbg.atk = {}); A[t + ':' + n] = (A[t + ':' + n] || 0) + 1; } return n; }   // ?dbg=1: cuenta los ataques usados
   function bulwarkOk(n, d) { return n === 'bash' ? d < BASH_R : n === 'stomp' ? d < 190 : n === 'charge' ? (d >= 130 && d <= 430) : d < 340; }
+  // Guardianes de bioma (J3, ligeros): mismo motor y misma parte rompible, pero solo 2 ataques y otro nombre/color. Cripta: Centinela de Brasa (Embestida con onda + Escudos giratorios);
+  // Asfodelo: Plañidera Anegada (Lluvia de larvas + Marea ácida). Se reconocen por e.variant ('warden' | 'wraith'); el tipo sigue siendo mini_bulwark / mini_hive (botín, encargos y PF iguales).
+  E.VARIANTS = { warden: { name: 'CENTINELA DE BRASA', part: 'PETO', tint: '#c4501a' }, wraith: { name: 'PLAÑIDERA ANEGADA', part: 'BOLSA', tint: '#2f9a9a' } };
+  E.variant = function (e, v) { var d = E.VARIANTS[v]; if (!d || !e) return; e.variant = v; e.partName = d.part; e.vname = d.name; };
   function bulwarkNext(e, d) {
     if (e.force) { var f = e.force; e.force = null; return atkLog('bulwark', f); }
-    if (!e.bag.length) e.bag = shuffleBag(['bash', 'stomp', 'charge', 'shields']);
+    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'warden' ? ['charge', 'shields'] : ['bash', 'stomp', 'charge', 'shields']);
     for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || !bulwarkOk(n, d)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('bulwark', n); }
     return null;
   }
@@ -429,7 +433,7 @@
   function startEnrageB(e) {
     atkLog('bulwark', 'enrage'); e.enraged = true; e.st = 'enrage'; e.t = 0; e.orbs = null; e.shieldDown = false;
     fx.shake(9, 400); fx.ring(e.x, e.y, 20, 180, 600, '#ff4030', 6); fx.flames(e.x, e.y, 10, 30); G.sfx('boss_roar', { pitch: 0.9, vol: 0.8 });
-    G.Hud.banner('¡EL COLOSO SE ENFURECE!', 1800, '#ff6a3a');
+    G.Hud.banner(e.vname ? '¡' + e.vname + ' SE ENFURECE!' : '¡EL COLOSO SE ENFURECE!', 1800, '#ff6a3a');
   }
   // Escudo rompible: el daño frontal bloqueado (antes de reducirlo) gasta el medidor; al llegar a 0 el escudo cae para siempre
   E.shieldHit = function (e, pre) {
@@ -439,7 +443,7 @@
     e.shieldBroken = true; e.shield = 0; e.shieldDown = false; e.orbs = null;
     e.st = 'rec'; e.t = 0; e.recDur = MB.breakExp; E.expose(e, MB.breakExp, MB.expMul);
     fx.hit(80); fx.shake(8, 250); fx.burst(e.x, e.y, 16, '#dfe6f0', 260, 600, 4, { add: true }); fx.ring(e.x, e.y, 10, 90, 400, '#ffd27a', 5); G.sfx('hit_heavy', { pitch: 0.8 }); G.sfx('boss_roar', { pitch: 1.7, vol: 0.5 });
-    G.Hud.banner('¡ESCUDO ROTO!', 1500, '#ffd27a');
+    G.Hud.banner('¡' + e.partName + ' ROTO!', 1500, '#ffd27a');
     miniHeart(e); G.Loot.onMiniPart(e);
   };
 
@@ -538,7 +542,7 @@
   function hiveKids(e) { var n = 0; for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.src === e) n++; } return n; }
   function hiveNext(e) {
     if (e.force) { var f = e.force; e.force = null; return atkLog('hive', f); }
-    if (!e.bag.length) e.bag = shuffleBag(e.sacBroken ? ['spit', 'acid', 'tide'] : ['spit', 'acid', 'rain', 'tide']);
+    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'wraith' ? (e.sacBroken ? ['spit', 'tide'] : ['rain', 'tide']) : e.sacBroken ? ['spit', 'acid', 'tide'] : ['spit', 'acid', 'rain', 'tide']);
     for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || (n === 'rain' && e.sacBroken)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('hive', n); }
     e.bag = []; return atkLog('hive', 'spit');
   }
@@ -549,7 +553,7 @@
     if (e.sacHp > 0) return;
     e.sacBroken = true; e.rain = null; e.st = 'stag'; e.t = 0; E.expose(e, MH.breakExp, MH.expMul);
     fx.hit(80); fx.shake(8, 250); fx.burst(e.x, e.y, 18, '#ffb73a', 260, 600, 4, { add: true }); fx.ring(e.x, e.y, 10, 100, 400, '#ffd27a', 5); G.sfx('boss_roar', { pitch: 1.7, vol: 0.5 });
-    G.Hud.banner('¡SACO DE LARVAS ROTO!', 1500, '#ffd27a');
+    G.Hud.banner(e.variant ? '¡' + e.partName + ' ROTA!' : '¡SACO DE LARVAS ROTO!', 1500, '#ffd27a');
     for (var j = 0; j < 6; j++) { var an = j * 1.047 + G.rnd(-0.2, 0.2); E.spawn('worm', e.x + Math.cos(an) * 40, e.y + Math.sin(an) * 40, { summoned: true, hp: 12, scale: 0.85, spawnT: 400, src: e }); }
     miniHeart(e); G.Loot.onMiniPart(e);
   };
@@ -559,7 +563,7 @@
     if (e.sacFlash > 0) e.sacFlash -= dt;
     if (!e.enraged && e.hp <= e.maxHp * M.enrageAt && e.st !== 'burst') {   // Estallido de enjambre: se hincha 1,15 s (círculo rojo) y revienta
       e.enraged = true; e.st = 'burst'; e.t = 0; e.rain = null; atkLog('hive', 'burst');
-      fx.shake(7, 300); G.sfx('boss_roar', { pitch: 1.5, vol: 0.7 }); G.Hud.banner('¡LA COLMENA ESTALLA!', 1800, '#ffb73a');
+      fx.shake(7, 300); G.sfx('boss_roar', { pitch: 1.5, vol: 0.7 }); G.Hud.banner(e.vname ? '¡' + e.vname + ' ESTALLA!' : '¡LA COLMENA ESTALLA!', 1800, '#ffb73a');
     }
     if (e.enraged) e.spd *= M.enrageSpd;
     if (e.st === 'move') {
@@ -990,7 +994,7 @@
     else if (e.type === 'boar' && e.st === 'stun') { o.tint = '#ffff80'; o.tintA = 0.25 + 0.15 * Math.sin(e.t / 60); }
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
-    else if (v.fb) { o.tint = v.fb.tint; o.tintA = 0.5; }
+    else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
     if (v.fb && v.fb.alpha && o.alpha == null) o.alpha = v.fb.alpha;
     if (e.immune) { o.alpha = 0.25 + 0.1 * Math.sin(e.t / 40); }
     if (e.type === 'boss' && e.st === 'tele' && e.kind !== 'slam') { o.sx = 1 + 0.05 * Math.sin(e.t / 40); }

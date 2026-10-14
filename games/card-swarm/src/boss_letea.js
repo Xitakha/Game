@@ -37,7 +37,7 @@
     },
     weak: [{ tag: 'blood', mul: 1.25, phases: [1, 2] }, { tag: 'poison', mul: 1.25, phases: [3] }, { tag: 'lightning', mul: 1.1, phases: [1, 2, 3] }],
     resist: [{ tag: 'ice', mul: 0.8 }],
-    hpCal: 3.5, // calibrado con el bot (README, Jefes v4 J2): 6600 x 3,5 = 23100 a 9 min; p50 aislado ~122 s, partida completa (con horda) ~140 s
+    hpCal: 3.6, // J3: 3,5 -> 3,6 con Mordisco cd 2500 (ver README). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 6600 x 3,5 = 23100 a 9 min; p50 aislado ~122 s, partida completa (con horda) ~140 s
     brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { spine: 2, frost: 2, fang: 1 },
     h: { camW: 0.55 }
@@ -273,7 +273,8 @@
 
   // ------------------------------------------------------------------ ataques
   function def(name, o) { o.b = 'letea'; ATKS[name] = o; }
-  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 2800,  dmg: 22, phases: [1, 2, 3] });
+  def('l_mordisco',   { name: 'Mordisco en picado',  tele: 700,  cd: 2500,   // J3: 2800 -> 2500 (Letea quedó demasiado fácil: ver README, calibración J3)
+                          dmg: 22, phases: [1, 2, 3] });
   def('l_acido',      { name: 'Escupitajo ácido',    tele: 900,  cd: 10000, dmg: 8,  phases: [1, 2, 3] });
   def('l_aliento',    { name: 'Aliento helado',      tele: 900,  cd: 9000,  dmg: 14, phases: [1, 2, 3] });
   def('l_rayo',       { name: 'Rayo del cielo',      tele: 1000, cd: 10000, dmg: 22, phases: [1, 2, 3] });
@@ -346,9 +347,9 @@
   // ---- Rayo del cielo (cabeza amarilla): 4 rayos r 45 cayendo cada 250 ms (F3: 6 sobre una línea hacia el jugador); los pilares de cristal absorben el rayo
   ATK.l_rayo = {
     start: function (e, A0) {
-      var p = PL(), big = A0.big || 1, h = hd(A0.head), n = e.phase === 3 && !A0.big ? 6 : 4, i, an;
+      var p = PL(), big = A0.big || 1, h = hd(A0.head), f3 = e.phase === 3 || !!pel().v3, n = f3 && !A0.big ? 6 : 4, i, an;   // Peligro III+: Rayo del cielo desde la F1 con 6 rayos en línea
       A0.pose = 'rayo'; A0.rec = 500; A0.r = 45 * big; A0.bolts = []; A0.drawAct = true; A0.n = n; A0.ox = h.x; A0.oy = h.y;
-      if (e.phase === 3 || A0.big) {   // en línea desde la cabeza hacia el jugador y más allá
+      if (f3 || A0.big) {   // en línea desde la cabeza hacia el jugador y más allá
         var ang = angTo(h, p), dd = Math.hypot(p.x - h.x, p.y - h.y);
         for (i = 0; i < n; i++) { var f = Math.max(60, dd - 200) + i * 80 * big; A0.bolts.push({ x: clampX(h.x + Math.cos(ang) * f, 40), y: clampY(h.y + Math.sin(ang) * f, 40), st: 0 }); }
       } else {

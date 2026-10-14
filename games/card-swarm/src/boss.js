@@ -18,6 +18,9 @@
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function sfx(n, o) { G.sfx(n, o); }
 
+  // Stingers propios por jefe y fase (assets_peligro.js los registra en G.Snd); sin ese archivo no suena nada y no pasa nada
+  S.stinger = function (kind, e) { try { G.Snd.play(kind === 'part' || kind === 'prep' || kind === 'peligro' ? 'stg_' + kind : 'stg_' + ((e && e.id) || (S.e && S.e.id) || 'pastor') + '_' + kind); } catch (x) { /* audio opcional */ } };
+
   // ================================================================= TABLAS
   var ATKS = S.ATKS = {     // b = jefe dueño del ataque (por defecto el Pastor); tele = telegrafía (ms) antes del Peligro; dmg = daño base; sig = ataque firma (>= 25 de daño: doble contorno + viñeta)
     barrido:   { name: 'Barrido de cayado',  tele: 800,  cd: 5000,  dmg: 24, phases: [1, 2, 3] },
@@ -56,20 +59,27 @@
     staff:  { spr: 'trophy_pastor_staff',  name: 'Cayado Astillado' },
     fleece: { spr: 'trophy_pastor_fleece', name: 'Vellón Calcinado' }
   };
-  // Peligro I-V (tabla preparada; en J1 solo Peligro I está activo en la UI, ?peligro=n la fuerza para pruebas). Ver DESIGN 4.3.
+  // Peligro I-V (J3, DESIGN 4.3). Todo acumulativo: hp/dmg/tele/adds/cap/fury/part/derr/regrow ya existían; J3 añade las variantes por jefe:
+  //   v3 = ataque nuevo/variante (Pastor: Embestida doble; Karceron: Lluvia de 9 brasas; Letea: Rayo con 6 desde la F1), x2 = dos ataques desesperados seguidos ("Último aliento", V),
+  //   troph = trofeos por parte rota (2 desde IV), rare = prob. extra de Esencia al vencer, gmul = multiplicador de partes garantizadas, pfx = PF extra la primera vez (III y V).
   var PEL = S.PELIGRO = [null,
-    { hp: 1.00, dmg: 1.00, tele: 1.00, adds: 0, cap: 4, fury: 150000, part: 1.0, brasas: 1.00 },
-    { hp: 1.15, dmg: 1.10, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.25 },
-    { hp: 1.30, dmg: 1.20, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50 },
-    { hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, derr: 0.8, regrow: 14000 },
-    { hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, derr: 0.8, regrow: 14000 }];
+    { n: 1, hp: 1.00, dmg: 1.00, tele: 1.00, adds: 0, cap: 4, fury: 150000, part: 1.0, brasas: 1.00, troph: 1, rare: 0,    gmul: 1.00, pfx: 0 },
+    { n: 2, hp: 1.15, dmg: 1.10, tele: 0.95, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.25, troph: 1, rare: 0.15, gmul: 1.25, pfx: 0 },
+    { n: 3, hp: 1.30, dmg: 1.20, tele: 0.95, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50, troph: 1, rare: 0.30, gmul: 1.50, pfx: 1, v3: true, mets: 9 },
+    { n: 4, hp: 1.50, dmg: 1.30, tele: 0.92, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, troph: 2, rare: 0.45, gmul: 1.75, pfx: 0, v3: true, mets: 9, derr: 0.8, regrow: 14000 },
+    { n: 5, hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, troph: 2, rare: 0.60, gmul: 2.00, pfx: 1, v3: true, mets: 9, derr: 0.8, regrow: 14000, x2: true }];
+  S.ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+  if (G.pelx) G.pelx.split(',').forEach(function (kv) {   // calibración: ?pelx=hp:1.1,dmg3:1.05 (sin sufijo: niveles II-V; con sufijo: solo ese nivel)
+    var a = kv.split(':'), m = /^([a-z]+)(\d)?$/.exec(a[0]); if (!m) return;
+    for (var i = 2; i <= 5; i++) if (!m[2] || +m[2] === i) PEL[i][m[1]] = parseFloat(a[1]);
+  });
   function pel() { return PEL[G.clamp(Math.round(G.peligro || 1), 1, 5)]; }
   S.durMul = function () {
     var m = G.RUN_LEN / 60000;
     if (m <= 7) return 0.75; if (m >= 10) return 1.1;
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
-  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * pel().hp); };
+  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
   S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   function teleMs(name) {
@@ -109,7 +119,7 @@
     e.broken = {}; Object.keys(D.parts).forEach(function (k) { e.broken[k] = false; });
     e.parts = {}; e.exps = []; e.lift = h.pos ? 0 : 700; e.alpha = 0; e.roar = 0; e.cadMul = 1;
     e.cadT = 1500; e.atk = null; e.bag = []; e.last = null; e.lastHit = {}; e.moveAmt = 0; e.curSpd = 0; e.stagT = 0; e.gateT = 0; e.despDone = false;
-    e.sortY = y + 88; e.partsBroken = []; e.despT = 0; e.enrageSaid = false;
+    e.sortY = y + 88; e.partsBroken = []; e.despT = 0; e.enrageSaid = false; e.despLeft = pel().x2 ? 2 : 1;   // Peligro V: dos ataques desesperados seguidos ("Último aliento")
     Object.keys(D.parts).forEach(function (k) {
       var pd = D.parts[k]; e.parts[k] = mkPart(e, k, x, y, pd.r, pd.pct * hp * P.part, pd.hz); G.enemies.push(e.parts[k]);
     });
@@ -118,7 +128,7 @@
     S.obs.forEach(function (o) { S.pushOutOne(o, p, p.r); });
     S.e = e; S.active = true; G.frozen = true;
     if (G.Loot.run) G.Loot.run.boss = { id: D.id, won: false, parts: [] };
-    S.intro = { t: 0, landed: false, roared: false, music: false, seen: !!(G.Save.data.bossSeen && G.Save.data.bossSeen[D.id]) && !G.noSeen, skipped: false };
+    S.intro = { t: 0, landed: false, roared: false, music: false, seen: (!!(G.Save.data.bossSeen && G.Save.data.bossSeen[D.id]) || G.mode === 'practice') && !G.noSeen, skipped: false };
     if (G.nointro) { S.intro.t = 3490; S.intro.seen = true; S.intro.landed = S.intro.roared = S.intro.music = true; e.lift = 0; e.alpha = 1; e.rise = 1; }
     try { Assets.music.setIntensity(0.3); } catch (x1) { /* audio */ }
     return e;
@@ -220,9 +230,11 @@
     if (e.phase < 3 && e.mode !== 'gate') {
       flo = D.phases[e.phase - 1].thr * e.maxHp;
       if (e.hp <= flo) { e.hp = flo; S.startGate(e); }
-    } else if (e.phase === 3 && !e.despDone && e.mode === 'fight') {
-      flo = D.despairAt * e.maxHp;
+    } else if (e.phase === 3 && e.despLeft > 0 && e.mode === 'fight') {
+      flo = (e.despDone ? 0.03 : D.despairAt) * e.maxHp;   // 8 % el primero; el segundo (Peligro V) a 3 %
       if (e.hp <= flo) { e.hp = flo; S.startDespair(e); }
+    } else if (e.mode === 'despair' && e.despLeft > 0) {
+      flo = 0.03 * e.maxHp; if (e.hp < flo) e.hp = flo;   // el HP no baja del 3 % hasta que llegue el segundo desesperado
     }
   };
 
@@ -232,13 +244,15 @@
     pe.dead = true; e.broken[pe.key] = true; e.partsBroken.push(pe.key);
     fx.part('fx_part_break', pe.x, pe.y, 0, 0, 420, { anim: true, sc: 1, add: true });
     fx.burst(pe.x, pe.y, 12, '#ffd27a', 240, 600, 4, { add: true }); fx.ember(pe.x, pe.y, 6, 14);
-    fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 });
+    fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 }); S.stinger('part', e);
     G.Hud.banner('¡' + pd.name.toUpperCase() + (pd.fem ? ' ROTA!' : ' ROTO!'), 1500, '#ffd27a');
     // corazón + trofeo (cuenta como Esencia)
     G.Combat.dropGem(pe.x, pe.y, 'heart', B.player.heal);
     if (!pe.trophyGiven) {   // las cabezas de Letea rebrotan: el trofeo y las Brasas solo la primera vez
       pe.trophyGiven = true;
-      G.Combat.dropGem(pe.x, pe.y, 'part', 1); var g = G.gems[G.gems.length - 1]; g.part = 'rare'; g.trophy = pd.trophy;
+      for (var tn = 0; tn < pel().troph; tn++) {   // Peligro IV-V: cada parte rota suelta 2 trofeos
+        G.Combat.dropGem(pe.x + tn * 18, pe.y + tn * 8, 'part', 1); var g = G.gems[G.gems.length - 1]; g.part = 'rare'; g.trophy = pd.trophy;
+      }
       var R = G.Loot.run; if (R) { if (!R.boss) R.boss = { id: e.id, won: false, parts: [] }; R.boss.parts.push(pe.key); }
     }
     var dr = pd.derr || { mul: 1.3, ms: 3000 };
@@ -266,7 +280,7 @@
     clearHazards();
     fx.shake(10, 600); sfx('boss_roar'); fx.ring(e.x, e.y, 20, 300, 600, '#ffffff', 6); fx.ring(e.x, e.y, 10, 200, 500, '#a060ff', 4); fx.flash && fx.flash(0.2);
     S.flash = 0.25;
-    G.Hud.banner('FASE ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, e.phase === 2 ? '#c090ff' : '#ff9a3c');
+    G.Hud.banner('FASE ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, e.phase === 2 ? '#c090ff' : '#ff9a3c'); S.stinger('p' + e.phase, e);
     if (D.h && D.h.onGate) D.h.onGate(e);
     var p = PL();   // salvavidas: 2 corazones
     for (var i = 0; i < 2; i++) G.Combat.dropGem(p.x + (i ? 50 : -50), p.y + 20, 'heart', B.player.heal);
@@ -281,11 +295,13 @@
     for (var i = G.zones.length - 1; i >= 0; i--) if (G.zones[i].team === 'e' && String(G.zones[i].src).indexOf('boss') === 0) G.zones.splice(i, 1);
   }
   S.startDespair = function (e) {
+    var second = e.despDone; e.despLeft = Math.max(0, (e.despLeft || 1) - 1);
     e.mode = 'despair'; e.despDone = true; e.despT = 0; e.despN = 0; e.atk = null; e.bst = 'idle'; e.lift = 0; e.stagT = 0;
     clearHazards();
     for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.bossAdd) E.kill(q, true); }
     fx.shake(10, 700); sfx('boss_roar', { pitch: 0.8 }); fx.ring(e.x, e.y, 20, 260, 700, '#c060ff', 6);
-    G.Hud.banner(e.def.despair.toUpperCase(), 2400, '#c060ff');
+    G.Hud.banner(second ? 'ÚLTIMO ALIENTO: ' + e.def.despair.toUpperCase() : e.def.despair.toUpperCase(), 2400, '#c060ff');
+    S.stinger('despair', e);
     if (hk(e, 'onDespair')) e.def.h.onDespair(e); else expose(e, 1.25, 9500, 'despair');
     e.despAng = Math.random() * TAU;
     try { Assets.music.setIntensity(1); } catch (x) { /* audio */ }
@@ -330,17 +346,30 @@
     return stun;
   }
   ATK.embestida = {
-    start: function (e, A) { A.aim = angTo(e, PL()); A.len = 520; A.spd = e.broken.cuernos ? 430 : 520; A.dmg = 30; A.trav = 0; A.pose = 'embestida'; A.fixAt = A.tele - 300; A.actMs = 1000; },
+    start: function (e, A) { A.aim = angTo(e, PL()); A.len = 520; A.spd = e.broken.cuernos ? 430 : 520; A.dmg = 30; A.trav = 0; A.pose = 'embestida'; A.fixAt = A.tele - 300; A.actMs = 1000;
+      A.n = pel().v3 ? 2 : 1; A.k = 0; A.sub = 'charge'; A.drawAct = A.n > 1; },   // Peligro III+: Embestida doble (2 + 2): tras la 1.a, re-aim de 600 ms (300 de línea fija) y 2.a carga
     tele: function (e, A) { if (A.t < A.fixAt) { A.aim = angTo(e, PL()); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; } },
     go: function (e, A) { A.hit = false; sfx('whoosh', { pitch: 0.5, vol: 0.8 }); sfx('boss_roar', { pitch: 1.5, vol: 0.5 }); fx.shake(3, 90); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; },
     act: function (e, A, dt) {
+      if (A.sub === 'aim') {
+        A.subT += dt; if (A.subT < 300) { A.aim = angTo(e, PL()); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }
+        if (A.subT >= 600) { A.sub = 'charge'; A.trav = 0; A.hit = false; sfx('whoosh', { pitch: 0.55, vol: 0.7 }); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }
+        return false;
+      }
       var r = chargeMove(e, A, dt);
-      if (r) { chargeStun(e, A, r, 2400); return true; }
+      if (!r) return false;
+      A.k++;
+      if (A.k >= A.n || r !== 'end') { chargeStun(e, A, r, 2400); return true; }
+      A.sub = 'aim'; A.subT = 0; A.aim = angTo(e, PL()); fx.shake(4, 100);
       return false;
     },
-    draw: function (c, e, A) { Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 520, a: A.aim, p: A.t / A.tele, fix: A.t >= A.fixAt, sig: true, t: G.time }); },
+    draw: function (c, e, A) {
+      if (A.step === 'tele') Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 520, a: A.aim, p: A.t / A.tele, fix: A.t >= A.fixAt, sig: true, t: G.time });
+      else if (A.sub === 'aim') Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 520, a: A.aim, p: A.subT / 600, fix: A.subT >= 300, sig: true, t: G.time });
+    },
     haz: function (e, A, out) {
       if (A.step === 'tele') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len, t0: A.tele - A.t, t1: A.tele - A.t + A.len / A.spd * 1000 });
+      else if (A.step === 'act' && A.sub === 'aim') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len, t0: 600 - A.subT, t1: 600 - A.subT + A.len / A.spd * 1000 });
       else if (A.step === 'act') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len - A.trav, t0: 0, t1: (A.len - A.trav) / A.spd * 1000 });
     }
   };
@@ -632,6 +661,7 @@
     if (e.roar > 0 && e.mode !== 'gate') e.roar = Math.max(0, e.roar - dt / 400);
     updWaves(dt); updArena(e, dt);
     if (hk(e, 'tick')) e.def.h.tick(e, dt);
+    if (e.mode === 'fight' && e.phase === 3 && e.despDone && e.despLeft > 0 && e.hp <= 0.0301 * e.maxHp) { e.hp = 0.03 * e.maxHp; S.startDespair(e); }
     if (e.mode === 'gate') {
       e.gateT -= dt; e.roar = e.gateT > 2100 ? Math.min(1, (3000 - e.gateT) / 200) : Math.max(0, (e.gateT - 1500) / 600);
       if (e.gateT <= 0) { e.mode = 'fight'; e.immune = false; e.cadT = 1300; e.roar = 0; G.Hud.banner('¡' + e.def.phases[e.phase - 1].n.toUpperCase() + '!', 1000, '#ffd27a'); }
@@ -715,7 +745,7 @@
     }
     if (t >= 1800 && t < 2500) { var u = (t - 1800) / 700; e.roar = u < 0.2 ? u / 0.2 : u > 0.75 ? (1 - u) / 0.25 : 1; } else e.roar = 0;
     S.barFill = I.roared ? G.clamp((t - 1800) / 600, 0, 1) : 0;
-    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); }
+    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); S.stinger('intro', e); if (pel().n >= 4) setTimeout(function () { S.stinger('peligro', e); }, 700); }
     if (t >= 3500) {
       S.intro = null; e.mode = 'fight'; e.immune = false; e.lift = 0; e.alpha = 1; e.roar = 0; G.frozen = false; S.barFill = 1; e.cadT = 1200;
       if (!I.music) S.track(e);
@@ -728,7 +758,7 @@
   S.camTarget = function (tx, ty) {
     var I = S.intro, e = S.e;
     if (!I || !e) {
-      G.cam.zoom = 1;
+      G.cam.zoom = (e && S.active && !e.dead && G.combatZoom) || 1;   // zoom de combate opcional (?zoom=0.9): un poco más de campo de visión durante la pelea
       var cw = e && S.active && !e.dead && e.def.h && e.def.h.camW;   // jefes casi inmóviles (Karceron, Letea): la cámara se sesga hacia ellos para que quepan en pantalla
       if (cw) return { x: tx + (G.clamp(e.x - G.W / 2, 0, G.AW - G.W) - tx) * cw * 0.5, y: ty + (G.Proj.clampCamY(e.y + 20 - G.VH / 2) - ty) * cw };
       return { x: tx, y: ty };
@@ -775,9 +805,9 @@
       var pose = A.pose;
       if (A.step === 'tele') { st.windup = pose; st.wp = G.clamp(A.t / A.tele, 0, 0.999); }
       else if (A.step === 'act') {
-        if (A.name === 'estampida' && A.sub === 'aim') { st.windup = pose; st.wp = G.clamp(A.subT / 600, 0, 0.999); }
+        if ((A.name === 'estampida' || A.name === 'embestida') && A.sub === 'aim') { st.windup = pose; st.wp = G.clamp(A.subT / 600, 0, 0.999); }
         else { st.strike = pose; st.sp = G.clamp(A.t / (A.name === 'embestida' || A.name === 'estampida' ? 600 : (A.actMs || 300)), 0, 0.999); }
-        if (pose === 'embestida' || pose === 'estampida') st.speed = A.spd;
+        if ((pose === 'embestida' || pose === 'estampida') && A.sub !== 'aim') st.speed = A.spd;
       } else if (A.stunned) st.stun = true;
       else if (A.t < 300) { st.strike = pose; st.sp = G.clamp(0.7 + A.t / 1000, 0, 0.999); }
     }
@@ -873,14 +903,35 @@
     if (S.sigP > 0.01) Assets.drawBossVignette(c, W, H, 0.5 + 0.5 * S.sigP * (S.sigP > 0.8 ? 1 + 0.3 * Math.sin(G.time / 40) : 1) * 1.6, '255,30,20');
     if (S.flash > 0) { c.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, S.flash * 0.4) + ')'; c.fillRect(0, 0, W, H); }
     if (e && !e.dead && !e.dying) drawBar(c, e);
+    else { var gm = E.minis()[0]; if (gm && gm.spawnT <= 0 && !(e && S.active)) drawGuardBar(c, gm); }   // J3: los guardianes (Coloso, Colmena y variantes de bioma) usan una barra grande propia
     if (I) drawIntro(c, e, I);
   };
+  // Barra grande de guardián (DESIGN 4.1: banner de 2 s y la barra grande, sin intro larga): 520 x 16, muesca del enrage al 50 % y medidor de la parte rompible
+  function drawGuardBar(c, m) {
+    var bw = 520, bh = 16, bx = (W() - bw) / 2, by = 64, fr = G.clamp(m.hp / m.maxHp, 0, 1), nm = m.vname || B.enemy[m.type].name, t = G.time;
+    G.txt(c, nm, bx, by - 10, 15, m.enraged ? '#ff8a5a' : '#ffd27a', 'left');
+    G.txt(c, m.enraged ? 'ENFURECIDO' : 'GUARDIÁN', bx + bw, by - 10, 12, m.enraged ? '#ff6a3a' : '#c8b8e8', 'right');
+    c.fillStyle = '#07040c'; c.fillRect(bx - 3, by - 3, bw + 6, bh + 6); c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
+    var ex = m.expT > 0;
+    c.fillStyle = ex ? (Math.floor(t / 120) % 2 ? '#ffd24a' : '#ffb82a') : m.enraged ? '#ff5a30' : '#d8741a'; c.fillRect(bx, by, bw * fr, bh);
+    c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr, 4);
+    c.fillStyle = m.enraged ? 'rgba(80,70,90,0.9)' : '#ffffff'; c.fillRect(Math.round(bx + bw * 0.5) - 1, by - 3, 3, bh + 6);
+    c.strokeStyle = ex ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
+    G.txt(c, Math.ceil(m.hp) + ' / ' + Math.round(m.maxHp), bx + bw / 2, by + bh / 2, 10, '#ffffff', 'center');
+    var pm = m.shieldMax ? (m.shieldBroken ? 0 : m.shieldHp / m.shieldMax) : m.sacMax ? (m.sacBroken ? 0 : m.sacHp / m.sacMax) : -1;
+    if (pm >= 0) {
+      c.fillStyle = '#1a0a12'; c.fillRect(bx, by + bh + 5, 120, 8); c.fillStyle = (m.shieldFlash > 0 || m.sacFlash > 0) ? '#fff' : m.shieldMax ? '#8fb4e8' : '#c8e85a'; c.fillRect(bx + 1, by + bh + 6, 118 * pm, 6);
+      G.txt(c, pm > 0 ? m.partName : m.partName + ' ROTO', bx + 128, by + bh + 9, 10, pm > 0 ? '#d8cfe8' : '#ffd27a', 'left');
+    }
+    if (ex) G.txt(c, 'x' + m.expMul + ' EXPUESTO', bx + bw, by + bh + 9, 11, '#ffd24a', 'right');
+  }
   function drawBar(c, e) {
     var bw = 640, bh = 22, bx = (W() - bw) / 2, by = 52, D = e.def, fr = G.clamp(e.hp / e.maxHp, 0, 1), ex = S.expo(e), t = G.time;
     var fill = S.barFill == null ? 1 : S.barFill; if (e.mode === 'intro' && !(S.intro && S.intro.roared)) return;
     var ph = D.phases[e.phase - 1];
     // nombre y fase
     G.txt(c, D.name.toUpperCase(), bx, by - 11, 18, e.phase === 3 ? '#ff9a3c' : '#ffd27a', 'left');
+    S.drawChips(c, bx + c.measureText(D.name.toUpperCase()).width + 10, by - 11);
     G.txt(c, 'Fase ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + (e.mode === 'despair' ? D.despair : ph.n), bx + bw, by - 11, 14, e.mode === 'despair' ? '#d090ff' : '#c8b8e8', 'right');
     // marco + fondo
     c.fillStyle = '#07040c'; c.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
@@ -894,8 +945,9 @@
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr * fill, 6);
     // muescas de fase (65 % / 30 % / 8 %)
     var th = [D.phases[0].thr, D.phases[1].thr, D.despairAt], tc = ['#c8b8e8', '#ff9a3c', '#d090ff'];
+    if (pel().x2) { th.push(0.03); tc.push('#ff60c0'); }
     for (var i = 0; i < th.length; i++) {
-      var passed = (i === 0 && e.phase > 1) || (i === 1 && e.phase > 2) || (i === 2 && e.despDone);
+      var passed = (i === 0 && e.phase > 1) || (i === 1 && e.phase > 2) || (i === 2 && e.despDone) || (i === 3 && e.despLeft <= 0 && e.despDone);
       c.fillStyle = passed ? 'rgba(80,70,90,0.9)' : tc[i]; c.fillRect(Math.round(bx + bw * th[i]) - 1, by - 3, 3, bh + 6);
     }
     c.strokeStyle = ex.mul > 1 ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
@@ -936,6 +988,24 @@
       c.restore();
     }
   }
+  // Indicador de Peligro (y de modo cacería / práctica) junto al nombre del jefe
+  var PELCOL = ['', '#d8cfae', '#ffd27a', '#ff9a3c', '#ff5a3a', '#e0309a'];
+  S.chipsText = function () {
+    var out = [];
+    if (G.mode === 'practice') out.push(['PRÁCTICA', '#9dffb4']);
+    else {
+      if (G.mode === 'hunt') out.push(['CACERÍA', '#6ac8ff']);
+      var n = Math.round(G.peligro || 1); out.push(['PELIGRO ' + S.ROMAN[G.clamp(n, 1, 5)], PELCOL[G.clamp(n, 1, 5)]]);
+    }
+    return out;
+  };
+  S.drawChips = function (c, x, y) {
+    S.chipsText().forEach(function (ch) {
+      c.save(); c.font = 'bold 11px "Courier New", monospace'; var w = c.measureText(ch[0]).width + 12;
+      c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(x, y - 8, w, 17); c.strokeStyle = ch[1]; c.lineWidth = 2; c.strokeRect(x + 1, y - 7, w - 2, 15); c.restore();
+      G.txt(c, ch[0], x + w / 2, y + 1, 11, ch[1], 'center'); x += w + 6;
+    });
+  };
   function W() { return G.W; }
   function drawIntro(c, e, I) {
     var t = I.t, Wd = G.W, Hd = G.H, bar = 48;

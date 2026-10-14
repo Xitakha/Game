@@ -41,6 +41,10 @@
       desc: 'Acaba con la Madre Colmena: rompe su saco de larvas y no te quedes quieto.', rewardParts: { spine: 8 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'parts3', cat: 'C', tier: 3, kind: 'part', name: 'Rompe-partes', goal: 3, label: 'Partes de jefe', rare: 1,
       desc: 'Rompe 3 partes de jefe (suman entre expediciones, aunque pierdas). Mira los medidores de la barra.', rewardParts: { thread: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
+    { id: 'horn', cat: 'C', tier: 2, kind: 'partkey', key: 'cuernos', name: 'Rompe el cuerno', goal: 1, label: 'Cuernos del Pastor',
+      desc: 'Rompe los Cuernos del Pastor Corrupto (aunque pierdas, cuenta). Apunta a su cabeza.', rewardParts: { fang: 5 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'nojump', cat: 'C', tier: 3, kind: 'nojump', name: 'Sin Salto aplastante', goal: 1, label: 'Sin Salto', rare: 1,
+      desc: 'Derrota al Pastor Corrupto sin que te alcance su Salto aplastante: su sombra avisa 1 s.', rewardParts: { feather: 8 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'clean45', cat: 'C', tier: 2, kind: 'clean', name: 'Intocable', goal: 45, label: 'Sin daño', unit: ' s',
       desc: 'Aguanta 45 segundos seguidos sin recibir daño en una expedición.', rewardParts: { feather: 7 }, brasas: 90, pf: 1, pfRepeat: 1 },
     { id: 'clean90', cat: 'C', tier: 3, kind: 'clean', name: 'Fantasma de Rescoldo', goal: 90, label: 'Sin daño', unit: ' s', rare: 1,
@@ -116,6 +120,7 @@
     if (S().prog[d.id] >= d.goal) done(d);
   }
   Q.onKill = function (type) {
+    if (G.mode === 'practice') return;
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
     if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === type) inc(d);
     else if (d.kind === 'kills') inc(d);
@@ -134,6 +139,8 @@
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return null;
     if (d.kind === 'part') (info.parts || []).forEach(function (k) { Q.onBossPart(info.bossId, k); });
     else if (d.kind === 'clean') { var s = Math.floor(info.clean || 0); if (s > Q.progress(d.id)) { S().prog[d.id] = Math.min(d.goal, s); } }
+    else if (d.kind === 'partkey') { if ((info.parts || []).indexOf(d.key) >= 0) S().prog[d.id] = 1; }
+    else if (d.kind === 'nojump') { if (info.won && info.bossId === 'pastor' && !((info.hitBy || {}).boss_salto > 0)) S().prog[d.id] = 1; }
     else if (d.kind === 'win7') { if (info.won && info.lenMin === 7) S().prog[d.id] = 1; }
     else if (d.kind === 'wintag') {
       var n = (info.hand || []).filter(function (id) { var c = G.Cards.def(id); return c && c.tag === d.tag; }).length;
@@ -163,18 +170,19 @@
     if (d.kind === 'clean') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.cleanSecs()))) + '/' + d.goal + ' s';
     if (d.kind === 'wintag') return d.label + ' ' + Math.min(3, (G.Cards.mods.tagN || {})[d.tag] || 0) + '/3';
     if (d.kind === 'win7') return d.label + (G.RUN_LEN === 7 * 60000 ? '' : ' (elige 7 min)');
+    if (d.kind === 'nojump') return d.label + (G.Boss.active ? ' - ¡cuidado!' : '');
     return d.label + ' ' + Math.min(d.goal, Q.progress(d.id)) + '/' + d.goal;
   };
   Q.progText = function (d) {
     var p = Q.progress(d.id);
     if (d.kind === 'clean') return 'mejor racha ' + p + '/' + d.goal + ' s';
-    if (d.kind === 'wintag' || d.kind === 'win7') return p >= d.goal ? 'cumplido' : 'por cumplir';
+    if (d.kind === 'wintag' || d.kind === 'win7' || d.kind === 'partkey' || d.kind === 'nojump') return p >= d.goal ? 'cumplido' : 'por cumplir';
     return p + '/' + d.goal + ' ' + d.label;
   };
   Q.statusLine = function () {
     var d = Q.active(); if (!d) return null;
     var p = Math.min(d.goal, Q.progress(d.id));
-    return d.name + ': ' + (d.kind === 'wintag' || d.kind === 'win7' ? (p >= d.goal ? 'cumplido' : 'sin cumplir') : p + '/' + d.goal + (d.unit || '')) + (Q.isReady() ? '  (¡entrégalo a Vesper!)' : '');
+    return d.name + ': ' + (d.kind === 'wintag' || d.kind === 'win7' || d.kind === 'partkey' || d.kind === 'nojump' ? (p >= d.goal ? 'cumplido' : 'sin cumplir') : p + '/' + d.goal + (d.unit || '')) + (Q.isReady() ? '  (¡entrégalo a Vesper!)' : '');
   };
   // Marca "!" sobre Vesper: 'ready' (verde: entregable), 'new' (dorado: Tablón rotado desde la última visita y sin encargo activo) o null
   Q.seen = function () { G.Save.data.flags.qseen = Q.boardKey(); G.Save.save(); };

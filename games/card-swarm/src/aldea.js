@@ -192,7 +192,9 @@
       }
       if (act) lines = ['Aún te falta ' + (act.kind === 'clean' ? 'una racha de ' + act.goal + ' s' : act.goal - Q.progress(act.id) > 1 ? (act.goal - Q.progress(act.id)) + ' por cumplir' : 'poco') + '. No lo dejes escapar.'];
       else lines = firstV ? ['Hay bichos que molestan. Elige uno.', 'Empieza por las Bombas: huelen a chamusquina.'] : Q.mark() === 'new' ? ['El Tablón ha cambiado desde tu última visita. Echa un vistazo.'] : ['Hay bichos que molestan. Elige uno.'];
-      D.say(w, lines, [{ label: 'Encargos', fn: function () { openPanel('vesper'); } }, ch, bye]);
+      var vopts = [{ label: 'Encargos', fn: function () { G.Panels.vesperTab(0); openPanel('vesper'); } }];
+      if (G.Panels.huntAvailable()) { lines = lines.concat(['Hay una bestia que merece la pena. ¿Vamos?']); vopts.push({ label: 'Cacería', fn: function () { G.Panels.vesperTab(1); openPanel('vesper'); } }); }
+      D.say(w, lines, vopts.concat([ch, bye]));
     } else if (it.id === 'rufo') {
       var left = L.TRADE.cupo - (S.shop.trade || 0), line2 = left <= 0 ? 'Hoy no me caben más trastos. Vuelve tras otra salida.' : (S.brasas < 6 && totalParts() === 0) ? 'El cariño no paga, cordero.' : '¿Cambiamos? Tres por una, sin preguntas.';
       D.say(w, [line2], [{ label: 'Comerciar', fn: function () { openPanel('rufo'); } }, ch, bye]);

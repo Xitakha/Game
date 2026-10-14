@@ -30,11 +30,12 @@
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
     if (name === 'forge') G.Tree.open();
     if (name === 'rufo') st.rt = 0;
-    if (name === 'vesper') G.Quests.seen();
+    if (name === 'vesper') { G.Quests.seen(); st.vt = st.vt || 0; huntFix(); }
     if (name === 'logros') { st.lsel = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
   };
   P.closeAll = function () { cur = null; };
+  P.vesperTab = function (n) { st.vt = n; huntFix(); };   // 0 = Tablón, 1 = Cacería (lo usa el diálogo de Vesper)
   P.current = function () { return cur; };
 
   P.update = function (dt) {
@@ -83,14 +84,88 @@
     } else if (act) say('Ya tienes un encargo activo. Entrégalo o abandónalo.');
     else { Q.accept(d.id); say(d.target ? 'Encargo aceptado: ' + d.label + ' aparece antes y más a menudo.' : 'Encargo aceptado: ' + d.name + '.'); G.sfx('card_select', { vol: 0.7 }); }
   }
+  // ---- CACERÍA (J3, DESIGN 4.2): encargo de Vesper por jefe y Peligro desbloqueado; PRACTICAR = sin riesgo ni recompensas, con HP x0,5
+  function huntAvail(id) { return (SV().bossKills[id] || 0) > 0; }
+  P.huntAvailable = function () { return G.Save.BOSSES.some(huntAvail); };
+  function huntFix() {
+    var B = G.Save.BOSSES; st.hb = st.hb || 0; st.hph = st.hph || 1;
+    if (!huntAvail(B[st.hb])) { var f = B.filter(huntAvail)[0]; st.hb = f ? B.indexOf(f) : 0; }
+    st.hp = G.clamp(st.hp || 1, 1, G.Save.pelMax(B[st.hb]));
+  }
+  function tabRect(i) { return { x: 150 + i * 138, y: 4, w: 130, h: 40 }; }
+  function hbRect(i) { return { x: 20 + i * 152, y: 56, w: 144, h: 52 }; }
+  function hpRect(i) { return { x: 20 + i * 64, y: 116, w: 58, h: 38 }; }
+  var R_HUNT = { x: 648, y: 168, w: 280, h: 62 }, R_PRAC = { x: 648, y: 396, w: 280, h: 56 };
+  function phRect(i) { return { x: 648 + i * 94, y: 340, w: 90, h: 40 }; }
+  function startHunt(practice) {
+    var id = G.Save.BOSSES[st.hb]; if (!huntAvail(id)) return;
+    G.launchReq = { mode: practice ? 'practice' : 'hunt', boss: id, peligro: practice ? 1 : st.hp, phase: practice ? st.hph : 0 };
+    G.practiceHand = null; G.Base.launch();
+  }
+  function updHunt() {
+    var B = G.Save.BOSSES, i;
+    for (i = 0; i < 3; i++) if (onR(hbRect(i))) { if (huntAvail(B[i])) { st.hb = i; huntFix(); G.sfx('flip', { vol: 0.4 }); } else say('Aún no has derrotado a ' + G.Boss.DEFS[B[i]].name + ': véncelo en una expedición.'); }
+    var id = B[st.hb];
+    for (i = 0; i < 5; i++) if (onR(hpRect(i))) { if (i + 1 <= G.Save.pelMax(id)) { st.hp = i + 1; G.sfx('flip', { vol: 0.4 }); } else say('Peligro ' + G.Boss.ROMAN[i + 1] + ' bloqueado: véncelo antes en ' + G.Boss.ROMAN[i] + '.'); }
+    for (i = 0; i < 3; i++) if (onR(phRect(i))) { st.hph = i + 1; G.sfx('flip', { vol: 0.4 }); }
+    if (onR(R_HUNT) || inp.hit('KeyF')) startHunt(false);
+    if (onR(R_PRAC) || inp.hit('KeyP')) startHunt(true);
+    if (inp.hit('KeyQ')) { st.hp = Math.max(1, st.hp - 1); } if (inp.hit('KeyE')) { st.hp = Math.min(G.Save.pelMax(id), st.hp + 1); }
+    return false;
+  }
+  var TAGC = { fire: '#ff7a2a', steel: '#b8c0cc', poison: '#7be34a', ice: '#6ac8ff', lightning: '#ffe45a', blood: '#d02048' };
+  function drawHunt(c) {
+    var B = G.Save.BOSSES, S = SV(), Q = G.Quests, i;
+    G.txt(c, '"Hay una bestia que merece la pena. ¿Vamos?"', 720, 135, 12, '#ffd0a0', 'center');
+    for (i = 0; i < 3; i++) {
+      var D0 = G.Boss.DEFS[B[i]], av = huntAvail(B[i]);
+      U.button(c, hbRect(i), av ? D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase() : '? ' + D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase(), { size: 15, off: !av, color: st.hb === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.hb === i ? '#bfeaff' : '#6a5a80', sub: av ? 'Peligro hasta ' + G.Boss.ROMAN[G.Save.pelMax(B[i])] : 'vence al jefe 1 vez' });
+    }
+    var id = B[st.hb], D = G.Boss.DEFS[id], av2 = huntAvail(id), PD = G.Boss.PELIGRO[st.hp], pmax = G.Save.pelMax(id);
+    G.txt(c, 'PELIGRO  (Q/E)', 345, 135, 11, '#9a8fb0', 'left');
+    for (i = 0; i < 5; i++) { var op = i + 1 <= pmax; U.button(c, hpRect(i), op ? G.Boss.ROMAN[i + 1] : '?', { size: 15, off: !op, color: st.hp === i + 1 ? '#a8801a' : '#2c2438', hot: '#d8a82a', border: st.hp === i + 1 ? '#ffffff' : '#6a5a80' }); }
+    if (!av2) { G.txt(c, 'Derrota a este jefe en una expedición para desbloquear su cacería.', 20, 190, 14, '#ff9a8a', 'left'); return; }
+    U.panel(c, 20, 162, 612, 336, { border: '#6a4a30' });
+    G.txt(c, D.name.toUpperCase(), 36, 184, 20, '#ffd27a', 'left');
+    G.txt(c, D.title + '   -   Peligro ' + G.Boss.ROMAN[st.hp] + ': HP x' + PD.hp.toFixed(2).replace('.', ',') + ' x0,75 (cacería), daño +' + Math.round((PD.dmg - 1) * 100) + ' %', 36, 206, 12, '#c8b8e8', 'left');
+    G.txt(c, 'DEBILIDADES', 36, 232, 11, '#9a8fb0', 'left');
+    var x = 36;
+    D.weak.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, TAGC[w.tag] || '#9dffb4', 'left'); x += (t.length + 6) * 8.2 + 14; });
+    D.resist.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, '#8a8a98', 'left'); x += (t.length + 6) * 8.2 + 14; });
+    G.txt(c, 'PARTES ROMPIBLES  (cada una suelta su trofeo' + (PD.troph > 1 ? ' x2' : '') + ')', 36, 276, 11, '#9a8fb0', 'left');
+    Object.keys(D.parts).forEach(function (k, j) {
+      var pd = D.parts[k], tr = G.Boss.TROPHY[pd.trophy], y = 298 + j * 24;
+      try { c.drawImage(Assets.sprite(G.hasSpr(tr.spr) ? tr.spr : 'trophy_pastor_horn', 0), 36, y - 10, 20, 20); } catch (e0) { /* sin icono */ }
+      G.txt(c, pd.name + '  ->  ' + tr.name + '  (' + Math.round(pd.pct * 100) + ' % de la vida)', 64, y, 12, '#ffe9a0', 'left');
+    });
+    var bmin = Math.round(D.brasas * PD.brasas), bmax = Math.round((D.brasas + D.brasasPart * 3) * PD.brasas), pw = (S.pelWins[id] || {})[st.hp] || 0, hr = (S.hunts[id] || {})[st.hp] || { wins: 0, tries: 0, best: 0 }, pr = S.practice[id] || { tries: 0, wins: 0 };
+    G.txt(c, 'RECOMPENSA', 36, 380, 11, '#9a8fb0', 'left');
+    G.txt(c, bmin + '-' + bmax + ' Brasas, trofeos de las partes rotas, partes del jefe x' + PD.gmul.toFixed(2).replace('.', ','), 36, 398, 12, '#ffe9a0', 'left');
+    G.txt(c, 'PF: ' + (pw > 0 ? 'ya cobrados en este Peligro (sin farmeo)' : '+' + (D.pf + PD.pfx) + ' la primera vez') + '   -   sin Esencia segura, sin hordas', 36, 416, 12, pw > 0 ? '#9a8fb0' : '#ffd24a', 'left');
+    G.txt(c, 'Cacería en Peligro ' + G.Boss.ROMAN[st.hp] + ': ' + hr.wins + ' victorias / ' + hr.tries + ' intentos' + (hr.best ? '   mejor ' + G.fmtTime(hr.best * 1000) : ''), 36, 444, 12, '#9dffb4', 'left');
+    G.txt(c, 'Práctica: ' + pr.wins + ' victorias / ' + pr.tries + ' intentos', 36, 462, 12, '#9dffb4', 'left');
+    G.txt(c, 'Preparación: 6 ofertas de carta seguidas; luego entra la bestia.', 36, 484, 11, '#c8b8e8', 'left');
+    U.panel(c, 640, 162, 296, 336, { border: '#4a3a66' });
+    U.button(c, R_HUNT, 'CAZAR', { size: 26, sub: 'F  -  Peligro ' + G.Boss.ROMAN[st.hp], color: '#c4601c' });
+    G.txt(c, 'Sin hordas: solo la bestia y sus adds,', 650, 252, 11, '#d8cfe8', 'left');
+    G.txt(c, 'más 3 gusanos de limpieza cada 25 s.', 650, 267, 11, '#d8cfe8', 'left');
+    G.txt(c, 'PRACTICAR  (sin riesgo, HP x0,5, sin Peligro)', 650, 318, 11, '#9dffb4', 'left');
+    for (i = 0; i < 3; i++) U.button(c, phRect(i), 'FASE ' + G.Boss.ROMAN[i + 1], { size: 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
+    G.txt(c, 'Empieza en la fase elegida. Reinicio rápido con R.', 650, 396 - 6, 10, '#9a8fb0', 'left');
+    U.button(c, R_PRAC, 'PRACTICAR', { size: 20, sub: 'P  -  fase ' + G.Boss.ROMAN[st.hph] + ', intento ' + (pr.tries + 1), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+  }
   function updVesper() {
+    for (var ti = 0; ti < 2; ti++) if (onR(tabRect(ti))) { st.vt = ti; huntFix(); G.sfx('flip', { vol: 0.4 }); }
+    if (st.vt === 1) return updHunt();
     var n = G.Quests.board().length;
     for (var i = 0; i < n; i++) if (inp.hit('Digit' + (i + 1)) || onR(qBtn(i))) qAction(i);
     return false;
   }
   function drawVesper(c) {
     var Q = G.Quests, act = Q.active(), list = Q.board();
-    bg(c, 'TABLÓN DE ENCARGOS  -  Vesper'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
+    bg(c, 'VESPER'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
+    ['TABLÓN', 'CACERÍA'].forEach(function (t, i) { U.button(c, tabRect(i), t, { size: 15, color: st.vt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.vt === i ? '#bfeaff' : '#6a5a80', sub: i === 1 && !P.huntAvailable() ? 'vence a un jefe' : null }); });
+    if (st.vt === 1) { drawHunt(c); G.txt(c, 'Esc: volver', 20, 522, 11, '#6f6480', 'left'); return; }
     list.forEach(function (d, i) {
       var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
       U.panel(c, r.x, r.y, r.w, r.h, { border: ready ? '#7dff9a' : isA ? '#ffd24a' : '#4a3a66' });
@@ -220,11 +295,20 @@
   function handRect(i) { return { x: 20 + i * 84, y: 120, w: 72, h: 96 }; }
   function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
   function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
-  var R_GO = { x: 650, y: 440, w: 290, h: 76 };
+  var R_GO = { x: 650, y: 486, w: 290, h: 44 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
-  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron' }];
-  function biomeRect(i) { return { x: 650 + i * 98, y: 376, w: 92, h: 50 }; }
+  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' }];
+  function biomeRect(i) { return { x: 650 + i * 98, y: 338, w: 92, h: 44 }; }
+  // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
+  var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
+  function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 38 }; }
+  function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
+    var S = SV(), id = S.biome || 'bosque';
+    if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
+    if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
+    return BIOMES.filter(function (b) { return b.id === id; })[0];
+  }
   function biomeOpen(b) { return !b.need || (SV().bossKills[b.need] || 0) > 0; }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
@@ -242,6 +326,14 @@
       else say('Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
     }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
+    var bid = effBiome().bid;
+    for (i = 0; i < 5; i++) if (onR(pelRect(i))) {
+      if (i + 1 <= G.Save.pelMax(bid)) { G.Save.setPelSel(bid, i + 1); G.sfx('card_select', { vol: 0.5 }); }
+      else say('Bloqueado: vence a ' + effBiome().boss + ' en Peligro ' + G.Boss.ROMAN[i] + ' para abrirlo.');
+    }
+    if (inp.hit('KeyQ')) G.Save.setPelSel(bid, G.Save.pelSel(bid) - 1);
+    if (inp.hit('KeyE')) G.Save.setPelSel(bid, G.Save.pelSel(bid) + 1);
+    G.launchReq = null;
     if (onR(R_GO) || inp.hit('Enter')) { G.Base.launch(); }
     return false;
   }
@@ -271,26 +363,33 @@
     LENS.forEach(function (n, k) { var on = S.len === n; U.button(c, lenRect(k), n + ' min', { size: 17, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: subs[n] }); });
     G.txt(c, 'Jefe a los ' + G.fmtTime(S.len * 60000 * 7.5 / 9) + '. Más tiempo = más botín.', 650, 172, 11, '#9a8fb0', 'left');
     // encargo y compras pendientes
-    U.panel(c, 650, 190, 290, 104);
-    G.txt(c, 'ENCARGO ACTIVO', 662, 208, 12, '#9a8fb0', 'left');
+    U.panel(c, 650, 184, 290, 70);
+    G.txt(c, 'ENCARGO ACTIVO', 662, 200, 12, '#9a8fb0', 'left');
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
-    for (i = 0; i < ls.length && i < 3; i++) G.txt(c, ls[i], 662, 230 + i * 16, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    if (Q.target()) G.txt(c, 'Objetivo: pesa x2,5 y llega antes', 662, 282, 10, '#9dffb4', 'left');
-    U.panel(c, 650, 300, 290, 58);
-    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 314, 11, '#9a8fb0', 'left');
-    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 349, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
-    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 335, 12, '#ffe9a0', 'left');
-    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 335, 12, '#8a7f96', 'left');
-    var cb = BIOMES.filter(function (b) { return b.id === (S.biome || 'bosque'); })[0] || BIOMES[0];
-    G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 364, 11, '#9a8fb0', 'left');
+    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 220 + i * 15, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
+    if (Q.target()) G.txt(c, 'Objetivo: pesa x2,5 y llega antes', 662, 247, 10, '#9dffb4', 'left');
+    U.panel(c, 650, 258, 290, 62);
+    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 272, 11, '#9a8fb0', 'left');
+    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 307, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
+    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 291, 12, '#ffe9a0', 'left');
+    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 291, 12, '#8a7f96', 'left');
+    var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel];
+    G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
-      var open = biomeOpen(b), on = (S.biome || 'bosque') === b.id && open;
-      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 13, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro I') : 'bloqueado' });
+      var open = biomeOpen(b), on = cb.id === b.id;
+      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 13, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
     });
-    G.txt(c, 'Peligro I (II-V: próximamente)', 650, 434, 10, '#5a4f68', 'left');
+    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax], 650, 398, 11, '#9a8fb0', 'left');
+    for (i = 0; i < 5; i++) {
+      var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
+      U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 16, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
+    }
+    var pl1 = 'HP jefe x' + PD.hp.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : '');
+    G.txt(c, pl1, 650, 453, 10, '#ffe9a0', 'left');
+    U.wrap(c, PEL_TXT[psel] + (psel >= 4 ? ' Recomendado: DPS >= 110.' : ''), 290, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 650, 466 + k * 12, 10, '#c8b8e8', 'left'); });
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
-    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 19, sub: 'Enter  -  anclas: ' + names });
+    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 15, sub: 'Enter  -  ' + names });
   }
 
   // ============================================================= ARCHIVO (Ulalume) / COLECCIÓN

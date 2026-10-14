@@ -19,7 +19,11 @@
   G.speed = qnum('speed', 1); G.god = qnum('god', 0) > 0; G.t0 = qnum('t', 0) * 1000;
   // Jefes v4: ?boss=pastor salta a la pelea, ?peligro=<n> (1-5), ?phase=2|3, ?hp=0.3, ?nointro=1, ?hand=spark:3,ember:2 (mano de prueba)
   G.bossUrl = (/[?&]boss=(\w+)/.exec(location.search) || [])[1] || null; G.peligro = qnum('peligro', 1);
-  G.dbgHpCal = qnum('hpcal', 0); G.dbgPhase = qnum('phase', 0); G.dbgHp = qnum('hp', 0); G.nointro = qnum('nointro', 0) > 0;
+  // J3: ?hunt=<jefe> arranca una cacería (sin hordas, 6 ofertas de preparación), ?practice=1 la modalidad PRACTICAR (con ?hunt= o ?boss=), ?prep=0 salta las 6 ofertas, ?zoom=0.9 zoom de combate opcional
+  G.huntUrl = (/[?&]hunt=(\w+)/.exec(location.search) || [])[1] || null; G.practiceUrl = qnum('practice', 0) > 0; G.noPrep = qnum('prep', 1) === 0;
+  G.peligroUrl = /[?&]peligro=/.test(location.search); G.combatZoom = qnum('zoom', 0) || 0; G.mode = 'run';   // G.mode: 'run' | 'hunt' | 'practice'
+  G.pelx = (/[?&]pelx=([\w.:,]+)/.exec(location.search) || [])[1] || null;   // ?pelx=hp:1.1,dmg3:1.05,tele:1 sobrescribe la tabla de Peligro (calibración; sufijo = solo ese nivel)
+  G.dbgHpCal = qnum('hpcal', 0); G.dbgPhase = qnum('phase', 0); G.dbgHp = qnum('hp', 0); G.nointro = G.nointroUrl = qnum('nointro', 0) > 0;
 
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
@@ -80,7 +84,7 @@
     },
     light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
     // Multiplicador GLOBAL de daño de cartas (armas, combos, zonas, estados). Aplicado en G.Combat.deal y G.Combat.dot. No afecta a enemigos. 0.98 = -2 %.
-    cardDmgMul: 0.98,
+    cardDmgMul: 0.98 * (qnum('cmul', 1) || 1),   // ?cmul=1.2 (solo calibración): modela una mano forjada (DPS x1,2) para medir Peligro con el bot
     // Curación por golpe (v5): el robo de vida (Colmillo) y el Pacto ardiente solo curan con esta probabilidad por kill, a cambio de una cantidad mayor.
     // Cura media por kill: Colmillo 1 -> 0,6 HP (-40 %); Pacto ardiente 2 -> 0,8 HP por kill de Fuego (-60 %). Sangre envenenada (4 HP cada 15 kills) no cambia.
     heal: { chance: 0.2, fang: 3, pact: 4, bloodpoison: 4 },
@@ -240,14 +244,23 @@
     try { Assets.unlock(); } catch (e) { /* sin audio */ }
     G.setLen(G.lenOverride || G.Save.data.len || 9);
     var pd = G.Save.data.pending;   // compras de Rufo (Tónico / Imán): valen para ESTA expedición
-    G.runBuff = { tonic: !!pd.tonic, magnet: !!pd.magnet }; pd.tonic = 0; pd.magnet = 0; G.Save.save();
-    try { G.Cook.begin(); } catch (e0) { G.runBuff.dish = null; G.runBuff.fx = {}; }   // Fase 2b: plato de Tía Castaña (consume pending.dish y deja su buff en G.runBuff.fx)
+    var prac = (G.launchReq && G.launchReq.mode === 'practice') || (!G.launchReq && G.practiceUrl && (G.huntUrl || G.bossUrl));   // la práctica no gasta compras ni platos
+    G.runBuff = { tonic: !prac && !!pd.tonic, magnet: !prac && !!pd.magnet }; if (!prac) { pd.tonic = 0; pd.magnet = 0; } G.Save.save();
+    if (prac) { G.runBuff.dish = null; G.runBuff.fx = {}; }
+    else try { G.Cook.begin(); } catch (e0) { G.runBuff.dish = null; G.runBuff.fx = {}; }   // Fase 2b: plato de Tía Castaña (consume pending.dish y deja su buff en G.runBuff.fx)
     G.Loot.beginRun();
     G.reset();
     // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (bosque = Pastor, cripta = Karceron, asfodelo = Letea).
     // Cripta exige haber vencido al Pastor y Asfodelo a Karceron (persistido en Save.data.bossKills); ?biome= y ?boss= saltan el bloqueo.
+    // Modo de la salida (J3): 'run' normal, 'hunt' (cacería de Vesper: sin hordas) o 'practice' (sin riesgo ni recompensas). G.launchReq lo pide el Portal / el Tablón de Vesper.
+    var rq = G.launchReq; G.launchReq = null;
+    if (!rq && G.huntUrl) rq = { mode: G.practiceUrl ? 'practice' : 'hunt', boss: G.huntUrl };
+    if (!rq && G.practiceUrl && G.bossUrl) rq = { mode: 'practice', boss: G.bossUrl };
+    G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
+    G.mode = rq ? rq.mode : 'run'; G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
-    if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[G.bossUrl] || biome;
+    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[rq.boss] || biome;
+    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[G.bossUrl] || biome;
     else if (!G.biomeUrl) {
       if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
@@ -255,12 +268,32 @@
     G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
     if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
-    if (G.bossUrl) { G.bossId = G.bossUrl; G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true }; }
+    if (rq) G.bossId = rq.boss;
+    else if (G.bossUrl) G.bossId = G.bossUrl;
+    // Peligro: el URL manda (pruebas); si no, el elegido en el Portal / Tablón (limitado a lo desbloqueado); ?boss= sin ?peligro= = Peligro I; la práctica no tiene Peligro
+    if (G.mode === 'practice') G.peligro = 1;
+    else if (rq && rq.peligro) G.peligro = G.peligroUrl ? qnum('peligro', 1) : Math.min(rq.peligro, G.Save.pelMax(G.bossId));
+    else if (!G.peligroUrl) G.peligro = G.bossUrl || rq ? 1 : G.Save.pelSel(G.bossId);
+    else G.peligro = qnum('peligro', 1);
+    G.dbgPhase = (rq && rq.phase) || qnum('phase', 0);
+    if (G.bossUrl || rq) { G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true }; }
+    if (G.mode !== 'run') {   // cacería / práctica: arena solo con el jefe; 6 ofertas de preparación (la práctica reutiliza la mano del primer intento)
+      var sv = G.Save.data, rec = sv.practice[G.bossId] = sv.practice[G.bossId] || { tries: 0, wins: 0 };
+      if (G.mode === 'practice') { rec.tries++; G.practiceTries = rec.tries; }
+      else G.Save.hunt(G.bossId, Math.round(G.peligro)).tries++;
+      G.Save.save();
+      G.nointro = G.nointroUrl || (G.mode === 'practice' && rec.tries > 1);
+    }
     var hq = /[?&]hand=([^&]+)/.exec(location.search);
+    if (G.mode === 'practice' && G.practiceHand && G.practiceHand.boss === G.bossId && !hq) {   // reinicio rápido: misma mano del intento anterior
+      G.practiceHand.hand.forEach(function (h) { if (h) for (var n = 0; n < h.lvl; n++) G.Cards.add(h.id); });
+      G.Cards.recalc(false);
+    } else if (G.mode !== 'run' && !hq && !G.noPrep) G.prep = { left: 6, total: 6 };
     if (hq) { decodeURIComponent(hq[1]).split(',').forEach(function (kv) { var a = kv.split(':'), n = parseInt(a[1], 10) || 1; for (var i = 0; i < n; i++) G.Cards.add(a[0]); }); G.Cards.recalc(false); }
     // Las anclas ya están en la mano (Cards.reset). Si no hay ningún arma, primera decisión: 1 de 3 cartas iniciales
     var armed = G.player.hand.some(function (s) { return s && G.Cards.def(s.id).type === 'attack'; });
-    if (armed) G.state = 'play';
+    if (G.prep) { try { G.Boss.stinger('prep'); } catch (e3) { /* audio */ } G.pendingLevels = G.prep.left; G.state = 'cards'; G.Cards.open('level'); }   // preparación: 6 ofertas seguidas, sin esperar a la XP
+    else if (armed) G.state = 'play';
     else { G.state = 'cards'; G.Cards.open('start'); }
     inp.lock = 250;
     try { Assets.music.setTrack('normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
@@ -270,7 +303,7 @@
     if (G.state === 'gameover') return;
     G.won = won; G.state = 'gameover';
     G.finalHand = G.Cards.snapshot();
-    G.Loot.endRun(won);
+    if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
     G.sfx(won ? 'boss_die' : 'game_over');
     if (won) { try { G.Snd.play('win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
@@ -279,7 +312,7 @@
   // ---------------------------------------------------------------- Actualización
   function updateWorld(dt) {
     G.time += dt;
-    if (!(G.Boss.active || G.Boss.defeated)) G.runT += dt;   // el reloj de la run se congela mientras el jefe vive
+    if (!(G.Boss.active || G.Boss.defeated) && G.mode === 'run') G.runT += dt;   // el reloj de la run se congela mientras el jefe vive
     G.Player.update(G.player, dt);
     G.Weapons.update(dt);
     G.Enemies.update(dt);
@@ -311,6 +344,7 @@
       case 'paused':
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
         else if (inp.hit('KeyB')) G.finish(false);   // abandonar: conserva las partes recogidas y va al botín
+        else if (inp.hit('KeyR') && G.mode === 'practice') G.Base.retryPractice();   // práctica: reinicio rápido
         break;
       case 'cards':
         G.fx.updateShake(dt);
@@ -405,7 +439,7 @@
     G.ground = buildGround(); G.groundBiome = Assets.getBiome();
     G.reset();
     G.Aldea.open(false);
-    if (G.bossUrl) G.startGame();   // ?boss=pastor: salta directo a la pelea
+    if (G.bossUrl || G.huntUrl) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();

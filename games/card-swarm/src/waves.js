@@ -5,7 +5,7 @@
   var G = window.G, B = G.B, W = G.Waves = {};
 
   W.MINI_LAST = 45000;   // ms reales: un minijefe pendiente no entra en los últimos 45 s antes del jefe final
-  W.reset = function () { W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
+  W.reset = function () { W.cleanT = null; W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
   W.reset();
 
   // Posición en anillo fuera de cámara (cae dentro de la arena)
@@ -31,9 +31,10 @@
   function spawnElite(type) {
     W.elitesDone[type] = true;
     var pos = spawnPos(), E = G.Enemies;
-    E.spawn(type, pos[0], pos[1]);
+    var el = E.spawn(type, pos[0], pos[1]), vr = G.curBiome === 'cripta' && type === 'mini_bulwark' ? 'warden' : G.curBiome === 'asfodelo' && type === 'mini_hive' ? 'wraith' : null;
+    if (vr) E.variant(el, vr);   // guardián propio del bioma (J3)
     if (type === 'mini_bulwark') { E.spawn('shield', pos[0] + 45, pos[1] + 20); E.spawn('shield', pos[0] - 45, pos[1] + 20); }
-    G.Hud.banner('¡ÉLITE: ' + B.enemy[type].name + '!', 2000, '#ffb347');
+    G.Hud.banner('¡GUARDIÁN: ' + (vr ? G.Enemies.VARIANTS[vr].name : B.enemy[type].name) + '!', 2000, '#ffb347');
     G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 });
     W.eliteBoost = 25000;
   }
@@ -75,9 +76,31 @@
   function qTarget() { try { return G.Quests.target(); } catch (e) { return null; } }
   function fromOf(k, qt) { var f = B.enemy[k].from; return k === qt ? Math.min(f, G.Quests.EARLY) : f; }
 
+  // Cacería / práctica (J3, DESIGN 4.2 y 4.4): sin hordas. Tras las 6 ofertas de preparación entra el jefe; solo sus adds + una oleada de limpieza de 3 gusanos cada 25 s
+  // (para que las cartas de área tengan algo que hacer), nunca durante la intro, las puertas de fase, los desesperados ni los ataques firma. Tope: 6 normales.
+  function huntUpdate(dt) {
+    var boss = G.Enemies.boss();
+    if (!W.bossSpawned) {
+      if (G.pendingLevels > 0) return;   // preparación en curso
+      G.prep = null;
+      if (G.mode === 'practice') G.practiceHand = { boss: G.bossId, hand: G.Cards.snapshot().hand };
+      spawnBoss(); return;
+    }
+    if (!boss || boss.dead || boss.mode !== 'fight') return;
+    if (boss.atk && boss.atk.sig) return;
+    if (boss.def.h && boss.def.h.sigNow && boss.def.h.sigNow(boss)) return;
+    W.cleanT = (W.cleanT == null ? 12000 : W.cleanT) - dt;
+    if (W.cleanT > 0) return;
+    W.cleanT = 25000;
+    if (G.Boss.normalsAlive() > 3) return;
+    var pos = spawnPos();
+    for (var i = 0; i < 3; i++) G.Enemies.spawn('worm', G.clamp(pos[0] + G.rnd(-40, 40), G.WALL + 30, G.AW - G.WALL - 30), G.clamp(pos[1] + G.rnd(-40, 40), G.WALL + 30, G.AH - G.WALL - 30));
+  }
+
   W.update = function (dt) {
-    var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
     if (G.frozen) return;   // intro del jefe
+    if (G.mode !== 'run') { huntUpdate(dt); return; }
+    var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
     if (!W.bossSpawned && G.runT >= G.BOSS_T) spawnBoss();
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
