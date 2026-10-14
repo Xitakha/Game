@@ -337,10 +337,7 @@
     },
     tele: function (e, A, dt) {
       var p = PL(), m = G.WALL + e.r, miny = G.WALL + 110;
-      if (A.t < A.fixAt) {   // la sombra persigue al jugador, pero más lenta que él (150 px/s): se puede salir
-        var dx = p.x - A.tx, dy = p.y - A.ty, d = Math.hypot(dx, dy), st = Math.min(d, 150 * dt / 1000);
-        if (d > 0.5) { A.tx += dx / d * st; A.ty += dy / d * st; }
-      }
+      // El objetivo es donde estaba el jugador al EMPEZAR (no persigue): salir de r 120 cuesta 0,63 s + reacción < 1000 ms (regla de esquiva)
       A.tx = G.clamp(A.tx, m, G.AW - m); A.ty = G.clamp(A.ty, miny, G.AH - m);
       var u = ease((A.t - A.flyAt) / 600);
       e.x = A.sx + (A.tx - A.sx) * u; e.y = A.sy + (A.ty - A.sy) * u; e.lift = A.t > A.flyAt ? 120 * Math.sin(u * Math.PI) : 0;
@@ -690,6 +687,7 @@
     e.dying = true; e.immune = true; S.noHurt = 1e9; G.frozen = false; S.tint = 0; S.sigP = 0;
     Object.keys(e.parts).forEach(function (k) { e.parts[k].dead = true; });
     S.waves.length = 0; S.spikes.length = 0;
+    for (var pj = 0; pj < G.projectiles.length; pj++) if (G.projectiles[pj].team === 'e') G.projectiles[pj].life = 0;   // proyectiles enemigos: se apagan en el siguiente paso
     fx.hit(120); fx.shake(12, 900); sfx('boss_die'); S.flash = 0.6;
     G.Hud.banner('¡' + e.def.name.toUpperCase() + ' DERROTADO!', 2800, '#ffd24a');
     var R = G.Loot.run; if (R) { if (!R.boss) R.boss = { id: e.id, won: true, parts: [] }; R.boss.won = true; R.boss.time = S.combatT; }
@@ -896,4 +894,8 @@
       adds: addsAlive(), combatT: Math.round(S.combatT), bst: e.bst, x: Math.round(e.x), y: Math.round(e.y), exp: S.expo(e).mul };
   };
   S.normalsAlive = normalsAlive;
+  // pruebas / capturas: fuerza un ataque o rompe una parte (G.Boss.force('salto'), G.Boss.breakKey('cuernos'))
+  S.force = function (name) { var e = S.e; if (!e || e.mode !== 'fight' || e.atk) return false; startAttack(e, name); return true; };
+  S.breakKey = function (k) { var e = S.e; if (e && e.parts[k] && !e.parts[k].dead) S.breakPart(e, e.parts[k]); };
+  S.gate = function () { var e = S.e; if (e && e.mode === 'fight' && e.phase < 3) { e.hp = e.def.phases[e.phase - 1].thr * e.maxHp; S.startGate(e); } };
 })();

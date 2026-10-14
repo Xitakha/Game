@@ -53,7 +53,7 @@
   function updateZones(dt) {
     var p = PL();
     for (var i = G.zones.length - 1; i >= 0; i--) {
-      var z = G.zones[i]; if (z.team !== 'e') continue;
+      var z = G.zones[i]; if (!z || z.team !== 'e') continue;
       z.t += dt;
       if (z.arm > 0) { z.arm -= dt; if (z.arm <= 0) { z.arm = 0; if (z.kind !== 'fire') fx.ring(z.x, z.y, z.r * 0.4, z.r, 250, '#9bff4a', 3); } continue; }
       z.life -= dt;
@@ -124,7 +124,7 @@
   function updateProjectiles(dt, onlyPlayer) {
     var s = dt / 1000, p = PL(), hand = p.hand || [];
     for (var i = G.projectiles.length - 1; i >= 0; i--) {
-      var q = G.projectiles[i];
+      var q = G.projectiles[i]; if (!q) continue;
       if (q.team === 'p') { if (G.Weapons.updateProj(q, dt, s)) G.projectiles.splice(i, 1); continue; }
       if (onlyPlayer) continue;   // intro del jefe: los proyectiles enemigos quedan congelados
       q.x += q.vx * s; q.y += q.vy * s; q.life -= dt; q.t += dt;

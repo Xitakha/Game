@@ -235,7 +235,7 @@
 
   function updateZones(dt) {
     for (var i = G.zones.length - 1; i >= 0; i--) {
-      var z = G.zones[i]; if (z.team === 'e') continue;   // zonas enemigas: las gestiona enemies.js
+      var z = G.zones[i]; if (!z || z.team === 'e') continue;   // zonas enemigas: las gestiona enemies.js (z puede faltar si la muerte del jefe limpió zonas a mitad del bucle)
       z.life -= dt; z.tk -= dt;
       if (z.kind === 'pool' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-z.r, z.r) * 0.7, z.y + G.rnd(-z.r, z.r) * 0.5, 0, -30, 600, '#9aff6a', 3, { drag: 1 });
       if (z.tk <= 0) {
