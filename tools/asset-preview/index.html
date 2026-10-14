@@ -51,6 +51,36 @@
 <canvas id="village" width="960" height="540"></canvas>
 </div>
 
+<div id="bossBox" style="display:none">
+<h2>Jefe (Pastor Corrupto; solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px">
+  <label>Jefe <select id="bid"></select></label>
+  <label>Ataque <select id="bwin"><option value="">(ninguno)</option></select></label>
+  <label>Fase de ataque <select id="bmode"><option value="windup">telegrafia (windup)</option><option value="strike">golpe (strike)</option></select></label>
+  <label>Progreso <input id="bprog" type="range" min="0" max="1" step="0.01" value="0.6"><output id="bprogv">0.60</output></label>
+  <label><input type="checkbox" id="bloop" checked> auto</label>
+  <label>Fase <select id="bphase"><option>1</option><option>2</option><option>3</option></select></label>
+  <label>Vel. (px/s) <input id="bspeed" type="range" min="0" max="520" step="5" value="0"><output id="bspeedv">0</output></label>
+  <label>Salto (px) <input id="blift" type="range" min="0" max="160" step="2" value="0"><output id="bliftv">0</output></label>
+</div>
+<div style="margin-bottom:8px">
+  <label><input type="checkbox" id="bf"> mira a la izquierda</label>
+  <label><input type="checkbox" id="bh"> herido</label>
+  <label><input type="checkbox" id="be"> furia</label>
+  <label><input type="checkbox" id="bd"> desesperado (extasis)</label>
+  <label><input type="checkbox" id="bx"> ventana (expuesto)</label>
+  <label><input type="checkbox" id="bs"> aturdido</label>
+  <label><input type="checkbox" id="bi"> inmune (cambio de fase)</label>
+  <label><input type="checkbox" id="br"> rugido</label>
+  <label>Rotas: <input type="checkbox" id="bb1"> cuernos <input type="checkbox" id="bb2"> cayado <input type="checkbox" id="bb3"> vellon</label>
+  <label><input type="checkbox" id="bdy"> muerte (dt <input id="bdt" type="range" min="0" max="3200" step="20" value="0" style="width:120px">)</label>
+  <label><input type="checkbox" id="bdbg"> anclajes/hitboxes</label>
+  <label><input type="checkbox" id="btele" checked> telegrafia</label>
+  <label><input type="checkbox" id="bplayer" checked> Marlo de referencia</label>
+</div>
+<canvas id="bossCv" width="960" height="540" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
+</div>
+
 <h2>Sprites</h2>
 <div class="btns" style="margin-bottom:10px"><button id="expAll">Exportar atlas PNG (todos los sprites)</button><span id="expMsg" style="color:var(--dim)"></span></div>
 <div class="grid" id="sprites"></div>
@@ -79,7 +109,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -138,7 +168,7 @@
   }
   if (A.drawVillage) $('vilBox').style.display = 'block';
   function tick(t) {
-    vilDraw(t);
+    vilDraw(t); bossDraw(t);
     ANIMS.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); a.ctx.drawImage(A.animFrame(a.name, a.anim, t), 0, 0); });
     drawArena(t);
     requestAnimationFrame(tick);
@@ -177,6 +207,60 @@
 
   A.biomes().forEach(function (b) { var o = document.createElement('option'); o.value = b; o.textContent = A.biomeInfo(b).label; $('biome').appendChild(o); });
   $('biome').onchange = function () { A.setBiome($('biome').value); buildCards(); buildArena(); };
+
+  // --- vista Jefe
+  var BCOL = { barrido: 'arc', embestida: 'rect', pisoton: 'ring', salto: 'circle', abanico: 'cone', llamada: 'summon', esporas: 'spore', estampida: 'rect' };
+  function bossInit() {
+    if (!A.bossIds) return; $('bossBox').style.display = 'block';
+    A.bossIds().forEach(function (id) { var o = document.createElement('option'); o.value = id; o.textContent = A.bossInfo(id).name; $('bid').appendChild(o); });
+    A.bossPoseNames().forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; $('bwin').appendChild(o); });
+    $('bprog').oninput = function () { $('bprogv').textContent = (+$('bprog').value).toFixed(2); };
+    $('bspeed').oninput = function () { $('bspeedv').textContent = $('bspeed').value; };
+    $('blift').oninput = function () { $('bliftv').textContent = $('blift').value; };
+  }
+  var BS0 = performance.now();
+  function bossState(t) {
+    var w = $('bwin').value, mode = $('bmode').value, p = +$('bprog').value;
+    if ($('bloop').checked) p = (t % (mode === 'windup' ? 1400 : 600)) / (mode === 'windup' ? 1400 : 600);
+    var s = { t: t, facing: $('bf').checked ? -1 : 1, phase: +$('bphase').value, hurt: $('bh').checked ? (0.5 + 0.5 * Math.sin(t / 120)) : 0, enraged: $('be').checked, desperate: $('bd').checked,
+      exposed: $('bx').checked, stun: $('bs').checked, immune: $('bi').checked, roar: $('br').checked ? 1 : 0, speed: +$('bspeed').value, moving: +$('bspeed').value > 4 ? 1 : 0, lift: +$('blift').value,
+      broken: { cuernos: $('bb1').checked, cayado: $('bb2').checked, vellon: $('bb3').checked }, dying: $('bdy').checked, dt: +$('bdt').value };
+    if ($('bdy').checked && $('bloop').checked) s.dt = (t % 4200);
+    if (w) { if (mode === 'windup') { s.windup = w; s.wp = p; } else { s.strike = w; s.sp = p; } }
+    s.pp = p; s.w = w; return s;
+  }
+  function bossDraw(t) {
+    if (!A.bossIds) return; var c = $('bossCv'), x = c.getContext('2d'), id = $('bid').value || 'pastor';
+    x.imageSmoothingEnabled = false; x.drawImage(ground, 0, 0);
+    var s = bossState(t), bx = 480, by = 270;
+    if (s.w && $('btele').checked && s.windup) {
+      var f = s.facing, k = BCOL[s.w], o = { p: s.pp, a: f > 0 ? 0 : Math.PI, sig: s.w === 'embestida' || s.w === 'salto' || s.w === 'pisoton' };
+      if (k === 'arc') { o.r = 190; } if (k === 'rect') { o.w = 90; o.len = 420; } if (k === 'ring') { o.r = 300; o.th = 24; o.gap = Math.PI / 3; o.a = f > 0 ? Math.PI : 0; } if (k === 'circle') { o.r = 120; } if (k === 'cone') { o.r = 300; } if (k === 'summon') { o.r = 150; } if (k === 'spore') { o.r = 60; }
+      A.drawBossTele(x, k, bx, by + 44, o);
+    }
+    if (s.w === 'pisoton' && s.strike) A.drawBossWave(x, bx, by + 44, 40 + 260 * s.pp, { gap: Math.PI / 3, a: s.facing > 0 ? Math.PI : 0 });
+    if (s.desperate) A.drawBossArenaTint(x, 960, 540, t, 1);
+    if ($('bplayer').checked) { var pl = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl, 250 - 24, 330 - 24); }
+    A.drawBoss(id, x, bx, by, s);
+    if ($('bplayer').checked) { var pl2 = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl2, 250 - 24, 380 - 24); }
+    var an = A.bossAnchors(id, s);
+    if ($('bdbg').checked) {
+      x.lineWidth = 1.5; Object.keys(an).forEach(function (k) { var a = an[k]; if (!a.r) return; x.strokeStyle = k === 'body' ? '#ff4040' : '#40ffff'; x.beginPath(); x.arc(bx + a.x, by + a.y, a.r, 0, 6.2832); x.stroke(); x.fillStyle = '#fff'; x.font = '10px monospace'; x.fillText(k, bx + a.x - 10, by + a.y + 3); });
+      x.strokeStyle = '#ffcc00'; x.beginPath(); x.arc(bx, by, 74, 0, 6.2832); x.stroke(); x.fillStyle = '#ffcc00'; x.fillRect(bx - 2, by - 2, 4, 4);
+    }
+    // retratos
+    for (var m = 0; m < 3; m++) A.drawBossPortrait(id, x, 8 + m * 104, 8, { mood: m, size: 96 });
+    var ic = ['trophy_pastor_horn', 'trophy_pastor_staff', 'trophy_pastor_fleece'];
+    ic.forEach(function (n, k) { x.drawImage(A.sprite(n, 0), 330 + k * 40, 16); x.drawImage(A.sprite(n, 1), 330 + k * 40, 52); });
+    x.drawImage(A.sprite('icon_weak'), 460, 16); x.drawImage(A.sprite('icon_resist'), 490, 16);
+    // elementos de arena y vfx
+    x.drawImage(A.sprite('obs_log', 0), 700, 30); x.drawImage(A.sprite('obs_log', 1), 770, 30); x.drawImage(A.sprite('obs_log', 2), 840, 30);
+    x.drawImage(A.animFrame('fx_thorn_patch', 'sway', t), 700, 110);
+    x.drawImage(A.animFrame('fx_boss_spike', 'rise', t % 900), 800, 110); x.drawImage(A.sprite('fx_boss_crack', Math.floor(t / 400) % 3), 840, 100);
+    x.drawImage(A.animFrame('fx_part_break', 'burst', t % 1000), 740, 150); x.drawImage(A.animFrame('fx_window_ring', 'loop', t), 820, 170);
+    x.drawImage(A.animFrame('proj_boss_thorn', 'loop', t), 880, 150); x.drawImage(A.sprite('fx_spore_puff', Math.floor(t / 200) % 4), 880, 180);
+  }
+  bossInit();
   buildCards(); buildArena(); requestAnimationFrame(tick);
 
   // --- sonido
