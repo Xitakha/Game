@@ -10,3 +10,5 @@
 - [ ] Playtest humano y balance de Swarm Hand
 - [x] Crafteo Fase 1 (Base, forja, botin, anclas) en games/card-swarm
 - [ ] Playtest humano de la Fase 1; decidir Fase 2 (sets, encargos, desmontar) y version movil
+- [x] Fase 2a: aldea Rescoldo, arbol de Fuego, economia v2
+- [ ] Jefes J1 (Pastor rediseñado): arte en curso, logica pendiente

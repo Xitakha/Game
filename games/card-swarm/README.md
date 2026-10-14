@@ -12,21 +12,49 @@ python3 -m http.server 8123
 ```
 (También funciona abriendo `index.html` directamente.)
 
-## Bucle completo (Fase 1 de crafteo)
-**Base -> Expedición -> Botín -> Forja -> Expedición.** La pantalla de título es ahora la **Base** (una página): colección de las 26 cartas (6 desbloqueadas de inicio: Chispa, Esquirla,
-Dardo, Daga, Colmillo, Reloj), forja con recetas, Rango I-III, 2 anclas, selector de duración y "SALIR A LA EXPEDICIÓN" (Enter). Repetir con el mismo loadout son 1-2 clics
-("REINTENTAR MISMO BUILD" en la pantalla de botín, o R / Enter). Todo se guarda solo en `localStorage` (`swarmhand.save`, esquema v1; botón BORRAR PROGRESO con doble pulsación).
-- **Anclas (Opción B híbrida):** la expedición parte con `G.B.anchorSlots = 2` cartas elegidas de tu colección ya en la mano; los otros 3 slots se llenan al subir de nivel con
-  ofertas aleatorias **solo de tus cartas desbloqueadas**. Cambiar a 3 anclas = cambiar ese número. Sin ningún arma entre las anclas, se ofrece la elección inicial de siempre.
-- **Duración:** selector 7 / 9 / 10 min en la Base (`?len=N` lo fuerza). `G.setLen()` escala jefe (a 5/6 de la run), élites, entrada de enemigos, curva del director, escalado de HP/daño
-  y Furia mediante `G.vt()` (tiempo "virtual" en escala de 9:00): una run corta es la misma curva comprimida y da menos botín (~78 % a 7 min, ~110 % a 10).
-- **Partes:** 8 comunes (Hebra, Pluma, Púa, Colmillo, Placa, Mecha, Escarcha, Jirón; 30-35 % por muerte según enemigo) + Esencia rara (3,5 % en Espectro/Ascua/Brujo, pity +1,5 % por run
-  sin rara, 35 % en élites, 1 segura del Pastor). Élites y jefe tienen partes garantizadas. Se recogen con el imán o se auto-recogen al terminar. El HUD muestra "Partes N".
-- **Brasas:** 20 % de la Ceniza sobrante + 15 por minuto jugado (+40 si ganas). Se gastan en recetas.
-- **Forja:** desbloquear carta (receta de 2-3 tipos de parte + Brasas; épicas piden Esencia) y subir Rango I -> II -> III (permanente): **+8 % de daño por rango, por carta**
-  (las pasivas escalan su efecto igual). Se multiplica con el -2 % global `cardDmgMul`.
-- **Balance de la meta:** todo en `src/loot.js` (drops, suministro esperado por run, costes por rareza, justificación de "3-4 runs" para la primera build completa).
-- Quedan fuera (Fases 2-3): sets/bonos, gemas, talismán, encargos, desmontar, partir partes. Ver `PROPUESTA-crafteo.md`.
+## Bucle completo (v3: Aldea, Fase 2a)
+**Aldea -> Portal -> Expedición -> Botín (R = repetir sin pasar por la aldea) -> Aldea.** La pantalla principal es **Rescoldo** (`src/aldea.js`), una aldea caminable de una pantalla
+(960x540, escala a cualquier tamaño). Marlo se mueve con WASD / flechas (o el joystick táctil flotante de la mitad izquierda), interactúa con **E / Enter** (o el botón táctil
+HABLAR de 96 px) a menos de 56 px de un NPC, y viaja al Portal con **Tab** (o el botón PORTAL) con un fundido de 0,3 s. Colisiones con los rectángulos de `Assets.VILLAGE.colliders`
+y los límites de la zona caminable. Esc abre el menú (Colección, Ajustes, Borrar progreso con doble pulsación). El arte viene de `assets_village.js` (`Assets.drawVillage`);
+si no existe, se dibuja un fallback de rectángulos. Luz: Día al abrir o tras ganar, Ocaso tras una derrota.
+- **Grum (herrero):** abre la **Forja** (`src/tree.js`), un árbol por pestañas: **Fuego** (12 nodos completos), **Tronco** (Rango de forja II/III, Ceniza viva, Tercera ancla,
+  Pezuñas/Imán/Alforja) y **Clásica** (recetas planas rebalanceadas para las cartas de Hielo, Rayo, Veneno, Sangre, Acero y el Reloj; los demás árboles llegan en la Fase 2b).
+- **Vesper (encargos):** Tablón con 3 encargos fijos (tutorial "Huele a chamusquina": 20 Bombas -> 6 Mecha + 40 Brasas + 1 PF; 40 Polillas; el Coloso Escudero). Solo uno activo; el progreso
+  persiste entre expediciones y se ve en el HUD de la run. El enemigo objetivo pesa **x2,5** en el director (`waves.js`) y su entrada se adelanta a 2:30 virtuales. Son repetibles.
+- **Rufo (mercader):** **Trueque** (3 partes comunes por 1; Hebra 6 por 1; cupo de 4 por expedición, se reinicia al volver de una salida), **Vender** (6 Brasas por parte, Hebra 3) y
+  **Comprar** (Tónico de ceniza 80: +40 Ceniza; Imán de bolsillo 120: radio x1,5; parte común 24, cupo 3). Las raras no se truecan ni se venden.
+- **Portal:** mano al salir (anclas), selector 7 / 9 / 10 min, encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
+- **Ulalume (provisional):** colección de las 26 cartas y anclas (hasta que la Fase 2b añada loadouts). **Abuelo Lanudo** y **Tía Castaña**: diálogos de ambiente.
+- **Anclas:** `G.B.anchorSlots` = 2 (3 con el nodo Tercera ancla). Se eligen en el Archivo de Ulalume o en el Portal. Los otros slots se llenan al subir de nivel con cartas desbloqueadas.
+- **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`.
+
+### Árbol de forja y Puntos de Forja (PF)
+- Cada nodo cuesta **PF + partes + Brasas** (tabla `L.NODE_TIER` en `loot.js`: T1 1 PF 10/5 partes 30 Brasas; T2 2 PF 16/7 60; T3 3 PF 24/9 100 + 1 Esencia; T4 4 PF 34/12 150 + 2 Esencias).
+  T2 pide **Rango de forja II** y T3/T4 **Rango III** (Tronco). Tipos: carta (C), mejora A/B (M, +1 rango de la carta), pasivo (P), rama excluyente (X: Cenizas ardientes o Fundición),
+  set (S: Emblema de Fuego) y maestría (Ma: Corazón de brasa, revive una vez por expedición). Un árbol de Fuego completo cuesta 20 PF.
+- **Techo de 24 PF** ganados (`L.PF_CAP`): builds duras. Fuentes: 1 de regalo, encargos (1-2), primer élite de cada tipo (+1) y cada 4 nodos distintos forjados (+1, "Maestría de oficio").
+  Compensación de 2 PF al migrar de v1.
+- **Reespecializar:** botón DESHACER en un nodo (él y sus dependientes: 40 Brasas por PF devuelto) o REESPECIALIZAR el árbol (250 Brasas); devuelve los PF y el **50 % de las partes**; el
+  **primer reespecializado es gratis**. Quitar un nodo de carta quita la carta de la colección y de las anclas. Los nodos heredados de v1 no se pueden deshacer.
+- Efectos reales en la run (`G.Tree.fx`, leídos por `cards.js`, `combat.js`, `weapons.js`, `player.js`): Pavesa (quemadura +2 s y +30 %), Ráfaga (cooldown de Chispa -15 %), Metralla (3 fragmentos de 8),
+  Napalm (suelo ardiente 2 s, 4 dps, radio 40), Pulmón (+8 % Fuego), Cenizas ardientes (fuego 3 s al morir un quemado), Fundición (escudo del Escudero x0,5 y +15 % a élites/jefe), Corona (3 llamas),
+  Cometa (órbita +25 % y +20 % daño), Emblema (3 cartas Fuego: +25 % daño; 4+: Pira, las quemaduras se propagan), Corazón de brasa, Ceniza viva (+20 Ceniza), Tercera ancla.
+- Teclas del panel: flechas mover, **F** forjar / elegir A, **G** elegir B, **U** deshacer nodo, **R** reespecializar, **Q/E** o 1-3 cambian de pestaña, Esc sale. Táctil: tocar un nodo lo selecciona,
+  deslizar en horizontal cambia de pestaña.
+
+### Economía (hotfix incluido, ver `DESIGN-v3-aldea.md` sección C y `src/loot.js`)
+- **Partes:** 8 comunes (Hebra, Pluma, Púa, Colmillo, Placa, Mecha, Escarcha, Jirón) con drops de **12-15 %** por muerte (antes 30-35 %) + Esencia rara (**0,8 %**, pity +0,4 % por run sin rara hasta +4 %;
+  élites 20 %; el Pastor da 1 segura). Garantías: Coloso 2 Placa + 1 Pluma, Madre Colmena 2 Púa + 2 Hebra, Pastor 2 Colmillo + 2 Hebra + 1 Pluma.
+- **Brasas:** 12 % de la Ceniza sobrante + 10 por minuto (+40 si ganas). `L.EXPECT` x0,42.
+- **Guardado v2** (`swarmhand.save`, `src/save.js`): partes, Brasas, rangos, anclas, PF, nodos y elecciones, encargos, cupos de Rufo, compras pendientes, flags. Migración automática desde v1 sin perder
+  progreso; si el guardado está corrupto, se empieza de cero sin romper (try/catch).
+- **Medido con el bot** (`?speed=25&god=1`, jugador que recoge partes y mata al jefe; 16 runs de 7 min y 10 de 9 min con la política "build mínima primero"): 7 min = **119 partes/run, 9,5 Mecha,
+  ~2,1 Esencias** (el Pastor suma 1), ~254 Brasas; 9 min = 148 partes/run, 12,8 Mecha, ~314 Brasas. Con un jugador real (x0,7) salen ~7 Mecha por run de 7 min. Build mínima (Chispa II, Bola de brasa, Rango II,
+  Manto de ceniza, Bola II) completa tras la **5.ª expedición** del bot (teórico; ~6-7 con un jugador que a veces muere); árbol de Fuego completo (13 nodos) tras la 15.ª. Los PF llegan a ~1,3 por run con encargos.
+
+## Teclas de la forja anterior
+La Base de una página (`base.js`) ya no existe como pantalla: `base.js` conserva el botín y el lanzador; la colección vive en el Archivo.
 
 ## Cómo se juega
 - Muévete esquivando al enjambre. Las cartas atacan solas; cada una muestra su cooldown girando.
@@ -46,8 +74,9 @@ Dardo, Daga, Colmillo, Reloj), forja con recetas, Rango I-III, 2 anclas, selecto
 | Slot a reemplazar con la mano llena | 1..5 o clic (Esc cancela) |
 | Pausa | P / Esc |
 | Reintentar mismo build (pantalla final) | R / Enter / botón |
-| Ir a la Base desde el botín | B / Esc / botón |
-| Base: elegir carta / forjar / ancla / salir | clic o flechas / F / E / Enter |
+| Ir a la Aldea desde el botín | B / Esc / botón |
+| Aldea: mover / hablar / portal / menú | WASD o flechas / E o Enter / Tab / Esc |
+| Táctil | toque = clic; joystick flotante a la izquierda (aldea y expedición); botón HABLAR 96 px; deslizar = cambiar pestaña |
 
 ## Contenido
 - 26 cartas (16 de ataque + 10 pasivas; el GDD original listaba 28, Bobina y Murciélago no se implementaron), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
@@ -74,9 +103,9 @@ Dardo, Daga, Colmillo, Reloj), forja con recetas, Rango I-III, 2 anclas, selecto
 - `?dbg=1` cuenta el daño recibido por fuente en `G.dbg.dmg` (consola) para ajustar el balance. Combínalo con `?god=1&speed=4` para recorrer la run entera.
 - Consola: `G.Enemies.spawn('blinker', x, y)` crea cualquier tipo (`fanner shield moth sower blinker scorcher mini_bulwark mini_hive boss`).
 - `?biome=cripta|asfodelo` cambia el fondo.
-- `?reset=1` borra el guardado. `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
+- `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
 - `?len=7` fuerza la duración de la run en minutos (sin tocar el guardado).
 
 ## Estructura
 `src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
-`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage) · `base.js` (Base y pantalla de botín) · `assets_ui.js` (iconos de partes y botones por código) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
+`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v2 con migración) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo, menú) · `tree.js` (árbol de forja) · `quests.js` (encargos) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).

@@ -56,11 +56,11 @@
     G.txt(c, '+' + sm.brasas + ' Brasas   (total ' + S.brasas + ')', 548, 262, 16, '#ff9a3c', 'left');
     if (sm.rare) G.txt(c, '¡Esencia rara conseguida!', 516, 286, 13, '#e0a8ff', 'left');
     else G.txt(c, 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', 516, 286, 12, '#9a8fb0', 'left');
-    if (sm.quest) G.txt(c, 'Encargo: ' + sm.quest, 516, 304, 12, '#ffe9a0', 'left');
+    if (sm.quest) U.wrap(c, 'Encargo: ' + sm.quest, 410, 11).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 516, 302 + k * 13, 11, '#ffe9a0', 'left'); });
     if (sm.pfGained) G.txt(c, '+' + sm.pfGained + ' Punto de Forja (primer élite)', 730, 286, 12, '#ffd24a', 'left');
-    G.txt(c, sm.newCards.length ? 'NUEVAS CARTAS YA FORJABLES (Clásica)' : 'PF libres ' + G.Tree.pfFree() + '  -  nodos comprables ' + G.Tree.availableCount(), 516, 322, 13, sm.newCards.length ? '#9dffb4' : '#9a8fb0', 'left');
+    G.txt(c, sm.newCards.length ? 'NUEVAS CARTAS YA FORJABLES (Clásica)' : 'PF libres ' + G.Tree.pfFree() + '  -  nodos comprables ' + G.Tree.availableCount(), 516, 336, 13, sm.newCards.length ? '#9dffb4' : '#9a8fb0', 'left');
     sm.newCards.slice(0, 6).forEach(function (id, k) {
-      G.Cards.drawCard(c, { id: id, lvl: 0 }, 516 + k * 68, 338, 56, 74, { nocd: true, glow: '#9dffb4' });
+      G.Cards.drawCard(c, { id: id, lvl: 0 }, 516 + k * 68, 348, 56, 74, { nocd: true, glow: '#9dffb4' });
     });
     U.button(c, END_RETRY, 'REINTENTAR MISMO BUILD', { size: 22, sub: 'R / Enter  -  anclas: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'ninguna') });
     U.button(c, END_BASE, 'IR A LA ALDEA', { size: 22, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: 'B  -  forjar, encargos y anclas' });

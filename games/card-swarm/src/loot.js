@@ -42,15 +42,14 @@
   L.RANK_MUL = [1, 1, 1.08, 1.16];   // multiplicador por rango de forja (0 bloqueada, I, II, III): +8 % por rango
   L.MAXRANK = 3;
 
-  // Suministro ESPERADO de cada parte por expedición estándar de 9:00, medido con el bot de pruebas (16 runs, ?speed=25 ?god=1, jugador que
-  // llega al jefe y lo mata; ~350 partes/run: 7 min = 78 %, 10 min = 110 %). La receta se expresa como fracción de ese suministro.
-  // v3: x0,42 (drops de 12-15 %). Con el bot (ver README) la Mecha de 9 min sale ~13, 7 min ~10.
+  // Suministro ESPERADO de cada parte por expedición estándar de 9:00 (v3: valores originales x0,42, ver DESIGN-v3-aldea.md C.3). Las recetas planas ("Clásica")
+  // se expresan como fracción de este suministro; los nodos del árbol usan L.NODE_TIER (cifras absolutas).
+  // MEDIDO con el bot (?speed=25 ?god=1, jugador que recoge partes y mata al jefe; 16 runs de 7 min, 10 de 9 min, política "build mínima primero"):
+  //   7 min: ~119 partes/run, Mecha 9,5 (objetivo 8-12), Hebra 52, Esencia ~2,1 (el Pastor da 1 segura), Brasas ~254.
+  //   9 min: ~148 partes/run, Mecha 12,8, Hebra 66, Esencia ~2,2, Brasas ~314. Un jugador real (se muere antes, recoge menos) saca ~x0,7.
+  //   Build mínima de Fuego (Chispa II, Bola de brasa, Rango II, Manto, Bola II = 6 PF, 52 Mecha): completa tras la 5.ª expedición del bot (6-7 con jugador real).
+  //   Árbol de Fuego completo (20 PF, ~170 Mecha): 15.ª expedición. Brasas sobran en esta fase (solo hay un árbol); Esencias tampoco limitan.
   L.EXPECT = { thread: 67, feather: 15, spine: 18, fang: 9, plate: 6, wick: 13, frost: 5.5, static: 7.6, rare: 1 };
-  // CUENTA ESPERADA (por qué salen 3-4 runs). La build "Tormenta tóxica" (Chispazo c + Tormenta e + Nube r + Bilis r + Cascabel r, todas por forjar)
-  // pide Jirón (static) 56 = 3.1 x el suministro de 18/run y Púa 93 = 2.2 x 43/run, más Hebra y Esencia sueltas: la parte limitante manda,
-  // ~3.1-3.5 runs medias + dispersión de los drops. Medido con el bot completo (forjando en el bucle, 24 builds): 5 forjas = 3.61 runs de media
-  // (todas entre 3 y 4), 4 forjas = 2.67. Brasas (~460/run) y Esencia (~5/run) NO limitan; limitan Jirón, Mecha, Placa y Púa según la build.
-  // Una run de 7 min da ~78 % de ese suministro y una de 10 min ~110 %. Un jugador que muera antes del jefe saca bastante menos (ver README).
 
   // Rareza de cada carta (c común, r rara, e épica). Las 6 iniciales (set básico) son gratis y solo cuestan sus mejoras de rango.
   L.TIER = {
