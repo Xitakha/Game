@@ -18,7 +18,7 @@
     player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
-      worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1 },
+      worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1, maxAlive: 40 },
       archer:  { hp: 10,  spd: 60, dmg: 8,  r: 11, cost: 3, from: 45000,  w: 20, spr: 'archer',  xp: 2, ash: 1, maxAlive: 10 },
       fanner:  { hp: 16,  spd: 55, dmg: 6,  r: 11, cost: 4, from: 90000,  w: 14, spr: 'enemy_fanner',  xp: 3, ash: 1, maxAlive: 8 },
       boar:    { hp: 45,  spd: 55, dmg: 14, r: 15, cost: 5, from: 120000, w: 10, spr: 'boar',    xp: 4, ash: 3, maxAlive: 8 },
@@ -39,12 +39,12 @@
     tier: { worm: 0, archer: 1, fanner: 1, bomb: 1, boar: 2, shield: 2, moth: 2, sower: 3, blinker: 3, scorcher: 3, warlock: 3 },
     tierCurve: [   // [minuto, mult tier0, tier1, tier2, tier3]
       [0, 1.0, 1.0, 1.0, 1.0],
-      [2, 0.9, 0.9, 1.0, 1.0],
-      [3, 0.65, 0.7, 0.9, 1.1],
-      [4, 0.45, 0.5, 0.75, 1.3],
-      [5, 0.3, 0.35, 0.6, 1.6],
-      [6, 0.2, 0.22, 0.45, 1.9],
-      [7, 0.14, 0.15, 0.35, 2.2],
+      [2, 0.85, 0.85, 1.0, 1.0],
+      [3, 0.55, 0.6, 0.9, 1.1],
+      [4, 0.35, 0.4, 0.75, 1.3],
+      [5, 0.2, 0.25, 0.6, 1.6],
+      [6, 0.14, 0.15, 0.45, 1.9],
+      [7, 0.12, 0.12, 0.35, 2.2],
       [9, 0.12, 0.12, 0.3, 2.4]
     ],
     tierFloor: 0.12,
@@ -61,7 +61,8 @@
     cardDmgMul: 0.98,
     skipAsh: 5,                                                      // Ceniza que da omitir la elección de carta al subir de nivel
     spawnTelegraph: 400,
-    bp: function (m) { return 2 + 1.6 * m; },                       // presupuesto por pulso de 1,5 s
+    // presupuesto por pulso de 1,5 s; el factor tras el min 3 compensa que los enemigos fuertes cuestan más (densidad total similar)
+    bp: function (m) { return (2 + 1.6 * m) * (1 + 0.07 * Math.max(0, m - 3)); },
     cap: function (m) { return Math.min(30 + 10 * m, 110); },       // tope de enemigos
     hpMult: function (m) { return Math.min(3.2, 1 + 0.22 * m); },
     dmgMult: function (m) { return 1 + 0.06 * m; },

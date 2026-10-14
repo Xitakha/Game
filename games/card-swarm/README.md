@@ -24,6 +24,7 @@ python3 -m http.server 8123
 |---|---|
 | Mover | WASD / flechas |
 | Elegir carta | 1 / 2 / 3 o clic |
+| Omitir la elección (solo al subir de nivel; sin penalización, +5 Ceniza) | 4 / Espacio o botón OMITIR |
 | Reroll (15 Ceniza, +15 por reroll en la misma oferta) | R o botón |
 | Descartar carta de la mano (+10 Ceniza) | Shift+1..5 o clic derecho en el slot (en la pantalla de cartas) |
 | Slot a reemplazar con la mano llena | 1..5 o clic (Esc cancela) |
@@ -38,9 +39,14 @@ python3 -m http.server 8123
   Bomba 3:30, Polilla gélida 4:00 (orbe de hielo que ralentiza 35 % 2 s; se destruye con un golpe de carta), Sembrador 4:30 (zonas de esporas), Espectro 5:15 (teletransporte + tajo),
   Ascua 6:00 (carga con rastro de fuego), Brujo 6:45 (invoca gusanos; matarlo los disipa).
 - Élites únicos: Coloso Escudero a 3:30 y Madre Colmena a 5:30 (desaparecen si siguen vivos al llegar el jefe). Jefe a 7:30: llamada del rebaño cada 20 s, esporas en fase 2.
-- Director: tiers por tiempo, tope por tipo (`maxAlive`), "enemigo protagonista" rotativo cada 60 s (peso x2.2) y packs temáticos (Línea, Cruce, Pinza, Campo) desde 2:45.
+- Director: los enemigos fuertes REEMPLAZAN a los débiles: `G.B.tierCurve` (tabla por minuto con multiplicador de peso y de tope `maxAlive` por tier: 0 gusano, 1 arquero/espinoso/bomba, 2 jabalí/escudero/polilla, 3 sembrador/ascua/espectro/brujo; suelo `G.B.tierFloor` 0.12 para que los viejos sigan saliendo). Además: tiers por tiempo, tope por tipo (`maxAlive`), "enemigo protagonista" rotativo cada 60 s (peso x2.2) y packs temáticos (Línea, Cruce, Pinza, Campo) desde 2:45.
 - Telegrafía: rojo = daño directo, azul = hielo/ralentiza, verde ácido = zonas persistentes, morado = invocación/teletransporte. Todo ataque avisa >= 400 ms antes de hacer daño.
 - Run de 9 minutos (`G.RUN_LEN`), jefe en `G.BOSS_T` = 7:30 con 1400 HP.
+
+## Balance rápido
+- `G.B.cardDmgMul` (main.js) = 0.98: multiplicador global del daño de todas las cartas (impactos, zonas, estados), aplicado en `Combat.deal`/`Combat.dot`. No toca el daño de enemigos.
+- `G.B.skipAsh` = 5: Ceniza que da omitir una subida de nivel (cada omisión consume una subida pendiente de la cola).
+- `G.B.tierCurve` / `tierFloor`: curva de reemplazo débil -> fuerte del director.
 
 ## Parámetros de depuración (URL)
 - `?speed=4` acelera el tiempo de simulación x4.
