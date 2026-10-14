@@ -144,3 +144,51 @@ Helpers de dibujo (para extender): `Assets._h` expone `addV, V, Pclosed, Ppoly, 
 
 # Swarm Hand v2 - protagonista
 `player` (24x24 -> 48x48): ahora Marlo, el Tahur (mapache gris azulado, chaleco teal, visera jade, abanico de cartas en vez de espada). Indices de frame y anims IDENTICOS a v1 (idle, walk, attack, attack_hit, roll, hurt, die; frames 0-23).
+
+
+---
+# Aldea v3 "Rescoldo" (src/assets_village.js, cargado tras assets_ui.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Mismo estilo (contorno grueso, color plano + sombra + brillo). Todos los tamanos "final" = base x2 = pixeles reales en el canvas 960x540. Los NPC miran a la DERECHA (voltear con `scale(-1,1)`). `t` SIEMPRE en milisegundos (`performance.now()`/`Date.now()`), igual que `Assets.animFrame`.
+
+## 1) Funcion principal
+`Assets.drawVillage(ctx, t, opts)` dibuja la aldea completa en 960x540 (cielo, suelo, caminos, edificios, props, NPCs, humo, luciernagas, luz).
+opts (todos opcionales):
+- `time`: 0..1 ciclo (0 = dia, 0.5 = ocaso [defecto], 1 = noche) o `'dia'|'ocaso'|'noche'`. Interpola cielo, tinte y luces. Nunca queda ilegible (tinte maximo ~55 %, la fogata/farolas/portal abren luz).
+- `actors`: `[{ y, draw(ctx) }]` entidades a ordenar con el decorado por `y` (pies). Marlo va aqui: `{y: marlo.y + pies, draw: c => c.drawImage(...)}`. Un actor con `y` menor que el `sort` de un prop se dibuja detras de el.
+- `npcs`: `true` (defecto: dibuja los 6 NPC idle en su sitio) | `false` (los dibujas tu con `Assets.drawNPC`) | `{ grum:{anim:'work', flip:true, x, y, hidden:true}, ... }` (override por NPC).
+- `light` (true): capa de luz/tinte/brillos; `false` para dibujarla aparte con `Assets.drawVillageLight(ctx, t, opts)` (despues de actores y antes de la UI).
+- `fireflies` (true), `smoke` (true: humo de la chimenea, olla y chispas), `vignette` (true).
+`Assets.villageTime(name)` -> numero (`'dia'->0`, `'ocaso'->0.5`, `'noche'->1`).
+
+## 2) Datos para la logica: `Assets.VILLAGE`
+- `VILLAGE.w/h` 960/540; `VILLAGE.walk` = `{x:20,y:290,w:920,h:200}` zona caminable sugerida.
+- `VILLAGE.spots`: `{ marloStart:{x,y}, portalReturn:{x,y}, bonfire:{x,y}, portal:{x,y}, forge:{x,y}, board:{x,y}, archive:{x,y}, tent:{x,y}, cart:{x,y} }` (px; y = base/puerta de cada edificio; `portal` = donde ponerse para entrar).
+- `VILLAGE.npcs`: `{ grum:{name,title,x,y,flip,color,icon...}, vesper, rufo, ulalume, lanudo, castana }`. `x,y` = PIES del NPC (ancla), `flip` = orientacion por defecto.
+- `VILLAGE.colliders`: `[{x,y,w,h,id}]` rectangulos sugeridos (edificios, anvil, cart, fogata, olla, troncos, vallas).
+- `VILLAGE.props`: lista de props `{id,spr,x,y,sort}` (x,y = ancla bottom-center del sprite; `sort` = y de ordenacion).
+
+## 3) NPCs (6)
+Sprites `npc_grum`, `npc_vesper`, `npc_rufo`, `npc_ulalume`, `npc_lanudo`, `npc_castana`. TODOS 40x42 base = **80x84 final**, ancla = pies en (40, 80): `ctx.drawImage(Assets.sprite('npc_grum',0), x-40, y-80)`. Frames comunes: 0 idle, 1 idle2 (inspira), 2 parpadeo, 3-6 accion, 7 hablar (boca pequena), 8 hablar (boca abierta), 9 feliz (ojos ^ ^).
+Anims: `idle` (respira + parpadeo cada ~5 s), `work` (accion propia), `talk` (mueve la boca), `happy`.
+| NPC | animal / rasgo | `work` |
+|---|---|---|
+| grum | oso grande marron, pañuelo rojo, delantal de cuero, martillo al hombro | martillazo con chispas (golpea hacia la derecha-abajo: yunque a su derecha) |
+| vesper | zorra delgada naranja/blanca, orejas altas, capa verde con papeles clavados | escribe con pluma en un pergamino |
+| rufo | mapache grueso gris oscuro/antifaz negro, sombrero granate con pluma, chaleco mostaza, mochila ENORME | cuenta monedas (la moneda salta) |
+| ulalume | buho morado, ojos amarillos enormes, sombrero de cartomante, cartas flotando | baraja/gira las cartas |
+| lanudo | carnero crema, cuernos enroscados, baston, sentado en un tronco (ya incluido en el sprite) | gesticula/cuenta batallitas, golpea el baston |
+| castana | erizo rosado, gorro de chef, delantal, cuchara | remueve la olla |
+Helpers: `Assets.drawNPC(ctx, name, x, y, t, {anim:'idle', flip:false, scale:1, shadow:true, alpha:1, tOff})` (dibuja sombra + frame animado; x,y = pies). `Assets.NPC_NAMES`.
+Retratos/emotes: `portrait_<npc>` (96x96 final, marco incluido; frames 0 neutro, 1 feliz, 2 hablando). `Assets.drawPortrait(ctx, name, x, y, {mood:0|1|2, size:96})` (x,y esquina sup. izq.).
+Emotes sueltos: `emote` 16x16 base = 32x32 final, frames 0 corazon, 1 '!', 2 '?', 3 nota musical, 4 '...', 5 moneda, 6 destello, 7 gota de sudor. Se dibujan sobre la cabeza (~y-90).
+
+## 4) UI de aldea
+- `ui_bubble`: 9-slice de globo de dialogo, 24x24 base = 48x48 final, **borde de corte 16 px** por lado; frames 0 crema (NPC), 1 violeta oscuro (Marlo/narracion), 2 dorado (encargo). `ui_bubble_tail` 14x10 base = 28x20 final, mismos 3 frames, apunta ABAJO (rotar/voltear para arriba).
+  `Assets.drawBubble(ctx, x, y, w, h, {style:0|1|2, tail:'down'|'up'|null, tailX:<x absoluta de la punta>, alpha:1})`: x,y = esquina sup. izq. de la caja; padding de texto recomendado 12 px. Colores de texto: estilo 0 `#2a1e3c`, estilo 1 `#fdf6e3`, estilo 2 `#3a2410`.
+- `ui_mark_gold` / `ui_mark_green` (marcador '!' de misión: dorado = encargo nuevo, verde = completado/forjable): 14x22 base = 28x44 final, frames 0-3 (brillo girando), anim `shine` 6 fps. Poner centrado sobre la cabeza (y-96) con rebote `sin(t/300)*3` por codigo.
+- `ui_key_e` 18x18 base = 36x36 final, frames 0 normal, 1 pulsada; anim `pulse` 2 fps. `ui_key_tab` 28x18 base = 56x36 final (mismos frames). `ui_arrow` flecha ABAJO 14x14 base = 28x28 final, frames 0-1 (anim `bob` 3 fps); rotar para otras direcciones.
+- `fx_portal_glow` 64x64 base = 128x128 final, 4 frames (anim `loop` 6 fps): brillo del portal para dibujar centrado con `globalCompositeOperation='lighter'`. (drawVillage ya lo pone en el portal.)
+
+## 5) Props / edificios como sprites sueltos (por si quieres componer tu escena)
+Ancla = bottom-center salvo cielo/suelo (origen 0,0 a 960x540). Tamano final:
+`vil_sky` 960x540 (frames 0 dia, 1 ocaso, 2 noche) | `vil_ground` 960x540 (transparente arriba, camino y plaza horneados) | `vil_forge` 192x152 | `vil_anvil` 44x28 | `vil_board` 128x136 (anim `wave` 3 fps, 3 frames) | `vil_archive` 144x192 | `vil_portal` 168x192 (anim `swirl` 8 fps, 6 frames) | `vil_tent` 144x128 | `vil_pot` 52x48 (anim `fire`, 3 frames) | `vil_cart` 136x104 | `vil_bonfire` 80x68 (anim `fire` 10 fps, 6 frames) | `vil_tree0` 112x144, `vil_tree1` 88x140, `vil_tree2` 88x120 (anim `sway` 1.2 fps, 2 frames) | `vil_lantern` 28x84 | `vil_torch` 24x68 (anim `fire` 9 fps, 4 frames) | `vil_fence` 64x32 | `vil_barrel` 32x40 | `vil_crate` 36x32 | `vil_hay` 44x28 | `vil_bush` 48x32 | `vil_bunting` 200x48 (anim `sway` 2 fps, 3 frames) | `vil_sign` 88x68 | `vil_cloud` 96x32 (2 frames).

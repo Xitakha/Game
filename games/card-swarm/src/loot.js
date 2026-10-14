@@ -21,28 +21,31 @@
   L.part = function (id) { return PBY[id]; };
 
   // Parte común que suelta cada enemigo normal y probabilidad (comunes 30-35 %). Los invocados (summoned) no sueltan.
+  // v3 (hotfix de economía): 12-15 % (antes 30-35 %). Ver DESIGN-v3-aldea.md sección C.
   L.DROPS = {
-    worm: ['thread', 0.30], warlock: ['thread', 0.35], archer: ['feather', 0.32], fanner: ['spine', 0.33], sower: ['spine', 0.35],
-    boar: ['fang', 0.33], shield: ['plate', 0.33], bomb: ['wick', 0.30], scorcher: ['wick', 0.35], moth: ['frost', 0.33], blinker: ['static', 0.35]
+    worm: ['thread', 0.12], warlock: ['thread', 0.14], archer: ['feather', 0.13], fanner: ['spine', 0.14], sower: ['spine', 0.14],
+    boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15]
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)
   L.GUARANTEED = {
-    mini_bulwark: { parts: { plate: 3, feather: 1 }, rare: 0.35 },
-    mini_hive:    { parts: { spine: 3, thread: 2 }, rare: 0.35 },
-    boss:         { parts: { fang: 2, thread: 3, feather: 2 }, rare: 1.0 }
+    mini_bulwark: { parts: { plate: 2, feather: 1 }, rare: 0.20 },
+    mini_hive:    { parts: { spine: 2, thread: 2 }, rare: 0.20 },
+    boss:         { parts: { fang: 2, thread: 2, feather: 1 }, rare: 1.0 }
   };
-  L.RARE_P = 0.035;          // Esencia rara: 3,5 % por muerte de enemigo de coste >= 6 (Espectro, Ascua, Brujo; no élites)
+  L.RARE_P = 0.008;          // Esencia rara: 0,8 % por muerte de enemigo de coste >= 6 (Espectro, Ascua, Brujo; no élites)
   L.RARE_MIN_COST = 6;
-  L.PITY_STEP = 0.015;       // +1,5 % por run sin rara; se reinicia al conseguir una
-  L.BRASAS_ASH = 0.20;       // Brasas = 20 % de la Ceniza sobrante...
-  L.BRASAS_MIN = 15;         // ... + 15 por minuto sobrevivido
+  L.PITY_STEP = 0.004;       // +0,4 % por run sin rara (tope +4 %); se reinicia al conseguir una
+  L.PITY_MAX = 0.04;
+  L.BRASAS_ASH = 0.12;       // Brasas = 12 % de la Ceniza sobrante...
+  L.BRASAS_MIN = 10;         // ... + 10 por minuto sobrevivido
   L.BRASAS_WIN = 40;         // bonus por derrotar al Pastor
   L.RANK_MUL = [1, 1, 1.08, 1.16];   // multiplicador por rango de forja (0 bloqueada, I, II, III): +8 % por rango
   L.MAXRANK = 3;
 
   // Suministro ESPERADO de cada parte por expedición estándar de 9:00, medido con el bot de pruebas (16 runs, ?speed=25 ?god=1, jugador que
   // llega al jefe y lo mata; ~350 partes/run: 7 min = 78 %, 10 min = 110 %). La receta se expresa como fracción de ese suministro.
-  L.EXPECT = { thread: 160, feather: 35, spine: 43, fang: 21, plate: 15, wick: 30, frost: 13, static: 18, rare: 5 };
+  // v3: x0,42 (drops de 12-15 %). Con el bot (ver README) la Mecha de 9 min sale ~13, 7 min ~10.
+  L.EXPECT = { thread: 67, feather: 15, spine: 18, fang: 9, plate: 6, wick: 13, frost: 5.5, static: 7.6, rare: 1 };
   // CUENTA ESPERADA (por qué salen 3-4 runs). La build "Tormenta tóxica" (Chispazo c + Tormenta e + Nube r + Bilis r + Cascabel r, todas por forjar)
   // pide Jirón (static) 56 = 3.1 x el suministro de 18/run y Púa 93 = 2.2 x 43/run, más Hebra y Esencia sueltas: la parte limitante manda,
   // ~3.1-3.5 runs medias + dispersión de los drops. Medido con el bot completo (forjando en el bucle, 24 builds): 5 forjas = 3.61 runs de media
@@ -80,6 +83,19 @@
     if (rare) parts.rare = rare;
     return { parts: parts, brasas: Math.round(t.brasas * rc.b), rare: rare };
   };
+  // ----------------------------------------------------------------- Constantes del árbol, trueque y tienda (Fase 2a)
+  L.NODE_TIER = { T1: { pf: 1, main: 10, sec: 5, brasas: 30 }, T2: { pf: 2, main: 16, sec: 7, brasas: 60 },
+    T3: { pf: 3, main: 24, sec: 9, brasas: 100, rare: 1 }, T4: { pf: 4, main: 34, sec: 12, brasas: 150, rare: 2 } };
+  L.PF_CAP = 24;                                        // techo de Puntos de Forja ganados (builds duras)
+  L.TRADE = { ratio: 3, hebraRatio: 6, cupo: 4 };       // 3 partes comunes -> 1 (Hebra 6:1); 4 trueques por expedición
+  L.SELL = 6; L.SELL_THREAD = 3;                        // Brasas por parte vendida
+  L.BUY = { tonic: 80, magnet: 120, part: 24, partCupo: 3 };
+  L.RESPEC = { brasasPerPF: 40, tree: 250, refund: 0.5 };   // reespecializar: 40 Brasas por PF devuelto o 250 el árbol; devuelve el 50 % de las partes
+  L.PF_SOURCES = { gift: 1, migrate: 2, firstElite: 1, milestoneEvery: 4 };
+  // Cartas que se obtienen por el árbol (no por la receta plana "Clásica"): las de Fuego y las neutras del Tronco
+  L.TREE_CARDS = { spark: 1, ember: 1, ring: 1, mantle: 1, hooves: 1, magnet: 1, satchel: 1 };
+  L.classic = function (id) { return !L.TREE_CARDS[id]; };
+
   L.nextRank = function (id) { var r = G.Save.rank(id); return r >= L.MAXRANK ? 0 : r + 1; };
   L.canForge = function (id) {
     var nr = L.nextRank(id); if (!nr) return false;
@@ -100,12 +116,12 @@
   L.rm = function (id) { return L.RANK_MUL[G.Save.rank(id)] || 1; };
   L.affordable = function () {
     var out = {};
-    G.Cards.defs.forEach(function (d) { if (d.id && !L.unlocked(d.id) && L.canForge(d.id)) out[d.id] = true; });
+    G.Cards.defs.forEach(function (d) { if (d.id && L.classic(d.id) && !L.unlocked(d.id) && L.canForge(d.id)) out[d.id] = true; });
     return out;
   };
 
   // ----------------------------------------------------------------- Drops en la run
-  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {} }; };
+  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0 }; };
   L.resetRun();
 
   function drop(e, part, n) {
@@ -117,6 +133,7 @@
   L.onKill = function (e) {
     if (e.summoned) return;
     var t = e.type, R = L.run; R.kills[t] = (R.kills[t] || 0) + 1;
+    try { G.Quests.onKill(t); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
     var pityP = L.RARE_P + (G.Save.data.pity || 0);
     var gt = L.GUARANTEED[t];
     if (gt) {
@@ -141,11 +158,13 @@
     var brasas = Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * mins + (won ? L.BRASAS_WIN : 0));
     for (var k in R.parts) G.Save.add(k, R.parts[k]);
     S.brasas += brasas; S.runs++; if (won) S.wins++;
-    S.pity = R.rare > 0 ? 0 : Math.min(1, (S.pity || 0) + L.PITY_STEP);
+    S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);
+    S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0 };   // cupos de Rufo: se reinician al volver de una salida
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
-    L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills };
+    var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
+    L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0 };
   };
   L.beginRun = function () { L.resetRun(); L.startAff = L.affordable(); L.summary = null; };
 })();
