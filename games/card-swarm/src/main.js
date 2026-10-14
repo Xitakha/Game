@@ -25,7 +25,7 @@
       shield:  { hp: 40,  spd: 48, dmg: 10, r: 13, cost: 5, from: 165000, w: 9,  spr: 'enemy_shield',  xp: 5, ash: 3, maxAlive: 6 },
       bomb:    { hp: 8,   spd: 105, dmg: 20, r: 10, cost: 2, from: 210000, w: 10, spr: 'bomb',    xp: 2, ash: 1, maxAlive: 8 },
       moth:    { hp: 14,  spd: 80, dmg: 5,  r: 10, cost: 4, from: 240000, w: 10, spr: 'enemy_moth',    xp: 3, ash: 1, maxAlive: 5 },
-      sower:   { hp: 22,  spd: 45, dmg: 8,  r: 12, cost: 5, from: 270000, w: 7,  spr: 'enemy_sower',   xp: 5, ash: 3, maxAlive: 3 },
+      sower:   { hp: 22,  spd: 45, dmg: 6,  r: 12, cost: 5, from: 270000, w: 7,  spr: 'enemy_sower',   xp: 5, ash: 3, maxAlive: 3 },
       blinker: { hp: 18,  spd: 65, dmg: 16, r: 11, cost: 6, from: 315000, w: 7,  spr: 'enemy_blinker', xp: 6, ash: 3, maxAlive: 4 },
       scorcher:{ hp: 30,  spd: 60, dmg: 12, r: 12, cost: 6, from: 360000, w: 6,  spr: 'enemy_scorcher',xp: 6, ash: 3, maxAlive: 3 },
       warlock: { hp: 30,  spd: 50, dmg: 0,  r: 13, cost: 8, from: 405000, w: 5,  spr: 'warlock', xp: 6, ash: 5, maxAlive: 2 },

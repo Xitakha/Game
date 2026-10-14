@@ -370,7 +370,7 @@
   function ai_scorcher(e, dt, s, p, d, a) {
     if (e.st === 'move') {
       moveTo(e, a, e.spd, s);
-      contact(e, dt, p, d, 900, 'scorcher');
+      if (e.hitCd > 0) e.hitCd -= dt; else if (!p.dead && d < e.r + p.r + 3) { G.Player.hurt(p, e.dmg * 0.5, e.x, e.y, { src: 'scorcher' }); e.hitCd = 1000; }   // el roce pesa la mitad: el golpe fuerte es la carga
       e.atkT -= dt;
       if (e.atkT <= 0 && d < 320) { e.st = 'wind'; e.t = 0; e.ang = a; e.face = Math.cos(a) >= 0 ? 1 : -1; }
     } else if (e.st === 'wind') {
@@ -503,7 +503,7 @@
         e.sporeT = 10000;
         for (var sp = 0; sp < 2; sp++) {
           var sa = G.rnd(0, 6.283), mg = G.WALL + 40;
-          E.zone({ kind: 'spore', x: G.clamp(p.x + Math.cos(sa) * 140, mg, G.AW - mg), y: G.clamp(p.y + Math.sin(sa) * 140, mg, G.AH - mg), r: 42, arm: 900, life: 4000, dmg: 10, tick: 500, slow: 0.15, src: 'boss_spore' });
+          E.zone({ kind: 'spore', x: G.clamp(p.x + Math.cos(sa) * 140, mg, G.AW - mg), y: G.clamp(p.y + Math.sin(sa) * 140, mg, G.AH - mg), r: 42, arm: 900, life: 4000, dmg: 8, tick: 500, slow: 0.15, src: 'boss_spore' });
         }
       }
     }

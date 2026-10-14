@@ -17,7 +17,7 @@ python3 -m http.server 8123
 - Matar suelta gemas verdes (XP), naranjas (Ceniza) y, a veces, corazones. Al subir de nivel eliges 1 de 3 cartas.
 - Coger un duplicado **fusiona** (Nv2/Nv3, no gasta slot). Con la mano llena eliges qué slot reemplazar.
 - La oferta se sesga hacia cartas que activan un combo nuevo: se enciende una línea entre las cartas y sale el banner.
-- Sobrevive hasta el **5:00**: aparece el Pastor Corrupto. Mátalo para ganar ("Mano ganadora"). Si mueres, `R` para otra partida.
+- Sobrevive hasta el **7:30**: aparece el Pastor Corrupto (1400 HP). Mátalo para ganar ("Mano ganadora"); tienes hasta el 9:00, y a los 2 min de su aparición entra en Furia. Si mueres, `R` para otra partida.
 
 ## Controles
 | Acción | Entrada |
@@ -34,15 +34,22 @@ python3 -m http.server 8123
 - 26 cartas (16 de ataque + 10 pasivas), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
 - 12 combos: VAPOR, GAS EXPLOSIVO, CONGELACIÓN, SOBRECARGA, SANGRE ENVENENADA, FRENESÍ, FILO ELÉCTRICO, FILO GÉLIDO, FORJA, PLAGA CONGELADA, PACTO ARDIENTE, DESCARGA TÓXICA.
 - Estados con tinte: quemado (naranja), ralentizado (azul), veneno (verde, apila), sangrado (rojo), aturdido (amarillo).
-- Enemigos: Gusano, Arquero, Jabalí (3:00), Bomba (4:30) y el jefe. Spawn continuo por presupuesto, escalado por minuto.
-- Run de 6 minutos (`G.RUN_LEN`, jefe en `G.BOSS_T` = 5:00, HP 900).
+- Enemigos (entrada): Gusano 0:00, Arquero 0:45, Espinoso 1:30 (abanico de 3 espinas), Jabalí 2:00, Escudero 2:45 (escudo frontal x0.2: flanquea o usa área/orbitales/estados),
+  Bomba 3:30, Polilla gélida 4:00 (orbe de hielo que ralentiza 35 % 2 s; se destruye con un golpe de carta), Sembrador 4:30 (zonas de esporas), Espectro 5:15 (teletransporte + tajo),
+  Ascua 6:00 (carga con rastro de fuego), Brujo 6:45 (invoca gusanos; matarlo los disipa).
+- Élites únicos: Coloso Escudero a 3:30 y Madre Colmena a 5:30 (desaparecen si siguen vivos al llegar el jefe). Jefe a 7:30: llamada del rebaño cada 20 s, esporas en fase 2.
+- Director: tiers por tiempo, tope por tipo (`maxAlive`), "enemigo protagonista" rotativo cada 60 s (peso x2.2) y packs temáticos (Línea, Cruce, Pinza, Campo) desde 2:45.
+- Telegrafía: rojo = daño directo, azul = hielo/ralentiza, verde ácido = zonas persistentes, morado = invocación/teletransporte. Todo ataque avisa >= 400 ms antes de hacer daño.
+- Run de 9 minutos (`G.RUN_LEN`), jefe en `G.BOSS_T` = 7:30 con 1400 HP.
 
 ## Parámetros de depuración (URL)
 - `?speed=4` acelera el tiempo de simulación x4.
 - `?god=1` jugador invulnerable.
-- `?t=240` empieza la partida en el segundo indicado (útil para ver al jefe: `?t=285`).
+- `?t=240` empieza la partida en el segundo indicado: `?t=100` espinoso, `?t=180` escudero, `?t=270` polilla/sembrador, `?t=330` élites y espectro, `?t=380` ascua, `?t=410` brujo, `?t=450` jefe.
+- `?dbg=1` cuenta el daño recibido por fuente en `G.dbg.dmg` (consola) para ajustar el balance. Combínalo con `?god=1&speed=4` para recorrer la run entera.
+- Consola: `G.Enemies.spawn('blinker', x, y)` crea cualquier tipo (`fanner shield moth sower blinker scorcher mini_bulwark mini_hive boss`).
 - `?biome=cripta|asfodelo` cambia el fondo.
 
 ## Estructura
-`src/main.js` núcleo y balance (`G.B`) · `player.js` · `enemies.js` · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
+`src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
 `weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta, dibujo de cartas) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
