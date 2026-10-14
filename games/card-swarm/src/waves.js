@@ -68,6 +68,13 @@
     }
   }
 
+  // Tope efectivo por tipo: maxAlive escalado por la curva de tier (mínimo 1 para que el tipo viejo siga apareciendo). Gusano: sin tope propio, lo limita el peso.
+  function capOf(k, m) {
+    var d = B.enemy[k]; if (!d.maxAlive) return 1e9;
+    var sc = B.tier[k] >= 3 ? Math.max(1, B.tierMul(k, m)) : B.tierMul(k, m);   // los fuertes pueden superar su tope base según la curva
+    return Math.max(1, Math.round(d.maxAlive * sc));
+  }
+
   W.update = function (dt) {
     var m = G.time / 60000, boss = G.Enemies.boss(), E = G.Enemies;
     if (!W.bossSpawned && G.time >= G.BOSS_T) spawnBoss();
@@ -96,7 +103,7 @@
         var pk = PACKS[n], total = 0, ok = packCost(pk) <= W.budget;
         pk.parts.forEach(function (q) {
           var d = B.enemy[q[0]]; total += q[1];
-          if (d.from > G.time || (d.maxAlive && (counts[q[0]] || 0) + q[1] > d.maxAlive)) ok = false;
+          if (d.from > G.time || ((counts[q[0]] || 0) + q[1] > capOf(q[0], m))) ok = false;
           if (q[0] === 'shield' && counts.mini_bulwark) ok = false;
         });
         return ok && alive + total <= cap;
@@ -107,16 +114,17 @@
         return;
       }
     }
-    var guard = 0;
+    function wOf(k) { return B.enemy[k].w * B.tierMul(k, m) * (k === W.star ? 2.2 : 1); }
+    var guard = 0, tmul = function (k) { return B.tierMul(k, m); };
     while (guard++ < 60 && alive < cap) {
       var opts = types.filter(function (k) {
         var d = B.enemy[k];
-        return d.cost <= W.budget && (!d.maxAlive || (counts[k] || 0) < d.maxAlive) && !(k === 'shield' && counts.mini_bulwark);
+        return d.cost <= W.budget && (counts[k] || 0) < capOf(k, m) && !(k === 'shield' && counts.mini_bulwark);
       });
       if (!opts.length) break;
-      var tot = 0; opts.forEach(function (k) { tot += B.enemy[k].w * (k === W.star ? 2.2 : 1); });
+      var tot = 0; opts.forEach(function (k) { tot += wOf(k); });
       var r = Math.random() * tot, pk2 = opts[0];
-      for (var i = 0; i < opts.length; i++) { r -= B.enemy[opts[i]].w * (opts[i] === W.star ? 2.2 : 1); if (r <= 0) { pk2 = opts[i]; break; } }
+      for (var i = 0; i < opts.length; i++) { r -= wOf(opts[i]); if (r <= 0) { pk2 = opts[i]; break; } }
       var pos = spawnPos();
       E.spawn(pk2, pos[0], pos[1]);
       W.budget -= B.enemy[pk2].cost; alive++; counts[pk2] = (counts[pk2] || 0) + 1;

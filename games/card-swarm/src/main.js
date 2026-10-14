@@ -33,7 +33,33 @@
       mini_hive:    { hp: 520, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
       boss:    { hp: 1400, spd: 60, dmg: 20, r: 24, cost: 0, from: Infinity, w: 0, spr: 'boss',   xp: 60, ash: 30 }
     },
+    // Curva del director: multiplicador de PESO de spawn y de TOPE (maxAlive) por tier y minuto (interpolación lineal entre filas).
+    // Lo débil sale y lo fuerte entra, con presupuesto total (bp/cap) intacto. Suelo 'floor' = mínimo para no perder variedad.
+    // tier 0: worm  1: archer fanner bomb  2: boar shield moth  3: sower blinker scorcher warlock  (cada tipo tiene su 'tier' en B.tier)
+    tier: { worm: 0, archer: 1, fanner: 1, bomb: 1, boar: 2, shield: 2, moth: 2, sower: 3, blinker: 3, scorcher: 3, warlock: 3 },
+    tierCurve: [   // [minuto, mult tier0, tier1, tier2, tier3]
+      [0, 1.0, 1.0, 1.0, 1.0],
+      [2, 0.9, 0.9, 1.0, 1.0],
+      [3, 0.65, 0.7, 0.9, 1.1],
+      [4, 0.45, 0.5, 0.75, 1.3],
+      [5, 0.3, 0.35, 0.6, 1.6],
+      [6, 0.2, 0.22, 0.45, 1.9],
+      [7, 0.14, 0.15, 0.35, 2.2],
+      [9, 0.12, 0.12, 0.3, 2.4]
+    ],
+    tierFloor: 0.12,
+    tierMul: function (type, m) {
+      var t = G.B.tier[type]; if (t == null) return 1;
+      var c = G.B.tierCurve, i = 1;
+      if (m <= c[0][0]) return c[0][t + 1];
+      while (i < c.length - 1 && m > c[i][0]) i++;
+      var a = c[i - 1], b = c[i], u = G.clamp((m - a[0]) / (b[0] - a[0]), 0, 1);
+      return Math.max(G.B.tierFloor, a[t + 1] + (b[t + 1] - a[t + 1]) * u);
+    },
     light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
+    // Multiplicador GLOBAL de daño de cartas (armas, combos, zonas, estados). Aplicado en G.Combat.deal y G.Combat.dot. No afecta a enemigos. 0.98 = -2 %.
+    cardDmgMul: 0.98,
+    skipAsh: 5,                                                      // Ceniza que da omitir la elección de carta al subir de nivel
     spawnTelegraph: 400,
     bp: function (m) { return 2 + 1.6 * m; },                       // presupuesto por pulso de 1,5 s
     cap: function (m) { return Math.min(30 + 10 * m, 110); },       // tope de enemigos

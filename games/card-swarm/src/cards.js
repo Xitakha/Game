@@ -198,6 +198,13 @@
     msg('Carta descartada: +10 Ceniza.');
     if (C.off.replacing) { var id = C.off.replacing; C.off.replacing = null; finish(C.add(id), id); }
   };
+  // Omitir: sin penalización, +B.skipAsh Ceniza. Solo en subidas de nivel (la elección inicial es obligatoria). close() consume 1 subida pendiente.
+  C.skip = function () {
+    var O = C.off; if (!O || O.mode !== 'level') return;
+    G.player.ash += G.B.skipAsh; G.Snd.play('discard');
+    G.fx.num(G.player.x, G.player.y - 30, '+' + G.B.skipAsh + ' Ceniza', '#ff9a3c');
+    close();
+  };
   C.reroll = function () {
     var O = C.off, cost = C.rerollCost(), p = G.player;
     if (p.ash < cost) { msg('Ceniza insuficiente (' + cost + ').'); return; }
@@ -212,6 +219,7 @@
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
     return { x: 280 + i * 82, y: 428, w: 72, h: 96 };
   };
+  C.skipRect = { x: 580, y: 440, w: 250, h: 26 };
   C.rerollRect = { x: 580, y: 360, w: 250, h: 46 };
   function inR(r, m) { return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }
 
@@ -232,6 +240,7 @@
       if (shift && inp.hit('Digit' + (i + 1))) { C.discard(i); return; }
       if (inp.hit('Mouse2') && inR(C.slotRect(i, true), m)) { C.discard(i); return; }
     }
+    if (O.mode === 'level' && (inp.hit('Digit4', 'Numpad4', 'Space') || (inp.hit('Mouse0') && inR(C.skipRect, m)))) { C.skip(); return; }
     if (inp.hit('KeyR') || (inp.hit('Mouse0') && inR(C.rerollRect, m))) { C.reroll(); return; }
     for (i = 0; i < O.cards.length; i++) {
       if (!shift && inp.hit('Digit' + (i + 1), 'Numpad' + (i + 1))) { C.pick(i); return; }
@@ -456,8 +465,14 @@
     c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x, rr.y, rr.w, rr.h);
     G.txt(c, 'REROLL (R)  -  ' + cost + ' Ceniza', rr.x + rr.w / 2, rr.y + rr.h / 2, 16, can ? '#fff' : '#9a8fa0', 'center');
     G.txt(c, 'Ceniza: ' + p.ash, rr.x + rr.w / 2, rr.y + rr.h + 20, 16, '#ff9a3c', 'center');
+    if (O.mode === 'level') {
+      var sk = C.skipRect, sh = inR(sk, m);
+      c.fillStyle = sh ? '#4a6a4a' : '#324a38'; c.fillRect(sk.x, sk.y, sk.w, sk.h);
+      c.strokeStyle = '#9be59b'; c.lineWidth = 3; c.strokeRect(sk.x, sk.y, sk.w, sk.h);
+      G.txt(c, 'OMITIR (4 / Espacio)  +' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + sk.h / 2, 14, '#fff', 'center');
+    }
     // ayuda
-    G.txt(c, '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 474, 13, '#d8cfe8', 'center');
+    G.txt(c, '1 / 2 / 3 o clic: elegir     4 / Espacio: omitir     R: reroll', G.W / 2, 474, 13, '#d8cfe8', 'center');
     G.txt(c, 'Descartar: Shift+1..5 o clic derecho en el slot (+10 Ceniza)', G.W / 2, 494, 13, '#d8cfe8', 'center');
     if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 522, 14, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
     c.restore();

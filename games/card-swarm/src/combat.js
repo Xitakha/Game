@@ -108,7 +108,7 @@
       if (e.shieldDown) { if (e.type === 'mini_bulwark') dmg *= 1.5; }
       else { dmg *= 0.2; blocked = true; }
     }
-    dmg = Math.max(1, Math.round(dmg));
+    dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
       if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
@@ -142,6 +142,7 @@
 
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
+    n *= G.B.cardDmgMul;
     e.hp -= n; e.lastTag = tag;
     e.dotAcc += n;
     if (e.dotT <= 0 && e.dotAcc >= 3) { fx.num(e.x, e.y - e.r - 8, Math.round(e.dotAcc), col(tag)); e.dotAcc = 0; e.dotT = 600; }
