@@ -833,6 +833,7 @@
       e = G.enemies[i];
       if (e.dead || e.partOf) continue;
       if (e.spawnT > 0) { // telegrafía de aparición (morado si es una invocación)
+        if (e.type === 'boss') continue;   // Letea hundida usa spawnT para no ser objetivo: sin marca de aparición
         u = 1 - e.spawnT / (e.spawnMax || B.spawnTelegraph);
         var big = e.type === 'boss' || e.big, sm = e.summoned, ca = sm ? '176,96,255' : '255,60,60';
         c.save(); c.strokeStyle = sm ? '#b060ff' : '#ff4040'; c.fillStyle = 'rgba(' + ca + ',' + (0.15 + 0.2 * u) + ')'; c.lineWidth = 2;

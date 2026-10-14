@@ -70,7 +70,8 @@
     spark: 'c', dart: 'c', shard: 'c', dagger: 'c', fang: 'c', hourglass: 'c',
     ember: 'c', nova: 'c', zap: 'c', pool: 'c', bleed: 'c', hooves: 'c', heart: 'c', thorns: 'c',
     mantle: 'r', frost: 'r', bell: 'r', bile: 'r', whet: 'r', magnet: 'r', satchel: 'r', cloud: 'r',
-    ring: 'e', blizzard: 'e', storm: 'e', axe: 'e'
+    ring: 'e', blizzard: 'e', storm: 'e', axe: 'e',
+    coil: 'r', bat: 'r'   // Fase 2b: cartas nuevas (Bobina de Rayo, Murciélago de Sangre)
   };
   // Parte principal y secundaria según etiqueta
   L.MAIN = { fire: 'wick', ice: 'frost', lightning: 'static', poison: 'spine', blood: 'fang', steel: 'plate', neutral: 'thread' };
@@ -105,9 +106,12 @@
   L.BUY = { tonic: 80, magnet: 120, part: 24, partCupo: 3 };
   L.RESPEC = { brasasPerPF: 60, tree: 400, refund: 0.5 };   // reespecializar (v5, antes 40 / 250): 60 Brasas por PF devuelto o 400 el árbol; devuelve el 50 % de las partes
   L.PF_SOURCES = { gift: 1, migrate: 2, firstElite: 1, milestoneEvery: 4, miniFrag: 2 };   // miniFrag: cada minijefe abatido da 1 fragmento; 2 fragmentos = 1 PF (matar los dos en una run = +1 PF)
-  // Cartas que se obtienen por el árbol (no por la receta plana "Clásica"): las de Fuego y las neutras del Tronco
-  L.TREE_CARDS = { spark: 1, ember: 1, ring: 1, mantle: 1, hooves: 1, magnet: 1, satchel: 1 };
-  L.classic = function (id) { return !L.TREE_CARDS[id]; };
+  // Fase 2b: TODAS las cartas con nodo en los 7 árboles se obtienen por el árbol (G.Tree.treeCards). Solo el Reloj de arena (gratis desde el inicio) queda fuera:
+  // la receta plana "Clásica" ya no tiene pestaña (L.classic solo existe para compatibilidad con guardados antiguos y herramientas).
+  L.classic = function (id) { var T = G.Tree; return !(T && T.treeCards && T.treeCards[id]) && !(G.Save.STARTERS.indexOf(id) >= 0); };
+  // Multiplicador del coste de la PARTE PRINCIPAL de los nodos por árbol, según cuánto cae de esa parte (Mecha = 1; Escarcha y Placa caen mucho menos).
+  // Se calibra con el bot (README "Árboles de forja 2b"): con ellos cada árbol completo tarda lo mismo en partes que el cuello de Brasas (~16-20 expediciones).
+  L.TREE_PART_MUL = { fire: 1, ice: 0.5, lightning: 0.75, poison: 1, blood: 0.8, steel: 0.6, neutral: 1 };
 
   L.nextRank = function (id) { var r = G.Save.rank(id); return r >= L.MAXRANK ? 0 : r + 1; };
   L.canForge = function (id) {
@@ -134,7 +138,10 @@
   };
 
   // ----------------------------------------------------------------- Drops en la run
-  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0, trophies: [], boss: null }; };
+  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0, trophies: [], boss: null, clean: 0, lastHit: null }; };
+  // Racha sin recibir daño (encargos "Intocable"): player.js llama a noteHit() en cada golpe real; cleanSecs() es la racha actual en segundos
+  L.noteHit = function () { var R = L.run; if (!R) return; var now = G.time; R.clean = Math.max(R.clean || 0, now - (R.lastHit == null ? G.t0 : R.lastHit)); R.lastHit = now; };
+  L.cleanSecs = function () { var R = L.run; if (!R) return 0; return Math.max(0, (G.time - (R.lastHit == null ? G.t0 : R.lastHit)) / 1000); };
   L.resetRun();
 
   function drop(e, part, n) {
@@ -149,6 +156,7 @@
     try { G.Quests.onKill(t); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
     var pityP = L.RARE_P + (G.Save.data.pity || 0);
     var gt = L.GUARANTEED[t];
+    if (t === 'boss' && G.Boss.e && G.Boss.e.def.guaranteed) gt = { parts: G.Boss.e.def.guaranteed, rare: gt.rare };   // J2: cada jefe tiene su botín garantizado (Karceron / Letea)
     if (gt) {
       for (var k in gt.parts) drop(e, k, gt.parts[k]);
       if (Math.random() < gt.rare) drop(e, 'rare', 1);
@@ -191,7 +199,11 @@
     }
     S.brasas += brasas; S.runs++; if (won) S.wins++;
     S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);
-    S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0 };   // cupos de Rufo: se reinician al volver de una salida
+    S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 };   // cupos de Rufo y plato de Castaña: se reinician al volver de una salida
+    S.lossStreak = won ? 0 : (S.lossStreak || 0) + 1;                 // racha de derrotas (la aldea pasa a "noche" a partir de 3)
+    R.clean = Math.max(R.clean || 0, G.time - (R.lastHit == null ? G.t0 : R.lastHit));
+    var qdone = null;
+    try { qdone = G.Quests.onRunEnd({ won: won, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000) }); } catch (x) { /* encargos opcionales */ }
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);

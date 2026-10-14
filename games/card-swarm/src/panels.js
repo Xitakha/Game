@@ -1,5 +1,6 @@
-/* panels.js - Paneles de la aldea (todo en canvas 960x540, botones >= 44 px): Tablón de Vesper, Mercader Rufo (trueque / vender / comprar),
-   Portal (mano al salir, anclas, duración, encargo, SALIR), Archivo de Ulalume (colección + anclas, provisional hasta la Fase 2b), Menú y Ajustes.
+/* panels.js - Paneles de la aldea (todo en canvas 960x540, botones >= 44 px): Tablón de Vesper (ofertas rotativas), Mercader Rufo (trueque / vender / comprar),
+   Portal (mano al salir, anclas, duración, encargo, plato, SALIR), Archivo de Ulalume (colección con filtros por etiqueta, 3 loadouts, anclas con vista previa de combos),
+   cocina de Tía Castaña (G.Cook: 1 plato por expedición), logros de Lanudo, Menú y Ajustes.
    La forja de Grum vive en tree.js (P.open('forge') la abre). Interfaz: P.open(nombre), P.update(dt) -> true si hay que cerrar, P.draw(c). */
 (function () {
   'use strict';
@@ -8,6 +9,7 @@
   var R_CLOSE = { x: 904, y: 2, w: 52, h: 42 };
   var st = { rt: 0, give: 'wick', get: 'thread', qty: 1, buy: 'thread', csel: 0 };
   var LENS = [7, 9, 10];
+  G.touchUI = ('ontouchstart' in window) && !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);   // táctil: el renombrado de loadouts usa el teclado nativo
 
   function SV() { return G.Save.data; }
   function say(t) { msg = t; msgT = 3200; }
@@ -28,6 +30,9 @@
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
     if (name === 'forge') G.Tree.open();
     if (name === 'rufo') st.rt = 0;
+    if (name === 'vesper') G.Quests.seen();
+    if (name === 'logros') { st.lsel = 0; G.Ach.markSeen(); }
+    if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
   };
   P.closeAll = function () { cur = null; };
   P.current = function () { return cur; };
@@ -36,6 +41,7 @@
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
     if (cur === 'forge') return G.Tree.update(dt);
     var esc = inp.hit('Escape'), cl = onR(R_CLOSE);
+    if (cur === 'archive' && st.edit) { updEdit(); return false; }   // renombrar un loadout: Esc/Enter terminan la edición, no cierran el panel
     if (cur === 'menu') { if (esc) return true; }
     else if (cur === 'settings') { if (esc || cl) { cur = 'menu'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
@@ -44,6 +50,8 @@
     if (cur === 'rufo') return updRufo();
     if (cur === 'portal') return updPortal();
     if (cur === 'archive') return updArchive();
+    if (cur === 'cook') return updCook();
+    if (cur === 'logros') return updLogros();
     if (cur === 'menu') return updMenu();
     if (cur === 'settings') return updSettings();
     return true;
@@ -54,45 +62,53 @@
     else if (cur === 'rufo') drawRufo(c);
     else if (cur === 'portal') drawPortal(c);
     else if (cur === 'archive') drawArchive(c);
+    else if (cur === 'cook') drawCook(c);
+    else if (cur === 'logros') drawLogros(c);
     else if (cur === 'menu') drawMenu(c);
     else if (cur === 'settings') drawSettings(c);
   };
 
   // ============================================================= VESPER
-  function qRect(i) { return { x: 20, y: 76 + i * 128, w: 920, h: 116 }; }
-  function qBtn(i) { var r = qRect(i); return { x: r.x + r.w - 196, y: r.y + 30, w: 178, h: 56 }; }
+  // Filas: el encargo activo (si ya rotó fuera del Tablón) + 3 ofertas rotativas (Quests.board). Teclas 1-4.
+  function qRect(i) { return { x: 20, y: 64 + i * 108, w: 920, h: 100 }; }
+  function qBtn(i) { var r = qRect(i); return { x: r.x + r.w - 196, y: r.y + 22, w: 178, h: 56 }; }
+  var TIERC = { 1: '#7dff9a', 2: '#ffd24a', 3: '#ff7a5a' };
   function qAction(i) {
-    var Q = G.Quests, d = Q.DEFS[i], act = Q.active();
+    var Q = G.Quests, d = Q.board()[i], act = Q.active(); if (!d) return;
     if (act && act.id === d.id) {
       if (Q.isReady()) {
         var r = Q.claim(); if (r) { say('Entregado: ' + r.text + '.'); G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } }
       } else if (confirm === 'q' + i) { Q.abandon(); confirm = ''; say('Encargo abandonado (el progreso se pierde).'); }
       else { confirm = 'q' + i; confirmT = 3000; say('Pulsa otra vez para abandonar (pierdes el progreso).'); }
     } else if (act) say('Ya tienes un encargo activo. Entrégalo o abandónalo.');
-    else { Q.accept(d.id); say('Encargo aceptado: ' + d.target + ' aparece antes y más a menudo.'); G.sfx('card_select', { vol: 0.7 }); }
+    else { Q.accept(d.id); say(d.target ? 'Encargo aceptado: ' + d.label + ' aparece antes y más a menudo.' : 'Encargo aceptado: ' + d.name + '.'); G.sfx('card_select', { vol: 0.7 }); }
   }
   function updVesper() {
-    for (var i = 0; i < 3; i++) if (inp.hit('Digit' + (i + 1)) || onR(qBtn(i))) qAction(i);
+    var n = G.Quests.board().length;
+    for (var i = 0; i < n; i++) if (inp.hit('Digit' + (i + 1)) || onR(qBtn(i))) qAction(i);
     return false;
   }
   function drawVesper(c) {
-    var Q = G.Quests, act = Q.active();
+    var Q = G.Quests, act = Q.active(), list = Q.board();
     bg(c, 'TABLÓN DE ENCARGOS  -  Vesper'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
-    Q.DEFS.forEach(function (d, i) {
-      var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id);
+    list.forEach(function (d, i) {
+      var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
       U.panel(c, r.x, r.y, r.w, r.h, { border: ready ? '#7dff9a' : isA ? '#ffd24a' : '#4a3a66' });
-      G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 16, r.y + 22, 19, '#ffd27a', 'left');
-      if (d.tutorial) G.txt(c, 'TUTORIAL', r.x + 16, r.y + 44, 10, '#9dffb4', 'left');
-      G.txt(c, d.desc, r.x + 16, r.y + 60, 12, '#d8cfe8', 'left');
-      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x; el PF se repite a ' + d.pfRepeat + ')' : ''), r.x + 16, r.y + 82, 12, '#ffe9a0', 'left');
-      var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 96, bw, 10);
-      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 96, bw * G.clamp(prog / d.goal, 0, 1), 10);
-      G.txt(c, (isA ? prog : 0) + '/' + d.goal + ' ' + d.label + (isA ? '' : '  (no activo)'), r.x + bw + 28, r.y + 101, 11, '#d8cfe8', 'left');
+      G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
+      var tx = r.x + 24 + Math.min(430, d.name.length * 11.6 + 40);
+      G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 11, TIERC[d.tier], 'left');
+      if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 70, r.y + 20, 10, '#9dffb4', 'left');
+      if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx + (d.tutorial ? 140 : 70), r.y + 20, 10, '#9a8fb0', 'left');
+      G.txt(c, d.desc, r.x + 16, r.y + 44, 12, '#d8cfe8', 'left');
+      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 64, 11, '#ffe9a0', 'left');
+      var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 80, bw, 9);
+      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 80, bw * G.clamp(prog / d.goal, 0, 1), 9);
+      G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 28, r.y + 85, 11, '#d8cfe8', 'left');
       var label = ready ? 'ENTREGAR' : isA ? (confirm === 'q' + i ? 'SEGURO?' : 'ABANDONAR') : 'ACEPTAR';
       U.button(c, b, label, { size: 16, off: !isA && !!act, color: ready ? '#2a8a4a' : isA ? '#7a3a3a' : '#c4601c', hot: ready ? '#3aba66' : '#ff9a3c' });
     });
-    G.txt(c, 'Un encargo a la vez. El enemigo objetivo pesa x2,5 en el director y entra antes (máx. 2:30). El progreso se conserva entre expediciones.', 20, 482, 11, '#9a8fb0', 'left');
-    G.txt(c, 'Esc: volver', 20, 502, 11, '#6f6480', 'left');
+    G.txt(c, 'El Tablón cambia cada día y tras cada expedición. Un encargo a la vez; el progreso se conserva. El enemigo objetivo pesa x2,5 y entra antes (máx. 2:30).', 20, 504, 10, '#9a8fb0', 'left');
+    G.txt(c, 'Esc: volver', 20, 522, 11, '#6f6480', 'left');
   }
 
   // ============================================================= RUFO
@@ -206,8 +222,8 @@
   function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
   var R_GO = { x: 650, y: 440, w: 290, h: 76 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
-  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'El Pastor (Karceron llega en J2)', need: 'pastor', needName: 'el Pastor' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea (J2, sin jefe aún)', need: 'karceron', needName: 'Karceron' }];
+  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron, el Carcelero de Brasa', need: 'pastor', needName: 'el Pastor' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea, la Hidra del Olvido', need: 'karceron', needName: 'Karceron' }];
   function biomeRect(i) { return { x: 650 + i * 98, y: 376, w: 92, h: 50 }; }
   function biomeOpen(b) { return !b.need || (SV().bossKills[b.need] || 0) > 0; }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
@@ -261,8 +277,9 @@
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
     for (i = 0; i < ls.length && i < 3; i++) G.txt(c, ls[i], 662, 230 + i * 16, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
     if (Q.target()) G.txt(c, 'Objetivo: pesa x2,5 y llega antes', 662, 282, 10, '#9dffb4', 'left');
-    U.panel(c, 650, 300, 290, 50);
-    G.txt(c, 'COMPRAS PARA ESTA SALIDA', 662, 314, 11, '#9a8fb0', 'left');
+    U.panel(c, 650, 300, 290, 58);
+    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 314, 11, '#9a8fb0', 'left');
+    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 349, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
     G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 335, 12, '#ffe9a0', 'left');
     if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 335, 12, '#8a7f96', 'left');
     var cb = BIOMES.filter(function (b) { return b.id === (S.biome || 'bosque'); })[0] || BIOMES[0];
@@ -276,53 +293,271 @@
     U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 19, sub: 'Enter  -  anclas: ' + names });
   }
 
-  // ============================================================= ARCHIVO (Ulalume provisional) / COLECCIÓN
-  var CELL = { w: 62, h: 84, gx: 66, gy: 92, x0: 14, y0: 60, cols: 9 };
+  // ============================================================= ARCHIVO (Ulalume) / COLECCIÓN
+  // Colección completa (28 cartas) con filtros por etiqueta, selección de anclas con vista previa de combos y sinergias, y 3 loadouts guardados.
+  var FILTERS = [{ id: 'all', name: 'TODAS', color: '#e8dcb0' }, { id: 'fire', name: 'FUEGO' }, { id: 'ice', name: 'HIELO' }, { id: 'lightning', name: 'RAYO' },
+    { id: 'poison', name: 'VENENO' }, { id: 'blood', name: 'SANGRE' }, { id: 'steel', name: 'ACERO' }, { id: 'neutral', name: 'NEUTRO' }];
+  FILTERS.forEach(function (f) { if (!f.color) f.color = G.TAGS[f.id].color; });
+  var CELL = { w: 56, h: 76, gx: 60, gy: 82, x0: 14, y0: 104, cols: 10 };
   function cellRect(i) { return { x: CELL.x0 + (i % CELL.cols) * CELL.gx, y: CELL.y0 + Math.floor(i / CELL.cols) * CELL.gy, w: CELL.w, h: CELL.h }; }
-  var R_ANC = { x: 626, y: 280, w: 310, h: 52 };
+  function chipRect(i) { return { x: 14 + i * 76, y: 64, w: 72, h: 30 }; }
+  var R_ANC = { x: 626, y: 306, w: 312, h: 44 };
+  var LOX = 620, LOW = 324;
+  function loRect(i) { return { x: LOX, y: 388 + i * 46, w: LOW, h: 44 }; }
+  function loName(i) { return { x: LOX, y: 388 + i * 46, w: 120, h: 44 }; }
+  function loSave(i) { return { x: LOX + 124, y: 388 + i * 46, w: 94, h: 44 }; }
+  function loApply(i) { return { x: LOX + 222, y: 388 + i * 46, w: 102, h: 44 }; }
+  function handRect2(i) { return { x: 14 + i * 70, y: 390, w: 64, h: 86 }; }
+  function archList() {
+    var f = st.filter || 'all';
+    return G.Cards.defs.filter(function (d) { return d.id && (f === 'all' || d.tag === f); });
+  }
+  function comboNames(ids) {
+    var tags = {}; ids.forEach(function (id) { var d = G.Cards.def(id); if (d && d.tag !== 'neutral') tags[d.tag] = true; });
+    return G.Cards.combos.filter(function (cb) { return tags[cb.a] && tags[cb.b]; });
+  }
+  P.anchorCombos = function (ids) { return comboNames(ids).map(function (cb) { return cb.k; }); };   // para pruebas
+  function saveLoadout(i) {
+    var S = SV(); S.loadouts[i] = { name: (S.loadouts[i] && S.loadouts[i].name) || 'LOADOUT ' + (i + 1), anchors: S.anchors.slice(), dish: S.pending.dish || null, len: S.len };
+    G.Save.save(); G.sfx('card_select', { vol: 0.6 }); say('Loadout ' + (i + 1) + ' guardado: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas') + ', ' + S.len + ' min.');
+  }
+  function applyLoadout(i) {
+    var S = SV(), lo = S.loadouts[i]; if (!lo) { say('Ese slot está vacío. Pulsa GUARDAR para guardar tu mano actual.'); return; }
+    S.anchors = lo.anchors.filter(function (id) { return G.Cards.def(id) && L.unlocked(id); }).slice(0, G.B.anchorSlots);
+    if (LENS.indexOf(lo.len) >= 0) S.len = lo.len;
+    var extra = '';
+    if (lo.dish) {
+      var cur = G.Cook.pending();
+      if (cur && cur.id === lo.dish) extra = '  Plato ya preparado.';
+      else if (cur) extra = '  (Ya hay otro plato preparado.)';
+      else { var r = G.Cook.cook(lo.dish); extra = '  ' + r.msg; }
+    }
+    G.Save.save(); G.sfx('card_select', { vol: 0.7 });
+    say('Loadout "' + lo.name + '" aplicado: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas') + ', ' + S.len + ' min.' + extra);
+  }
+  P.saveLoadout = saveLoadout; P.applyLoadout = applyLoadout;   // API de pruebas
+  var KEYCH = {};
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function (ch) { KEYCH['Key' + ch] = ch; });
+  '0123456789'.split('').forEach(function (ch) { KEYCH['Digit' + ch] = ch; });
+  function startEdit() {
+    var S = SV(), lo = S.loadouts[st.lo];
+    if (!lo) { say('Guarda primero el loadout y luego ponle nombre.'); return; }
+    if (G.touchUI && window.prompt) {   // táctil: teclado nativo del navegador
+      var nm = window.prompt('Nombre del loadout (12 letras)', lo.name);
+      if (nm != null) { lo.name = nm.toUpperCase().replace(/[^A-Z0-9 ÁÉÍÓÚÑ-]/g, '').slice(0, 12) || lo.name; G.Save.save(); }
+      return;
+    }
+    st.edit = true; st.buf = '';   // escribe el nombre nuevo (si lo dejas vacío se conserva el anterior)
+  }
+  function updEdit() {
+    var lo = SV().loadouts[st.lo];
+    if (!lo) { st.edit = false; return; }
+    for (var code in inp.pressed) {
+      if (!inp.pressed[code]) continue;
+      if (code === 'Enter' || code === 'NumpadEnter') { lo.name = (st.buf || '').trim() || lo.name; G.Save.save(); st.edit = false; say('Loadout renombrado: ' + lo.name); return; }
+      if (code === 'Escape') { st.edit = false; return; }
+      if (code === 'Backspace') st.buf = st.buf.slice(0, -1);
+      else if (code === 'Space') { if (st.buf.length < 12) st.buf += ' '; }
+      else if (KEYCH[code] && st.buf.length < 12) st.buf += KEYCH[code];
+    }
+    if (click() && !U.inR(loName(st.lo), inp.mouse)) { lo.name = (st.buf || '').trim() || lo.name; G.Save.save(); st.edit = false; }
+  }
   function updArchive() {
-    var defs = G.Cards.defs, i;
-    if (inp.hit('ArrowRight', 'KeyD')) st.csel = (st.csel + 1) % defs.length;
-    if (inp.hit('ArrowLeft', 'KeyA')) st.csel = (st.csel + defs.length - 1) % defs.length;
-    if (inp.hit('ArrowDown', 'KeyS')) st.csel = Math.min(defs.length - 1, st.csel + CELL.cols);
+    var list = archList(), i, S = SV();
+    if (st.csel >= list.length) st.csel = Math.max(0, list.length - 1);
+    if (inp.hit('ArrowRight', 'KeyD')) st.csel = Math.min(list.length - 1, st.csel + 1);
+    if (inp.hit('ArrowLeft', 'KeyA')) st.csel = Math.max(0, st.csel - 1);
+    if (inp.hit('ArrowDown', 'KeyS')) st.csel = Math.min(list.length - 1, st.csel + CELL.cols);
     if (inp.hit('ArrowUp', 'KeyW')) st.csel = Math.max(0, st.csel - CELL.cols);
-    if (inp.hit('KeyE', 'Enter') || onR(R_ANC)) { toggleAnchor(defs[st.csel].id); }
-    for (i = 0; i < defs.length; i++) if (onR(cellRect(i))) { st.csel = i; G.sfx('flip', { vol: 0.4 }); }
-    for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect2(i)) && SV().anchors[i]) { SV().anchors.splice(i, 1); G.Save.save(); }
+    if (inp.hit('KeyQ')) { st.filter = FILTERS[(FILTERS.map(function (f) { return f.id; }).indexOf(st.filter || 'all') + FILTERS.length - 1) % FILTERS.length].id; st.csel = 0; }
+    if (inp.hit('Tab')) { st.filter = FILTERS[(FILTERS.map(function (f) { return f.id; }).indexOf(st.filter || 'all') + 1) % FILTERS.length].id; st.csel = 0; }
+    for (i = 0; i < FILTERS.length; i++) if (onR(chipRect(i))) { st.filter = FILTERS[i].id; st.csel = 0; G.sfx('flip', { vol: 0.4 }); }
+    list = archList();
+    if ((inp.hit('KeyE', 'Enter') || onR(R_ANC)) && list[st.csel]) toggleAnchor(list[st.csel].id);
+    for (i = 0; i < list.length; i++) if (onR(cellRect(i))) { st.csel = i; G.sfx('flip', { vol: 0.4 }); }
+    for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect2(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
+    for (i = 0; i < 3; i++) {
+      if (inp.hit('Digit' + (i + 1))) { st.lo = i; G.sfx('flip', { vol: 0.3 }); }
+      if (onR(loRect(i))) st.lo = i;
+      if (onR(loSave(i))) saveLoadout(i);
+      else if (onR(loApply(i))) applyLoadout(i);
+      else if (onR(loName(i)) && st.lo === i && S.loadouts[i]) startEdit();
+    }
+    if (inp.hit('KeyZ')) saveLoadout(st.lo);
+    if (inp.hit('KeyX')) applyLoadout(st.lo);
+    if (inp.hit('KeyN')) startEdit();
     return false;
   }
-  function handRect2(i) { return { x: 20 + i * 84, y: 410, w: 72, h: 96 }; }
   function nodeFor(card) { return G.Tree.NODES.filter(function (n) { return n.card === card && n.type === 'C'; })[0]; }
   function drawArchive(c) {
-    var defs = G.Cards.defs, S = SV(), i, d = defs[st.csel], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color;
-    bg(c, 'ARCHIVO  -  Ulalume (colección y anclas)');
-    for (i = 0; i < defs.length; i++) {
-      var r = cellRect(i), rk = G.Save.rank(defs[i].id), isA = S.anchors.indexOf(defs[i].id) >= 0;
-      G.Cards.drawCard(c, { id: defs[i].id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true, dim: rk === 0, glow: i === st.csel ? '#ffe9a0' : null });
-      if (i === st.csel) { c.strokeStyle = '#ffe9a0'; c.lineWidth = 3; c.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); }
-      if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
-      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 16, r.w, 16); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 8, 11, '#2a1a00', 'center', '#ffd24a'); }
+    var list = archList(), S = SV(), i, d = list[Math.min(st.csel, list.length - 1)] || list[0], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color;
+    var owned = G.Cards.defs.filter(function (q) { return q.id && L.unlocked(q.id); }).length;
+    bg(c, 'ARCHIVO  -  Ulalume');
+    G.txt(c, 'Colección ' + owned + '/' + G.Cards.defs.length + '  -  anclas ' + S.anchors.length + '/' + G.B.anchorSlots, 300, 24, 13, '#9a8fb0', 'left');
+    for (i = 0; i < FILTERS.length; i++) {
+      var f = FILTERS[i], cr = chipRect(i), on = (st.filter || 'all') === f.id;
+      c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(cr.x, cr.y, cr.w, cr.h); c.strokeStyle = on ? f.color : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(cr.x + 1, cr.y + 1, cr.w - 2, cr.h - 2);
+      G.txt(c, f.name, cr.x + cr.w / 2, cr.y + cr.h / 2, 12, on ? f.color : '#8a7f96', 'center');
     }
-    U.panel(c, 614, 56, 330, 290, { border: tc });
-    G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 66, 62, 84, { nocd: true });
-    G.txt(c, d.name, 700, 80, 17, '#ffd27a', 'left');
-    G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), 700, 101, 12, tc, 'left');
-    G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', 700, 121, 13, rank ? '#fff' : '#ff8a8a', 'left');
+    for (i = 0; i < list.length; i++) {
+      var r = cellRect(i), rk = G.Save.rank(list[i].id), isA = S.anchors.indexOf(list[i].id) >= 0;
+      G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true, dim: rk === 0, glow: list[i] === d ? '#ffe9a0' : null });
+      if (list[i] === d) { c.strokeStyle = '#ffe9a0'; c.lineWidth = 3; c.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); }
+      if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
+      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 14, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 7, 10, '#2a1a00', 'center', '#ffd24a'); }
+    }
+    // detalle de la carta
+    U.panel(c, 614, 60, 336, 296, { border: tc });
+    G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 70, 62, 84, { nocd: true });
+    G.txt(c, d.name, 700, 84, 17, '#ffd27a', 'left');
+    G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), 700, 105, 12, tc, 'left');
+    G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', 700, 125, 13, rank ? '#fff' : '#ff8a8a', 'left');
     var ls = U.wrap(c, d.desc, 306, 11);
-    for (i = 0; i < ls.length && i < 3; i++) G.txt(c, ls[i], 626, 168 + i * 14, 11, '#d8cfe8', 'left');
-    var how = rank ? 'Mejoras de rango: forja de Grum.' : (L.classic(id) ? 'Se desbloquea con receta en Grum > CLÁSICA.' : 'Se desbloquea en el árbol de Grum: ' + (nodeFor(id) ? nodeFor(id).name + '.' : '.'));
-    var hl = U.wrap(c, how, 306, 11); for (i = 0; i < hl.length && i < 2; i++) G.txt(c, hl[i], 626, 220 + i * 14, 11, '#9dffb4', 'left');
-    var isAnchor = S.anchors.indexOf(id) >= 0;
+    for (i = 0; i < ls.length && i < 4; i++) G.txt(c, ls[i], 626, 172 + i * 14, 11, '#d8cfe8', 'left');
+    var how = rank ? 'Mejoras de rango: árbol de Grum.' : G.Save.STARTERS.indexOf(id) >= 0 ? 'Carta inicial.' : 'Se desbloquea en el árbol de Grum' + (nodeFor(id) ? ': ' + nodeFor(id).name + ' (' + (G.Tree.tabOf(nodeFor(id).tree) || {}).name + ').' : '.');
+    var hl = U.wrap(c, how, 306, 11); for (i = 0; i < hl.length && i < 2; i++) G.txt(c, hl[i], 626, 236 + i * 14, 11, '#9dffb4', 'left');
+    var isAnchor = S.anchors.indexOf(id) >= 0, nw = comboNames(S.anchors.concat(isAnchor ? [] : [id]));
+    var gain = isAnchor || !rank ? [] : nw.filter(function (cb) { return comboNames(S.anchors).indexOf(cb) < 0; });
+    if (gain.length) G.txt(c, 'COMBO al fijarla: ' + gain.map(function (cb) { return cb.name; }).join(', '), 626, 276, 11, '#ffe9a0', 'left');
     U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 16, sub: '[E]' });
-    G.txt(c, 'TU MANO AL SALIR', 20, 394, 12, '#9a8fb0', 'left');
+    // mano al salir
+    G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 376, 12, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
       var hr = handRect2(i), isAn = i < G.B.anchorSlots, a = S.anchors[i];
-      if (isAn && a) G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true });
+      if (isAn && a) { G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true }); G.txt(c, 'ANCLA', hr.x + hr.w / 2, hr.y + hr.h + 9, 9, '#ffd24a', 'center'); }
       else if (isAn) G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '+');
-      else G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?');
+      else { G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?'); G.txt(c, 'ABIERTO', hr.x + hr.w / 2, hr.y + hr.h + 9, 9, '#6f6480', 'center'); }
     }
-    G.txt(c, G.B.anchorSlots + ' anclas. Flechas: elegir  -  E: fijar  -  Esc: volver', 450, 430, 12, '#9a8fb0', 'left');
-    G.txt(c, 'Ulalume, la archivista, abrirá tus loadouts en la Fase 2b.', 450, 450, 11, '#6f6480', 'left');
+    drawSynergy(c, S, d, isAnchor);
+    // loadouts
+    U.panel(c, 614, 372, 336, 156);
+    G.txt(c, 'LOADOUTS  1-3 elegir  Z guardar  X aplicar  N nombre', 626, 382, 10, '#9a8fb0', 'left');
+    for (i = 0; i < 3; i++) {
+      var lr = loRect(i), lo = S.loadouts[i], sel = st.lo === i;
+      c.fillStyle = sel ? '#2a1d3a' : '#150f20'; c.fillRect(lr.x, lr.y, lr.w, lr.h); c.strokeStyle = sel ? '#ffd27a' : '#3a2f48'; c.lineWidth = sel ? 3 : 2; c.strokeRect(lr.x + 1, lr.y + 1, lr.w - 2, lr.h - 2);
+      var nm = st.edit && sel ? (st.buf || 'ESCRIBE...') + (Math.floor(Date.now() / 400) % 2 ? '_' : ' ') : (lo ? lo.name : 'VACÍO ' + (i + 1));
+      G.txt(c, nm, lr.x + 8, lr.y + 14, 12, lo ? '#fff' : '#6a5f78', 'left');
+      var sub = lo ? lo.anchors.map(function (a2) { return (G.Cards.def(a2) || { short: '?' }).short; }).join('+') + ' ' + lo.len + 'm' + (lo.dish ? ' *' : '') : 'sin guardar';
+      G.txt(c, sub.length > 19 ? sub.slice(0, 18) + '.' : sub, lr.x + 8, lr.y + 32, 9, '#9a8fb0', 'left');
+      U.button(c, loSave(i), 'GUARDAR', { size: 12, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
+      U.button(c, loApply(i), 'APLICAR', { size: 12, off: !lo, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    }
+    G.txt(c, 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 531, 10, '#6f6480', 'left');
+  }
+  // Vista previa de sinergias de etiqueta de las anclas (y de la carta señalada)
+  function drawSynergy(c, S, d, isAnchor) {
+    var i, N = {}, ids = S.anchors.slice(0, G.B.anchorSlots), x = 372, y = 372;
+    U.panel(c, x, y, 232, 156);
+    G.txt(c, 'SINERGIAS DE TUS ANCLAS', x + 10, y + 14, 11, '#9a8fb0', 'left');
+    ids.forEach(function (a) { var t = G.Cards.def(a).tag; N[t] = (N[t] || 0) + 1; });
+    var tags = Object.keys(N), px = x + 10;
+    if (!tags.length) G.txt(c, 'Sin anclas: sal con la mano vacía.', x + 10, y + 32, 11, '#8a7f96', 'left');
+    tags.forEach(function (t, k) {
+      var col = (G.TAGS[t] || {}).color || '#fff'; c.fillStyle = col; c.beginPath(); c.arc(px + 5, y + 34, 5, 0, 6.283); c.fill();
+      G.txt(c, (G.TAGS[t] || { name: t }).name + ' x' + N[t], px + 14, y + 34, 10, '#d8cfe8', 'left'); px += 14 + (G.TAGS[t].name.length + 3) * 6.4 + 8;
+    });
+    var cur = comboNames(ids);
+    G.txt(c, cur.length ? 'COMBOS ACTIVOS' : 'Sin combos: junta etiquetas distintas', x + 10, y + 54, 10, cur.length ? '#9dffb4' : '#9a8fb0', 'left');
+    cur.slice(0, 3).forEach(function (cb, k) {
+      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x + 15, y + 72 + k * 17, 4, 0, 6.283); c.fill(); c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x + 25, y + 72 + k * 17, 4, 0, 6.283); c.fill();
+      G.txt(c, cb.name, x + 34, y + 72 + k * 17, 11, '#ffe9a0', 'left');
+    });
+    if (cur.length > 3) G.txt(c, '+' + (cur.length - 3) + ' más', x + 160, y + 72, 10, '#9a8fb0', 'left');
+    var set = Object.keys(N).filter(function (t) { return N[t] >= 2 && t !== 'neutral'; });
+    if (set.length) G.txt(c, 'Set de ' + G.TAGS[set[0]].name + ': a 3 cartas +25 % (nodo de Set en el árbol)', x + 10, y + 126, 9, '#c8b8e8', 'left');
+    var gain = !isAnchor && G.Save.rank(d.id) ? comboNames(ids.concat([d.id])).filter(function (cb) { return cur.indexOf(cb) < 0; }) : [];
+    G.txt(c, gain.length ? 'Con ' + d.short + ': ' + gain.map(function (cb) { return cb.name; }).join(', ') : (isAnchor ? d.short + ' ya es ancla.' : 'Con ' + d.short + ': sin combo nuevo.'), x + 10, y + 142, 10, gain.length ? '#ffe9a0' : '#8a7f96', 'left');
+  }
+
+  // ============================================================= COCINA de Tía Castaña
+  // Un plato por expedición (se reinicia al volver de una salida). El plato preparado se consume al salir y da su buff durante toda la run (HUD: chip abajo a la izquierda).
+  var Cook = G.Cook = {};
+  Cook.DISHES = [
+    { id: 'sopa', name: 'Sopa de hebra', icon: 'thread', short: 'Sopa', desc: 'Cura pasiva leve: +0,25 HP por segundo (sin cifras flotantes).', parts: { thread: 8 }, brasas: 20, fx: { regen: 0.25 } },
+    { id: 'pan', name: 'Pan de pluma', icon: 'feather', short: 'Pan', desc: '+8 % de velocidad de movimiento.', parts: { feather: 6 }, brasas: 20, fx: { speed: 1 } },
+    { id: 'te', name: 'Té de brasas', icon: 'brasa', short: 'Té', desc: '+10 % de XP durante toda la expedición.', parts: { thread: 4 }, brasas: 60, fx: { xp: 1 } },
+    { id: 'estofado', name: 'Estofado de púas', icon: 'spine', short: 'Estofado', desc: '-25 % de daño de proyectiles (arqueros, espinosos, polillas, sembradores).', parts: { spine: 6 }, brasas: 20, fx: { res: { ranged: 0.25 } } },
+    { id: 'guiso', name: 'Guiso de mecha', icon: 'wick', short: 'Guiso', desc: '-30 % de daño de explosivos y fuego (bombas, ascuas).', parts: { wick: 4 }, brasas: 30, fx: { res: { blast: 0.3 } } },
+    { id: 'caldo', name: 'Caldo de placa', icon: 'plate', short: 'Caldo', desc: '-20 % de daño cuerpo a cuerpo (gusanos, jabalíes, escuderos, espectros).', parts: { plate: 5 }, brasas: 30, fx: { res: { melee: 0.2 } } },
+    { id: 'asado', name: 'Asado de colmillo', icon: 'fang', short: 'Asado', desc: '-15 % de daño de élites, minijefes y jefes.', parts: { fang: 4 }, brasas: 30, fx: { res: { big: 0.15 } } }
+  ];
+  Cook.def = function (id) { return Cook.DISHES.filter(function (d) { return d.id === id; })[0] || null; };
+  Cook.pending = function () { var id = SV().pending.dish; return id ? Cook.def(id) : null; };
+  Cook.afford = function (d) { var S = SV(); if (S.brasas < d.brasas) return false; for (var k in d.parts) if ((S.parts[k] || 0) < d.parts[k]) return false; return true; };
+  Cook.can = function () { var S = SV(); return !S.pending.dish && !S.shop.dish; };
+  Cook.anyAffordable = function () { return Cook.can() && Cook.DISHES.some(Cook.afford); };
+  Cook.cook = function (id) {
+    var S = SV(), d = Cook.def(id); if (!d) return { ok: false, msg: '' };
+    if (S.pending.dish) return { ok: false, msg: 'Ya llevas un plato: ' + Cook.def(S.pending.dish).name + '.' };
+    if (S.shop.dish) return { ok: false, msg: 'Ya comiste en esta salida. Vuelve tras otra expedición.' };
+    if (!Cook.afford(d)) return { ok: false, msg: 'Faltan ingredientes o Brasas.' };
+    for (var k in d.parts) S.parts[k] -= d.parts[k];
+    S.brasas -= d.brasas; S.pending.dish = id; S.shop.dish = 1; G.Save.save();
+    return { ok: true, msg: d.name + ' preparado para la próxima expedición.' };
+  };
+  // Al empezar una expedición (G.startGame): consume el plato y deja su buff en G.runBuff
+  Cook.begin = function () {
+    var S = SV(), d = S.pending.dish ? Cook.def(S.pending.dish) : null;
+    G.runBuff = G.runBuff || {}; G.runBuff.dish = d ? d.id : null; G.runBuff.fx = d ? d.fx : {};
+    if (d) { S.pending.dish = null; S.cooked = (S.cooked || 0) + 1; G.Save.save(); try { G.Ach.check(); } catch (e) { /* logros */ } }
+  };
+  Cook.drawHud = function (c) {
+    var d = G.runBuff && G.runBuff.dish ? Cook.def(G.runBuff.dish) : null; if (!d) return;
+    c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(66, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(67, G.H - 33, 146, 20);
+    U.part(c, d.icon, 80, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 94, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
+  };
+  function dRow(i) { return { x: 14, y: 70 + i * 63, w: 932, h: 57 }; }
+  function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 6, w: 156, h: 45 }; }
+  function updCook() {
+    for (var i = 0; i < Cook.DISHES.length; i++) if (onR(dBtn(i)) || inp.hit('Digit' + (i + 1))) {
+      var r = Cook.cook(Cook.DISHES[i].id); say(r.msg); if (r.ok) { G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } if (G.Aldea.onCooked) G.Aldea.onCooked(); } else G.sfx('discard', { vol: 0.5 });
+    }
+    return false;
+  }
+  function drawCook(c) {
+    var S = SV(), cur = Cook.pending();
+    bg(c, 'COCINA  -  Tía Castaña'); header(c, 560);
+    G.txt(c, cur ? 'Preparado: ' + cur.name : S.shop.dish ? 'Hoy ya comiste. Vuelve tras otra expedición.' : 'Un plato por expedición. Se come solo al salir.', 14, 56, 12, cur ? '#9dffb4' : '#9a8fb0', 'left');
+    Cook.DISHES.forEach(function (d, i) {
+      var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id;
+      U.panel(c, r.x, r.y, r.w, r.h, { border: isCur ? '#7dff9a' : ok ? '#8a6a4a' : '#3a2f48' });
+      U.part(c, d.icon, r.x + 28, r.y + 29, 14);
+      G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 58, r.y + 18, 16, '#ffd27a', 'left');
+      G.txt(c, d.desc, r.x + 58, r.y + 40, 11, '#d8cfe8', 'left');
+      var x = r.x + 560, k;
+      for (k in d.parts) { var have = S.parts[k] || 0; U.part(c, k, x + 8, r.y + 28, 9); G.txt(c, have + '/' + d.parts[k], x + 22, r.y + 29, 12, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 74; }
+      U.part(c, 'brasa', x + 8, r.y + 28, 9); G.txt(c, S.brasas + '/' + d.brasas, x + 22, r.y + 29, 12, S.brasas >= d.brasas ? '#9dffb4' : '#ff8a8a', 'left');
+      U.button(c, dBtn(i), isCur ? 'LISTO' : 'COCINAR', { size: 15, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    });
+    G.txt(c, '1-7: cocinar  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
+  }
+
+  // ============================================================= LOGROS (Abuelo Lanudo)
+  function lRow(i) { return { x: 14, y: 64 + i * 40, w: 560, h: 36 }; }
+  function updLogros() {
+    var n = G.Ach.DEFS.length, i;
+    if (inp.hit('ArrowDown', 'KeyS')) st.lsel = Math.min(n - 1, (st.lsel || 0) + 1);
+    if (inp.hit('ArrowUp', 'KeyW')) st.lsel = Math.max(0, (st.lsel || 0) - 1);
+    for (i = 0; i < n; i++) if (onR(lRow(i))) { st.lsel = i; G.sfx('flip', { vol: 0.3 }); }
+    return false;
+  }
+  function drawLogros(c) {
+    var A = G.Ach, S = SV(), sel = A.DEFS[st.lsel || 0];
+    bg(c, 'MEMORIAS  -  Abuelo Lanudo'); G.txt(c, A.count() + '/' + A.DEFS.length + ' logros', 400, 24, 14, '#ffd24a', 'left');
+    A.DEFS.forEach(function (a, i) {
+      var r = lRow(i), got = !!S.ach[a.id], on = i === (st.lsel || 0);
+      c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = got ? '#ffd24a' : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+      c.fillStyle = got ? '#ffd24a' : '#3a2f48'; c.beginPath(); c.arc(r.x + 20, r.y + 18, 9, 0, 6.283); c.fill();
+      if (got) G.txt(c, 'v', r.x + 20, r.y + 19, 12, '#3a2410', 'center', 'rgba(0,0,0,0)');
+      G.txt(c, a.name, r.x + 40, r.y + 12, 13, got ? '#fff' : '#8a7f96', 'left'); G.txt(c, a.desc, r.x + 40, r.y + 27, 10, got ? '#bdb2d0' : '#6a5f78', 'left');
+    });
+    U.panel(c, 590, 64, 356, 300, { border: '#b8a878' });
+    if (sel) {
+      G.txt(c, sel.name, 604, 84, 16, '#ffd27a', 'left');
+      var got2 = !!S.ach[sel.id], ls = U.wrap(c, got2 ? '"' + sel.lore + '"' : 'Aún no lo has conseguido. ' + sel.desc, 330, 12);
+      for (var k = 0; k < ls.length && k < 10; k++) G.txt(c, ls[k], 604, 114 + k * 17, 12, got2 ? '#e8dcb0' : '#8a7f96', 'left');
+    }
+    G.txt(c, 'Flechas: elegir  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
   }
 
   // ============================================================= MENÚ y AJUSTES

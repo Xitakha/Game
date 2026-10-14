@@ -109,6 +109,7 @@
       G.txt(c, 'Sube de nivel para conseguir cartas. Haz que sus etiquetas se toquen.', G.W / 2, 402, 13, '#d8cfe8', 'center');
       c.restore();
     }
+    try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
     drawBanner(c);
     G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
     if (G.state === 'paused') drawPause(c);

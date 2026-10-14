@@ -32,9 +32,9 @@
     // resumen del jefe (v4): una línea bajo el título; los trofeos y el desglose de Brasas van en el panel del botín
     var bi = sm.boss;
     if (bi) {
-      var PN = { cuernos: 'Cuernos', cayado: 'Cayado', vellon: 'Vellón' }, mm = Math.floor(bi.time / 60000), ss = Math.floor(bi.time / 1000) % 60;
+      var BDP = (G.Boss.DEFS[bi.id] || {}).parts || {}, PN = { cuernos: 'Cuernos', cayado: 'Cayado', vellon: 'Vellón' }, mm = Math.floor(bi.time / 60000), ss = Math.floor(bi.time / 1000) % 60;
       var bl = bi.name.toUpperCase() + (bi.won ? '  -  derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss : '  -  te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida')
-        + '  -  partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k]; }).join(', ') : 'ninguna');
+        + '  -  partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k] || (BDP[k] && BDP[k].name) || k; }).join(', ') : 'ninguna');
       G.txt(c, bl, G.W / 2, 92, 13, bi.won ? '#ffd24a' : '#ff9a8a', 'center');
     }
     var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });

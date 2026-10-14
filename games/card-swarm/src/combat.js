@@ -37,6 +37,7 @@
   // ------------------------------------------------------------- Estados
   C.slow = function (e, pct, ms) {
     var m = M(); pct = Math.min(0.8, pct + m.slowAdd); ms += m.slowDur;
+    if (G.Tree.fx.permafrost) pct = Math.max(pct, 0.45);   // Permafrost (Hielo): toda ralentización es de al menos el 45 %
     if (e.type === 'boss' || e.big) pct *= 0.5;
     e.slowPct = Math.max(e.slowT > 0 ? e.slowPct : 0, pct); e.slowT = Math.max(e.slowT, ms);
   };
@@ -44,8 +45,10 @@
   C.poison = function (e, n) {
     var a = A(), m = M();
     e.poisonN = Math.min(m.poisonMax, (e.poisonN || 0) + (n || 1));
-    var dur = 4000 + (a.plague && e.slowT > 0 ? 3000 : 0);
+    var dur = 4000 + (a.plague && e.slowT > 0 ? 3000 : 0), tf = G.Tree.fx;
     e.poisonT = Math.max(e.poisonT, dur);
+    if (tf.plaga && (e.big || e.type === 'boss')) e.poisonT = 1e9;   // Plaga (Veneno, maestría): el veneno nunca expira en élites y jefes
+    if (tf.neurotoxina && e.poisonN >= 5 && !(e.neuCd > 0)) { e.neuCd = 3000; C.stun(e, 1000); fx.burst(e.x, e.y, 6, '#b4ff7a', 120, 400, 3, { add: true }); }   // Neurotoxina: 5 stacks aturden 1 s
   };
   C.bleed = function (e) { e.bleedT = Math.max(e.bleedT, 3000); };
   C.stun = function (e, ms) { if (e.type === 'boss' || e.big) return; e.stunT = Math.max(e.stunT, ms); };
@@ -87,10 +90,19 @@
       dmg *= m.fireDmg;
       if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
     }
+    if (m.tagMul[tag]) dmg *= m.tagMul[tag];   // Hielo / Rayo / Veneno / Sangre: pasivo del árbol y Resonancia (set)
     if (tag === 'steel') {
       dmg *= m.steelDmg;
-      if ((a.edge_ice && slowed) || Math.random() < m.steelCrit) { dmg *= 2; crit = true; }
+      if ((a.edge_ice && slowed) || Math.random() < m.steelCrit) {
+        dmg *= 2; crit = true;
+        if (m.set4.steel && (!C.filoCd || G.time - C.filoCd > 400)) {   // Filo eterno (set Acero 4+): un crítico recorta 0,3 s todos los cooldowns
+          C.filoCd = G.time; for (var fi = 0; fi < p.hand.length; fi++) if (p.hand[fi] && p.hand[fi].cd > 0) p.hand[fi].cd = Math.max(0, p.hand[fi].cd - 300);
+        }
+      }
     }
+    if (tf.quebradizo && slowed) dmg *= 1.25;                          // Quebradizo (Hielo): +25 % de daño a ralentizados
+    if (tf.berserker && p.hp < p.maxHp * 0.4) dmg *= 1.35;            // Berserker (Sangre): +35 % con menos del 40 % de vida
+    if (p.pactT > 0) dmg *= 1.1;                                       // Pacto de sangre: +10 % de daño 5 s
     if (a.pact && p.hp < p.maxHp * 0.5) dmg *= 1.2;
     if (tag === 'fire' && a.vapor && slowed) {
       dmg *= 1.5;
@@ -129,7 +141,7 @@
       else C.burn(e, o.burn || 5, 2000);
     }
     if (o.slow) C.slow(e, o.slow[0], o.slow[1]);
-    if (o.poison) C.poison(e, 1);
+    if (o.poison) C.poison(e, o.poison === 2 ? 2 : 1);
     if (o.bleed) C.bleed(e);
     if (o.stun) C.stun(e, o.stun);
     e.hp -= dmg; e.flash = 70; e.lastTag = tag; e.boomDepth = o.depth || 0;
@@ -145,6 +157,9 @@
     if (o.proj && a.edge_elec && tag === 'steel' && !o.noChain) {
       var nx = C.nearest(e.x, e.y, 100, [e]);
       if (nx) C.chain(e.x, e.y, nx, 2, 8, 1, 100, 'lightning', { noChain: true, exclude: [e] });
+    }
+    if (m.set4.ice && e.hp > 0 && e.slowT > 0 && e.hp < e.maxHp * 0.15 && e.type !== 'boss' && !e.big && !e.partOf) {   // Cripta (set Hielo 4+): ralentizados <15 % de vida mueren congelados
+      e.hp = 0; fx.burst(e.x, e.y, 8, '#e8f6ff', 160, 450, 3, { add: true }); fx.ring(e.x, e.y, 4, 26, 260, '#bfeaff', 3);
     }
     if (e.hp <= 0) {
       G.Enemies.kill(e, false, tag);
@@ -195,7 +210,8 @@
       }
     }
     if (e.bleedT > 0) e.bleedT -= dt;
-    var bl = (e.bleedT > 0 ? 5 : 0) + (a.bloodpoison && e.poisonN > 0 ? 3 : 0);
+    if (e.neuCd > 0) e.neuCd -= dt;
+    var bl = ((e.bleedT > 0 ? (G.Tree.fx.sangradoHondo ? 7 : 5) : 0) + (a.bloodpoison && e.poisonN > 0 ? 3 : 0)) * m.tagMul.blood;
     if (bl > 0) {
       if (Math.random() < 0.05) fx.dot(e.x, e.y, G.rnd(-20, 20), 30, 400, '#c01838', 3, { g: 200 });
       if (tickAcc(e, 'blood', bl, dt, 'blood')) return true;
@@ -300,6 +316,15 @@
         for (var pi = 0; pi < pl.length && pn < 3; pi++) if (pl[pi] !== e) { C.burn(pl[pi], e.burnDps, 2500); fx.bolt(e.x, e.y, pl[pi].x, pl[pi].y, '#ff7a2a', 2); pn++; }
       }
     }
+    var tfk = G.Tree.fx;
+    if (tfk.vampiro && tag === 'blood' && Math.random() < 0.12) G.Player.heal(p, 3, 'vampiro');   // Vampiro (Sangre): 12 % de curar 3 HP al matar con Sangre
+    if (M().set4.blood) { p.sedN = (p.sedN || 0) + 1; if (p.sedN % 3 === 0) { p.shield = Math.min(20, (p.shield || 0) + 10); G.fx.num(p.x, p.y - 30, '+10 escudo', '#d02048'); } }   // Sed (set Sangre 4+): 3 kills = escudo de 10 HP (tope 20)
+    if (tfk.pactoSangre) { p.pactN = (p.pactN || 0) + 1; if (p.pactN % 25 === 0) { G.Player.heal(p, 15, 'pacto'); p.pactT = 5000; G.fx.ring(p.x, p.y, 8, 70, 400, '#d02048', 5); } }   // Pacto de sangre (maestría)
+    if (tfk.pandemia && e.poisonN > 0) {   // Pandemia (Veneno): un envenenado que muere pasa sus stacks a 3 enemigos cercanos
+      var pn2 = 0, pl2 = C.inRange(e.x, e.y, 90);
+      for (var pj = 0; pj < pl2.length && pn2 < 3; pj++) if (pl2[pj] !== e) { C.poison(pl2[pj], Math.min(2, e.poisonN)); fx.bolt(e.x, e.y, pl2[pj].x, pl2[pj].y, '#7be34a', 2); pn2++; }
+    }
+    if (M().set4.poison && e.poisonN > 0) C.zone({ kind: 'pool', x: e.x, y: e.y, r: 40, life: 2500, dps: 5, tag: 'poison', poison: true, interval: 500 });   // Epidemia (set Veneno 4+): charco venenoso al morir un envenenado
     if (a.frenzy) p.frenzyT = 1500;
     if (a.pact && tag === 'fire' && Math.random() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
     if (e.poisonN > 0) {

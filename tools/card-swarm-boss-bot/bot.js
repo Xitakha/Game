@@ -21,6 +21,14 @@ window.installBot = function (opts) {
       } else if (h.k === 'lane') {
         var ca = Math.cos(h.a), sa = Math.sin(h.a), dx = x - h.x, dy = y - h.y, al = dx * ca + dy * sa, la = -dx * sa + dy * ca;
         if (al > -40 && al < h.len + 40 && Math.abs(la) < h.w / 2 + pr + 8) d += 10;
+      } else if (h.k === 'band') {   // Marea de Letea: ola vertical de w px que cruza la arena; los huecos (gaps = y centrales, 100 px) son seguros
+        var bx = h.x + h.dir * h.v * Math.max(0, tau - h.t0) / 1000;
+        if (Math.abs(x - bx) < h.w / 2 + pr + 10) { var inGap = false; for (var gi = 0; gi < h.gaps.length; gi++) if (Math.abs(y - h.gaps[gi]) <= 44 - pr * 0.3) inGap = true; if (!inGap) d += 10; }
+      } else if (h.k === 'flood') {   // Marea / Réquiem de Karceron: peligroso todo salvo el radio h.R alrededor de cada isla
+        var safe = false; for (var ii = 0; ii < h.islands.length; ii++) if (Math.hypot(x - h.islands[ii][0], y - h.islands[ii][1]) <= h.R - 6) safe = true;
+        if (!safe) d += 10;
+      } else if (h.k === 'frame') {   // borde de lava (F2 de Karceron)
+        if (x < h.m + 4 || x > G.AW - h.m - 4 || y < h.m + 4 || y > G.AH - h.m - 4) d += 4;
       } else if (h.k === 'wave') {
         var rr = h.r + h.v * Math.max(0, tau - h.t0) / 1000, dw = Math.hypot(x - h.x, y - h.y);
         if (Math.abs(dw - rr) < h.th / 2 + pr + 10) {

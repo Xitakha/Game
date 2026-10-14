@@ -1,14 +1,14 @@
-// uso: node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
+// uso: (jefes: "boss":"pastor|karceron|letea", "port":8765) node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
-const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, profile: 'fresh', anchors: '' }, JSON.parse(process.argv[2] || '{}'));
+const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765 }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/bot.js', 'utf8');
 async function one(b, i) {
   const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
   const errs = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   pg.on('pageerror', e => errs.push('PAGEERR ' + e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 5).join(' | ')));
-  const url = cfg.full ? `http://localhost:8765/index.html?reset=1&len=${cfg.len}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}` : `http://localhost:8765/index.html?boss=pastor&reset=1&len=${cfg.len}&hand=${cfg.hand}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}`;
+  const url = cfg.full ? `http://localhost:${cfg.port}/index.html?reset=1&len=${cfg.len}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}` : `http://localhost:${cfg.port}/index.html?boss=${cfg.boss}&reset=1&len=${cfg.len}&hand=${cfg.hand}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}`;
   await pg.addInitScript(() => { });
   await pg.goto(url);
   if (cfg.full) {

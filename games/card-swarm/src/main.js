@@ -1,6 +1,6 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
    Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
-   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
+   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
   var G = window.G = {};
@@ -241,11 +241,17 @@
     G.setLen(G.lenOverride || G.Save.data.len || 9);
     var pd = G.Save.data.pending;   // compras de Rufo (Tónico / Imán): valen para ESTA expedición
     G.runBuff = { tonic: !!pd.tonic, magnet: !!pd.magnet }; pd.tonic = 0; pd.magnet = 0; G.Save.save();
+    try { G.Cook.begin(); } catch (e0) { G.runBuff.dish = null; G.runBuff.fx = {}; }   // Fase 2b: plato de Tía Castaña (consume pending.dish y deja su buff en G.runBuff.fx)
     G.Loot.beginRun();
     G.reset();
-    // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (J1: siempre el Pastor)
-    var biome = G.biomeUrl || G.Save.data.biome || 'bosque';
-    if (biome !== 'bosque' && !G.biomeUrl && !G.Save.data.bossKills.pastor) biome = 'bosque';
+    // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (bosque = Pastor, cripta = Karceron, asfodelo = Letea).
+    // Cripta exige haber vencido al Pastor y Asfodelo a Karceron (persistido en Save.data.bossKills); ?biome= y ?boss= saltan el bloqueo.
+    var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
+    if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[G.bossUrl] || biome;
+    else if (!G.biomeUrl) {
+      if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
+      if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
+    }
     G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
     if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);

@@ -3,6 +3,8 @@
    (telegrafía -> acción -> recuperación) con hitboxes por parte (Assets.bossAnchors), partes rompibles con trofeo, ventanas de daño, Furia,
    ataque desesperado, tope de adds y proyectiles, arena con troncos, zarzal (F2) y perímetro ardiente (F3), intro de 3,5 s, barra de vida grande,
    cámara/zoom y gancho para el bot (G.Boss.hazards()). El arte viene de Assets.drawBoss / bossAnchors / drawBossTele / drawBossWave (assets_boss.js).
+   J2: el motor es genérico por jefe. Karceron (boss_karceron.js) y Letea (boss_letea.js) se registran en S.DEFS / S.ATKS / S.ATK y enganchan sus ganchos en DEFS[id].h
+   (setup, anchors, move, okNow, onGate, onDespair, updDespair, onBreak, partMul, bodyHit, draw, drawGround, items, hazards, intro...); utilidades en S.u.
    El jefe vive en G.enemies (type 'boss') y sus partes son entidades hijas (type 'bosspart', e.partOf): así Combat.nearest/inRange/chain funcionan sin cambios.
    Reloj: G.time sigue corriendo (temporizadores); G.runT es el reloj de la RUN y se congela mientras el jefe vive. */
 (function () {
@@ -17,7 +19,7 @@
   function sfx(n, o) { G.sfx(n, o); }
 
   // ================================================================= TABLAS
-  var ATKS = {     // tele = telegrafía (ms) antes del Peligro; dmg = daño base; sig = ataque firma (>= 25 de daño: doble contorno + viñeta)
+  var ATKS = S.ATKS = {     // b = jefe dueño del ataque (por defecto el Pastor); tele = telegrafía (ms) antes del Peligro; dmg = daño base; sig = ataque firma (>= 25 de daño: doble contorno + viñeta)
     barrido:   { name: 'Barrido de cayado',  tele: 800,  cd: 5000,  dmg: 24, phases: [1, 2, 3] },
     embestida: { name: 'Embestida del carnero', tele: 900, cd: 9000, dmg: 30, phases: [1, 2, 3], sig: true },
     pisoton:   { name: 'Pisotón sísmico',    tele: 700,  cd: 8000,  dmg: 20, phases: [1, 2, 3] },
@@ -27,6 +29,7 @@
     esporas:   { name: 'Esporas del Rebaño', tele: 1000, cd: 12000, dmg: 8,  phases: [2, 3] },
     estampida: { name: 'Estampida',          tele: 700,  cd: 14000, dmg: 24, phases: [3], sig: true }
   };
+  var ATK = S.ATK = {};
   var DEFS = S.DEFS = {
     pastor: {
       id: 'pastor', name: 'El Pastor Corrupto', title: 'Bestia del Rebaño', hp: 6000, r: 74,
@@ -58,8 +61,8 @@
     { hp: 1.00, dmg: 1.00, tele: 1.00, adds: 0, cap: 4, fury: 150000, part: 1.0, brasas: 1.00 },
     { hp: 1.15, dmg: 1.10, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.25 },
     { hp: 1.30, dmg: 1.20, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50 },
-    { hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75 },
-    { hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00 }];
+    { hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, derr: 0.8, regrow: 14000 },
+    { hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, derr: 0.8, regrow: 14000 }];
   function pel() { return PEL[G.clamp(Math.round(G.peligro || 1), 1, 5)]; }
   S.durMul = function () {
     var m = G.RUN_LEN / 60000;
@@ -67,7 +70,8 @@
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
   S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * pel().hp); };
-  S.bossFor = function (biome) { return 'pastor'; };   // J1: todos los biomas usan al Pastor (Karceron y Letea llegan en J2)
+  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
+  S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   function teleMs(name) {
     var d = ATKS[name], big = d.dmg >= 25;
     return Math.round(Math.max(d.tele * pel().tele, Math.min(d.tele, big ? 600 : 400)));
@@ -83,34 +87,39 @@
     S.inset = 0; S.insetOn = false; S.insetT = 0; S.burnTk = 0; S.brierTk = 0;
     S.cds = {}; S.combatT = 0; S.fury = 1; S.furyStep = 0;
     S.flash = 0; S.tint = 0; S.ghost = 1; S.ghostT = 0; S.barFill = 1; S.noHurt = 0; S.sigP = 0; S.lastFull = 0; S.title = 0;
+    S.A = {};   // estado de arena del jefe activo (Karceron / Letea: lava, charcos, marea...)
     G.frozen = false; G.cam.zoom = 1;
   };
   S.reset();
 
   // ================================================================= SPAWN
+  function mkPart(e, k, x, y, r, meter, hz) {   // entidad hija (parte rompible, herida cauterizable...) con los campos que espera Combat
+    return { type: 'bosspart', partOf: e, key: k, x: x, y: y, r: r, hp: 1e9, maxHp: 1e9, dead: false, spawnT: 0, flash: 0, meter: meter, meterMax: meter, hz: hz, expT: 0,
+      kx: 0, ky: 0, face: 1, anim: 0, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, burnT: 0, poisonT: 0, poisonN: 0, bleedT: 0, slowT: 0, stunT: 0, vaporCd: 0, acc: { fire: 0, poison: 0, blood: 0 }, boomDepth: 0, lastTag: 'neutral' };
+  }
   S.spawn = function (id) {
     var D = DEFS[id] || DEFS.pastor, p = PL(), P = pel();
     S.reset();
-    var hp = S.bossHp(D.id), x = G.AW / 2, y = G.AH / 2 - 40;
-    if (G.dist(x, y, p.x, p.y) < 260) x = G.AW / 2 + (p.x < G.AW / 2 ? 260 : -260);
+    var hp = S.bossHp(D.id), x = G.AW / 2, y = G.AH / 2 - 40, h = D.h || {};
+    if (h.pos) { var q0 = h.pos(p); x = q0.x; y = q0.y; }
+    else if (G.dist(x, y, p.x, p.y) < 260) x = G.AW / 2 + (p.x < G.AW / 2 ? 260 : -260);
     var e = E.spawn('boss', x, y, { hp: hp });
     e.x = x; e.y = y; e.r = D.r; e.hp = e.maxHp = hp; e.spawnT = 0; e.spawnMax = 1;
     e.def = D; e.id = D.id; e.immune = true; e.phase = 1; e.mode = 'intro'; e.bst = 'idle'; e.face = p.x >= x ? 1 : -1;
-    e.broken = { cuernos: false, cayado: false, vellon: false }; e.parts = {}; e.exps = []; e.lift = 700; e.alpha = 0; e.roar = 0;
+    e.broken = {}; Object.keys(D.parts).forEach(function (k) { e.broken[k] = false; });
+    e.parts = {}; e.exps = []; e.lift = h.pos ? 0 : 700; e.alpha = 0; e.roar = 0; e.cadMul = 1;
     e.cadT = 1500; e.atk = null; e.bag = []; e.last = null; e.lastHit = {}; e.moveAmt = 0; e.curSpd = 0; e.stagT = 0; e.gateT = 0; e.despDone = false;
     e.sortY = y + 88; e.partsBroken = []; e.despT = 0; e.enrageSaid = false;
     Object.keys(D.parts).forEach(function (k) {
-      var pd = D.parts[k], m = pd.pct * hp * P.part;
-      var pe = { type: 'bosspart', partOf: e, key: k, x: x, y: y, r: pd.r, hp: 1e9, maxHp: 1e9, dead: false, spawnT: 0, flash: 0, meter: m, meterMax: m, hz: pd.hz,
-        kx: 0, ky: 0, face: 1, anim: 0, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, burnT: 0, poisonT: 0, poisonN: 0, bleedT: 0, slowT: 0, stunT: 0, vaporCd: 0, acc: { fire: 0, poison: 0, blood: 0 }, boomDepth: 0, lastTag: 'neutral' };
-      e.parts[k] = pe; G.enemies.push(pe);
+      var pd = D.parts[k]; e.parts[k] = mkPart(e, k, x, y, pd.r, pd.pct * hp * P.part, pd.hz); G.enemies.push(e.parts[k]);
     });
-    LOGS.forEach(function (l) { S.obs.push({ x: l[0], y: l[1], r: 28, dead: false, shake: 0, sortY: l[1] + 6 }); });
+    if (h.setup) h.setup(e, p);
+    else LOGS.forEach(function (l) { S.obs.push({ x: l[0], y: l[1], r: 28, dead: false, shake: 0, sortY: l[1] + 6 }); });
     S.obs.forEach(function (o) { S.pushOutOne(o, p, p.r); });
     S.e = e; S.active = true; G.frozen = true;
     if (G.Loot.run) G.Loot.run.boss = { id: D.id, won: false, parts: [] };
     S.intro = { t: 0, landed: false, roared: false, music: false, seen: !!(G.Save.data.bossSeen && G.Save.data.bossSeen[D.id]) && !G.noSeen, skipped: false };
-    if (G.nointro) { S.intro.t = 3490; S.intro.seen = true; S.intro.landed = S.intro.roared = S.intro.music = true; e.lift = 0; e.alpha = 1; }
+    if (G.nointro) { S.intro.t = 3490; S.intro.seen = true; S.intro.landed = S.intro.roared = S.intro.music = true; e.lift = 0; e.alpha = 1; e.rise = 1; }
     try { Assets.music.setIntensity(0.3); } catch (x1) { /* audio */ }
     return e;
   };
@@ -148,7 +157,8 @@
   function addsAlive() { var n = 0; for (var i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead && G.enemies[i].bossAdd) n++; return n; }
   function normalsAlive() { var n = 0; for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.type !== 'boss' && q.type !== 'bosspart' && !q.bossAdd) n++; } return n; }
   S.addsAlive = addsAlive;
-  function anchors(e) { return Assets.bossAnchors('pastor', S.stateOf(e)); }
+  function anchors(e) { return e.def.h && e.def.h.anchors ? e.def.h.anchors(e) : Assets.bossAnchors('pastor', S.stateOf(e)); }
+  function hk(e, n) { return e && e.def && e.def.h && e.def.h[n]; }
 
   // exposición (ventana de daño / derribo / aturdido): gana el mayor multiplicador activo
   function expose(e, mul, ms, kind) {
@@ -168,7 +178,8 @@
     var D = e.def, m = 1, i;
     for (i = 0; i < D.weak.length; i++) if (D.weak[i].tag === tag && D.weak[i].phases.indexOf(e.phase) >= 0) m *= D.weak[i].mul;
     for (i = 0; i < D.resist.length; i++) if (D.resist[i].tag === tag) m *= D.resist[i].mul;
-    if (!e.broken.vellon && !(o && o.viaPart)) m *= 0.8;          // lana gruesa
+    if (e.id === 'pastor' && !e.broken.vellon && !(o && o.viaPart)) m *= 0.8;          // lana gruesa
+    if (D.h && D.h.mulExtra) m *= D.h.mulExtra(e, tag, o);
     m *= S.expo(e).mul;
     var full = dmg * m; S.lastFull = full;
     if (o && !o.proj && !o.dot) {                                  // golpes de área/aura/orbital: cuerpo + parte cuentan una sola vez
@@ -176,7 +187,8 @@
       if (last != null && G.time - last < 120) return 0;
       e.lastHit[key] = G.time;
     }
-    if (!e.broken.vellon && !(o && o.viaPart) && !(o && o.dot)) {   // el Vellón (en el lomo, dentro del cuerpo) se desgasta con el daño al cuerpo: 22 % de cada golpe
+    if (D.h && D.h.bodyHit && !(o && o.viaPart) && !(o && o.dot)) D.h.bodyHit(e, full, o);   // Karceron: el pecho abierto llena el medidor del Núcleo
+    if (e.id === 'pastor' && !e.broken.vellon && !(o && o.viaPart) && !(o && o.dot)) {   // el Vellón (en el lomo, dentro del cuerpo) se desgasta con el daño al cuerpo: 22 % de cada golpe
       var vp = e.parts.vellon; vp.meter -= full * 0.22; vp.flash = 60;
       if (vp.meter <= 0 && !vp.dead) S.breakPart(e, vp);
     }
@@ -184,11 +196,19 @@
   };
   S.dealPart = function (pe, base, o) {
     var e = pe.partOf;
-    if (!e || e.dead || pe.dead || e.immune || e.mode === 'intro') return 0;
+    if (!e || e.dead || pe.dead || e.mode === 'intro') return 0;
+    if (e.submerged && !e.dying) {   // Letea hundida: el cuerpo es inmune pero las cabezas siguen vivas (se pueden romper)
+      var sd = base * G.B.cardDmgMul; pe.meter -= sd * pe.hz; pe.flash = 80;
+      if (pe.meter <= 0 && !pe.dead) S.breakPart(e, pe);
+      return sd;
+    }
+    if (e.immune) return 0;
     var o2 = {}, k; for (k in o) o2[k] = o[k];
     o2.viaPart = pe;
-    var dealt = G.Combat.deal(e, base, o2);
+    var hp = hk(e, 'partMul'), pm = hp ? hp(e, pe, o) : 1;
+    var dealt = G.Combat.deal(e, base * pm, o2);
     pe.meter -= S.lastFull * pe.hz; pe.flash = 80;
+    if (hk(e, 'onPartHit')) e.def.h.onPartHit(e, pe, o, dealt);
     if (pe.meter <= 0 && !pe.dead && !e.dead) S.breakPart(e, pe);
     return dealt;
   };
@@ -213,22 +233,28 @@
     fx.part('fx_part_break', pe.x, pe.y, 0, 0, 420, { anim: true, sc: 1, add: true });
     fx.burst(pe.x, pe.y, 12, '#ffd27a', 240, 600, 4, { add: true }); fx.ember(pe.x, pe.y, 6, 14);
     fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 });
-    G.Hud.banner('¡' + pd.name.toUpperCase() + ' ROTO!', 1500, '#ffd27a');
+    G.Hud.banner('¡' + pd.name.toUpperCase() + (pd.fem ? ' ROTA!' : ' ROTO!'), 1500, '#ffd27a');
     // corazón + trofeo (cuenta como Esencia)
     G.Combat.dropGem(pe.x, pe.y, 'heart', B.player.heal);
-    G.Combat.dropGem(pe.x, pe.y, 'part', 1); var g = G.gems[G.gems.length - 1]; g.part = 'rare'; g.trophy = pd.trophy;
-    var R = G.Loot.run; if (R) { if (!R.boss) R.boss = { id: e.id, won: false, parts: [] }; R.boss.parts.push(pe.key); }
-    expose(e, 1.3, 3000, 'derribo');                                  // derribo: x1,3 durante 3 s y el jefe se tambalea
+    if (!pe.trophyGiven) {   // las cabezas de Letea rebrotan: el trofeo y las Brasas solo la primera vez
+      pe.trophyGiven = true;
+      G.Combat.dropGem(pe.x, pe.y, 'part', 1); var g = G.gems[G.gems.length - 1]; g.part = 'rare'; g.trophy = pd.trophy;
+      var R = G.Loot.run; if (R) { if (!R.boss) R.boss = { id: e.id, won: false, parts: [] }; R.boss.parts.push(pe.key); }
+    }
+    var dr = pd.derr || { mul: 1.3, ms: 3000 };
+    expose(e, dr.mul, dr.ms * (pel().derr || 1), 'derribo');         // derribo: x1,3 durante 3 s y el jefe se tambalea
     if (e.atk && e.atk.name === 'salto') e.lift = 0;
-    e.atk = null; e.bst = 'idle'; e.stagT = 1200; e.cadT = D.phases[e.phase - 1].cad * 0.6; e.lift = 0;
+    if (!D.h || !D.h.keepAtk || !D.h.keepAtk(e, pe)) { e.atk = null; e.bst = 'idle'; e.stagT = pd.stag == null ? 1200 : pd.stag; e.cadT = D.phases[e.phase - 1].cad * 0.6; e.lift = 0; }
     if (pe.key === 'vellon') fx.flames(e.x, e.y - 40, 8, 30);
+    if (D.h && D.h.onBreak) D.h.onBreak(e, pe);
   };
   function updParts(e) {
     var a = anchors(e), D = e.def;
     for (var k in e.parts) {
-      var pe = e.parts[k]; if (pe.dead) continue;
-      var an = a[k]; pe.x = e.x + an.x; pe.y = e.y + an.y; pe.r = D.parts[k].r;
-      if (pe.flash > 0) pe.flash -= 16.7;
+      var pe = e.parts[k]; if (pe.flash > 0) pe.flash -= 16.7; if (pe.expT > 0) pe.expT -= 16.7;
+      if (pe.dead) continue;
+      var an = a[k]; if (!an) continue;
+      pe.x = e.x + an.x; pe.y = e.y + an.y; pe.r = an.r || D.parts[k].r;
     }
   }
 
@@ -241,15 +267,17 @@
     fx.shake(10, 600); sfx('boss_roar'); fx.ring(e.x, e.y, 20, 300, 600, '#ffffff', 6); fx.ring(e.x, e.y, 10, 200, 500, '#a060ff', 4); fx.flash && fx.flash(0.2);
     S.flash = 0.25;
     G.Hud.banner('FASE ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, e.phase === 2 ? '#c090ff' : '#ff9a3c');
+    if (D.h && D.h.onGate) D.h.onGate(e);
     var p = PL();   // salvavidas: 2 corazones
     for (var i = 0; i < 2; i++) G.Combat.dropGem(p.x + (i ? 50 : -50), p.y + 20, 'heart', B.player.heal);
     try { Assets.music.setIntensity(D.phases[e.phase - 1].music); } catch (x) { /* audio */ }
-    if (e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: Math.random() * 3000 }); }); }
-    if (e.phase === 3) { S.insetOn = true; S.insetT = 0; }
+    if (e.id === 'pastor' && e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: Math.random() * 3000 }); }); }
+    if (e.id === 'pastor' && e.phase === 3) { S.insetOn = true; S.insetT = 0; }
     for (var j = 0; j < G.enemies.length; j++) { var q = G.enemies[j]; if (!q.dead && q.type !== 'boss' && q.type !== 'bosspart' && !q.bossAdd) { q.noSpawnAdd = true; } }
   };
   function clearHazards() {
     S.waves.length = 0; S.spikes.length = 0;
+    if (S.e && S.e.def.h && S.e.def.h.clear) S.e.def.h.clear(S.e);
     for (var i = G.zones.length - 1; i >= 0; i--) if (G.zones[i].team === 'e' && String(G.zones[i].src).indexOf('boss') === 0) G.zones.splice(i, 1);
   }
   S.startDespair = function (e) {
@@ -258,14 +286,12 @@
     for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.bossAdd) E.kill(q, true); }
     fx.shake(10, 700); sfx('boss_roar', { pitch: 0.8 }); fx.ring(e.x, e.y, 20, 260, 700, '#c060ff', 6);
     G.Hud.banner(e.def.despair.toUpperCase(), 2400, '#c060ff');
-    expose(e, 1.25, 9500, 'despair');
+    if (hk(e, 'onDespair')) e.def.h.onDespair(e); else expose(e, 1.25, 9500, 'despair');
     e.despAng = Math.random() * TAU;
     try { Assets.music.setIntensity(1); } catch (x) { /* audio */ }
   };
 
   // ================================================================= ATAQUES
-  var ATK = {};
-
   // ---- 1. Barrido de cayado (con el Cayado roto: golpe de puño corto)
   ATK.barrido = {
     start: function (e, A) {
@@ -453,6 +479,7 @@
   // ================================================================= MÁQUINA DE ATAQUES
   function okNow(e, name) {
     var d = G.dist(e.x, e.y, PL().x, PL().y);
+    if (e.id !== 'pastor') return e.def.h.okNow ? e.def.h.okNow(e, name, d) : true;
     switch (name) {
       case 'barrido': return d < (e.broken.cayado ? 190 : 260);
       case 'embestida': return d > 200 && d < 650;
@@ -465,14 +492,14 @@
     }
   }
   function pickAttack(e) {
-    var allowed = Object.keys(ATKS).filter(function (n) { return ATKS[n].phases.indexOf(e.phase) >= 0; });
+    var allowed = Object.keys(ATKS).filter(function (n) { return (ATKS[n].b || 'pastor') === e.id && ATKS[n].phases.indexOf(e.phase) >= 0 && !(ATK[n].avail && !ATK[n].avail(e)); });
     if (!e.bag.length) e.bag = shuffle(allowed.slice());
     var i, n, pass;
     for (pass = 0; pass < 2; pass++) {   // 1.ª pasada: respeta posición; 2.ª: solo cooldown
       for (i = 0; i < e.bag.length; i++) {
         n = e.bag[i];
         if (n === e.last || (S.cds[n] || 0) > 0 || allowed.indexOf(n) < 0) continue;
-        if (n === 'llamada' && !ATK.llamada.ok(e)) continue;
+        if (ATK[n].ok && !ATK[n].ok(e)) continue;
         if (pass === 0 && !okNow(e, n)) continue;
         e.bag.splice(i, 1); return n;
       }
@@ -480,26 +507,33 @@
       for (i = 0; i < allowed.length; i++) {
         n = allowed[i];
         if (n === e.last || (S.cds[n] || 0) > 0) continue;
-        if (n === 'llamada' && !ATK.llamada.ok(e)) continue;
+        if (ATK[n].ok && !ATK[n].ok(e)) continue;
         if (pass === 0 && !okNow(e, n)) continue;
         return n;
       }
     }
     return null;
   }
-  function startAttack(e, name) {
-    var d = ATKS[name], H = ATK[name], A = { name: name, def: d, t: 0, step: 'tele', tele: teleMs(name), sig: !!d.sig, rec: 600, actMs: 300, ticks: 0 };
-    S.cds[name] = d.cd * (name === 'llamada' && e.broken.cayado ? 30 / 22 : 1);
-    e.atk = A; e.bst = 'atk'; e.cadT = e.def.phases[e.phase - 1].cad;   // la cadencia (2,8 / 2,3 / 1,9 s) cuenta de inicio a inicio de ataque
+  function makeAtk(e, name, o) {   // crea el estado de un ataque (sin asignarlo a e.atk)
+    var d = ATKS[name], H = ATK[name], A = { name: name, def: d, t: 0, step: 'tele', tele: teleMs(name), sig: !!d.sig, rec: 600, actMs: 300, ticks: 0, abs: 0 };
+    if (o) for (var k in o) A[k] = o[k];
+    S.cds[name] = d.cd * (name === 'llamada' && e.broken.cayado ? 30 / 22 : 1) * (d.cdMul ? d.cdMul(e) : 1);
     H.start(e, A);
-    sfx(d.sig ? 'hit_heavy' : 'whoosh', { pitch: d.sig ? 0.55 : 0.6, vol: 0.5 });
+    sfx(d.sig ? 'hit_heavy' : 'whoosh', { pitch: d.sig ? 0.55 : 0.6, vol: d.sig ? 0.5 : 0.35 });
+    return A;
+  }
+  function startAttack(e, name) {
+    e.atk = makeAtk(e, name); e.bst = 'atk'; e.cadT = e.def.phases[e.phase - 1].cad;   // la cadencia (2,8 / 2,3 / 1,9 s) cuenta de inicio a inicio de ataque
   }
   function endAtk(e) {
     var A = e.atk; e.last = A.name; e.atk = null; e.bst = 'idle'; e.lift = 0;
+    if (hk(e, 'afterAtk')) e.def.h.afterAtk(e, A);
     e.cadT = Math.max(e.cadT, 300);   // al menos 0,3 s de respiro entre ataques
   }
-  function runAtk(e, dt) {
-    var A = e.atk, H = ATK[A.name];
+  function runAtk(e, dt) { if (stepAtk(e, e.atk, dt)) endAtk(e); }
+  // Avanza un ataque (telegrafía -> acción -> recuperación); devuelve true al terminar. Letea lo usa para sus 4 ranuras (3 cabezas + cuerpo).
+  function stepAtk(e, A, dt) {
+    var H = ATK[A.name];
     A.t += dt;
     if (A.step === 'tele') {
       if (H.tele) H.tele(e, A, dt);
@@ -511,7 +545,8 @@
       if (A.t >= A.tele) { A.step = 'act'; A.t = 0; H.go(e, A); }
     } else if (A.step === 'act') {
       if (H.act(e, A, dt)) { A.step = 'rec'; A.t = 0; }
-    } else if (A.t >= A.rec) endAtk(e);
+    } else if (A.t >= A.rec) return true;
+    return false;
   }
 
   // ================================================================= ONDAS (Pisotón y Éxtasis)
@@ -574,7 +609,7 @@
     if (f > S.fury) {
       var first = S.fury === 1; S.fury = f;
       fx.shake(8, 300); sfx('boss_roar', { pitch: 1.1 });
-      G.Hud.banner(first ? '¡FURIA DEL PASTOR!' : 'FURIA +' + Math.round((f - 1) * 100) + ' %', 1600, '#ff3030');
+      G.Hud.banner(first ? '¡FURIA ' + (e.def.furia || 'DEL PASTOR') + '!' : 'FURIA +' + Math.round((f - 1) * 100) + ' %', 1600, '#ff3030');
     }
   }
   S.update = function (dt) {
@@ -596,14 +631,16 @@
     for (var k in S.cds) if (S.cds[k] > 0) S.cds[k] -= dt;
     if (e.roar > 0 && e.mode !== 'gate') e.roar = Math.max(0, e.roar - dt / 400);
     updWaves(dt); updArena(e, dt);
+    if (hk(e, 'tick')) e.def.h.tick(e, dt);
     if (e.mode === 'gate') {
       e.gateT -= dt; e.roar = e.gateT > 2100 ? Math.min(1, (3000 - e.gateT) / 200) : Math.max(0, (e.gateT - 1500) / 600);
       if (e.gateT <= 0) { e.mode = 'fight'; e.immune = false; e.cadT = 1300; e.roar = 0; G.Hud.banner('¡' + e.def.phases[e.phase - 1].n.toUpperCase() + '!', 1000, '#ffd27a'); }
-    } else if (e.mode === 'despair') updDespair(e, dt);
+    } else if (e.mode === 'despair') { if (hk(e, 'updDespair')) e.def.h.updDespair(e, dt); else updDespair(e, dt); }
+    else if (hk(e, 'fight')) e.def.h.fight(e, dt);
     else updFight(e, dt);
     updParts(e);
-    e.sortY = e.y + 88 - (e.lift || 0) * 0.3;
-    S.sigP = (e.atk && e.atk.sig && e.atk.step === 'tele') ? Math.min(1, e.atk.t / e.atk.tele) : 0;
+    e.sortY = e.y + (e.def.gy || 88) - (e.lift || 0) * 0.3;
+    S.sigP = hk(e, 'sigP') ? e.def.h.sigP(e) : (e.atk && e.atk.sig && e.atk.step === 'tele') ? Math.min(1, e.atk.t / e.atk.tele) : 0;
   };
 
   function moveToward(e, tx, ty, spd, dt) {
@@ -617,12 +654,15 @@
   function updFight(e, dt) {
     var p = PL(), PH = e.def.phases[e.phase - 1];
     if (e.stagT > 0) { e.stagT -= dt; e.moveAmt = 0; return; }
-    if (e.bst === 'atk') { e.moveAmt = 0; e.cadT -= dt * S.fury; runAtk(e, dt); return; }
-    // desplazamiento hacia el jugador
+    if (e.bst === 'atk') { e.moveAmt = 0; e.cadT -= dt * S.fury * e.cadMul; runAtk(e, dt); return; }
+    // desplazamiento hacia el jugador (Karceron: se arrastra entre sus anclajes)
     var d = G.dist(e.x, e.y, p.x, p.y), spd = PH.spd * (e.slowT > 0 ? 1 - e.slowPct : 1);
-    if (!p.dead && d > 90) { moveToward(e, p.x, p.y, spd, dt); e.moveAmt = 1; e.curSpd = spd; } else e.moveAmt = 0;
-    if (!p.dead && Math.abs(p.x - e.x) > 4) e.face = p.x >= e.x ? 1 : -1;
-    e.cadT -= dt * S.fury;
+    if (hk(e, 'move')) e.def.h.move(e, dt);
+    else {
+      if (!p.dead && d > 90) { moveToward(e, p.x, p.y, spd, dt); e.moveAmt = 1; e.curSpd = spd; } else e.moveAmt = 0;
+      if (!p.dead && Math.abs(p.x - e.x) > 4) e.face = p.x >= e.x ? 1 : -1;
+    }
+    e.cadT -= dt * S.fury * e.cadMul;
     if (e.cadT <= 0 && !p.dead) {
       var n = pickAttack(e);
       if (n) startAttack(e, n); else e.cadT = 350;
@@ -651,16 +691,22 @@
     for (var j = G.projectiles.length - 1; j >= 0; j--) if (G.projectiles[j].team === 'e') G.projectiles.splice(j, 1);
     for (var z = G.zones.length - 1; z >= 0; z--) if (G.zones[z].team === 'e') G.zones.splice(z, 1);
   }
+  S.track = function (e) {   // pista propia del jefe si el audio la tiene ('boss_karceron'...), si no la genérica de jefe
+    try { var tr = 'boss_' + e.id, has = Assets.music.tracks().indexOf(tr) >= 0; Assets.music.setTrack(has ? tr : 'boss'); Assets.music.setIntensity(e.def.phases[e.phase - 1].music); } catch (x) { /* audio */ }
+  };
   function updIntro(e, dt) {
     var I = S.intro; I.t += dt;
     if (I.seen && I.t > 1000 && I.t < 3490 && !I.skipped && G.input.hit('Space', 'Enter', 'KeyE', 'Mouse0')) { I.skipped = true; I.t = 3500; }   // ya vista: se salta pulsando Espacio / Enter / toque tras 1 s
     var t = I.t;
-    e.alpha = G.clamp(t / 250, 0, 1);
-    if (!I.landed) e.lift = 640 * (1 - Math.pow(G.clamp(t / 800, 0, 1), 2));
-    if (t >= 800 && !I.landed) {
-      I.landed = true; e.lift = 0; I.landT = t;
-      fx.shake(8, 220); fx.shockwave(e.x, e.y + 70, 300); fx.dust(e.x, e.y + 80, 16); fx.ring(e.x, e.y + 70, 20, 280, 500, '#ffd27a', 5); sfx('shockwave', { vol: 0.9 });
-      fx.part('fx_boss_crack', e.x, e.y + 60, 0, 0, 700, { anim: true, sc: 1.8 });
+    if (hk(e, 'intro')) e.def.h.intro(e, I, t, dt);   // Karceron surge del suelo, Letea emerge del estanque
+    else {
+      e.alpha = G.clamp(t / 250, 0, 1);
+      if (!I.landed) e.lift = 640 * (1 - Math.pow(G.clamp(t / 800, 0, 1), 2));
+      if (t >= 800 && !I.landed) {
+        I.landed = true; e.lift = 0; I.landT = t;
+        fx.shake(8, 220); fx.shockwave(e.x, e.y + 70, 300); fx.dust(e.x, e.y + 80, 16); fx.ring(e.x, e.y + 70, 20, 280, 500, '#ffd27a', 5); sfx('shockwave', { vol: 0.9 });
+        fx.part('fx_boss_crack', e.x, e.y + 60, 0, 0, 700, { anim: true, sc: 1.8 });
+      }
     }
     if (t >= 1800 && !I.roared) {
       I.roared = true; fx.shake(10, 600); fx.hit(80); sfx('boss_roar'); S.flash = 0.5;
@@ -669,10 +715,10 @@
     }
     if (t >= 1800 && t < 2500) { var u = (t - 1800) / 700; e.roar = u < 0.2 ? u / 0.2 : u > 0.75 ? (1 - u) / 0.25 : 1; } else e.roar = 0;
     S.barFill = I.roared ? G.clamp((t - 1800) / 600, 0, 1) : 0;
-    if (t >= 2400 && !I.music) { I.music = true; try { Assets.music.setTrack('boss'); Assets.music.setIntensity(e.def.phases[0].music); } catch (x) { /* audio */ } sfx('special', { vol: 0.6 }); }
+    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); }
     if (t >= 3500) {
       S.intro = null; e.mode = 'fight'; e.immune = false; e.lift = 0; e.alpha = 1; e.roar = 0; G.frozen = false; S.barFill = 1; e.cadT = 1200;
-      if (!I.music) { try { Assets.music.setTrack('boss'); Assets.music.setIntensity(e.def.phases[0].music); } catch (x2) { /* audio */ } }
+      if (!I.music) S.track(e);
       G.Save.data.bossSeen = G.Save.data.bossSeen || {}; G.Save.data.bossSeen[e.id] = 1; G.Save.save();
       if (G.dbgPhase > 1) { e.hp = e.maxHp * (G.dbgPhase === 2 ? 0.65 : 0.30); for (var gi = 1; gi < G.dbgPhase; gi++) S.startGate(e); }
       if (G.dbgHp) e.hp = e.maxHp * G.dbgHp;
@@ -681,7 +727,12 @@
   // peso de cámara hacia el jefe y zoom durante la intro
   S.camTarget = function (tx, ty) {
     var I = S.intro, e = S.e;
-    if (!I || !e) { G.cam.zoom = 1; return { x: tx, y: ty }; }
+    if (!I || !e) {
+      G.cam.zoom = 1;
+      var cw = e && S.active && !e.dead && e.def.h && e.def.h.camW;   // jefes casi inmóviles (Karceron, Letea): la cámara se sesga hacia ellos para que quepan en pantalla
+      if (cw) return { x: tx + (G.clamp(e.x - G.W / 2, 0, G.AW - G.W) - tx) * cw * 0.5, y: ty + (G.Proj.clampCamY(e.y + 20 - G.VH / 2) - ty) * cw };
+      return { x: tx, y: ty };
+    }
     var t = I.t, w = t < 800 ? ease(t / 800) : t < 2400 ? 1 : 1 - ease((t - 2400) / 900);
     G.cam.zoom = 1 + 0.15 * (1 - ease(t / 800)) * (t < 2400 ? 1 : 0);
     var bx = G.clamp(e.x - G.W / 2, 0, G.AW - G.W), by = G.Proj.clampCamY(e.y - 40 - G.VH / 2);
@@ -692,7 +743,9 @@
   S.onDeath = function (e) {
     S.active = false; S.defeated = true;
     var wasDespair = e.mode === 'despair';
-    S.dying = { t: 0, hold: wasDespair ? 400 : 0, dt: 0, x: e.x, y: e.y, face: e.face, phase: e.phase, broken: { cuernos: e.broken.cuernos, cayado: e.broken.cayado, vellon: e.broken.vellon } };
+    var bk = {}; for (var bkk in e.broken) bk[bkk] = e.broken[bkk];
+    S.dying = { t: 0, hold: wasDespair ? 400 : 0, dt: 0, x: e.x, y: e.y, face: e.face, phase: e.phase, broken: bk, id: e.id, gy: e.def.gy || 88 };
+    if (hk(e, 'onDeath')) e.def.h.onDeath(e);
     e.dying = true; e.immune = true; S.noHurt = 1e9; G.frozen = false; S.tint = 0; S.sigP = 0;
     Object.keys(e.parts).forEach(function (k) { e.parts[k].dead = true; });
     S.waves.length = 0; S.spikes.length = 0;
@@ -732,8 +785,7 @@
   };
   S.draw = function (c, e) {
     if (e.dying) return;
-    var st = S.stateOf(e);
-    Assets.drawBoss('pastor', c, e.x, e.y, st);
+    if (e.def.h && e.def.h.draw) e.def.h.draw(c, e); else Assets.drawBoss('pastor', c, e.x, e.y, S.stateOf(e));
     // barras flotantes de las partes dañadas (solo mientras lo están)
     for (var k in e.parts) {
       var pe = e.parts[k]; if (pe.dead || pe.meter >= pe.meterMax - 0.5) continue;
@@ -744,12 +796,14 @@
   };
   S.drawGhost = function (c) {
     var D = S.dying; if (!D || D.dt >= 3200) return;
-    Assets.drawBoss('pastor', c, D.x, D.y, { t: G.time, facing: D.face, phase: D.phase, broken: D.broken, dying: true, dt: D.dt });
+    var dh = DEFS[D.id].h;
+    if (dh && dh.drawGhost) dh.drawGhost(c, D); else Assets.drawBoss('pastor', c, D.x, D.y, { t: G.time, facing: D.face, phase: D.phase, broken: D.broken, dying: true, dt: D.dt });
   };
   // elementos que se ordenan en profundidad con el resto (troncos, fantasma de la muerte)
   S.items = function (list) {
-    for (var i = 0; i < S.obs.length; i++) { var o = S.obs[i]; if (!o.dead) list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: drawLog, o: o }); }
-    if (S.dying && S.dying.dt < 3200) list.push({ y: S.dying.y + 88, ux: S.dying.x, uy: S.dying.y, foot: 88, draw: S.drawGhost });
+    for (var i = 0; i < S.obs.length; i++) { var o = S.obs[i]; if (!o.dead) list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: o.draw || drawLog, o: o }); }
+    if (S.dying && S.dying.dt < 3200) list.push({ y: S.dying.y + S.dying.gy, ux: S.dying.x, uy: S.dying.y, foot: S.dying.gy, draw: S.drawGhost });
+    if (S.e && S.e.def.h && S.e.def.h.items) S.e.def.h.items(list, S.e);
   };
   function drawLog(c, it) {
     var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
@@ -769,9 +823,10 @@
       c.drawImage(Assets.sprite('fx_boss_spike', Math.min(3, fr)), Math.round(s.x - 14), Math.round(s.y - 42)); c.restore(); G.Proj.down(c);
     }
     for (i = 0; i < S.waves.length; i++) drawWave(c, S.waves[i]);
+    if (e && e.def.h && e.def.h.drawGround) e.def.h.drawGround(c, e);
     if (e && e.atk && e.atk.step !== 'rec') {
       var A = e.atk, H = ATK[A.name];
-      if (H.draw && (A.step === 'tele' || A.name === 'estampida')) H.draw(c, e, A);
+      if (H.draw && (A.step === 'tele' || A.name === 'estampida' || A.drawAct)) H.draw(c, e, A);
     }
   };
   function drawInset(c) {
@@ -791,6 +846,7 @@
   S.hazards = function () {
     var out = [], e = S.e;
     if (e && !e.dead && e.atk && ATK[e.atk.name].haz) { ATK[e.atk.name].haz(e, e.atk, out); for (var j = 0; j < out.length; j++) out[j].ref = e.atk; }
+    if (e && !e.dead && e.def.h && e.def.h.hazards) e.def.h.hazards(e, out);
     for (var i = 0; i < S.waves.length; i++) { var w = S.waves[i]; out.push({ ref: w.ref || w, k: 'wave', x: w.x, y: w.y, r: w.r, v: w.v, th: w.th, gaps: w.gaps, t0: Math.max(0, w.delay || 0), t1: (w.delay || 0) + Math.max(0, (w.maxR - w.r) / w.v * 1000), live: !(w.delay > 0) });
     }
     return out;
@@ -801,6 +857,8 @@
     var e = S.e; if (!e || e.dead) return null;
     if (e.mode === 'intro' || e.mode === 'gate' || e.mode === 'despair' || e.dying) return { mul: 0, allow: {}, cap: 0 };
     if (e.atk && e.atk.sig) return { mul: 0, allow: {}, cap: 0 };      // ataque firma (telegrafía + ejecución): pausa total
+    if (e.def.h && e.def.h.sigNow && e.def.h.sigNow(e)) return { mul: 0, allow: {}, cap: 0 };
+    if (e.def.h && e.def.h.spawnMode) { var sm = e.def.h.spawnMode(e); if (sm) return sm; }
     return e.def.phases[e.phase - 1].spawn;
   };
   S.noHurtNow = function () { return S.noHurt > 0 || (S.intro && true); };
@@ -808,7 +866,7 @@
   // ================================================================= HUD
   var WEAKCOL = { fire: '#ff7a2a', steel: '#b8c0cc', poison: '#7be34a', ice: '#6ac8ff', lightning: '#ffe45a', blood: '#d02048' };
   var WEAKTXT = { fire: 'FUE', steel: 'ACE', poison: 'VEN', ice: 'HIE', lightning: 'RAY', blood: 'SAN' };
-  var PARTSPR = { cuernos: 'trophy_pastor_horn', cayado: 'trophy_pastor_staff', vellon: 'trophy_pastor_fleece' };
+  var PARTSPR = {};
   S.drawHud = function (c) {
     var e = S.e, W = G.W, H = G.H, I = S.intro;
     if (S.tint > 0.01) Assets.drawBossArenaTint(c, W, H, G.time, S.tint);
@@ -828,7 +886,7 @@
     c.fillStyle = '#07040c'; c.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
     c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
     var win = ex.mul > 1 && ex.kind !== 'stun' || ex.kind === 'stun';
-    var col = e.phase === 1 ? '#c03a8a' : e.phase === 2 ? '#b02a50' : '#ff6a1a';
+    var col = D.barCol ? D.barCol[e.phase - 1] : e.phase === 1 ? '#c03a8a' : e.phase === 2 ? '#b02a50' : '#ff6a1a';
     if (e.mode === 'despair') col = '#9a40d0';
     // fantasma (daño reciente) y relleno
     c.fillStyle = '#ffe9d0'; c.fillRect(bx, by, bw * G.clamp(S.ghost, 0, 1) * fill, bh);
@@ -850,12 +908,13 @@
       G.txt(c, 'x' + ex.mul.toFixed(2).replace(/0$/, '') + ' ' + (ex.kind === 'stun' ? 'ATURDIDO' : ex.kind === 'derribo' ? 'DERRIBO' : ex.kind === 'despair' ? 'EXPUESTO' : 'VENTANA'), bx + bw / 2, by + bh + 14, 11, '#ffd24a', 'center');
     }
     // marcas de partes (bajo la barra, a la izquierda)
-    var px = bx + 4, py = by + bh + 10, names = ['cuernos', 'cayado', 'vellon'];
+    var px = bx + 4, py = by + bh + 10, names = Object.keys(D.parts);
     for (var j = 0; j < names.length; j++) {
-      var k = names[j], pe = e.parts[k], broken = e.broken[k], x = px + j * 44;
-      var sp = Assets.sprite(PARTSPR[k], broken ? 1 : 0);
+      var k = names[j], pe = e.parts[k], broken = e.broken[k] && !(pe && pe.regrow), x = px + j * 44;
+      var tsp = S.TROPHY[D.parts[k].trophy].spr, sp = Assets.sprite(G.hasSpr(tsp) ? tsp : 'trophy_pastor_horn', broken ? 1 : 0);
       c.drawImage(sp, x, py, 16, 16);
-      if (!broken) { var mf = G.clamp(pe.meter / pe.meterMax, 0, 1); c.fillStyle = '#1a0a12'; c.fillRect(x + 18, py + 5, 20, 5); c.fillStyle = pe.flash > 0 ? '#fff' : '#ffb347'; c.fillRect(x + 19, py + 6, 18 * mf, 3); }
+      if (pe && pe.regrow && e.broken[k]) { c.fillStyle = '#1a0a12'; c.fillRect(x + 18, py + 5, 20, 5); c.fillStyle = pe.cauter ? '#ff9a3c' : '#7be34a'; c.fillRect(x + 19, py + 6, 18 * G.clamp(pe.regrowF || 0, 0, 1), 3); }
+      else if (!broken) { var mf = G.clamp(pe.meter / pe.meterMax, 0, 1); c.fillStyle = '#1a0a12'; c.fillRect(x + 18, py + 5, 20, 5); c.fillStyle = pe.flash > 0 ? '#fff' : '#ffb347'; c.fillRect(x + 19, py + 6, 18 * mf, 3); }
       else { c.strokeStyle = '#ff3030'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - 1, py + 1); c.lineTo(x + 17, py + 15); c.moveTo(x + 17, py + 1); c.lineTo(x - 1, py + 15); c.stroke(); }
     }
     // debilidades / resistencias (bajo la barra, a la derecha)
@@ -886,7 +945,8 @@
       c.fillStyle = 'rgba(6,2,10,0.82)'; c.fillRect(Wd / 2 - wBar / 2, cy - 44, wBar, 92);
       c.fillStyle = '#c8941a'; c.fillRect(Wd / 2 - wBar / 2, cy - 44, wBar, 2); c.fillRect(Wd / 2 - wBar / 2, cy + 46, wBar, 2);
       if (u > 0.6) {
-        Assets.drawBossPortrait(D.id, c, Wd / 2 - 250, cy - 40, { size: 80, mood: t > 1800 ? 1 : 0 });
+        if (G.hasSpr('boss_' + D.id + '_portrait')) Assets.drawBossPortrait(D.id, c, Wd / 2 - 250, cy - 40, { size: 80, mood: t > 1800 ? 1 : 0 });
+        else { c.fillStyle = '#2a1020'; c.fillRect(Wd / 2 - 250, cy - 40, 80, 80); c.strokeStyle = '#c8941a'; c.lineWidth = 2; c.strokeRect(Wd / 2 - 250, cy - 40, 80, 80); G.txt(c, D.name.charAt(0), Wd / 2 - 210, cy, 40, '#ffd27a', 'center'); }
         G.txt(c, D.name.toUpperCase(), Wd / 2 + 40, cy - 14, 28, '#ffd27a', 'center');
         G.txt(c, D.title, Wd / 2 + 40, cy + 22, 14, '#d8cfe8', 'center');
       }
@@ -903,8 +963,19 @@
       adds: addsAlive(), combatT: Math.round(S.combatT), bst: e.bst, x: Math.round(e.x), y: Math.round(e.y), exp: S.expo(e).mul };
   };
   S.normalsAlive = normalsAlive;
+  // utilidades para los módulos de jefe (boss_karceron.js / boss_letea.js)
+  S.u = { ease: ease, angTo: angTo, shuffle: shuffle, sfx: sfx, hurt: hurt, dmgMul: dmgMul, pel: pel, expose: expose, addsAlive: addsAlive, teleMs: teleMs, makeAtk: makeAtk,
+    stepAtk: stepAtk, mkPart: mkPart, clearHazards: clearHazards, moveToward: moveToward, pickFor: pickAttack, startAttack: startAttack, destroyLog: destroyLog, TAU: TAU, DEG: DEG };
+  S.u.shootBoss = function (x, y, ang, speed, dmg, spr, o) {   // proyectil enemigo de jefe con tope de 60 en pantalla
+    var n = 0, L = G.projectiles;
+    for (var i = 0; i < L.length; i++) if (L[i].team === 'e') n++;
+    if (n >= 60) return false;
+    o = o || {}; o.src = o.src || 'boss_proj';
+    E.shoot('e', x, y, ang, speed, dmg * dmgMul(), spr, o);
+    return true;
+  };
   // pruebas / capturas: fuerza un ataque o rompe una parte (G.Boss.force('salto'), G.Boss.breakKey('cuernos'))
-  S.force = function (name) { var e = S.e; if (!e || e.mode !== 'fight' || e.atk) return false; startAttack(e, name); return true; };
+  S.force = function (name, arg) { var e = S.e; if (!e) return false; if (hk(e, 'force')) return e.def.h.force(e, name, arg); if (e.mode !== 'fight' || e.atk) return false; startAttack(e, name); return true; };
   S.breakKey = function (k) { var e = S.e; if (e && e.parts[k] && !e.parts[k].dead) S.breakPart(e, e.parts[k]); };
   S.gate = function () { var e = S.e; if (e && e.mode === 'fight' && e.phase < 3) { e.hp = e.def.phases[e.phase - 1].thr * e.maxHp; S.startGate(e); } };
 })();

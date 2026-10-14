@@ -31,6 +31,11 @@
     var a = Math.atan2(p.y - sy, p.x - sx), k = 12 * (o.kb != null ? o.kb : 1);
     if (G.dbg) { var D = G.dbg.dmg; D[o.src || '?'] = (D[o.src || '?'] || 0) + dmg; }
     if (G.god) { p.hurtT = 300; return false; }
+    // Fase 2b: Bastión (Acero, -10 %), platos de Tía Castaña (resistencia por familia de enemigo), escudo de Sed (set Sangre)
+    if (G.Tree.fx.bastion) dmg *= 0.9;
+    var rs = G.runBuff && G.runBuff.fx && G.runBuff.fx.res; if (rs) { var fam = P.family(o.src); if (rs[fam]) dmg *= 1 - rs[fam]; }
+    try { G.Loot.noteHit(); } catch (e) { /* racha sin daño */ }
+    if (p.shield > 0) { var ab = Math.min(p.shield, dmg); p.shield -= ab; dmg -= ab; if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'escudo', '#ff9aa8', true); G.sfx('hit', { pitch: 1.6, vol: 0.5 }); return false; } }
     p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln;
     if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; G.fx.shake(7, 200); G.fx.hit(40); }
     else G.fx.shake(2, 80);
@@ -47,6 +52,15 @@
     return true;
   };
 
+  // Familia de enemigo de una fuente de daño (platos de resistencia): ranged (proyectiles), blast (explosivos y fuego), big (élites y jefes), melee (el resto)
+  P.family = function (src) {
+    src = src || '';
+    if (/^(archer|fanner|moth|sower|proj|thorn|arrow)/.test(src)) return 'ranged';
+    if (/^(bomb|scorcher)/.test(src)) return 'blast';
+    if (/^(boss|bulwark|hive)/.test(src)) return 'big';
+    return 'melee';
+  };
+
   // src: etiqueta de origen para ?dbg=1 (G.dbg.heal acumula la cura bruta por fuente)
   P.heal = function (p, n, src) {
     if (G.dbg) { var H = G.dbg.heal || (G.dbg.heal = {}); H[src || '?'] = (H[src || '?'] || 0) + n; }
@@ -60,6 +74,9 @@
     if (p.hurtT > 0) p.hurtT -= dt;
     if (p.squash > 0) p.squash -= dt;
     if (p.frenzyT > 0) p.frenzyT -= dt;
+    if (p.pactT > 0) p.pactT -= dt;
+    var rg = G.runBuff && G.runBuff.fx && G.runBuff.fx.regen;   // Sopa de hebra (Castaña): cura pasiva leve, sin cifras flotantes
+    if (rg && !p.dead && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + rg * dt / 1000);
     if (p.slowT > 0) { p.slowT -= dt; if (p.slowT <= 0) p.slowPct = 0; }
     if (p.kx || p.ky) {
       p.x += p.kx * s; p.y += p.ky * s;

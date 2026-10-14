@@ -1,5 +1,6 @@
 /* cards.js - Catálogo de cartas (26), combos por etiquetas (12), mano de 5 slots, fusión, Ceniza, reroll, descarte,
-   sesgo de sinergia en la oferta y el dibujo de cartas (marco por etiqueta, iconos, barrido de cooldown). */
+   sesgo de sinergia en la oferta y el dibujo de cartas (marco por etiqueta, iconos, barrido de cooldown).
+   Fase 2b: 28 cartas (26 + Bobina de Rayo y Murciélago de Sangre, que se desbloquean en sus árboles de forja) y Resonancia por etiqueta (sets del árbol). */
 (function () {
   'use strict';
   var G = window.G, C = G.Cards = {};
@@ -34,7 +35,10 @@
     { id: 'hourglass', name: 'Reloj de arena', short: 'Reloj', tag: 'neutral', type: 'passive', icon: 'hourglass', desc: 'Todos los cooldowns -10%. Sin etiqueta: no hace combo.' },
     { id: 'hooves', name: 'Pezuñas veloces', short: 'Pezuñas', tag: 'neutral', type: 'passive', icon: 'boots', desc: '+12% de velocidad de movimiento. Sin etiqueta.' },
     { id: 'magnet', name: 'Imán de brasas', short: 'Imán', tag: 'neutral', type: 'passive', icon: 'magnet', desc: 'Radio de recogida x2 y +20% de XP. Sin etiqueta.' },
-    { id: 'satchel', name: 'Alforja de ceniza', short: 'Alforja', tag: 'neutral', type: 'passive', icon: 'bag', desc: '+50% de Ceniza y rerolls 5 más baratos. Sin etiqueta.' }
+    { id: 'satchel', name: 'Alforja de ceniza', short: 'Alforja', tag: 'neutral', type: 'passive', icon: 'bag', desc: '+50% de Ceniza y rerolls 5 más baratos. Sin etiqueta.' },
+    // --- Fase 2b: cartas nuevas (solo se obtienen en el árbol de forja; poder calibrado con Chispa/Dardo: ~15-18 dps a Nv1)
+    { id: 'coil', name: 'Bobina', short: 'Bobina', tag: 'lightning', type: 'attack', kind: 'turret', icon: 'coil', cd: 6000, dmg: 7, tick: 400, life: 5000, range: 170, desc: 'Coloca una torreta 5 s que dispara 7 de daño cada 0,4 s al más cercano (alcance 170).' },
+    { id: 'bat', name: 'Murciélago', short: 'Murciél.', tag: 'blood', type: 'attack', kind: 'bat', icon: 'bat', cd: 1600, dmg: 13, speed: 260, desc: 'Un murciélago persigue a un enemigo (13 de daño + sangrado) y rebota a otro.' }
   ];
   var BYID = {}; C.defs.forEach(function (d) { d.id && (BYID[d.id] = d); });
   C.def = function (id) { return BYID[id]; };
@@ -80,22 +84,30 @@
 
   // Recalcula modificadores y combos activos; con announce=true anuncia los nuevos (banner, stinger, línea)
   C.recalc = function (announce) {
-    var m = C.mods, p = G.player, tf = G.Tree.fx, fireN = 0, hh = hand();
-    for (var fi = 0; fi < hh.length; fi++) if (hh[fi] && C.def(hh[fi].id).tag === 'fire') fireN++;
-    m.fireN = fireN; m.pira = !!tf.emblem && fireN >= 4;
+    var m = C.mods, p = G.player, tf = G.Tree.fx, fireN = 0, hh = hand(), rb = (G.runBuff && G.runBuff.fx) || {};
+    var N = { fire: 0, ice: 0, lightning: 0, poison: 0, blood: 0, steel: 0 };
+    for (var fi = 0; fi < hh.length; fi++) if (hh[fi]) { var tg0 = C.def(hh[fi].id).tag; if (N[tg0] != null) N[tg0]++; }
+    fireN = N.fire;
+    m.fireN = fireN; m.pira = !!tf.emblem && fireN >= 4; m.tagN = N;
+    // Resonancia (GDD): con el nodo de Set de la etiqueta, 3 cartas de esa etiqueta en la mano = +25 % de daño de la etiqueta; 4+ activa su habilidad de set (m.set4)
+    function res(tag, fxk) { return tf[fxk] && N[tag] >= 3 ? 1.25 : 1; }
+    m.tagMul = { ice: (tf.aliento ? 1.08 : 1) * res('ice', 'setIce'), lightning: (tf.pararrayos ? 1.08 : 1) * res('lightning', 'setLight'),
+      poison: (tf.savia ? 1.08 : 1) * res('poison', 'setPoison'), blood: (tf.ansia ? 1.08 : 1) * res('blood', 'setBlood') };
+    m.set4 = { ice: !!tf.setIce && N.ice >= 4, lightning: !!tf.setLight && N.lightning >= 4, poison: !!tf.setPoison && N.poison >= 4, blood: !!tf.setBlood && N.blood >= 4, steel: !!tf.setSteel && N.steel >= 4 };
     // Fuego: Manto de ceniza +25 %, Pulmón de fragua (nodo F4) +8 %, Emblema de Fuego (F10) +25 % con 3+ cartas Fuego en la mano
     m.fireDmg = 1 + 0.25 * lv('mantle') + (tf.lung ? 0.08 : 0) + (tf.emblem && fireN >= 3 ? 0.25 : 0); m.slowAdd = 0.15 * lv('frost'); m.slowDur = 1000 * lv('frost');
     m.lightSpd = 1 / (1 - Math.min(0.6, 0.2 * lv('bell'))); m.lightJumps = Math.round(lv('bell'));
-    m.poisonDmg = 1 + 0.5 * lv('bile'); m.poisonMax = lv('bile') > 0 ? 5 : 3;
-    m.steelDmg = 1 + 0.25 * lv('whet'); m.steelCrit = 0.1 * lv('whet');
-    m.cdMul = 1 - 0.1 * lv('hourglass'); m.speed = 1 + 0.12 * lv('hooves');
-    m.magnet = lv('magnet') > 0 ? 2 : 1; m.xpMul = 1 + 0.2 * lv('magnet');
+    m.poisonDmg = (1 + 0.5 * lv('bile')) * m.tagMul.poison; m.poisonMax = lv('bile') > 0 || tf.neurotoxina ? 5 : 3;
+    m.steelDmg = 1 + 0.25 * lv('whet') + (tf.temple ? 0.08 : 0) + (tf.setSteel && N.steel >= 3 ? 0.25 : 0); m.steelCrit = 0.1 * lv('whet') + (tf.filo ? 0.15 : 0);
+    m.cdMul = 1 - 0.1 * lv('hourglass'); m.speed = (1 + 0.12 * lv('hooves')) * (rb.speed ? 1.08 : 1);
+    m.magnet = lv('magnet') > 0 ? 2 : 1; m.xpMul = (1 + 0.2 * lv('magnet')) * (rb.xp ? 1.1 : 1);
     m.ashMul = 1 + 0.5 * lv('satchel'); m.rerollDisc = lv('satchel') > 0 ? 5 : 0;
     p.maxHp = G.B.player.hp + 30 * lv('heart'); p.hp = Math.min(p.hp, p.maxHp);
     var prev = C.active, now = {}, idx = 0;
     C.combos.forEach(function (c, i) {
       if (C.hasTag(c.a) && C.hasTag(c.b)) {
         now[c.k] = true;
+        if (G.Save && G.Save.data && G.Save.data.combosSeen && !G.Save.data.combosSeen[c.k]) { G.Save.data.combosSeen[c.k] = 1; G.Save.save(); }   // Ulalume y Lanudo comentan los combos que ya viste
         if (announce && !prev[c.k]) {
           G.Hud.banner(c.name + '!', 2000, '#ffe9a0', c);
           G.Snd.play('combo', c.pitch);
@@ -321,6 +333,14 @@
       case 'bag':
         c.beginPath(); c.moveTo(-s * 0.3, -s * 0.8); c.lineTo(s * 0.3, -s * 0.8); c.quadraticCurveTo(s * 0.4, -s * 0.3, s * 0.8, s * 0.3); c.quadraticCurveTo(s * 0.8, s, 0, s); c.quadraticCurveTo(-s * 0.8, s, -s * 0.8, s * 0.3); c.quadraticCurveTo(-s * 0.4, -s * 0.3, -s * 0.3, -s * 0.8); fs();
         c.fillStyle = '#ffd27a'; c.beginPath(); c.arc(0, s * 0.35, s * 0.25, 0, 6.283); c.fill(); break;
+      case 'coil':   // bobina: torre con bola y arcos
+        c.fillStyle = '#8a8fa8'; c.beginPath(); c.moveTo(-s * 0.5, s); c.lineTo(-s * 0.25, -s * 0.2); c.lineTo(s * 0.25, -s * 0.2); c.lineTo(s * 0.5, s); c.closePath(); fs();
+        c.fillStyle = col; c.beginPath(); c.arc(0, -s * 0.45, s * 0.38, 0, 6.283); fs();
+        c.strokeStyle = '#fff6a8'; c.lineWidth = Math.max(1.5, s * 0.12); c.beginPath(); c.moveTo(-s * 0.9, -s * 0.9); c.lineTo(-s * 0.45, -s * 0.55); c.moveTo(s * 0.9, -s * 0.9); c.lineTo(s * 0.45, -s * 0.55); c.stroke(); break;
+      case 'bat':    // murciélago
+        c.beginPath(); c.moveTo(0, -s * 0.2); c.quadraticCurveTo(-s * 0.5, -s * 0.9, -s * 1.0, -s * 0.2); c.lineTo(-s * 0.65, -s * 0.05); c.lineTo(-s * 0.45, s * 0.35); c.lineTo(-s * 0.2, s * 0.05); c.lineTo(0, s * 0.45);
+        c.lineTo(s * 0.2, s * 0.05); c.lineTo(s * 0.45, s * 0.35); c.lineTo(s * 0.65, -s * 0.05); c.lineTo(s * 1.0, -s * 0.2); c.quadraticCurveTo(s * 0.5, -s * 0.9, 0, -s * 0.2); c.closePath(); fs();
+        c.fillStyle = '#ffe9a0'; c.beginPath(); c.arc(-s * 0.14, -s * 0.12, s * 0.07, 0, 6.283); c.arc(s * 0.14, -s * 0.12, s * 0.07, 0, 6.283); c.fill(); break;
       default: c.beginPath(); c.arc(0, 0, s * 0.7, 0, 6.283); fs();
     }
     c.restore();

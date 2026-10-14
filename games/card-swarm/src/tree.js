@@ -1,6 +1,6 @@
-/* tree.js - Árbol de forja de Grum (Fase 2a): datos de nodos (Tronco + Fuego completo, 12 nodos), reglas (PF, prerrequisitos, ramas excluyentes,
-   reespecializar) y el panel de UI por pestañas (Fuego / Tronco / Clásica). Los efectos viven en T.fx (flags) y los leen cards.js, combat.js,
-   weapons.js, player.js y main.js. Costes por nivel en Loot.NODE_TIER; nada de balance está aquí salvo los textos y la disposición. */
+/* tree.js - Árbol de forja de Grum (Fase 2b): datos de nodos (Tronco + los 6 árboles de etiqueta: Fuego, Hielo, Rayo, Veneno, Sangre y Acero, 11-12 nodos
+   cada uno), reglas (PF, prerrequisitos, ramas excluyentes, reespecializar) y el panel de UI por pestañas. Los efectos viven en T.fx (flags) y los leen cards.js,
+   combat.js, weapons.js y player.js. Costes por nivel en Loot.NODE_TIER (x L.COST_MUL.node x L.TREE_PART_MUL); nada de balance está aquí salvo los textos y la disposición. */
 (function () {
   'use strict';
   var G = window.G, T = G.Tree = {}, L = G.Loot, U = G.UI, inp = G.input;
@@ -35,6 +35,137 @@
       ch: { A: { name: 'Corona', fx: 'corona', desc: '3 llamas orbitales en vez de 2.' }, B: { name: 'Cometa', fx: 'cometa', desc: 'Órbita +25 % de radio y +20 % de daño.' } } },
     { id: 'F11', tree: 'fire', tag: 'fire', type: 'Ma', tier: 'T4', name: 'Corazón de brasa', col: 3, row: 5, icon: 'heart', fx: 'heart', req: { all: ['F9', 'F10'] },
       desc: 'Maestría: una vez por expedición, al llegar a 0 HP revives con el 40 % de vida y una explosión de radio 120 (60 de daño).' },
+    // ================= HIELO (12 nodos, ~20 PF): control y ralentización. Debilidad de Karceron.
+    { id: 'H0', tree: 'ice', tag: 'ice', type: 'root', name: 'Esquirla', col: 2.5, row: 0, icon: 'flake', desc: 'Carta inicial de Hielo (Rango I): proyectil que ralentiza al enemigo. Raíz del árbol.' },
+    { id: 'H1', tree: 'ice', tag: 'ice', type: 'M', tier: 'T1', name: 'Esquirla II', col: 1, row: 1, icon: 'flake', card: 'shard', req: { all: ['H0'] },
+      desc: 'Esquirla sube a Rango II (+8 % de daño). Elige una mejora permanente.',
+      ch: { A: { name: 'Perforante', fx: 'perfora', desc: 'La Esquirla atraviesa a todos los enemigos de su trayectoria.' }, B: { name: 'Escarcha densa', fx: 'helada', desc: 'La Esquirla ralentiza +15 puntos y 1 s más.' } } },
+    { id: 'H2', tree: 'ice', tag: 'ice', type: 'C', tier: 'T1', name: 'Nova helada', col: 4, row: 1, icon: 'nova', card: 'nova', req: { all: ['H0'] },
+      desc: 'Desbloquea la carta Nova helada (común): pulso de radio 85 a tu alrededor que daña y ralentiza.' },
+    { id: 'H4', tree: 'ice', tag: 'ice', type: 'P', tier: 'T1', name: 'Aliento gélido', col: 0, row: 2, icon: 'snow', fx: 'aliento', req: { all: ['H1'] },
+      desc: 'Pasivo: +8 % de daño en todas las cartas de Hielo.' },
+    { id: 'H5', tree: 'ice', tag: 'ice', type: 'C', tier: 'T2', name: 'Cristal de escarcha', col: 2, row: 2, icon: 'flake', card: 'frost', req: { any: ['H1', 'H2'] },
+      desc: 'Desbloquea la carta pasiva Cristal de escarcha (rara): ralentizaciones +15 puntos de intensidad y +1 s.' },
+    { id: 'H3', tree: 'ice', tag: 'ice', type: 'M', tier: 'T2', name: 'Nova II', col: 4, row: 2, icon: 'nova', card: 'nova', req: { all: ['H2'] },
+      desc: 'Nova helada sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Onda ancha', fx: 'novaAncha', desc: 'El radio del pulso crece un 25 %.' }, B: { name: 'Doble pulso', fx: 'novaDoble', desc: 'Un segundo pulso (70 % de daño) 0,4 s después.' } } },
+    { id: 'H6', tree: 'ice', tag: 'ice', type: 'X', tier: 'T2', name: 'Permafrost', col: 1, row: 3, icon: 'snow', fx: 'permafrost', req: { all: ['H5'] }, xor: 'H7',
+      desc: 'Toda ralentización es de al menos el 45 %. Para controlar enjambres. Excluye a Quebradizo.' },
+    { id: 'H7', tree: 'ice', tag: 'ice', type: 'X', tier: 'T2', name: 'Quebradizo', col: 3, row: 3, icon: 'burst', fx: 'quebradizo', req: { all: ['H5'] }, xor: 'H6',
+      desc: 'Cualquier carta hace +25 % de daño a enemigos ralentizados. Para matar élites. Excluye a Permafrost.' },
+    { id: 'H8', tree: 'ice', tag: 'ice', type: 'C', tier: 'T3', name: 'Ventisca', col: 4, row: 3, icon: 'snow', card: 'blizzard', req: { all: ['H3', 'H5'] },
+      desc: 'Desbloquea la carta épica Ventisca: aura permanente de radio 70 que daña y ralentiza. Exige 1 Esencia rara.' },
+    { id: 'H10', tree: 'ice', tag: 'ice', type: 'S', tier: 'T2', name: 'Cripta de hielo', col: 2, row: 4, icon: 'flake', fx: 'setIce', req: { any: ['H6', 'H7'] },
+      desc: 'Set: con 3 cartas de Hielo en la mano, +25 % de daño de Hielo. Con 4 o más, "Cripta": los ralentizados con menos del 15 % de vida mueren congelados.' },
+    { id: 'H9', tree: 'ice', tag: 'ice', type: 'M', tier: 'T2', name: 'Ventisca II', col: 4, row: 4, icon: 'snow', card: 'blizzard', req: { all: ['H8'] },
+      desc: 'Ventisca sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Ventisca ancha', fx: 'ventAncha', desc: 'El radio del aura crece un 30 %.' }, B: { name: 'Escarcha eterna', fx: 'ventDura', desc: 'El aura hace +40 % de daño por segundo.' } } },
+    { id: 'H11', tree: 'ice', tag: 'ice', type: 'Ma', tier: 'T4', name: 'Era glacial', col: 3, row: 5, icon: 'nova', fx: 'eraGlacial', req: { all: ['H9', 'H10'] },
+      desc: 'Maestría: cada 60 s un pulso congela 2 s a todos los enemigos en pantalla (los jefes y élites solo se ralentizan).' },
+    // ================= RAYO (12 nodos, ~20 PF): cadenas y área. Debilidad de Karceron. La raíz es virtual: el primer nodo es la carta Chispazo.
+    { id: 'Z0', tree: 'lightning', tag: 'lightning', type: 'root', name: 'Tormenta lejana', col: 2.5, row: 0, icon: 'bolt', desc: 'Raíz del árbol de Rayo. Aún no tienes ninguna carta de Rayo: Chispazo (a la izquierda) abre el camino.' },
+    { id: 'Z1', tree: 'lightning', tag: 'lightning', type: 'C', tier: 'T1', name: 'Chispazo', col: 1, row: 1, icon: 'bolt', card: 'zap', req: { all: ['Z0'] },
+      desc: 'Desbloquea la carta Chispazo (común): rayo que salta entre 3 enemigos (-20 % de daño por salto).' },
+    { id: 'Z5', tree: 'lightning', tag: 'lightning', type: 'C', tier: 'T2', name: 'Cascabel conductor', col: 4, row: 1, icon: 'bell', card: 'bell', req: { all: ['Z0'] },
+      desc: 'Desbloquea la carta pasiva Cascabel conductor (rara): las cartas de Rayo -20 % de cooldown y +1 salto.' },
+    { id: 'Z2', tree: 'lightning', tag: 'lightning', type: 'M', tier: 'T1', name: 'Chispazo II', col: 0, row: 2, icon: 'bolt', card: 'zap', req: { all: ['Z1'] },
+      desc: 'Chispazo sube a Rango II (+8 % de daño). Elige una mejora permanente.',
+      ch: { A: { name: 'Chispa viva', fx: 'chispaViva', desc: 'El cooldown de Chispazo baja un 15 %.' }, B: { name: 'Sin pérdida', fx: 'sinPerdida', desc: 'El rayo no pierde daño en cada salto.' } } },
+    { id: 'Z4', tree: 'lightning', tag: 'lightning', type: 'P', tier: 'T1', name: 'Pararrayos', col: 2, row: 2, icon: 'bolt', fx: 'pararrayos', req: { all: ['Z1'] },
+      desc: 'Pasivo: +8 % de daño en todas las cartas de Rayo.' },
+    { id: 'Z8', tree: 'lightning', tag: 'lightning', type: 'C', tier: 'T2', name: 'Bobina', col: 4, row: 2, icon: 'coil', card: 'coil', req: { all: ['Z5'] },
+      desc: 'Desbloquea la carta nueva Bobina (rara): coloca una torreta 5 s que dispara 7 de daño cada 0,4 s al enemigo más cercano.' },
+    { id: 'Z6', tree: 'lightning', tag: 'lightning', type: 'X', tier: 'T2', name: 'Cadena larga', col: 1, row: 3, icon: 'bolt', fx: 'cadenaLarga', req: { all: ['Z4'] }, xor: 'Z7',
+      desc: 'Los rayos en cadena dan +1 salto y su alcance sube a 150. Para enjambres. Excluye a Un solo rayo.' },
+    { id: 'Z7', tree: 'lightning', tag: 'lightning', type: 'X', tier: 'T2', name: 'Un solo rayo', col: 3, row: 3, icon: 'storm', fx: 'unRayo', req: { all: ['Z4'] }, xor: 'Z6',
+      desc: 'El rayo en cadena hace x2 de daño pero un salto menos. Para blindados y jefes. Excluye a Cadena larga.' },
+    { id: 'Z3', tree: 'lightning', tag: 'lightning', type: 'C', tier: 'T3', name: 'Tormenta', col: 4, row: 3, icon: 'storm', card: 'storm', req: { all: ['Z4', 'Z8'] },
+      desc: 'Desbloquea la carta épica Tormenta: cae un rayo de 32 de daño en área sobre un enemigo visible. Exige 1 Esencia rara.' },
+    { id: 'Z10', tree: 'lightning', tag: 'lightning', type: 'S', tier: 'T2', name: 'Eco de tormenta', col: 2, row: 4, icon: 'bolt', fx: 'setLight', req: { any: ['Z6', 'Z7'] },
+      desc: 'Set: con 3 cartas de Rayo en la mano, +25 % de daño de Rayo. Con 4 o más, "Eco": cada 8.º rayo (Chispazo, Tormenta) se repite solo.' },
+    { id: 'Z9', tree: 'lightning', tag: 'lightning', type: 'M', tier: 'T2', name: 'Tormenta II', col: 4, row: 4, icon: 'storm', card: 'storm', req: { all: ['Z3'] },
+      desc: 'Tormenta sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Dos rayos', fx: 'dobleRayo', desc: 'Cae un segundo rayo (60 % de daño) sobre otro enemigo.' }, B: { name: 'Rayo ancho', fx: 'rayoAncho', desc: 'Área x1,5 y +10 % de daño.' } } },
+    { id: 'Z11', tree: 'lightning', tag: 'lightning', type: 'Ma', tier: 'T4', name: 'Ojo de la tormenta', col: 3, row: 5, icon: 'storm', fx: 'ojoTormenta', req: { all: ['Z9', 'Z10'] },
+      desc: 'Maestría: cada 10 s cae un rayo (150 de daño) sobre cada élite y jefe.' },
+    // ================= VENENO (12 nodos, ~20 PF): daño sostenido. Debilidad de Letea (tras mudar la sangre).
+    { id: 'V0', tree: 'poison', tag: 'poison', type: 'root', name: 'Dardo tóxico', col: 2.5, row: 0, icon: 'dart', desc: 'Carta inicial de Veneno (Rango I): proyectil con veneno que apila. Raíz del árbol.' },
+    { id: 'V1', tree: 'poison', tag: 'poison', type: 'M', tier: 'T1', name: 'Dardo II', col: 1, row: 1, icon: 'dart', card: 'dart', req: { all: ['V0'] },
+      desc: 'Dardo tóxico sube a Rango II (+8 % de daño). Elige una mejora permanente.',
+      ch: { A: { name: 'Dosis doble', fx: 'dosisDoble', desc: 'Cada Dardo aplica 2 stacks de veneno en vez de 1.' }, B: { name: 'Punta afilada', fx: 'puntaAfilada', desc: 'El daño inicial del Dardo se duplica.' } } },
+    { id: 'V2', tree: 'poison', tag: 'poison', type: 'C', tier: 'T1', name: 'Charco', col: 4, row: 1, icon: 'pool', card: 'pool', req: { all: ['V0'] },
+      desc: 'Desbloquea la carta Charco (común): charco de 5 s bajo el enemigo más cercano, 6 dps + veneno.' },
+    { id: 'V4', tree: 'poison', tag: 'poison', type: 'P', tier: 'T1', name: 'Savia amarga', col: 0, row: 2, icon: 'flask', fx: 'savia', req: { all: ['V1'] },
+      desc: 'Pasivo: +8 % de daño en todas las cartas de Veneno y de su daño por veneno.' },
+    { id: 'V5', tree: 'poison', tag: 'poison', type: 'C', tier: 'T2', name: 'Frasco de bilis', col: 2, row: 2, icon: 'flask', card: 'bile', req: { any: ['V1', 'V2'] },
+      desc: 'Desbloquea la carta pasiva Frasco de bilis (rara): veneno +50 % de daño y apila hasta 5.' },
+    { id: 'V3', tree: 'poison', tag: 'poison', type: 'M', tier: 'T2', name: 'Charco II', col: 4, row: 2, icon: 'pool', card: 'pool', req: { all: ['V2'] },
+      desc: 'Charco sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Pantano', fx: 'pantano', desc: 'El charco dura 8 s en vez de 5.' }, B: { name: 'Charco amplio', fx: 'charcoAncho', desc: 'El radio del charco crece un 30 %.' } } },
+    { id: 'V6', tree: 'poison', tag: 'poison', type: 'X', tier: 'T2', name: 'Pandemia', col: 1, row: 3, icon: 'cloud', fx: 'pandemia', req: { all: ['V5'] }, xor: 'V7',
+      desc: 'Un enemigo envenenado que muere pasa su veneno (hasta 2 stacks) a 3 enemigos cercanos. Para enjambres. Excluye a Neurotoxina.' },
+    { id: 'V7', tree: 'poison', tag: 'poison', type: 'X', tier: 'T2', name: 'Neurotoxina', col: 3, row: 3, icon: 'dart', fx: 'neurotoxina', req: { all: ['V5'] }, xor: 'V6',
+      desc: 'El veneno apila hasta 5 y, al llegar a 5 stacks, aturde 1 s al enemigo (cada 3 s). Para élites. Excluye a Pandemia.' },
+    { id: 'V8', tree: 'poison', tag: 'poison', type: 'C', tier: 'T3', name: 'Nube pútrida', col: 4, row: 3, icon: 'cloud', card: 'cloud', req: { all: ['V3', 'V5'] },
+      desc: 'Desbloquea la carta Nube pútrida (aura permanente de radio 60: 3 dps + veneno). Exige 1 Esencia rara.' },
+    { id: 'V10', tree: 'poison', tag: 'poison', type: 'S', tier: 'T2', name: 'Foco de infección', col: 2, row: 4, icon: 'flask', fx: 'setPoison', req: { any: ['V6', 'V7'] },
+      desc: 'Set: con 3 cartas de Veneno en la mano, +25 % de daño de Veneno. Con 4 o más, "Epidemia": un envenenado que muere deja un charco venenoso 2,5 s.' },
+    { id: 'V9', tree: 'poison', tag: 'poison', type: 'M', tier: 'T2', name: 'Nube II', col: 4, row: 4, icon: 'cloud', card: 'cloud', req: { all: ['V8'] },
+      desc: 'Nube pútrida sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Nube densa', fx: 'nubeAncha', desc: 'El radio del aura crece un 30 %.' }, B: { name: 'Miasma', fx: 'miasma', desc: 'El aura hace x1,5 de daño por segundo.' } } },
+    { id: 'V11', tree: 'poison', tag: 'poison', type: 'Ma', tier: 'T4', name: 'Plaga', col: 3, row: 5, icon: 'cloud', fx: 'plaga', req: { all: ['V9', 'V10'] },
+      desc: 'Maestría: el veneno nunca expira en élites y jefes (los stacks se mantienen hasta que mueren).' },
+    // ================= SANGRE (11 nodos, ~17 PF): el árbol menor, 4 cartas. Debilidad de Letea.
+    { id: 'S0', tree: 'blood', tag: 'blood', type: 'root', name: 'Colmillo', col: 2.5, row: 0, icon: 'fang', desc: 'Carta inicial de Sangre (Rango I): tajo en arco que a veces cura. Raíz del árbol.' },
+    { id: 'S1', tree: 'blood', tag: 'blood', type: 'M', tier: 'T1', name: 'Colmillo II', col: 1, row: 1, icon: 'fang', card: 'fang', req: { all: ['S0'] },
+      desc: 'Colmillo sube a Rango II (+8 % de daño). Elige una mejora permanente.',
+      ch: { A: { name: 'Hemorragia', fx: 'hemorragia', desc: 'La curación del Colmillo se duplica (3 a 6 HP).' }, B: { name: 'Arco amplio', fx: 'arcoAmplio', desc: 'El tajo cubre 120 grados en vez de 90.' } } },
+    { id: 'S2', tree: 'blood', tag: 'blood', type: 'C', tier: 'T1', name: 'Sangría', col: 4, row: 1, icon: 'drop', card: 'bleed', req: { all: ['S0'] },
+      desc: 'Desbloquea la carta Sangría (común): marca a 3 enemigos cercanos con sangrado de 5 dps durante 3 s.' },
+    { id: 'S4', tree: 'blood', tag: 'blood', type: 'P', tier: 'T1', name: 'Ansia', col: 0, row: 2, icon: 'drop', fx: 'ansia', req: { all: ['S1'] },
+      desc: 'Pasivo: +8 % de daño en todas las cartas de Sangre y en el sangrado.' },
+    { id: 'S5', tree: 'blood', tag: 'blood', type: 'C', tier: 'T2', name: 'Corazón de lana', col: 2, row: 2, icon: 'heart', card: 'heart', req: { any: ['S1', 'S2'] },
+      desc: 'Desbloquea la carta pasiva Corazón de lana: +30 de vida máxima y curación inmediata de 30.' },
+    { id: 'S3', tree: 'blood', tag: 'blood', type: 'M', tier: 'T2', name: 'Sangría II', col: 4, row: 2, icon: 'drop', card: 'bleed', req: { all: ['S2'] },
+      desc: 'Sangría sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Cuatro marcas', fx: 'cuatroMarcas', desc: 'Marca a 4 enemigos en vez de 3.' }, B: { name: 'Sangrado profundo', fx: 'sangradoHondo', desc: 'El sangrado hace 7 dps en vez de 5 (+40 %).' } } },
+    { id: 'S9', tree: 'blood', tag: 'blood', type: 'C', tier: 'T2', name: 'Murciélago', col: 4, row: 3, icon: 'bat', card: 'bat', req: { all: ['S3'] },
+      desc: 'Desbloquea la carta nueva Murciélago (rara): persigue a un enemigo (13 de daño + sangrado) y rebota a otro.' },
+    { id: 'S6', tree: 'blood', tag: 'blood', type: 'X', tier: 'T2', name: 'Vampiro', col: 1, row: 3, icon: 'heart', fx: 'vampiro', req: { all: ['S5'] }, xor: 'S7',
+      desc: 'Matar con una carta de Sangre tiene un 12 % de curar 3 HP. Para aguantar. Excluye a Berserker.' },
+    { id: 'S7', tree: 'blood', tag: 'blood', type: 'X', tier: 'T2', name: 'Berserker', col: 3, row: 3, icon: 'fang', fx: 'berserker', req: { all: ['S5'] }, xor: 'S6',
+      desc: 'Todas tus cartas hacen +35 % de daño con menos del 40 % de vida. Para jugar al límite. Excluye a Vampiro.' },
+    { id: 'S10', tree: 'blood', tag: 'blood', type: 'S', tier: 'T2', name: 'Pacto de sed', col: 2, row: 4, icon: 'drop', fx: 'setBlood', req: { any: ['S6', 'S7'] },
+      desc: 'Set: con 3 cartas de Sangre en la mano, +25 % de daño de Sangre. Con 4, "Sed": cada 3 kills ganas un escudo de 10 HP (tope 20).' },
+    { id: 'S11', tree: 'blood', tag: 'blood', type: 'Ma', tier: 'T4', name: 'Pacto de sangre', col: 3, row: 5, icon: 'heart', fx: 'pactoSangre', req: { all: ['S9', 'S10'] },
+      desc: 'Maestría: cada 25 kills recuperas 15 HP y ganas +10 % de daño durante 5 s.' },
+    // ================= ACERO (12 nodos, ~20 PF): críticos y defensa. Debilidad del Pastor.
+    { id: 'A0', tree: 'steel', tag: 'steel', type: 'root', name: 'Daga', col: 2.5, row: 0, icon: 'dagger', desc: 'Carta inicial de Acero (Rango I): tres dagas en abanico. Raíz del árbol.' },
+    { id: 'A1', tree: 'steel', tag: 'steel', type: 'M', tier: 'T1', name: 'Daga II', col: 1, row: 1, icon: 'dagger', card: 'dagger', req: { all: ['A0'] },
+      desc: 'Daga sube a Rango II (+8 % de daño). Elige una mejora permanente.',
+      ch: { A: { name: 'Cinco dagas', fx: 'quintuple', desc: 'Lanza 5 dagas (80 % de daño cada una) en vez de 3.' }, B: { name: 'Perforante', fx: 'perforante', desc: 'Las dagas atraviesan a todos los enemigos.' } } },
+    { id: 'A2', tree: 'steel', tag: 'steel', type: 'C', tier: 'T1', name: 'Escudo de púas', col: 4, row: 1, icon: 'shield', card: 'thorns', req: { all: ['A0'] },
+      desc: 'Desbloquea la carta Escudo de púas (común): 3 escudos orbitan a tu alrededor, dañan y empujan.' },
+    { id: 'A4', tree: 'steel', tag: 'steel', type: 'P', tier: 'T1', name: 'Temple', col: 0, row: 2, icon: 'whet', fx: 'temple', req: { all: ['A1'] },
+      desc: 'Pasivo: +8 % de daño en todas las cartas de Acero.' },
+    { id: 'A5', tree: 'steel', tag: 'steel', type: 'C', tier: 'T2', name: 'Piedra de afilar', col: 2, row: 2, icon: 'whet', card: 'whet', req: { any: ['A1', 'A2'] },
+      desc: 'Desbloquea la carta pasiva Piedra de afilar (rara): Acero +25 % de daño y +10 % de crítico (x2).' },
+    { id: 'A3', tree: 'steel', tag: 'steel', type: 'M', tier: 'T2', name: 'Púas II', col: 4, row: 2, icon: 'shield', card: 'thorns', req: { all: ['A2'] },
+      desc: 'Escudo de púas sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Cuatro escudos', fx: 'cuatroEscudos', desc: 'Un escudo orbital más (4 en vez de 3).' }, B: { name: 'Empuje doble', fx: 'empuje', desc: 'El empuje de los escudos se duplica.' } } },
+    { id: 'A6', tree: 'steel', tag: 'steel', type: 'X', tier: 'T2', name: 'Filo', col: 1, row: 3, icon: 'dagger', fx: 'filo', req: { all: ['A5'] }, xor: 'A7',
+      desc: 'Las cartas de Acero ganan +15 % de probabilidad de crítico (x2). Para quien ataca. Excluye a Bastión.' },
+    { id: 'A7', tree: 'steel', tag: 'steel', type: 'X', tier: 'T2', name: 'Bastión', col: 3, row: 3, icon: 'shield', fx: 'bastion', req: { all: ['A5'] }, xor: 'A6',
+      desc: 'Recibes un 10 % menos de daño de cualquier fuente. Para quien aguanta. Excluye a Filo.' },
+    { id: 'A8', tree: 'steel', tag: 'steel', type: 'C', tier: 'T3', name: 'Hacha giratoria', col: 4, row: 3, icon: 'axe', card: 'axe', req: { all: ['A3', 'A5'] },
+      desc: 'Desbloquea la carta épica Hacha giratoria: boomerang que atraviesa, 22 de daño. Exige 1 Esencia rara.' },
+    { id: 'A10', tree: 'steel', tag: 'steel', type: 'S', tier: 'T2', name: 'Filo eterno', col: 2, row: 4, icon: 'whet', fx: 'setSteel', req: { any: ['A6', 'A7'] },
+      desc: 'Set: con 3 cartas de Acero en la mano, +25 % de daño de Acero. Con 4 o más, "Filo eterno": cada crítico recorta 0,3 s todos los cooldowns.' },
+    { id: 'A9', tree: 'steel', tag: 'steel', type: 'M', tier: 'T2', name: 'Hacha II', col: 4, row: 4, icon: 'axe', card: 'axe', req: { all: ['A8'] },
+      desc: 'Hacha giratoria sube a Rango II. Elige una mejora permanente.',
+      ch: { A: { name: 'Hoja ancha', fx: 'hojaAncha', desc: 'El Hacha es un 50 % más grande y golpea a más enemigos.' }, B: { name: 'Hacha veloz', fx: 'hachaVeloz', desc: 'El cooldown del Hacha baja un 20 %.' } } },
+    { id: 'A11', tree: 'steel', tag: 'steel', type: 'Ma', tier: 'T4', name: 'Tormenta de acero', col: 3, row: 5, icon: 'axe', fx: 'tormentaAcero', req: { all: ['A9', 'A10'] },
+      desc: 'Maestría: las dagas rebotan una vez hacia otro enemigo y el Hacha dobla la ida de su arco.' },
     // ---- Tronco común
     { id: 'R2', tree: 'trunk', tag: 'neutral', type: 'R', name: 'Rango de forja II', col: 2, row: 0, icon: 'II', fx: 'rank2', cost: { pf: 0, parts: { thread: 30, feather: 10 }, brasas: 60 },
       desc: 'Abre los nodos de nivel T2 de todos los árboles.' },
@@ -53,13 +184,17 @@
   ];
   var BY = {}; NODES.forEach(function (n) { BY[n.id] = n; });
   T.NODES = NODES; T.node = function (id) { return BY[id]; };
-  T.TABS = [{ id: 'fire', name: 'FUEGO', color: '#ff7a2a' }, { id: 'trunk', name: 'TRONCO', color: '#c8b8e8' }, { id: 'classic', name: 'CLÁSICA', color: '#e8dcb0' }];
+  T.treeCards = {}; NODES.forEach(function (n) { if (n.card) T.treeCards[n.card] = 1; });   // cartas que se obtienen en el árbol (el resto: set básico)
+  T.TABS = [{ id: 'fire', name: 'FUEGO', color: G.TAGS.fire.color }, { id: 'ice', name: 'HIELO', color: G.TAGS.ice.color }, { id: 'lightning', name: 'RAYO', color: G.TAGS.lightning.color },
+    { id: 'poison', name: 'VENENO', color: G.TAGS.poison.color }, { id: 'blood', name: 'SANGRE', color: G.TAGS.blood.color }, { id: 'steel', name: 'ACERO', color: G.TAGS.steel.color },
+    { id: 'trunk', name: 'TRONCO', color: '#c8b8e8' }];
+  T.tabOf = function (id) { return T.TABS.filter(function (t) { return t.id === id; })[0]; };
   var TYPE_NAME = { root: 'RAÍZ', C: 'CARTA', M: 'MEJORA A / B', P: 'PASIVO', X: 'RAMA EXCLUYENTE', S: 'SET', Ma: 'MAESTRÍA', R: 'RANGO DE FORJA' };
 
   // ------------------------------------------------------------- Estado y reglas
   function SV() { return G.Save.data; }
   T.fx = {};
-  T.owned = function (id) { return id === 'F0' || !!SV().nodes[id]; };
+  T.owned = function (id) { var n = BY[id]; return (n && n.type === 'root') || !!SV().nodes[id]; };
   T.choice = function (id) { var o = SV().nodes[id]; return o ? o.c : null; };
   T.pfEarned = function () { return SV().pf.earned; };
   T.pfUsed = function () { var u = 0, N = SV().nodes; for (var id in N) if (!N[id].free && BY[id]) u += T.cost(BY[id]).pf; return u; };
@@ -91,11 +226,11 @@
       return { pf: n.cost.pf, parts: parts, brasas: Math.round(n.cost.brasas * M.brasas) };
     }
     var t = L.NODE_TIER[n.tier || 'T1'], main = L.MAIN[n.tag], sec = L.SEC[n.tag];
-    parts[main] = Math.ceil(t.main * M.parts); if (sec !== main) parts[sec] = Math.ceil(t.sec * M.parts);
+    parts[main] = Math.ceil(t.main * M.parts * (L.TREE_PART_MUL[n.tag] || 1)); if (sec !== main) parts[sec] = Math.ceil(t.sec * M.parts);
     if (t.rare) parts.rare = t.rare;
     return { pf: t.pf, parts: parts, brasas: Math.round(t.brasas * M.brasas) };
   };
-  function nodeOK(id, set) { return id === 'F0' || (set ? !!set[id] : !!SV().nodes[id]); }
+  function nodeOK(id, set) { var n = BY[id]; return (n && n.type === 'root') || (set ? !!set[id] : !!SV().nodes[id]); }
   function reqOK(n, set) {
     if (!n.req) return true;
     var r = n.req, i;
@@ -227,30 +362,38 @@
     S.anchors = S.anchors.filter(function (id2, i, a) { return G.Loot.unlocked(id2) && a.indexOf(id2) === i; }).slice(-G.B.anchorSlots);
   };
   T.startAsh = function () { return (T.fx.ash ? 20 : 0) + (G.runBuff && G.runBuff.tonic ? 40 : 0); };
-  T.cdMul = function (id) { return id === 'spark' && T.fx.rafaga ? 0.85 : 1; };
+  T.cdMul = function (id) {
+    return (id === 'spark' && T.fx.rafaga ? 0.85 : 1) * (id === 'zap' && T.fx.chispaViva ? 0.85 : 1) * (id === 'axe' && T.fx.hachaVeloz ? 0.8 : 1);
+  };
+  // Nodos comprables ahora en una pestaña (para el aviso de las pestañas y el aviso de Grum)
+  T.availableIn = function (tab) { var n = 0; NODES.forEach(function (x) { if (x.tree === tab && x.type !== 'root' && T.status(x) === 'avail' && !T.afford(x)) n++; }); return n; };
+  // Puntos de Forja gastados en un árbol
+  T.pfIn = function (tab) { var u = 0, N = SV().nodes; for (var id in N) if (!N[id].free && BY[id] && BY[id].tree === tab) u += T.cost(BY[id]).pf; return u; };
+  // ¿Está completo el árbol? (todos los nodos comprables, salvo la rama excluyente no elegida)
+  T.complete = function (tab) {
+    return NODES.every(function (n) { return n.tree !== tab || n.type === 'root' || T.owned(n.id) || (n.xor && T.owned(n.xor)); });
+  };
 
   // ------------------------------------------------------------- UI
-  var ui = { tab: 'fire', sel: 'F1', csel: 0, msg: '', msgT: 0, confirm: '', confirmT: 0, flash: null, flashT: 0, fade: 0 };
+  var ui = { tab: 'fire', sel: 'F1', msg: '', msgT: 0, confirm: '', confirmT: 0, flash: null, flashT: 0, fade: 0 };
   var R_CLOSE = { x: 904, y: 2, w: 52, h: 42 };
-  var R_TAB = function (i) { return { x: 10 + i * 156, y: 50, w: 148, h: 44 }; };
+  var R_TAB = function (i) { return { x: 8 + i * 134, y: 44, w: 128, h: 48 }; };
   var R_RESET = { x: 590, y: 4, w: 156, h: 38 };
   var DET = { x: 644, y: 100, w: 306, h: 432 };
   var R_BUY = { x: 654, y: 470, w: 286, h: 52 };
   var R_CH = [{ x: 654, y: 470, w: 140, h: 52 }, { x: 800, y: 470, w: 140, h: 52 }];
   var R_UNDO = { x: 754, y: 418, w: 186, h: 44 };
-  var NX = 72, NY = 132, SX = 100, SY = 64, NR = 28;
+  var NX = 72, NY = 138, SX = 100, SY = 65, NR = 28;
   function pos(n) { return { x: NX + n.col * SX, y: NY + n.row * SY }; }
   function say(t) { ui.msg = t; ui.msgT = 3200; }
   function tabNodes() { return NODES.filter(function (n) { return n.tree === ui.tab; }); }
 
-  T.open = function (tab) { ui.tab = tab || ui.tab; ui.msg = ''; ui.msgT = 0; ui.confirm = ''; if (ui.tab !== 'classic' && !BY[ui.sel]) ui.sel = 'F1'; fixSel(); };
-  function fixSel() { if (ui.tab !== 'classic' && (!BY[ui.sel] || BY[ui.sel].tree !== ui.tab)) ui.sel = tabNodes()[ui.tab === 'fire' ? 1 : 0].id; }
+  T.open = function (tab) { ui.tab = tab || ui.tab; ui.msg = ''; ui.msgT = 0; ui.confirm = ''; fixSel(); };
+  function fixSel() {
+    if (!BY[ui.sel] || BY[ui.sel].tree !== ui.tab) { var tn = tabNodes(); ui.sel = (tn.filter(function (n) { return n.type !== 'root'; })[0] || tn[0]).id; }
+  }
   function setTab(t) { if (t === ui.tab) return; ui.tab = t; ui.confirm = ''; fixSel(); G.sfx('flip', { vol: 0.4 }); }
-  function classicList() { return G.Cards.defs.filter(function (d) { return d.id && L.classic(d.id); }); }
-
-  var CELL = { w: 62, h: 84, gx: 66, gy: 92, x0: 14, y0: 112, cols: 9 };
-  function cellRect(i) { return { x: CELL.x0 + (i % CELL.cols) * CELL.gx, y: CELL.y0 + Math.floor(i / CELL.cols) * CELL.gy, w: CELL.w, h: CELL.h }; }
-  var R_FORGE = { x: 654, y: 470, w: 286, h: 52 };
+  T.setTab = setTab; T.selectNode = function (id) { if (BY[id]) { ui.tab = BY[id].tree; ui.sel = id; } };
 
   function moveSel(dx, dy) {
     var cur = BY[ui.sel], p = pos(cur), best = null, bd = 1e9;
@@ -278,40 +421,17 @@
     if (r.ok) { try { G.Snd.play('discard'); } catch (e) { /* audio */ } }
     ui.confirm = '';
   }
-  function doClassicForge() {
-    var d = classicList()[ui.csel]; if (!d) return;
-    var nr = L.nextRank(d.id);
-    if (!nr) { say('Rango máximo.'); return; }
-    if (!L.canForge(d.id)) { say('Faltan partes o Brasas.'); G.sfx('discard', { vol: 0.5 }); return; }
-    L.forge(d.id); T.sync(); ui.flashT = 800; ui.flash = '*';
-    say(nr === 1 ? '¡Forjada: ' + d.name + '!' : d.name + ' sube a Rango ' + U.roman(nr) + ' (+8 % daño)');
-    try { G.Snd.play('fuse'); } catch (e) { /* audio */ }
-    if (G.Aldea && G.Aldea.onForged) G.Aldea.onForged(null);
-  }
-
   // Devuelve true si hay que cerrar el panel
   T.update = function (dt) {
     var m = inp.mouse, click = inp.hit('Mouse0'), i;
     if (ui.msgT > 0) ui.msgT -= dt; if (ui.flashT > 0) ui.flashT -= dt; if (ui.confirmT > 0) ui.confirmT -= dt; else ui.confirm = '';
     if (inp.hit('Escape') || (click && U.inR(R_CLOSE, m))) return true;
-    for (i = 0; i < 3; i++) if (inp.hit('Digit' + (i + 1)) || (click && U.inR(R_TAB(i), m))) { setTab(T.TABS[i].id); }
+    var NT = T.TABS.length;
+    for (i = 0; i < NT; i++) if (inp.hit('Digit' + (i + 1)) || (click && U.inR(R_TAB(i), m))) { setTab(T.TABS[i].id); }
     var ti = T.TABS.map(function (t) { return t.id; }).indexOf(ui.tab);
-    if (inp.hit('KeyQ') || inp.swipe === 1) setTab(T.TABS[(ti + 2) % 3].id);
-    if (inp.hit('KeyE') || inp.swipe === -1) setTab(T.TABS[(ti + 1) % 3].id);
+    if (inp.hit('KeyQ') || inp.swipe === 1) setTab(T.TABS[(ti + NT - 1) % NT].id);
+    if (inp.hit('KeyE') || inp.swipe === -1) setTab(T.TABS[(ti + 1) % NT].id);
 
-    if (ui.tab === 'classic') {
-      var list = classicList();
-      if (inp.hit('ArrowRight', 'KeyD')) ui.csel = Math.min(list.length - 1, ui.csel + 1);
-      if (inp.hit('ArrowLeft', 'KeyA')) ui.csel = Math.max(0, ui.csel - 1);
-      if (inp.hit('ArrowDown', 'KeyS')) ui.csel = Math.min(list.length - 1, ui.csel + CELL.cols);
-      if (inp.hit('ArrowUp', 'KeyW')) ui.csel = Math.max(0, ui.csel - CELL.cols);
-      if (inp.hit('KeyF')) doClassicForge();
-      if (click) {
-        for (i = 0; i < list.length; i++) if (U.inR(cellRect(i), m)) { ui.csel = i; G.sfx('flip', { vol: 0.4 }); return false; }
-        if (U.inR(R_FORGE, m)) doClassicForge();
-      }
-      return false;
-    }
     var n = BY[ui.sel];
     if (inp.hit('ArrowRight', 'KeyD')) moveSel(1, 0);
     if (inp.hit('ArrowLeft', 'KeyA')) moveSel(-1, 0);
@@ -354,18 +474,30 @@
     if (!items.length) { G.txt(c, 'Sin coste', x, y, 12, '#9a8fb0', 'left'); return true; }
     var ok = true;
     for (i = 0; i < items.length; i++) {
-      var it = items[i], cx = x + (i % 4) * 74, cy = y + Math.floor(i / 4) * 26, good = it.have >= it.need;
+      var it = items[i], cx = x + (i % 4) * 70, cy = y + Math.floor(i / 4) * 26, good = it.have >= it.need;
       if (!good) ok = false;
       if (it.k === 'pf') pfIcon(c, cx + 10, cy, 9); else U.part(c, it.k, cx + 10, cy, 10);
-      G.txt(c, (it.have >= 1000 ? (it.have / 1000).toFixed(1) + 'k' : it.have) + '/' + it.need, cx + 24, cy + 1, 11, good ? '#9dffb4' : '#ff8a8a', 'left');
+      G.txt(c, (it.have >= 1000 ? Math.floor(it.have / 1000) + 'k' : it.have) + '/' + it.need, cx + 22, cy + 1, 11, good ? '#9dffb4' : '#ff8a8a', 'left');
     }
     return ok;
   }
   T.costRow = costRow;
 
+  var TYPE_ICON = { P: 'passive', X: 'branch', S: 'set', Ma: 'mastery', R: 'rank' };
   function drawNodeShape(c, n, st, p, selected, t) {
     var tag = G.TAGS[n.tag] || G.TAGS.neutral, col = tag.color, owned = st === 'owned', pulse = 0.5 + 0.5 * Math.sin(t * 5);
     var dim = st === 'locked' || st === 'excluded';
+    if (window.Assets && Assets.drawTreeNode) {   // marco con el arte del árbol (assets_tree.js): el icono lo pongo yo (glifo de la carta o icono de tipo)
+      Assets.drawTreeNode(c, p.x, p.y, { type: n.type, tag: n.tag, state: st, choice: T.choice(n.id), sel: selected, t: Date.now(), r: NR });
+      var ik = owned ? '#1a1024' : col;
+      if (TYPE_ICON[n.type] && n.icon !== 'II' && n.icon !== 'III' && n.icon !== '3' && Assets.drawTreeIcon) Assets.drawTreeIcon(c, TYPE_ICON[n.type], p.x, p.y, 14, { color: ik, dim: dim });
+      else { c.save(); if (dim) c.globalAlpha = 0.4;
+        if (n.icon === 'II' || n.icon === 'III' || n.icon === '3') G.txt(c, n.icon, p.x, p.y + 1, n.icon.length > 1 ? 16 : 22, owned ? '#1a1024' : '#fff', 'center');
+        else G.Cards.glyph(c, n.icon, p.x, p.y + (n.type === 'M' ? 2 : 0), n.type === 'M' ? 11 : 15, ik);
+        c.restore(); }
+      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 24, p.y - 22, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 24, p.y - 21, 10, '#fff', 'center'); } }
+      return;   // la etiqueta con el nombre se dibuja después de todos los nodos (T.draw) para que ningún marco la tape
+    }
     c.save(); c.translate(p.x, p.y);
     if (st === 'avail') { c.shadowColor = col; c.shadowBlur = 10 + 8 * pulse; }
     c.fillStyle = owned ? col : (dim ? '#1c1626' : '#2a1d3a');
@@ -405,48 +537,57 @@
     U.part(c, 'brasa', 430, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 446, 22, 16, '#ff9a3c', 'left');
     var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];
     // fila de partes (compacta)
-    pk.forEach(function (k, j) { var x = 484 + j * 47; U.part(c, k, x + 7, 72, 7); G.txt(c, String(S.parts[k] || 0), x + 17, 73, 11, (S.parts[k] || 0) ? '#fff' : '#6a5f78', 'left'); });
+    pk.forEach(function (k, j) { var x = 14 + j * 52; U.part(c, k, x + 7, 100, 7); G.txt(c, String(S.parts[k] || 0), x + 18, 101, 11, (S.parts[k] || 0) ? '#fff' : '#6a5f78', 'left'); });
     U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
-    for (i = 0; i < 3; i++) {
-      var tb = T.TABS[i], r = R_TAB(i), on = tb.id === ui.tab;
-      if (i === 0) { /* fuego */ }
+    var ART = !!(window.Assets && Assets.drawTreeNode), now = Date.now();
+    for (i = 0; i < T.TABS.length; i++) {
+      var tb = T.TABS[i], r = R_TAB(i), on = tb.id === ui.tab, av = T.availableIn(tb.id), done = tb.id !== 'trunk' && T.complete(tb.id), pu = tb.id === 'trunk' ? 0 : T.pfIn(tb.id);
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h);
       c.strokeStyle = on ? tb.color : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-      G.txt(c, tb.name + ' [' + (i + 1) + ']', r.x + r.w / 2, r.y + r.h / 2, 15, on ? tb.color : '#8a7f96', 'center');
+      if (ART && Assets.drawTreeTab) Assets.drawTreeTab(c, r.x, r.y, tb.id === 'trunk' ? 'neutral' : tb.id, { sel: on, dim: !on, t: now, badge: av || 0 });
+      else { if (av > 0) { c.fillStyle = '#7dff9a'; c.beginPath(); c.arc(r.x + r.w - 10, r.y + 10, 8, 0, 6.283); c.fill(); G.txt(c, String(av), r.x + r.w - 10, r.y + 11, 10, '#102014', 'center', 'rgba(0,0,0,0)'); } }
+      var tx = ART ? r.x + 54 : r.x + r.w / 2 + 4, al = ART ? 'left' : 'center';
+      G.txt(c, tb.name, tx, r.y + 16, 13, on ? tb.color : '#8a7f96', al);
+      G.txt(c, done ? 'COMPLETO' : tb.id === 'trunk' ? 'Rangos' : pu + ' PF', ART ? tx : r.x + r.w / 2, r.y + 32, 10, done ? '#ffd24a' : '#7a6f88', al);
+      G.txt(c, String(i + 1), r.x + r.w - 9, r.y + r.h - 9, 9, '#5a4f68', 'center');
     }
     // mensaje
     if (ui.msgT > 0 && ui.msg) G.txt(c, ui.msg, 320, 508, 12, '#ffe9a0', 'center');
-    if (ui.tab === 'classic') { drawClassic(c, m); return; }
     var nodes = tabNodes(), n = BY[ui.sel];
     // reespecializar árbol
     var tp = T.treePlan(ui.tab);
     U.button(c, R_RESET, ui.confirm === 't' + ui.tab ? 'SEGURO? OTRA VEZ' : 'REESPECIALIZAR', { size: 12, off: !tp, color: '#3a2f48', hot: '#6a3a8a', border: '#8a6a8a',
       sub: tp ? (S.respecFree ? 'primera vez GRATIS' : L.RESPEC.tree + ' Brasas') : 'nada que deshacer' });
-    // aristas
+    // aristas (con Assets.drawTreeLink si existe el arte del árbol)
     nodes.forEach(function (nd) {
       if (!nd.req) return;
+      var tcol = (G.TAGS[nd.tag] || G.TAGS.neutral).color;
       (nd.req.all || nd.req.any).forEach(function (pid) {
-        var a = pos(BY[pid]), b = pos(nd), on = T.owned(pid) && T.owned(nd.id), ok = T.owned(pid);
+        var a = pos(BY[pid]), b = pos(nd), on = T.owned(pid) && T.owned(nd.id), ok = T.owned(pid), stt = T.status(nd);
+        if (ART && Assets.drawTreeLink) { Assets.drawTreeLink(c, a.x, a.y, b.x, b.y, { state: on ? 'owned' : (ok && stt === 'avail' ? 'avail' : 'locked'), color: tcol, kind: nd.req.any ? 'or' : 'and', inset: NR, t: now }); return; }
         c.strokeStyle = on ? '#ffe9a0' : (ok ? '#7a6aa0' : '#3a2f48'); c.lineWidth = on ? 4 : 3;
         if (nd.req.any) c.setLineDash([6, 5]);
         c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); c.setLineDash([]);
       });
       if (nd.xor && nd.id < nd.xor) {   // "V" punteada entre hermanos excluyentes
         var q1 = pos(nd), q2 = pos(BY[nd.xor]);
-        c.strokeStyle = '#ff6a6a'; c.lineWidth = 2; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(q1.x + NR, q1.y); c.lineTo(q2.x - NR, q2.y); c.stroke(); c.setLineDash([]);
+        if (ART && Assets.drawTreeLink) Assets.drawTreeLink(c, q1.x, q1.y, q2.x, q2.y, { state: T.owned(nd.id) || T.owned(nd.xor) ? 'owned' : 'avail', kind: 'xor', inset: NR + 6, t: now });
+        else { c.strokeStyle = '#ff6a6a'; c.lineWidth = 2; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(q1.x + NR, q1.y); c.lineTo(q2.x - NR, q2.y); c.stroke(); c.setLineDash([]); }
         G.txt(c, 'O', (q1.x + q2.x) / 2, q1.y, 12, '#ff8a8a', 'center');
       }
     });
     if (ui.tab === 'trunk') G.txt(c, 'CARTAS NEUTRAS', NX + 2 * SX, NY + 3 * SY + 10, 12, '#9a8fb0', 'center');
     nodes.forEach(function (nd) { drawNodeShape(c, nd, T.status(nd), pos(nd), nd.id === ui.sel, t); });
+    if (ART) nodes.forEach(function (nd) { var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded'; G.txt(c, nd.name.length > 17 ? nd.name.slice(0, 16) + '.' : nd.name, q.x, q.y + NR + 9, 10, dm ? '#7a6f8a' : '#e8dff8', 'center'); });
     if (ui.flashT > 0 && BY[ui.flash]) {
       var fp = pos(BY[ui.flash]), u = 1 - ui.flashT / 800;
-      c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,224,120,' + (1 - u) + ')'; c.lineWidth = 5; c.beginPath(); c.arc(fp.x, fp.y, NR + u * 40, 0, 6.283); c.stroke(); c.restore();
+      if (ART && Assets.drawTreeBurst) Assets.drawTreeBurst(c, fp.x, fp.y, u, (G.TAGS[BY[ui.flash].tag] || G.TAGS.neutral).color);
+      else { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,224,120,' + (1 - u) + ')'; c.lineWidth = 5; c.beginPath(); c.arc(fp.x, fp.y, NR + u * 40, 0, 6.283); c.stroke(); c.restore(); }
     }
     // selección
-    var sp = pos(n); c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.setLineDash([4, 4]); c.lineDashOffset = -t * 20; c.beginPath(); c.arc(sp.x, sp.y, NR + 8, 0, 6.283); c.stroke(); c.setLineDash([]);
+    if (!ART) { var sp = pos(n); c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.setLineDash([4, 4]); c.lineDashOffset = -t * 20; c.beginPath(); c.arc(sp.x, sp.y, NR + 8, 0, 6.283); c.stroke(); c.setLineDash([]); }
     drawDetail(c, n, m);
-    G.txt(c, 'Flechas: mover  -  F/G: forjar (A/B)  -  U: deshacer nodo  -  R: reespecializar  -  Q/E: pestaña  -  Esc: salir', 14, 526, 10, '#6f6480', 'left');
+    G.txt(c, 'Flechas: mover  F/G: forjar  U: deshacer  R: respec.  Q/E o 1-7: pestaña  Esc: salir', 14, 526, 10, '#6f6480', 'left');
   };
 
   function drawDetail(c, n, m) {
@@ -491,37 +632,5 @@
     } else {
       U.button(c, R_BUY, st === 'avail' ? (n.type === 'C' ? 'FORJAR' : 'COMPRAR') : 'BLOQUEADO', { size: 18, off: !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: why || (st === 'avail' ? '[F]' : '') });
     }
-  }
-
-  function drawClassic(c, m) {
-    var list = classicList(), i, S = SV();
-    if (ui.csel >= list.length) ui.csel = 0;
-    G.txt(c, 'RECETAS PLANAS (cartas de Hielo, Rayo, Veneno, Sangre, Acero y neutras)', 14, 104, 12, '#9a8fb0', 'left');
-    for (i = 0; i < list.length; i++) {
-      var dd = list[i], r = cellRect(i), rk = G.Save.rank(dd.id);
-      G.Cards.drawCard(c, { id: dd.id, lvl: 0 }, r.x, r.y + 12, r.w, r.h, { nocd: true, dim: rk === 0, glow: i === ui.csel ? '#ffe9a0' : null });
-      if (i === ui.csel) { c.strokeStyle = '#ffe9a0'; c.lineWidth = 3; c.strokeRect(r.x - 2, r.y + 10, r.w + 4, r.h + 4); }
-      if (L.canForge(dd.id)) { var pu = 0.6 + 0.4 * Math.sin(Date.now() / 200); c.fillStyle = 'rgba(120,255,160,' + pu + ')'; c.beginPath(); c.arc(r.x + 8, r.y + 20, 6, 0, 6.283); c.fill(); }
-    }
-    var yb = CELL.y0 + Math.ceil(list.length / CELL.cols) * CELL.gy + 16;
-    G.txt(c, 'Fuego y neutras clave (Pezuñas, Imán, Alforja): pestañas FUEGO y TRONCO.', 14, yb, 12, '#d8cfe8', 'left');
-    G.txt(c, 'Árboles de Hielo, Rayo, Veneno, Sangre y Acero: llegan en la Fase 2b.', 14, yb + 20, 12, '#d8cfe8', 'left');
-    var d = list[ui.csel]; if (!d) return;
-    var id = d.id, rank = G.Save.rank(id), nr = L.nextRank(id), tc = G.TAGS[d.tag].color;
-    U.panel(c, DET.x, DET.y, DET.w, DET.h, { border: tc });
-    G.Cards.drawCard(c, { id: id, lvl: 0 }, DET.x + 12, DET.y + 12, 62, 84, { nocd: true });
-    G.txt(c, d.name, DET.x + 86, DET.y + 26, 17, '#ffd27a', 'left');
-    G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), DET.x + 86, DET.y + 48, 12, tc, 'left');
-    G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', DET.x + 86, DET.y + 68, 13, rank ? '#fff' : '#ff8a8a', 'left');
-    var ls = U.wrap(c, d.desc, DET.w - 28, 12);
-    for (i = 0; i < ls.length && i < 4; i++) G.txt(c, ls[i], DET.x + 14, DET.y + 118 + i * 16, 12, '#d8cfe8', 'left');
-    var ok = false;
-    if (nr) {
-      G.txt(c, nr === 1 ? 'RECETA: DESBLOQUEAR' : 'MEJORAR A RANGO ' + U.roman(nr) + ' (+8 % daño)', DET.x + 14, 392, 12, '#ffe9a0', 'left');
-      var rec = L.recipe(id, nr);
-      ok = costRow(c, { pf: 0, parts: rec.parts, brasas: rec.brasas }, DET.x + 12, 416);
-    } else G.txt(c, 'RANGO MÁXIMO ALCANZADO', DET.x + 14, 400, 13, '#ffd24a', 'left');
-    U.button(c, R_FORGE, nr === 1 ? 'FORJAR' : 'MEJORAR', { size: 18, off: !nr || !ok, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: nr ? '[F]' : 'máx.' });
-    G.txt(c, 'Flechas: elegir  -  F: forjar  -  Q/E: pestaña  -  Esc: salir', 14, 526, 10, '#6f6480', 'left');
   }
 })();
