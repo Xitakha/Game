@@ -7,7 +7,7 @@
     return {
       x: G.AW / 2, y: G.AH / 2 + 70, r: B.player.r, hp: B.player.hp, maxHp: B.player.hp,
       kx: 0, ky: 0, dirx: 1, moving: false, animT: 0, hurtT: 0, dead: false, squash: 0,
-      level: 1, xp: 0, ash: 15, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0
+      level: 1, xp: 0, ash: 15, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0, slowT: 0, slowPct: 0
     };
   };
 
@@ -16,16 +16,25 @@
     p.x = G.clamp(p.x, m, G.AW - m); p.y = G.clamp(p.y, m, G.AH - m);
   }
 
-  // Devuelve true si el daño se aplicó.
-  P.hurt = function (p, dmg, sx, sy) {
+  // Ralentiza al jugador (no apila: se queda con el mayor % y refresca la duración al máximo)
+  P.slow = function (p, pct, ms) {
+    if (p.dead) return;
+    p.slowPct = Math.max(p.slowT > 0 ? p.slowPct : 0, pct); p.slowT = Math.max(p.slowT, ms);
+  };
+
+  // Devuelve true si el daño se aplicó. o: { kb (multiplicador de empuje), slow:[pct,ms], soft (daño de zona: sin empuje y casi sin hitstop), src (tipo, para depurar) }
+  P.hurt = function (p, dmg, sx, sy, o) {
+    o = o || {};
     if (p.dead || p.hurtT > 0) return false;
-    var a = Math.atan2(p.y - sy, p.x - sx), k = 12;
+    if (o.slow) P.slow(p, o.slow[0], o.slow[1]);
+    var a = Math.atan2(p.y - sy, p.x - sx), k = 12 * (o.kb != null ? o.kb : 1);
+    if (G.dbg) { var D = G.dbg.dmg; D[o.src || '?'] = (D[o.src || '?'] || 0) + dmg; }
     if (G.god) { p.hurtT = 300; return false; }
-    p.hp -= dmg; p.hurtT = B.player.invuln;
-    p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k;
-    G.fx.shake(7, 200); G.fx.hit(40);
+    p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln;
+    if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; G.fx.shake(7, 200); G.fx.hit(40); }
+    else G.fx.shake(2, 80);
     G.fx.num(p.x, p.y - 18, Math.round(dmg), '#ff5a5a', true);
-    G.fx.spark(p.x, p.y, 6, a);
+    G.fx.spark(p.x, p.y, o.soft ? 2 : 6, a);
     G.sfx('hurt');
     if (p.hp <= 0) { p.hp = 0; p.dead = true; G.fx.hit(120); G.fx.smoke(p.x, p.y, 8); }
     return true;
@@ -42,6 +51,7 @@
     if (p.hurtT > 0) p.hurtT -= dt;
     if (p.squash > 0) p.squash -= dt;
     if (p.frenzyT > 0) p.frenzyT -= dt;
+    if (p.slowT > 0) { p.slowT -= dt; if (p.slowT <= 0) p.slowPct = 0; }
     if (p.kx || p.ky) {
       p.x += p.kx * s; p.y += p.ky * s;
       var k = Math.exp(-12 * s); p.kx *= k; p.ky *= k;
@@ -54,7 +64,7 @@
     if (il > 0) { ix /= il; iy /= il; }
     p.moving = il > 0;
     if (ix !== 0) p.dirx = ix > 0 ? 1 : -1;
-    var spd = B.player.speed * G.Cards.mods.speed;
+    var spd = B.player.speed * G.Cards.mods.speed * (p.slowT > 0 ? 1 - p.slowPct : 1);
     p.x += ix * spd * s; p.y += iy * spd * s;
     wallClamp(p);
     if (p.moving && Math.random() < 0.06) G.fx.dust(p.x, p.y + 12, 1);
@@ -62,6 +72,15 @@
 
   P.draw = function (c, p) {
     G.fx.spr(c, Assets.sprite('shadow', 0), p.x, p.y + 14, { alpha: 0.6 });
+    if (p.slowT > 0 && !p.dead) { // aro de hielo bajo los pies
+      var rs = G.hasSpr('fx_freeze_ring') ? Assets.sprite('fx_freeze_ring', Math.floor(p.animT / 200) % 2) : null;
+      if (rs) G.fx.spr(c, rs, p.x, p.y + 12, { alpha: Math.min(1, p.slowT / 300) });
+      else {
+        c.save(); c.globalAlpha = Math.min(1, p.slowT / 300) * 0.8; c.strokeStyle = '#7fd4ff'; c.fillStyle = 'rgba(127,212,255,0.22)'; c.lineWidth = 2;
+        c.beginPath(); c.ellipse(p.x, p.y + 12, 17, 7, 0, 0, 6.283); c.fill(); c.stroke();
+        c.setLineDash([4, 5]); c.lineDashOffset = -p.animT / 40; c.beginPath(); c.ellipse(p.x, p.y + 12, 12, 5, 0, 0, 6.283); c.stroke(); c.restore();
+      }
+    }
     var frame;
     if (p.dead) frame = 'die:' + Math.floor((G.deadT || 0) / 110);
     else if (p.hurtT > 400) frame = 13;
@@ -71,6 +90,7 @@
     if (p.hurtT > 0 && !p.dead) alpha = (Math.floor(p.hurtT / 60) % 2) ? 0.45 : 1;
     var o = { flip: p.dirx < 0, alpha: alpha };
     if (p.hurtT > 450) { o.tint = '#ff2020'; o.tintA = 0.7; }
+    else if (p.slowT > 0) { o.tint = '#7fd4ff'; o.tintA = 0.35; }
     else if (p.frenzyT > 0) { o.tint = '#ff3050'; o.tintA = 0.25 + 0.15 * Math.sin(p.animT / 40); }
     G.fx.spr(c, cv, p.x, p.y, o);
   };

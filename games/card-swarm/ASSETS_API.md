@@ -109,3 +109,38 @@ fx.js: `hitspark/shockwave/puff/curse/corpse/drawCorpses` (particulas animadas c
 - `Assets.arena(w,h,{seed,wall})` -> `{canvas, torches:[{x,y,o}], ritual:{x,y,r}}`: fondo completo (exterior azul oscuro/lava, plataforma, circulo ritual central, decoracion, bordes). main.js lo usa en `buildGround`.
 - Animar en runtime: `Assets.drawTorchFire(ctx,x,y,t,o)` acepta `o` de cada entrada de `torches` (`candle`, `scale`); `Assets.drawRitualGlow(ctx,x,y,t,r)` pulso aditivo del pentagrama; `Assets.drawFireflies(ctx,w,h,t,{count,view})` luciernagas (bosque) / brasas (cripta, asfodelo). `Assets.vignette` mas fuerte, tinte por bioma (azul/morado, rojo oscuro, verde oscuro).
 - Cambios en src/main.js (solo visual): `buildGround` usa `Assets.arena`; draw anade glow ritual, luciernagas y vineta 0.8. Sin cambios de logica ni hitboxes.
+
+
+---
+# Swarm Hand v2 - sprites nuevos (src/assets_enemies2.js, cargado tras assets.js)
+Nombres y frames EXACTOS (contrato; no cambian). Todos miran a la DERECHA. Tamano final = base x2. `die` = 5 frames, 9 fps, no cicla (`Assets.animFrame(n,'die',ms)`). Los indices `die` van justo despues de los frames normales.
+Uso: `Assets.sprite('enemy_fanner','walk:'+i)`, `Assets.animFrame('enemy_fanner','walk',t)`, `Assets.info(n).anims`.
+
+| sprite | final | frames normales | anims (fps) | die |
+|---|---|---|---|---|
+| enemy_fanner (Espinoso) | 40x36 | 0 idle, 1 idle2, 2-5 walk, 6 aim (inflado), 7 fire | idle [0,1] 4; walk [0,2,1,3,4,5] 8; aim [6]; shoot [7,1] 8 | 8-12 |
+| enemy_shield (Escudero) | 48x48 | 0 idle, 1 idle2, 2-5 walk, 6 wind, 7 bash, 8 rec | idle [0,1] 4; walk [0,2,1,3,4,5] 7; bash [6,7,8] 10; wind [6]; rec [8] | 9-13 |
+| enemy_moth (Polilla) | 40x40 | 0-3 alas (arriba, media, abajo, media2), 4 charge, 5 throw | fly [0,1,2,3] 14; charge [4]; throw [5,0] 8 | 6-10 |
+| enemy_sower (Sembrador) | 44x44 | 0 idle, 1 idle2, 2-5 walk, 6 sow-down, 7 sow-up | idle [0,1] 4; walk [0,2,1,3,4,5] 7; sow [6,7,0] 8 | 8-12 |
+| enemy_blinker (Espectro) | 40x48 | 0 float, 1 float2, 2 fade (alpha .4 + anillo), 3 fade2 (alpha .15), 4 slash-wind, 5 slash-hit | idle [0,1] 5; fade [2,3] 10; slash [4,5,0] 12 | 6-10 |
+| enemy_scorcher (Ascua) | 56x32 | 0 idle, 1 idle2, 2-5 slither, 6 wind (enrollado), 7 dash (estirado), 8 rec (jadeo) | idle [0,1] 4; walk [0,2,1,3,4,5] 9; charge [6,7] 10; rec [8] | 9-13 |
+| enemy_mini_bulwark (Coloso) | 64x64 | 0 idle, 1 idle2, 2-5 walk, 6 bash-wind, 7 bash, 8 stomp-wind, 9 stomp, 10 rec | idle [0,1] 3; walk [0,2,1,3,4,5] 6; bash [6,7] 8; stomp [8,9] 8; rec [10] | 11-15 |
+| enemy_mini_hive (Madre Colmena) | 64x64 | 0 idle, 1 idle2, 2-5 float, 6 spit, 7 acid, 8 swell, 9 burst | idle [0,1] 3; float [0,2,1,3,4,5] 7; spit [6]; acid [7]; swell [8,9] 8 | 10-14 |
+
+Nota: `idle` del Espectro/Polilla se usa tambien como "flotar". Los sprites del Espectro en `fade` ya llevan alpha y anillo dibujados; `fx_blink_ring` es el anillo en el SUELO del punto de reaparicion.
+
+Proyectiles / VFX (anim `loop` en los de varios frames, salvo indicado):
+| sprite | final | frames | notas |
+|---|---|---|---|
+| proj_thorn_small | 16x8 | 0-1 (`loop` 10fps) | espina del Espinoso, apunta a la derecha (rotar al angulo) |
+| proj_frost_orb | 24x24 | 0-1 (`loop` 8fps) | orbe de hielo centrado |
+| fx_spore_zone | 96x96 | 0 arm (punteado), 1-2 active (`active` [1,2] 4fps) | centrado, disco que ocupa todo el lienzo (r=48 final); escalar a r deseado (r 30..55 de juego => escala r/48 sobre el canvas) |
+| fx_fire_cell | 44x44 | 0-2 (`loop` 10fps) | celda de 22 px de juego; centrada |
+| fx_blink_ring | 48x48 | 0-1 (`loop` 8fps) | anillo violeta en el suelo, centrado |
+| fx_shield_spark | 24x24 | 0 | chispa blanca centrada (usar con `fx.part`) |
+| fx_freeze_ring | 40x16 | 0-1 (`loop` 6fps) | aro de hielo bajo los pies del jugador, centrado |
+
+Helpers de dibujo (para extender): `Assets._h` expone `addV, V, Pclosed, Ppoly, Pblob, Prr, Pcirc, dyingFrames, DIE_ANIM, PH, OLC, rrand, puff, mkCanvas`.
+
+# Swarm Hand v2 - protagonista
+`player` (24x24 -> 48x48): ahora Marlo, el Tahur (mapache gris azulado, chaleco teal, visera jade, abanico de cartas en vez de espada). Indices de frame y anims IDENTICOS a v1 (idle, walk, attack, attack_hit, roll, hurt, die; frames 0-23).

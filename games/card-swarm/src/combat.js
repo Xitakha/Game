@@ -37,7 +37,7 @@
   // ------------------------------------------------------------- Estados
   C.slow = function (e, pct, ms) {
     var m = M(); pct = Math.min(0.8, pct + m.slowAdd); ms += m.slowDur;
-    if (e.type === 'boss') pct *= 0.5;
+    if (e.type === 'boss' || e.big) pct *= 0.5;
     e.slowPct = Math.max(e.slowT > 0 ? e.slowPct : 0, pct); e.slowT = Math.max(e.slowT, ms);
   };
   C.burn = function (e, dps, ms) { e.burnDps = Math.max(e.burnT > 0 ? e.burnDps : 0, dps); e.burnT = Math.max(e.burnT, ms || 2000); };
@@ -48,7 +48,7 @@
     e.poisonT = Math.max(e.poisonT, dur);
   };
   C.bleed = function (e) { e.bleedT = Math.max(e.bleedT, 3000); };
-  C.stun = function (e, ms) { if (e.type === 'boss') return; e.stunT = Math.max(e.stunT, ms); };
+  C.stun = function (e, ms) { if (e.type === 'boss' || e.big) return; e.stunT = Math.max(e.stunT, ms); };
 
   // ------------------------------------------------------------- Números y partículas
   C.num = function (e, amt, tag, crit) {
@@ -77,7 +77,7 @@
   // o: { tag, id, ang, kb, burn:dps, slow:[pct,ms], poison, bleed, stun, proj, lifesteal, noChain, zone, depth }
   C.deal = function (e, base, o) {
     o = o || {};
-    if (e.dead || e.spawnT > 0) return 0;
+    if (e.dead || e.spawnT > 0 || e.immune) return 0;   // el Espectro es inmune mientras se desvanece
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     if (tag === 'fire') dmg *= m.fireDmg;
@@ -102,7 +102,19 @@
       }
     }
     if (e.type === 'boar' && e.st === 'stun') dmg *= 1.5;
+    // escudo frontal: solo cuenta si el golpe trae posición de origen (o.sx/o.sy); auras, orbitales y pulsos cuentan como por la espalda
+    var blocked = false;
+    if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
+      if (e.shieldDown) { if (e.type === 'mini_bulwark') dmg *= 1.5; }
+      else { dmg *= 0.2; blocked = true; }
+    }
     dmg = Math.max(1, Math.round(dmg));
+    if (blocked) {
+      var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
+      if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
+      else fx.burst(bx, by, 4, '#ffffff', 140, 220, 3, { add: true });
+      if (!e.sparkSfx || G.time - e.sparkSfx > 120) { e.sparkSfx = G.time; G.sfx('hit', { pitch: 2.2, vol: 0.4 }); }
+    }
     // estados (antes del daño para que el veneno cuente si muere en este golpe)
     if (o.burn || (a.forge && tag === 'steel' && o.proj)) C.burn(e, o.burn || 5, 2000);
     if (o.slow) C.slow(e, o.slow[0], o.slow[1]);
@@ -112,10 +124,11 @@
     e.hp -= dmg; e.flash = 70; e.lastTag = tag; e.boomDepth = o.depth || 0;
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
-    var armor = e.type === 'boss' || (e.type === 'boar' && e.st === 'charge');
+    var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && e.st === 'charge');   // e.big = super armor de los élites
     if (o.kb && !armor) { var k = 12; e.kx = Math.cos(o.ang || 0) * o.kb * k; e.ky = Math.sin(o.ang || 0) * o.kb * k; }
     if (e.type === 'archer' && e.st === 'aim' && o.kb) { e.st = 'move'; e.shootT = 1200; }
-    if (e.type === 'boss' && !o.zone) fx.hitspark(e.x + G.rnd(-14, 14), e.y + G.rnd(-14, 14), 1.4);
+    if (e.type === 'fanner' && e.st === 'aim' && o.kb && !blocked) { e.st = 'move'; e.shootT = 1200; }   // un empujón interrumpe la ráfaga
+    if ((e.type === 'boss' || e.big) && !o.zone) fx.hitspark(e.x + G.rnd(-14, 14), e.y + G.rnd(-14, 14), 1.4);
     if (o.proj && a.edge_elec && tag === 'steel' && !o.noChain) {
       var nx = C.nearest(e.x, e.y, 100, [e]);
       if (nx) C.chain(e.x, e.y, nx, 2, 8, 1, 100, 'lightning', { noChain: true, exclude: [e] });
@@ -208,7 +221,8 @@
 
   function updateZones(dt) {
     for (var i = G.zones.length - 1; i >= 0; i--) {
-      var z = G.zones[i]; z.life -= dt; z.tk -= dt;
+      var z = G.zones[i]; if (z.team === 'e') continue;   // zonas enemigas: las gestiona enemies.js
+      z.life -= dt; z.tk -= dt;
       if (z.kind === 'pool' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-z.r, z.r) * 0.7, z.y + G.rnd(-z.r, z.r) * 0.5, 0, -30, 600, '#9aff6a', 3, { drag: 1 });
       if (z.tk <= 0) {
         z.tk = z.interval || 300;
@@ -222,6 +236,7 @@
   C.drawZones = function (c) {
     for (var i = 0; i < G.zones.length; i++) {
       var z = G.zones[i], u = Math.min(1, z.life / 400), t = G.time / 1000;
+      if (z.team === 'e') continue;
       c.save(); c.globalAlpha = (z.kind === 'vapor' ? 0.35 : 0.3) * u;
       var g = c.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r);
       var k = z.kind === 'vapor' ? '232,246,255' : '110,220,70';
@@ -249,9 +264,10 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
-    var drops = e.type === 'boss' ? 6 : 1;
+    var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
     for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
-    if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (Math.random() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
+    if (elite) { for (var q = 0; q < 4; q++) C.dropGem(e.x, e.y, 'ash', d.ash / 4); C.dropGem(e.x, e.y, 'heart', B.player.heal * 2); }
+    else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (Math.random() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
     else for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
     if (Math.random() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
     if (a.frenzy) p.frenzyT = 1500;

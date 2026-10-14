@@ -1,9 +1,10 @@
-/* waves.js - Director de spawn continuo por presupuesto (sin oleadas) + aparición del jefe a los 5:00. */
+/* waves.js - Director de spawn continuo por presupuesto (sin oleadas): tiers por tiempo, topes por tipo (maxAlive), enemigo protagonista
+   rotativo cada 60 s, packs temáticos, élites a 3:30 y 5:30 y el jefe a los 7:30 (con el jefe vivo: 40 % de spawn y solo tipos ligeros). */
 (function () {
   'use strict';
   var G = window.G, B = G.B, W = G.Waves = {};
 
-  W.reset = function () { W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; };
+  W.reset = function () { W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
   W.reset();
 
   // Posición en anillo fuera de cámara (cae dentro de la arena)
@@ -18,9 +19,11 @@
     }
     return [x, y];
   }
+  function mirror(pos) { var p = G.player; return [G.clamp(2 * p.x - pos[0], G.WALL + 30, G.AW - G.WALL - 30), G.clamp(2 * p.y - pos[1], G.WALL + 30, G.AH - G.WALL - 30)]; }
 
   function spawnBoss() {
     W.bossSpawned = true;
+    for (var i = 0; i < G.enemies.length; i++) if (B.enemy[G.enemies[i].type].elite) G.Enemies.kill(G.enemies[i], true);   // los élites desaparecen
     var p = G.player, x = G.AW / 2, y = G.WALL + 120;
     if (G.dist(x, y, p.x, p.y) < 260) y = G.AH - G.WALL - 120;
     G.Enemies.spawn('boss', x, y);
@@ -29,28 +32,94 @@
     try { Assets.music.setTrack('boss'); Assets.music.setIntensity(1); } catch (e) { /* audio */ }
   }
 
+  function spawnElite(type) {
+    W.elitesDone[type] = true;
+    var pos = spawnPos(), E = G.Enemies;
+    E.spawn(type, pos[0], pos[1]);
+    if (type === 'mini_bulwark') { E.spawn('shield', pos[0] + 45, pos[1] + 20); E.spawn('shield', pos[0] - 45, pos[1] + 20); }
+    G.Hud.banner('¡ÉLITE: ' + B.enemy[type].name + '!', 2000, '#ffb347');
+    G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 });
+    W.eliteBoost = 25000;
+  }
+
+  // ---- Packs temáticos: [{ t: tipo, n: cantidad, at: función(pos) -> [x,y] }], coste = suma de costes x 0.6
+  var PACKS = {
+    line:  { parts: [['shield', 3], ['warlock', 1]] },
+    cross: { parts: [['fanner', 2]] },
+    pincer:{ parts: [['scorcher', 2], ['moth', 1]] },
+    field: { parts: [['sower', 2], ['worm', 4]] }
+  };
+  function packCost(pk) { var c = 0; pk.parts.forEach(function (q) { c += B.enemy[q[0]].cost * q[1]; }); return c * 0.6; }
+
+  function spawnPack(name, counts) {
+    var pos = spawnPos(), E = G.Enemies, p = G.player, j;
+    if (name === 'line') {   // 3 escuderos en línea y el brujo detrás
+      var ang = Math.atan2(p.y - pos[1], p.x - pos[0]), px = -Math.sin(ang), py = Math.cos(ang);
+      for (j = -1; j <= 1; j++) E.spawn('shield', pos[0] + px * 44 * j, pos[1] + py * 44 * j);
+      E.spawn('warlock', pos[0] - Math.cos(ang) * 60, pos[1] - Math.sin(ang) * 60);
+    } else if (name === 'cross') {
+      var m = mirror(pos); E.spawn('fanner', pos[0], pos[1]); E.spawn('fanner', m[0], m[1]);
+    } else if (name === 'pincer') {
+      var m2 = mirror(pos); E.spawn('scorcher', pos[0], pos[1]); E.spawn('scorcher', m2[0], m2[1]);
+      var pa = G.rnd(0, 6.283); E.spawn('moth', p.x + Math.cos(pa) * 520, p.y + Math.sin(pa) * 420);
+    } else {
+      E.spawn('sower', pos[0], pos[1]); E.spawn('sower', pos[0] + 60, pos[1] + 30);
+      for (j = 0; j < 4; j++) E.spawn('worm', pos[0] + G.rnd(-50, 50), pos[1] + G.rnd(-50, 50));
+    }
+  }
+
   W.update = function (dt) {
-    var m = G.time / 60000, boss = G.Enemies.boss();
+    var m = G.time / 60000, boss = G.Enemies.boss(), E = G.Enemies;
     if (!W.bossSpawned && G.time >= G.BOSS_T) spawnBoss();
-    try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.15 + 0.16 * m)); } catch (e) { /* audio */ }
+    if (W.eliteBoost > 0) W.eliteBoost -= dt;
+    try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
+    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && G.time >= B.enemy[k].at) spawnElite(k); });
     W.t += dt;
     if (W.t < 1500) return;
     W.t -= 1500;
     var bp = B.bp(m) * (boss ? 0.4 : 1);
     W.budget = Math.min(W.budget + bp, bp * 2.5);
-    var cap = B.cap(m), alive = G.enemies.length;
+    var cap = B.cap(m), alive = G.enemies.length, counts = {};
+    G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];
-    Object.keys(B.enemy).forEach(function (k) { if (k !== 'boss' && B.enemy[k].from <= G.time) types.push(k); });
+    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && d.from <= G.time && (!boss || B.light[k])) types.push(k); });
+    // Rotación de sabor: cada 60 s un tipo protagonista (no gusano) pesa x2.2
+    W.starT -= 1500;
+    if (W.starT <= 0 || (W.star && types.indexOf(W.star) < 0)) {
+      W.starT = 60000;
+      var cand = types.filter(function (k) { return k !== 'worm'; });
+      W.star = cand.length ? cand[Math.floor(Math.random() * cand.length)] : null;
+    }
+    // Pack: 15 % por pulso desde 2:45, en vez de un spawn suelto
+    if (!boss && G.time >= 165000 && Math.random() < 0.15) {
+      var names = Object.keys(PACKS).filter(function (n) {
+        var pk = PACKS[n], total = 0, ok = packCost(pk) <= W.budget;
+        pk.parts.forEach(function (q) {
+          var d = B.enemy[q[0]]; total += q[1];
+          if (d.from > G.time || (d.maxAlive && (counts[q[0]] || 0) + q[1] > d.maxAlive)) ok = false;
+          if (q[0] === 'shield' && counts.mini_bulwark) ok = false;
+        });
+        return ok && alive + total <= cap;
+      });
+      if (names.length) {
+        var pick = names[Math.floor(Math.random() * names.length)];
+        spawnPack(pick, counts); W.budget -= packCost(PACKS[pick]);
+        return;
+      }
+    }
     var guard = 0;
     while (guard++ < 60 && alive < cap) {
-      var opts = types.filter(function (k) { return B.enemy[k].cost <= W.budget; });
+      var opts = types.filter(function (k) {
+        var d = B.enemy[k];
+        return d.cost <= W.budget && (!d.maxAlive || (counts[k] || 0) < d.maxAlive) && !(k === 'shield' && counts.mini_bulwark);
+      });
       if (!opts.length) break;
-      var tot = 0; opts.forEach(function (k) { tot += B.enemy[k].w; });
-      var r = Math.random() * tot, pick = opts[0];
-      for (var i = 0; i < opts.length; i++) { r -= B.enemy[opts[i]].w; if (r <= 0) { pick = opts[i]; break; } }
+      var tot = 0; opts.forEach(function (k) { tot += B.enemy[k].w * (k === W.star ? 2.2 : 1); });
+      var r = Math.random() * tot, pk2 = opts[0];
+      for (var i = 0; i < opts.length; i++) { r -= B.enemy[opts[i]].w * (opts[i] === W.star ? 2.2 : 1); if (r <= 0) { pk2 = opts[i]; break; } }
       var pos = spawnPos();
-      G.Enemies.spawn(pick, pos[0], pos[1]);
-      W.budget -= B.enemy[pick].cost; alive++;
+      E.spawn(pk2, pos[0], pos[1]);
+      W.budget -= B.enemy[pk2].cost; alive++; counts[pk2] = (counts[pk2] || 0) + 1;
     }
   };
 })();

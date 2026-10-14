@@ -49,7 +49,7 @@
       if (Math.hypot(q.x - e.x, q.y - e.y) < q.r + e.r) {
         q.hit.add(e);
         if (q.explode) { C().boom(q.x, q.y, q.explode, q.dmg, q.tag, { id: q.id, burn: 3, kb: 50 }); return true; }
-        var oo = { tag: q.tag, id: q.id, ang: q.ang, kb: 30, proj: true };
+        var oo = { tag: q.tag, id: q.id, ang: q.ang, kb: 30, proj: true, sx: q.x - Math.cos(q.ang) * 30, sy: q.y - Math.sin(q.ang) * 30 };   // sx/sy: origen del golpe (escudo frontal)
         for (var k in q.o) oo[k] = q.o[k];
         C().deal(e, q.dmg, oo);
         if (!q.pierce) return true;
@@ -149,7 +149,7 @@
       for (var i = 0; i < list.length; i++) {
         var e = list[i], ea = Math.atan2(e.y - p.y, e.x - p.x), dd = Math.hypot(e.x - p.x, e.y - p.y);
         if (dd > e.r + 8 && Math.abs(G.angDiff(ea, a)) > Math.PI / 4) continue;
-        C().deal(e, d.dmg * L.dmg, { tag: d.tag, id: d.id, ang: ea, kb: 35, lifesteal: 1 });
+        C().deal(e, d.dmg * L.dmg, { tag: d.tag, id: d.id, ang: ea, kb: 35, lifesteal: 1, sx: p.x, sy: p.y });
       }
       return true;
     },

@@ -284,92 +284,156 @@
   var DIE_ANIM = function (idx) { return { f: idx, fps: 9, loop: false }; };
   var PH = []; for (var pk = 0; pk < 6; pk++) PH.push(pk * Math.PI / 3);
 
-  // ------------------------------------------------------------------ JUGADOR (cordero con capa roja)
+  // ------------------------------------------------------------------ JUGADOR (Marlo, el Tahur: mapache con chaleco teal y baraja)
   var K = {
-    wool: '#f7f0dc', woolS: '#cfc2a8', woolH: '#ffffff', face: '#4f4d5c', faceS: '#363441', faceH: '#6e6c80',
-    leg: '#5e5c6c', legS: '#3e3c4b', cape: '#d6302b', capeS: '#8e1a28', capeH: '#ff6350', trim: '#fbf3df',
-    gold: '#f3b836', goldS: '#b87a22', steel: '#eef2fa', steelS: '#98a4c0'
+    fur: '#7f8fa6', furS: '#586579', furH: '#aab8cc', dark: '#2a2c3a', darkS: '#181a24',
+    cream: '#e8e4d4', creamS: '#b9b4a0', vest: '#1fa8a0', vestS: '#126a70', vestH: '#58d6c8',
+    jade: '#2ec27e', jadeB: '#1a6a46', jadeH: '#9bf0c8', amber: '#f3a31f', amberS: '#b46c10'
   };
-  function sword(v, hx, hy, tx, ty) {
-    var dx = tx - hx, dy = ty - hy, len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len;
-    v.line(hx - ux * 1.2, hy - uy * 1.2, tx, ty, 3.3, OLC);
-    v.line(hx + ux * 1.2, hy + uy * 1.2, tx - ux * 0.2, ty - uy * 0.2, 1.7, K.steel);
-    v.line(hx + ux * 2.4 + uy * 0.35, hy + uy * 2.4 - ux * 0.35, tx - ux * 0.8 + uy * 0.35, ty - uy * 0.8 - ux * 0.35, 0.45, K.steelS);
-    var gx = hx + ux * 1.4, gy = hy + uy * 1.4;
-    v.line(gx - uy * 2.2, gy + ux * 2.2, gx + uy * 2.2, gy - ux * 2.2, 2.8, OLC);
-    v.line(gx - uy * 2, gy + ux * 2, gx + uy * 2, gy - ux * 2, 1.2, K.gold);
-  }
-  function lamb(v, o) {
-    var x = v.ctx, by = o.by || 0, L = o.legs || [0, 0], fl = o.fl || 0, lf = o.lift || [0, 0], ea = o.ear || 0, i;
-    // patas
-    for (i = 0; i < 2; i++) v.part(Prr((i ? 14 : 8.8) + L[i], 19.3 - lf[i], 2.7, 3.7, 1.2), K.leg, { sh: K.legS, so: 0.6 });
-    // brazo trasero
-    v.part(Pblob(5.4, 16.6 + by, 1.7, 1.6, 4), K.leg, { sh: K.legS, so: 0.5 });
-    // capa
-    v.part(Pclosed([[8, 14.2 + by], [16.6, 14.2 + by], [19.4 + fl * 0.2, 19.4 + by], [19 + fl * 0.3, 21.4 + by], [14.5, 20.5 + by + fl * 0.2], [11.5, 21.6 + by], [8.5, 20.5 + by - fl * 0.2], [5, 21.4 + by], [4.6 - fl * 0.2, 19.4 + by]]), K.cape, { sh: K.capeS, hi: K.capeH, so: 1.1 });
-    x.strokeStyle = K.trim; x.lineWidth = 0.75; x.beginPath(); x.moveTo(5.4, 20.4 + by); x.quadraticCurveTo(8.5, 21.2 + by - fl * 0.2, 11.5, 20.7 + by); x.quadraticCurveTo(15, 21 + by + fl * 0.2, 18.8, 20.6 + by); x.stroke();
-    x.strokeStyle = K.trim; x.lineWidth = 0.7; x.beginPath(); x.moveTo(8.2, 14.8 + by); x.lineTo(10.4, 19.4 + by); x.moveTo(16.4, 14.8 + by); x.lineTo(14.4, 19.4 + by); x.stroke();
-    // cascabel con calavera
-    v.part(Pcirc(12.4, 16.3 + by, 1.65), K.gold, { sh: K.goldS, so: 0.4, lw: 0.9 });
-    v.dot(11.8, 16.1 + by, 0.3, OLC); v.dot(13, 16.1 + by, 0.3, OLC); v.line(12.4, 16.8 + by, 12.4, 17.2 + by, 0.35, OLC);
-    // orejas
-    v.part(Pclosed([[7.2, 8 + by], [3.2, 9.2 + by + ea], [2.8, 11.2 + by + ea], [7.4, 11.6 + by]]), K.leg, { sh: K.legS, hi: '#8a889b', so: 0.5, lw: 1.2 });
-    v.part(Pclosed([[17.6, 8 + by], [21.8, 9.2 + by + ea], [22.2, 11.2 + by + ea], [17.4, 11.6 + by]]), K.leg, { sh: K.legS, hi: '#8a889b', so: 0.5, lw: 1.2 });
-    // lana en nube
-    var tf = [[12, 9.2, 5.8], [7.6, 9, 3.2], [8.6, 5.6, 3.3], [12.2, 4.5, 3.4], [15.8, 5.5, 3.3], [17.2, 9, 3.2], [16.6, 12.6, 3], [7.8, 12.4, 2.9], [12.2, 13.4, 3.2]];
-    v.cluster(tf.map(function (t, k) { return Pcirc(t[0], t[1] + by + (k % 2 ? 0.1 : 0), t[2]); }), K.wool, { sh: K.woolS, hi: K.woolH, so: 0.8, lw: 1.5 });
-    // corona: ojo rojo
-    v.part(Ppoly([[9.6, 4.2], [9.8, 0.9], [11.6, 2.3], [12.4, 0.4], [13.2, 2.3], [15, 0.9], [15.2, 4.2]]), '#2c2234', { sh: '#1a1222', lw: 1.1, so: 0.5 });
-    v.part(Pblob(12.4, 3 + by * 0.3, 1.5, 0.95, 9), '#f33a30', { lw: 0.35, sh: '#a31824', so: 0.3 });
-    v.dot(12.6, 3 + by * 0.3, 0.38, '#2c0a10');
-    // cara
-    v.part(Pblob(12.4, 11.3 + by, 5.5, 4.2, 12, 0.025, 10), K.face, { sh: K.faceS, hi: K.faceH, so: 0.7, lw: 0.9 });
-    var eyeL = 9.9, eyeR = 14.9, ey = 10.7 + by;
-    if (o.hurt) {
-      [eyeL, eyeR].forEach(function (ex) { v.line(ex - 1.2, ey - 1.2, ex + 1.2, ey + 1.2, 0.8, '#fffdf2'); v.line(ex + 1.2, ey - 1.2, ex - 1.2, ey + 1.2, 0.8, '#fffdf2'); });
-    } else if (o.blink) {
-      [eyeL, eyeR].forEach(function (ex) { v.line(ex - 1.5, ey, ex + 1.5, ey, 0.8, '#fffdf2'); });
+  var SUITS = ['#e8433a', '#3a7be8', '#f2c133', '#3ac86a'];
+  // naipe centrado en (cx,cy), rotado rot (rad), w x h, con marca de color
+  function pcard(v, cx, cy, rot, w, h, mark) {
+    var x = v.ctx;
+    x.save(); x.translate(cx, cy); x.rotate(rot);
+    if (mark === 'back') { // reverso teal con rombo ambar
+      v.part(Prr(-w / 2, -h / 2, w, h, 0.5), K.vest, { lw: 0.75, sh: K.vestS, hi: K.vestH, so: 0.35 });
+      v.part(Ppoly([[0, -h * 0.26], [w * 0.24, 0], [0, h * 0.26], [-w * 0.24, 0]]), K.amber, { lw: 0, sh: null });
     } else {
-      var wc = o.fury ? '#ffd9a0' : '#fffdf2';
-      v.eye(eyeL, ey, 2.15, { white: wc, lx: 0.5, pr: 0.5, lw: 0.4, sh: false }); v.eye(eyeR, ey, 2.15, { white: wc, lx: 0.5, pr: 0.5, lw: 0.4, sh: false });
-      if (o.fury) { v.line(eyeL - 2, ey - 2.4, eyeL + 1.8, ey - 1.5, 0.9, OLC); v.line(eyeR + 2, ey - 2.4, eyeR - 1.8, ey - 1.5, 0.9, OLC); }
+      v.part(Prr(-w / 2, -h / 2, w, h, 0.5), K.cream, { lw: 0.75, sh: K.creamS, so: 0.35 });
+      v.dot(0, -h * 0.12, w * 0.2, mark || K.amber);
+      v.dot(-w * 0.28, -h * 0.34, 0.28, mark || K.amber);
     }
-    // boca
-    v.part(Pblob(12.7, 13.4 + by, 0.9, o.hurt || o.fury ? 1.0 : 0.65, 5), '#1a0c14', { lw: 0.3 });
-    if (o.hurt || o.fury) v.dot(12.7, 13.8 + by, 0.45, '#ff6a8a');
-    // espada + pezuña
-    if (o.sword) { var s = o.sword; sword(v, s[0], s[1], s[2], s[3]); v.part(Pblob(s[0], s[1], 1.7, 1.6, 7), K.leg, { sh: K.legS, so: 0.5, lw: 1 }); }
+    x.restore();
+  }
+  // carta en la mano delantera: hx,hy = mano; tx,ty = hacia donde apunta (misma ancla que la antigua espada)
+  function cardHand(v, hx, hy, tx, ty, fly) {
+    var dx = tx - hx, dy = ty - hy, len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len, rot = Math.atan2(dy, dx) + Math.PI / 2;
+    if (fly) { // lanzamiento: lineas de movimiento detras
+      v.line(hx - ux * 3 - uy * 2.6, hy - uy * 3 + ux * 2.6, hx - ux * 6.4 - uy * 2.6, hy - uy * 6.4 + ux * 2.6, 0.6, 'rgba(255,255,255,0.85)');
+      v.line(hx - ux * 2.4 + uy * 2.6, hy - uy * 2.4 - ux * 2.6, hx - ux * 5.8 + uy * 2.6, hy - uy * 5.8 - ux * 2.6, 0.6, 'rgba(255,255,255,0.85)');
+    }
+    pcard(v, hx + ux * 3.1, hy + uy * 3.1, rot, 3.1, 4.8, K.amber);
+    // puno + manguito
+    v.part(Pblob(hx - ux * 0.6, hy - uy * 0.6, 1.4, 1.35, 7), K.dark, { sh: K.darkS, so: 0.4, lw: 0.9 });
+  }
+  function racoon(v, o) {
+    var x = v.ctx, by = o.by || 0, L = o.legs || [0, 0], fl = o.fl || 0, lf = o.lift || [0, 0], ea = o.ear || 0, i;
+    // 1. cola alta y rayada (detras)
+    var tl = fl * 0.6, tw = o.hurt ? 4.4 : 3.5;
+    var tp = o.hurt ? [[7.6, 17.8 + by], [4.6, 15.2 + by], [3.6, 10.4 + by], [3.4, 5.6 + by], [4.2, 2.4 + by]]
+      : [[7.6, 17.8 + by], [4.8, 16.2 + by], [3.8, 12 + by], [4 + tl * 0.5, 7.6 + by], [5 + tl, 4.4 + by]];
+    v.stick(tp, tw, K.fur, { lw: 1.5, hi: K.furH });
+    var segs = [], tot = 0, s;
+    for (i = 0; i < tp.length - 1; i++) { var d = Math.hypot(tp[i + 1][0] - tp[i][0], tp[i + 1][1] - tp[i][1]); segs.push(d); tot += d; }
+    [0.2, 0.4, 0.6, 0.8].forEach(function (f) {
+      var dist = f * tot, k = 0; while (k < segs.length - 1 && dist > segs[k]) { dist -= segs[k]; k++; }
+      var t = dist / segs[k], px = tp[k][0] + (tp[k + 1][0] - tp[k][0]) * t, py = tp[k][1] + (tp[k + 1][1] - tp[k][1]) * t;
+      var ux = (tp[k + 1][0] - tp[k][0]) / segs[k], uy = (tp[k + 1][1] - tp[k][1]) / segs[k], hw = tw / 2 - 0.55;
+      v.line(px - uy * hw, py + ux * hw, px + uy * hw, py - ux * hw, o.hurt ? 1.5 : 1.15, K.dark);
+    });
+    var te = tp[tp.length - 1]; v.dot(te[0], te[1], tw / 2 - 0.15, K.cream);
+    v.part(Pblob(te[0] + 0.2, te[1] - tw / 2 - 0.1, 1.15, 1.15, 5, 0.05, 6), '#ff8a2a', { lw: 0.6, sh: '#c8501c', so: 0.2 }); // ficha de ceniza
+    // 2. patas
+    for (i = 0; i < 2; i++) v.part(Prr((i ? 14 : 8.8) + L[i], 19.3 - lf[i], 2.7, 3.7, 1.2), K.dark, { sh: K.darkS, so: 0.6, lw: 1.2 });
+    // 3. abanico de cartas a la cintura + brazo trasero
+    var pv = [6.9, 17.6 + by];
+    var ang = o.hurt ? [128, 156, 184] : [122, 146, 170, 194];
+    for (i = ang.length - 1; i >= 0; i--) {
+      var a = ang[i] * Math.PI / 180;
+      pcard(v, pv[0] + Math.cos(a) * 2.9, pv[1] + Math.sin(a) * 2.9, a + Math.PI / 2, 2.6, 4.2, 'back');
+    }
+    v.part(Pblob(6.8, 16.6 + by, 1.7, 1.6, 4), K.dark, { sh: K.darkS, so: 0.5, lw: 1 });
+    // 4. cuerpo + chaleco
+    v.part(Pblob(12, 15.5 + by, 5.2, 5.4, 3, 0.03, 10), K.fur, { sh: K.furS, hi: K.furH, so: 0.9, lw: 1.5 });
+    v.part(Pclosed([[8.3, 12.6 + by], [10.8, 12.1 + by], [12.5, 13.8 + by], [14.2, 12.1 + by], [16.6, 12.6 + by], [16.6, 18 + by], [12.5, 20.4 + by], [8.4, 18 + by]]), K.vest, { sh: K.vestS, hi: K.vestH, so: 0.8, lw: 1 });
+    v.flat(Ppoly([[10.5, 12.4 + by], [14.6, 12.4 + by], [12.5, 15.6 + by]]), K.cream, { sh: K.creamS, so: 0.3 });
+    v.line(10.5, 12.4 + by, 12.5, 15.6 + by, 0.5, OLC); v.line(14.6, 12.4 + by, 12.5, 15.6 + by, 0.5, OLC);
+    v.part(Pcirc(12.5, 17.4 + by, 0.95), K.amber, { lw: 0.5, sh: K.amberS, so: 0.3 });
+    // brazo delantero (antes de la cabeza)
+    var c = o.card, hx = c ? c[0] : 20, hy = c ? c[1] : 16;
+    v.stick([[15.4, 14.8 + by], [(15.4 + hx) / 2 + 0.2, (14.8 + by + hy) / 2 + 0.8], [hx, hy]], 2.2, K.dark, { lw: 0.9, curve: true });
+    // 5. orejas
+    [8.4, 15.8].forEach(function (ex, k) {
+      v.part(Pcirc(ex, 5.2 + by + ea, 1.95), K.fur, { sh: K.furS, so: 0.4, lw: 1.1 });
+      v.part(Pcirc(ex + (k ? -0.15 : 0.15), 5.5 + by + ea, 0.95), K.dark, { lw: 0 });
+    });
+    // 6. cabeza + antifaz + hocico
+    v.part(Pblob(12.6, 9.2 + by, 5.6, 4.4, 12, 0.025, 10), K.fur, { sh: K.furS, hi: K.furH, so: 0.8, lw: 1.5 });
+    v.part(Pclosed([[8.6, 9.1 + by], [9.8, 7.3 + by], [12, 8.2 + by], [14.2, 7 + by], [17.2, 8 + by], [17.6, 10.6 + by], [14.6, 11.6 + by], [11.4, 11.8 + by], [8.8, 10.8 + by]]), K.dark, { sh: K.darkS, so: 0.4, lw: 0.7 });
+    v.part(Pblob(16.8, 11.5 + by, 2.7, 1.9, 6), K.cream, { sh: K.creamS, so: 0.4, lw: 0.9 });
+    v.dot(19.2, 10.9 + by, 0.85, K.dark);
+    v.line(18.4, 12.2 + by, 21.6, 11.6 + by, 0.35, 'rgba(255,255,255,0.8)'); v.line(18.4, 12.6 + by, 21.4, 13.2 + by, 0.35, 'rgba(255,255,255,0.8)');
+    // 7. ojos
+    var ey = 9.5 + by, e1 = 11.4, e2 = 15.1;
+    if (o.hurt) {
+      [e1, e2].forEach(function (ex) { v.line(ex - 1.2, ey - 1.2, ex + 1.2, ey + 1.2, 0.85, K.amber); v.line(ex + 1.2, ey - 1.2, ex - 1.2, ey + 1.2, 0.85, K.amber); });
+    } else if (o.blink) {
+      [e1, e2].forEach(function (ex) { v.line(ex - 1.5, ey, ex + 1.5, ey, 0.85, K.amber); });
+    } else {
+      var wc = o.fury ? '#ffd23a' : K.amber;
+      v.eye(e1, ey, 1.75, { white: wc, pc: K.dark, lx: 0.5, pr: 0.5, lw: 0.35, sh: false }); v.eye(e2, ey, 1.75, { white: wc, pc: K.dark, lx: 0.5, pr: 0.5, lw: 0.35, sh: false });
+      if (o.fury) { v.line(e1 - 2, ey - 2.5, e1 + 1.8, ey - 1.5, 0.9, OLC); v.line(e2 + 2, ey - 2.5, e2 - 1.8, ey - 1.5, 0.9, OLC); }
+    }
+    // 8. visera de crupier (verde jade translucida)
+    x.save();
+    if (o.hurt) { x.translate(12.6, 6.4 + by); x.rotate(0.26); x.translate(-12.6, -6.4 - by); }
+    x.globalAlpha = 0.92;
+    v.part(Prr(7.4, 5.1 + by, 10.4, 2.2, 0.9), K.jade, { sh: K.jadeB, hi: K.jadeH, so: 0.5, lw: 0.9 });
+    v.part(Ppoly([[16, 5.5 + by], [20.6, 6.6 + by], [16.2, 7.5 + by]]), K.jade, { sh: K.jadeB, hi: K.jadeH, so: 0.3, lw: 0.8 });
+    x.restore();
+    // 9. boca
+    if (o.hurt) { v.part(Pblob(17, 12.9 + by, 1.2, 1.1, 8), '#ff6a8a', { lw: 0.5, sh: '#c8344c', so: 0.2 }); }
+    else if (o.fury) { x.strokeStyle = OLC; x.lineWidth = 0.7; x.beginPath(); x.moveTo(15.2, 12.3 + by); x.quadraticCurveTo(17.2, 14.2 + by, 19, 12.1 + by); x.stroke(); v.dot(17.2, 13.2 + by, 0.4, '#fff'); }
+    else { x.strokeStyle = OLC; x.lineWidth = 0.6; x.beginPath(); x.moveTo(15.8, 12.4 + by); x.quadraticCurveTo(17.2, 13.4 + by, 18.6, 12.1 + by); x.stroke(); }
+    // 10. carta en mano delantera
+    if (c) cardHand(v, c[0], c[1], c[2], c[3], o.fly);
+    if (o.flying) pcard(v, 19.6, 3.8, 0.5, 3.6, 5.2, '#e8433a');
   }
   function ball(k) {
     return function (v) {
-      var cx = 12, cy = 12.5, a = k * Math.PI / 2;
+      var x = v.ctx, cx = 12, cy = 12.5, a = k * Math.PI / 2;
       function at(an, rr) { return [cx + Math.cos(an) * rr, cy + Math.sin(an) * rr]; }
-      v.cluster([Pcirc(cx, cy, 7.4), Pcirc(cx - 2.5, cy - 4, 4.4), Pcirc(cx + 3.5, cy - 3.6, 4.2), Pcirc(cx - 4, cy + 3, 4), Pcirc(cx + 4, cy + 3.5, 4)], K.wool, { sh: K.woolS, hi: K.woolH, lw: 1.6 });
-      var p = at(a, 5); v.part(Pblob(p[0], p[1], 2.9, 2.2, 3, 0.05, 8, a), K.cape, { sh: K.capeS, hi: K.capeH, lw: 0.8, so: 0.6 });
-      p = at(a + 2.2, 5); v.part(Pblob(p[0], p[1], 2.6, 2.2, 4, 0.04, 8, a + 2.2), K.face, { sh: K.faceS, lw: 0.8, so: 0.5 }); v.dot(p[0], p[1], 0.8, '#fffdf2');
-      p = at(a + 4.2, 5.4); v.circ(p[0], p[1], 1.4, K.gold, { sh: K.goldS, lw: 0.8, so: 0.4 });
-      p = at(a + 5.4, 5.6); v.part(Pcirc(p[0], p[1], 1.3), K.leg, { sh: K.legS, lw: 0.8, so: 0.4 });
+      // cola envolvente como anillo exterior rayado
+      x.save(); x.lineCap = 'butt';
+      x.strokeStyle = OLC; x.lineWidth = 5.2; x.beginPath(); x.arc(cx, cy, 7.4, 0, 6.2832); x.stroke();
+      x.strokeStyle = K.fur; x.lineWidth = 3.6; x.stroke();
+      x.strokeStyle = K.dark; x.lineWidth = 3.6; x.setLineDash([1.4, 2.5]); x.lineDashOffset = -k * 2; x.stroke(); x.setLineDash([]);
+      x.restore();
+      var tp = at(a + 3.6, 7.4); v.dot(tp[0], tp[1], 1.9, K.cream);
+      v.part(Pcirc(cx, cy, 5.5), K.fur, { sh: K.furS, hi: K.furH, so: 0.8, lw: 1.4 });
+      var p = at(a + 1.9, 4.2); // vientre con chaleco
+      v.part(Pblob(p[0], p[1], 2.7, 2.2, 3, 0.05, 8, a + 1.9), K.vest, { sh: K.vestS, hi: K.vestH, lw: 0.8, so: 0.5 });
+      p = at(a + 4.4, 4.6); pcard(v, p[0], p[1], a + 4.4 + 1.57, 3, 4.4, SUITS[k % 4]);
+      p = at(a - 0.9, 5.6); v.part(Pcirc(p[0], p[1], 1.5), K.fur, { sh: K.furS, lw: 0.9, so: 0.3 }); v.dot(p[0], p[1], 0.6, K.dark);
+      // cabeza con antifaz mirando hacia fuera
+      p = at(a, 4.6);
+      x.save(); x.translate(p[0], p[1]); x.rotate(a);
+      v.part(Pblob(0, 0, 3.3, 3.1, 9, 0.03, 8), K.fur, { sh: K.furS, hi: K.furH, so: 0.5, lw: 1 });
+      v.part(Prr(0.1, -2.7, 2.6, 5.4, 1), K.dark, { sh: K.darkS, lw: 0.5, so: 0.3 });
+      v.part(Pblob(2.7, 0, 1.5, 1.2, 10), K.cream, { sh: K.creamS, lw: 0.6, so: 0.3 });
+      v.dot(3.9, 0, 0.5, K.dark); v.dot(1.5, -1.3, 0.55, K.amber); v.dot(1.5, 1.3, 0.55, K.amber);
+      x.restore();
     };
   }
   function walkPose(k) {
     var p = PH[k], c = Math.round(1.3 * Math.cos(p)), s = Math.sin(p), by = Math.abs(s) > 0.8 ? -1 : 0;
     return { by: by, legs: [-c, c], lift: [s > 0.5 ? 1 : 0, s < -0.5 ? 1 : 0], fl: [0, 1, 1, 0, -1, -1][k], ear: by ? 0 : 1 };
   }
-  function plWalk(k) { var o = walkPose(k); o.sword = [20, 16 + o.by, 23, 8 + o.by]; return function (g) { lamb(g, o); }; }
-  var plDraw = { hurt: function (g) { lamb(g, { by: 1, hurt: true, sword: [16, 16, 18, 10], fl: -1 }); } };
+  function plWalk(k) { var o = walkPose(k); o.card = [20, 16 + o.by, 23, 8 + o.by]; return function (g) { racoon(g, o); }; }
+  var plDraw = { hurt: function (g) { racoon(g, { by: 1, hurt: true, card: [18, 16.5, 21, 21], fl: -1, flying: true }); } };
   var pl = [];
-  pl.push(function (g) { lamb(g, { by: 0, sword: [20, 16, 23, 8] }); });
-  pl.push(function (g) { lamb(g, { by: 1, sword: [20, 17, 23, 9], legs: [0, 0], ear: 1 }); });
+  pl.push(function (g) { racoon(g, { by: 0, card: [20, 16, 23, 8] }); });
+  pl.push(function (g) { racoon(g, { by: 1, card: [20, 17, 23, 9], legs: [0, 0], ear: 1, fl: 1 }); });
   pl.push(plWalk(0)); pl.push(plWalk(1)); pl.push(plWalk(3)); pl.push(plWalk(4));
-  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [14, 11, 10, 1], fl: -1 }); });
-  pl.push(function (g) { lamb(g, { by: 0, legs: [-1, 2], sword: [17, 13, 23, 13], fl: 2, fury: true }); });
-  pl.push(function (g) { lamb(g, { by: 1, legs: [-1, 1], sword: [17, 15, 22, 20], fl: 1 }); });
+  pl.push(function (g) { racoon(g, { by: 0, legs: [0, 1], card: [20.5, 13.5, 22, 3], fl: -1 }); });                       // 6 carta arriba
+  pl.push(function (g) { racoon(g, { by: 0, legs: [-1, 2], card: [17.5, 14.8, 23.5, 14.8], fl: 2, fury: true, fly: true }); }); // 7 lanzamiento
+  pl.push(function (g) { racoon(g, { by: 1, legs: [-1, 1], card: [19, 17, 22, 22], fl: 1 }); });                           // 8 recogida
   for (var ri = 0; ri < 4; ri++) pl.push(ball(ri));
   pl.push(plDraw.hurt);
   pl.push(plWalk(2)); pl.push(plWalk(5));
-  pl.push(function (g) { lamb(g, { by: 1, legs: [1, -1], sword: [13, 12, 7, 3], fl: -2, ear: 1 }); });
-  pl.push(function (g) { lamb(g, { by: 0, legs: [0, 1], sword: [19, 17, 21, 23], fl: 0 }); });
-  pl.push(function (g) { lamb(g, { by: 0, blink: true, sword: [20, 16, 23, 8] }); });
+  pl.push(function (g) { racoon(g, { by: 1, legs: [1, -1], card: [14.5, 16.5, 9.5, 11.5], fl: -2, ear: 1 }); });             // 16 anticipacion
+  pl.push(function (g) { racoon(g, { by: 0, legs: [0, 1], card: [19, 17, 21, 22], fl: 2 }); });                              // 17 seguimiento (cola arriba)
+  pl.push(function (g) { racoon(g, { by: 0, blink: true, card: [20, 16, 23, 8] }); });
   var plDie0 = pl.length;
   dyingFrames(plDraw.hurt, 24, 24, null, { rot: [-0.1, -0.55, -1.25, -1.5, -1.55], sx: [1, 1, 1, 1, 1], sy: [1, 0.96, 0.92, 0.9, 0.85], dx: [0, 2, 7, 11, 11], dy: [0, 0, 0, 0, 0], dis: [0, 0, 0, 0.3, 0.75], ash: false }).forEach(function (f) { pl.push(f); });
   addV('player', 24, 24, pl, null, {
@@ -1831,5 +1895,7 @@
   }
   evs.forEach(function (e) { window.addEventListener(e, onGesture, true); });
 
+  // Kit de dibujo para extensiones (src/assets_enemies2.js)
+  Assets._h = { addV: addV, V: V, Pclosed: Pclosed, Ppoly: Ppoly, Pblob: Pblob, Prr: Prr, Pcirc: Pcirc, dyingFrames: dyingFrames, DIE_ANIM: DIE_ANIM, PH: PH, OLC: OLC, rrand: rrand, puff: puff, mkCanvas: mkCanvas };
   window.Assets = Assets;
 })();

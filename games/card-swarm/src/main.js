@@ -7,8 +7,8 @@
   G.AW = 1440; G.AH = 810;       // arena (la cámara sigue al jugador)
   G.WALL = 28;                   // margen de pared
   G.STEP = 1000 / 60;            // paso fijo en ms
-  G.RUN_LEN = 6 * 60000;         // duración prevista de la run (MVP: 6 min)
-  G.BOSS_T = 5 * 60000;          // el Pastor aparece a los 5:00
+  G.RUN_LEN = 9 * 60000;         // duración prevista de la run (9:00)
+  G.BOSS_T = 7.5 * 60000;        // el Pastor aparece a los 7:30 (margen de 1:30 para matarlo)
 
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
   G.speed = qnum('speed', 1); G.god = qnum('god', 0) > 0; G.t0 = qnum('t', 0) * 1000;
@@ -16,13 +16,24 @@
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
     player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
+    // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
-      worm:   { hp: 14, spd: 70,  dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',   xp: 1, ash: 1 },
-      archer: { hp: 10, spd: 60,  dmg: 8,  r: 11, cost: 3, from: 90000,  w: 20, spr: 'archer', xp: 2, ash: 1 },
-      boar:   { hp: 45, spd: 55,  dmg: 14, r: 15, cost: 5, from: 180000, w: 10, spr: 'boar',   xp: 4, ash: 3 },
-      bomb:   { hp: 8,  spd: 105, dmg: 20, r: 10, cost: 2, from: 270000, w: 10, spr: 'bomb',   xp: 2, ash: 1 },
-      boss:   { hp: 900, spd: 60, dmg: 20, r: 24, cost: 0, from: 0,      w: 0,  spr: 'boss',   xp: 60, ash: 30 }
+      worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1 },
+      archer:  { hp: 10,  spd: 60, dmg: 8,  r: 11, cost: 3, from: 45000,  w: 20, spr: 'archer',  xp: 2, ash: 1, maxAlive: 10 },
+      fanner:  { hp: 16,  spd: 55, dmg: 6,  r: 11, cost: 4, from: 90000,  w: 14, spr: 'enemy_fanner',  xp: 3, ash: 1, maxAlive: 8 },
+      boar:    { hp: 45,  spd: 55, dmg: 14, r: 15, cost: 5, from: 120000, w: 10, spr: 'boar',    xp: 4, ash: 3, maxAlive: 8 },
+      shield:  { hp: 40,  spd: 48, dmg: 10, r: 13, cost: 5, from: 165000, w: 9,  spr: 'enemy_shield',  xp: 5, ash: 3, maxAlive: 6 },
+      bomb:    { hp: 8,   spd: 105, dmg: 20, r: 10, cost: 2, from: 210000, w: 10, spr: 'bomb',    xp: 2, ash: 1, maxAlive: 8 },
+      moth:    { hp: 14,  spd: 80, dmg: 5,  r: 10, cost: 4, from: 240000, w: 10, spr: 'enemy_moth',    xp: 3, ash: 1, maxAlive: 5 },
+      sower:   { hp: 22,  spd: 45, dmg: 8,  r: 12, cost: 5, from: 270000, w: 7,  spr: 'enemy_sower',   xp: 5, ash: 3, maxAlive: 3 },
+      blinker: { hp: 18,  spd: 65, dmg: 16, r: 11, cost: 6, from: 315000, w: 7,  spr: 'enemy_blinker', xp: 6, ash: 3, maxAlive: 4 },
+      scorcher:{ hp: 30,  spd: 60, dmg: 12, r: 12, cost: 6, from: 360000, w: 6,  spr: 'enemy_scorcher',xp: 6, ash: 3, maxAlive: 3 },
+      warlock: { hp: 30,  spd: 50, dmg: 0,  r: 13, cost: 8, from: 405000, w: 5,  spr: 'warlock', xp: 6, ash: 5, maxAlive: 2 },
+      mini_bulwark: { hp: 420, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
+      mini_hive:    { hp: 520, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
+      boss:    { hp: 1400, spd: 60, dmg: 20, r: 24, cost: 0, from: Infinity, w: 0, spr: 'boss',   xp: 60, ash: 30 }
     },
+    light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
     spawnTelegraph: 400,
     bp: function (m) { return 2 + 1.6 * m; },                       // presupuesto por pulso de 1,5 s
     cap: function (m) { return Math.min(30 + 10 * m, 110); },       // tope de enemigos
@@ -36,6 +47,8 @@
   G.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   G.dist = function (ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); };
   G.angDiff = function (a, b) { var d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
+  G.hasSpr = function (n) { try { return !!Assets.info(n); } catch (e) { return false; } };   // los sprites nuevos pueden no existir aún
+  G.dbg = /[?&]dbg=1/.test(location.search) ? { dmg: {} } : null;   // ?dbg=1 cuenta el daño recibido por fuente (window.G.dbg.dmg)
   G.sfx = function (n, o) { try { if (window.Assets) Assets.sfx(n, o); } catch (e) { /* audio opcional */ } };
   G.txt = function (c, s, x, y, size, color, align, stroke) {
     c.font = 'bold ' + size + 'px "Courier New", monospace';

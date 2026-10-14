@@ -65,7 +65,12 @@
 </div>
 <div class="btns" id="sfx"></div>
 
-<script src="../../games/survival-lamb/src/assets.js"></script>
+<script>
+// ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
+(function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
+  document.write('<script src="' + b + 'assets.js"><\/script>');
+  if (g === 'card-swarm') document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); })();
+</script>
 <script>
 (function () {
   var A = window.Assets, $ = function (id) { return document.getElementById(id); };
