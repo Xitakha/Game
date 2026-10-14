@@ -8,3 +8,5 @@
 - [x] Estudio de juegos virales (studio/research/)
 - [x] Prototipo Swarm Hand (games/card-swarm)
 - [ ] Playtest humano y balance de Swarm Hand
+- [x] Crafteo Fase 1 (Base, forja, botin, anclas) en games/card-swarm
+- [ ] Playtest humano de la Fase 1; decidir Fase 2 (sets, encargos, desmontar) y version movil

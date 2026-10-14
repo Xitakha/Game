@@ -4,7 +4,7 @@
   'use strict';
   var G = window.G, B = G.B, fx = G.fx, E = G.Enemies = {};
 
-  function mins() { return G.time / 60000; }
+  function mins() { return G.vt() / 60000; }   // minutos en la escala de 9:00 (se comprime con la duración elegida)
   function PL() { return G.player; }
 
   // ------------------------------------------------------------- Creación
@@ -480,14 +480,14 @@
       G.Hud.banner('¡EL PASTOR ENFURECE!', 1400, '#ff5a5a');
     }
     e.age += dt;
-    if (!e.fury && e.age > 120000) {   // Furia: si sigue vivo a los 2 min, +50% daño y velocidad de ataque
+    if (!e.fury && e.age * G.tk > 120000) {   // Furia: si sigue vivo a los 2 min, +50% daño y velocidad de ataque
       e.fury = true; e.dmg *= 1.5; fx.shake(8, 300); G.sfx('boss_roar'); G.Hud.banner('¡FURIA DEL PASTOR!', 1600, '#ff3030');
     }
     var rate = (e.rage ? 1.25 : 1) * (e.fury ? 1.5 : 1);
     e.callT -= dt;
     if (e.callT <= 0) {   // llamada del rebaño: 2 enemigos ya desbloqueados, con aviso de 600 ms
       e.callT = 20000;
-      var pool = ['fanner', 'shield', 'moth'].filter(function (k) { return B.enemy[k].from <= G.time; });
+      var pool = ['fanner', 'shield', 'moth'].filter(function (k) { return B.enemy[k].from <= G.vt(); });
       if (pool.length) {
         for (var c2 = 0; c2 < 2; c2++) {
           var ty = pool[Math.floor(Math.random() * pool.length)], ca = G.rnd(0, 6.283), cx = e.x + Math.cos(ca) * 90, cy = e.y + Math.sin(ca) * 90;

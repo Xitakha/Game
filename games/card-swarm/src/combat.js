@@ -271,6 +271,7 @@
     else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (Math.random() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
     else for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
     if (Math.random() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
+    G.Loot.onKill(e);
     if (a.frenzy) p.frenzyT = 1500;
     if (a.pact && tag === 'fire') G.Player.heal(p, 2);
     if (e.poisonN > 0) {
@@ -300,6 +301,8 @@
       var need = B.xpNeed(p.level);
       while (p.xp >= need) { p.xp -= need; p.level++; G.pendingLevels++; need = B.xpNeed(p.level); }
       G.Snd.play('gem', 1);
+    } else if (g.kind === 'part') {
+      G.Loot.collect(g.part); G.Snd.play('gem', 1.8);
     } else if (g.kind === 'ash') {
       p.ash += Math.max(1, Math.round(g.v * m.ashMul)); G.Snd.play('gem', 1.4);
     } else { G.Player.heal(p, g.v); G.sfx('pickup'); }
@@ -328,7 +331,11 @@
       if (g.x < G.cam.x - 20 || g.x > G.cam.x + G.W + 20 || g.y < G.cam.y - 20 || g.y > G.cam.y + G.H + 20) continue;
       var bob = Math.sin(t * 5 + i) * 1.5, x = Math.round(g.x), y = Math.round(g.y + bob);
       c.save();
-      if (g.kind === 'heart') {
+      if (g.kind === 'part') {
+        c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.3 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = G.Loot.part(g.part).color;
+        c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+        G.UI.part(c, g.part, x, y, 7);
+      } else if (g.kind === 'heart') {
         c.fillStyle = '#ff5a7a'; c.strokeStyle = '#3a0a18'; c.lineWidth = 2;
         c.beginPath(); c.moveTo(x, y + 5); c.bezierCurveTo(x - 9, y - 1, x - 5, y - 8, x, y - 3); c.bezierCurveTo(x + 5, y - 8, x + 9, y - 1, x, y + 5); c.fill(); c.stroke();
       } else {

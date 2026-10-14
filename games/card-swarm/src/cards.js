@@ -66,11 +66,16 @@
   C.slotOf = function (id) { var h = hand(); for (var i = 0; i < h.length; i++) if (h[i] && h[i].id === id) return h[i]; return null; };
   C.hasTag = function (tag) { var h = hand(); for (var i = 0; i < h.length; i++) if (h[i] && C.def(h[i].id).tag === tag) return true; return false; };
   C.count = function () { var n = 0, h = hand(); for (var i = 0; i < h.length; i++) if (h[i]) n++; return n; };
-  function lv(id) { var s = C.slotOf(id); return s ? LVS[s.lvl] : 0; }
+  // efecto de una pasiva = nivel de la run x multiplicador de Rango de forja de esa carta (+8 % por rango)
+  function lv(id) { var s = C.slotOf(id); return s ? LVS[s.lvl] * G.Loot.rm(id) : 0; }
 
   C.reset = function () {
     G.player.hand = []; for (var i = 0; i < SLOTS; i++) G.player.hand.push(null);
-    C.active = {}; C.flash = {}; C.off = null; C.recalc(false);
+    C.active = {}; C.flash = {}; C.off = null;
+    // anclas de la Base: precargadas en los primeros slots (solo si siguen desbloqueadas)
+    var an = G.Save.data.anchors || [];
+    for (i = 0; i < an.length && i < G.B.anchorSlots; i++) if (G.Loot.unlocked(an[i])) C.add(an[i]);
+    C.recalc(false); G.player.hp = G.player.maxHp;
   };
 
   // Recalcula modificadores y combos activos; con announce=true anuncia los nuevos (banner, stinger, línea)
@@ -117,7 +122,8 @@
   };
 
   // ------------------------------------------------------------- Oferta
-  function pool() { return C.defs.filter(function (d) { var s = C.slotOf(d.id); return !s || s.lvl < 3; }); }
+  // Solo cartas de TU colección (desbloqueadas en la Base) y que no estén ya a Nv3
+  function pool() { return C.defs.filter(function (d) { var s = C.slotOf(d.id); return G.Loot.unlocked(d.id) && (!s || s.lvl < 3); }); }
   function rndOf(a) { return a[Math.floor(Math.random() * a.length)]; }
   // combos que se activarían al tener una carta de esta etiqueta
   C.newCombos = function (tag) {
@@ -215,7 +221,7 @@
   var OFF = { w: 220, h: 252, gap: 22, y: 52 };
   C.offerRect = function (i) { var x0 = (G.W - (3 * OFF.w + 2 * OFF.gap)) / 2; return { x: x0 + i * (OFF.w + OFF.gap), y: OFF.y, w: OFF.w, h: OFF.h }; };
   C.slotRect = function (i, big) {
-    if (big === 'end') return { x: 202 + i * 114, y: 176, w: 100, h: 132 };
+    if (big === 'end') return { x: 20 + i * 94, y: 118, w: 86, h: 114 };
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
     return { x: 280 + i * 82, y: 428, w: 72, h: 96 };
   };
@@ -319,6 +325,7 @@
   C.glyph = glyph;
 
   // Carta completa. slot: {id,lvl,cd,cdMax,flash} o {id,lvl} ; o: {key, glow, dim, big}
+  function U_roman(n) { return n === 2 ? 'II' : n === 3 ? 'III' : 'I'; }
   C.drawCard = function (c, slot, x, y, w, h, o) {
     o = o || {};
     var d = C.def(slot.id), tc = G.TAGS[d.tag].color, f = w / 72, t = G.time / 1000;
@@ -346,6 +353,8 @@
       for (var k = 0; k < 10; k++) { var r = k % 2 ? 2.2 * f : 4.6 * f, a = -Math.PI / 2 + k * Math.PI / 5; c.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); }
       c.closePath(); c.fill();
     }
+    var rk = G.Save.rank(slot.id);
+    if (rk > 1) G.txt(c, U_roman(rk), x + 9 * f, y + 24 * f, Math.round(10 * f), '#ffd24a', 'center');
     // nombre
     G.txt(c, d.short, x + w / 2, y + h - 11 * f, Math.round(10 * f), '#fff', 'center');
     // cooldown (barrido)

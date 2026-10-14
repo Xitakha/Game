@@ -56,10 +56,12 @@ FUEGO (rojo), HIELO (azul), RAYO (amarillo), VENENO (verde), SANGRE (carmesí os
 ### Estados sobre enemigos
 Quemado (3 dps, 2 s), Ralentizado (-35 % vel, 2 s), Envenenado (4 dps, 4 s, apila hasta 3 veces), Sangrado (5 dps, 3 s), Aturdido (0 vel, el tiempo indicado). Los estados refrescan duración, no se suman entre sí (salvo veneno). Cada estado tiene tinte visible (naranja, azul, verde, rojo) para que los combos se lean.
 
-## Catálogo de cartas (28)
+## Catálogo de cartas (26 implementadas)
+Nota: el diseño original listaba 28; Bobina (9) y Murciélago (15) no entraron en el prototipo, así que el juego tiene 26 cartas (16 de ataque + 10 pasivas). La numeración de las tablas es la original.
+
 Los valores son de Nv1. cd = cooldown base. Objetivo de balance: una carta de ataque suelta hace 10-16 dps; una mano de 5 con 2 combos y fusiones llega a 150-250 dps.
 
-### Ataque (18)
+### Ataque (16 implementadas; 18 en el diseño original)
 | # | Carta | Etiqueta | Efecto Nv1 |
 |---|---|---|---|
 | 1 | Chispa | FUEGO | Proyectil al enemigo más cercano, 12 de daño + quemadura. cd 0.8 s |
@@ -180,7 +182,7 @@ Director de spawn por **presupuesto continuo** (adaptación de `waves.js`): cada
 | Cartas (mejoras stat-only) y pantalla de selección | `cards.js` | Reutilizar la pantalla de 3 cartas, teclas 1/2/3 y clic; **reescribir** el modelo de datos (etiquetas, niveles, mano de slots, fusión, reroll, sesgo) |
 | HUD | `hud.js` | Reutilizar barras y texto; **nuevo**: mano de cartas, combos, Ceniza, XP |
 | FX: hit-stop, shake, partículas, números de daño, cadáveres | `fx.js` | Reutilizar; añadir agrupación de números de daño y tintes por estado |
-| Sprites, animaciones, VFX, biomas, arena, audio procedural (`Assets`) | `assets.js` | Reutilizar 100 %. **Añadir**: marcos de carta, iconos de etiquetas y de las 28 cartas, gemas (XP/Ceniza), proyectiles (dardo, esquirla, daga, hacha, orbe), rayo, charco, estela y SFX nuevos |
+| Sprites, animaciones, VFX, biomas, arena, audio procedural (`Assets`) | `assets.js` | Reutilizar 100 %. **Añadir**: marcos de carta, iconos de etiquetas y de las 26 cartas, gemas (XP/Ceniza), proyectiles (dardo, esquirla, daga, hacha, orbe), rayo, charco, estela y SFX nuevos |
 | Sistema de armas auto-fire (proyectil, aura, orbital, pulso, rayo, torreta, boomerang, tajo) | no existe | **Nuevo** (el grueso del trabajo) |
 | Combos por etiquetas, resonancia, fusión, reroll, Ceniza, XP/gemas, descarte | no existe | **Nuevo** |
 | Pantalla de victoria con la mano final | `hud.js` (Game Over) | Adaptar |
@@ -191,7 +193,7 @@ Todo lo posible se genera por código en `assets.js` (como Ember Flock); se regi
 ### Para asset-scout
 | Recurso | Descripción | Fuente / búsqueda |
 |---|---|---|
-| Iconos de las 28 cartas y 6 etiquetas | Glifos simples reconocibles (llama, copo, rayo, gota, colmillo/murciélago, daga, hacha...) | Generados por código; referencia: game-icons.net (CC BY 3.0, solo si se atribuye), Kenney "Game Icons" CC0 |
+| Iconos de las 26 cartas y 6 etiquetas | Glifos simples reconocibles (llama, copo, rayo, gota, colmillo/murciélago, daga, hacha...) | Generados por código; referencia: game-icons.net (CC BY 3.0, solo si se atribuye), Kenney "Game Icons" CC0 |
 | Marco de carta + reverso | Naipe oscuro, 6 colores de borde, estrellas de nivel, brillo dorado Nv3 | Generado por código; "kenney ui pack cards" CC0 como referencia |
 | Gemas de XP y Ceniza, corazón | Pequeñas, con brillo | Generadas por código |
 | Proyectiles y VFX por etiqueta | Dardo, esquirla, daga, hacha, rayo, charco, vapor, plasma, estela de fuego, onda de hielo | Reutilizar `fireball`, `flame`, `shockwave`, `hitspark`; resto por código; "kenney particle pack" CC0 |

@@ -217,7 +217,8 @@
     for (var i = 0; i < p.hand.length; i++) {
       var s = p.hand[i]; if (!s) continue;
       var d = G.Cards.def(s.id); if (d.type !== 'attack') continue;
-      var L = LV[s.lvl];
+      var L = LV[s.lvl], rm = G.Loot.rm(s.id);
+      if (rm !== 1) L = { dmg: L.dmg * rm, cd: L.cd, area: L.area };   // Rango de forja: +8 % de daño por rango (por carta), se combina con cardDmgMul en Combat.deal
       if (s.flash > 0) s.flash -= dt;
       if (d.kind === 'orbital') { updateOrbital(s, d, L, dt, p); continue; }
       if (d.kind === 'aura') { updateAura(s, d, L, dt, p); continue; }

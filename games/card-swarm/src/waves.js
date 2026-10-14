@@ -76,11 +76,11 @@
   }
 
   W.update = function (dt) {
-    var m = G.time / 60000, boss = G.Enemies.boss(), E = G.Enemies;
+    var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies;
     if (!W.bossSpawned && G.time >= G.BOSS_T) spawnBoss();
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
-    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && G.time >= B.enemy[k].at) spawnElite(k); });
+    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && vt >= B.enemy[k].at) spawnElite(k); });
     W.t += dt;
     if (W.t < 1500) return;
     W.t -= 1500;
@@ -89,7 +89,7 @@
     var cap = B.cap(m), alive = G.enemies.length, counts = {};
     G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];
-    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && d.from <= G.time && (!boss || B.light[k])) types.push(k); });
+    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && d.from <= vt && (!boss || B.light[k])) types.push(k); });
     // Rotación de sabor: cada 60 s un tipo protagonista (no gusano) pesa x2.2
     W.starT -= 1500;
     if (W.starT <= 0 || (W.star && types.indexOf(W.star) < 0)) {
@@ -98,12 +98,12 @@
       W.star = cand.length ? cand[Math.floor(Math.random() * cand.length)] : null;
     }
     // Pack: 15 % por pulso desde 2:45, en vez de un spawn suelto
-    if (!boss && G.time >= 165000 && Math.random() < 0.15) {
+    if (!boss && vt >= 165000 && Math.random() < 0.15) {
       var names = Object.keys(PACKS).filter(function (n) {
         var pk = PACKS[n], total = 0, ok = packCost(pk) <= W.budget;
         pk.parts.forEach(function (q) {
           var d = B.enemy[q[0]]; total += q[1];
-          if (d.from > G.time || ((counts[q[0]] || 0) + q[1] > capOf(q[0], m))) ok = false;
+          if (d.from > vt || ((counts[q[0]] || 0) + q[1] > capOf(q[0], m))) ok = false;
           if (q[0] === 'shield' && counts.mini_bulwark) ok = false;
         });
         return ok && alive + total <= cap;

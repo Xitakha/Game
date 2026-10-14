@@ -1,12 +1,10 @@
-/* hud.js - HUD de Swarm Hand: mano, combos, banner de combo, barras, título, pausa y pantalla final con la mano. */
+/* hud.js - HUD de Swarm Hand: mano, combos, banner de combo, barras, contador de partes y pausa (título y fin de run: base.js). */
 (function () {
   'use strict';
   var G = window.G, B = G.B, H = G.Hud = {};
   var bn = { text: '', t: 0, max: 1, color: '#fff', combo: null };
-  var RETRY = { x: 380, y: 452, w: 200, h: 46 };
 
   H.banner = function (text, ms, color, combo) { bn.text = text; bn.t = ms; bn.max = ms; bn.color = color || '#fff'; bn.combo = combo || null; };
-  H.inRetry = function (x, y) { return x >= RETRY.x && x <= RETRY.x + RETRY.w && y >= RETRY.y && y <= RETRY.y + RETRY.h; };
 
   H.update = function (dt) {
     if (bn.t > 0) bn.t -= dt;
@@ -73,9 +71,9 @@
 
   H.draw = function (c) {
     var p = G.player, i;
-    if (G.state === 'title') { drawTitle(c); return; }
+    if (G.state === 'base') { G.Base.draw(c); return; }
     if (G.state === 'cards') { G.Cards.draw(c); return; }
-    if (G.state === 'gameover') { drawOver(c); return; }
+    if (G.state === 'gameover') { G.Base.drawEnd(c); return; }
     // vida
     bar(c, 16, 14, 220, 18, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
     G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, 126, 24, 13, '#fff', 'center');
@@ -87,6 +85,10 @@
     G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
     c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();
     G.txt(c, 'Ceniza ' + p.ash, G.W - 16, 44, 15, '#ff9a3c', 'right');
+    // contador de partes recogidas en la expedición
+    var LR = G.Loot.run;
+    G.UI.part(c, 'thread', G.W - 105, 68, 7); G.txt(c, 'Partes ' + LR.total, G.W - 16, 68, 15, '#e8dcb0', 'right');
+    if (LR.rare) { G.UI.part(c, 'rare', G.W - 105, 88, 7); G.txt(c, 'Rara x' + LR.rare, G.W - 16, 88, 13, '#e0a8ff', 'right'); }
     drawCombosList(c);
     // barra del jefe
     if (boss && boss.spawnT <= 0) {
@@ -113,56 +115,11 @@
     if (p.hurtT > 300) { c.fillStyle = 'rgba(255,0,0,' + (0.18 * (p.hurtT - 300) / 300) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };
 
-  function drawTitle(c) {
-    c.fillStyle = 'rgba(8,4,14,0.74)'; c.fillRect(0, 0, G.W, G.H);
-    G.fx.spr(c, Assets.sprite('player', Math.floor(Date.now() / 450) % 2), G.W / 2, 120, { sx: 2.4, sy: 2.4 });
-    G.txt(c, 'SWARM HAND', G.W / 2, 205, 62, '#ffd27a', 'center');
-    G.txt(c, 'Tu mano de cartas dispara sola. Haz que se toquen.', G.W / 2, 252, 17, '#d8cfe8', 'center');
-    // demo de combo
-    var ids = ['spark', 'shard', 'zap'], t = Date.now() / 1000;
-    var xs = [310, 400, 490];
-    c.save(); c.globalCompositeOperation = 'lighter'; c.lineWidth = 6; c.globalAlpha = 0.6 + 0.3 * Math.sin(t * 5);
-    var gr = c.createLinearGradient(xs[0] + 36, 0, xs[1] + 36, 0); gr.addColorStop(0, G.TAGS.fire.color); gr.addColorStop(1, G.TAGS.ice.color);
-    c.strokeStyle = gr; c.beginPath(); c.moveTo(xs[0] + 36, 326); c.quadraticCurveTo((xs[0] + xs[1]) / 2 + 36, 292, xs[1] + 36, 326); c.stroke(); c.restore();
-    for (var i = 0; i < 3; i++) G.Cards.drawCard(c, { id: ids[i], lvl: 1 }, xs[i] + (i === 2 ? 70 : 0), 326, 72, 96, {});
-    G.txt(c, 'VAPOR!', 400 - 10, 296, 20, '#ffe9a0', 'center');
-    if (Math.floor(Date.now() / 500) % 2) G.txt(c, 'Pulsa ENTER o haz clic para jugar', G.W / 2, 452, 22, '#ffd27a', 'center');
-    G.txt(c, 'WASD / flechas: mover   1-3: elegir carta   R: reroll   P: pausa', G.W / 2, 482, 13, '#9a8fb0', 'center');
-    G.txt(c, 'Sobrevive 5 minutos y derrota al Pastor Corrupto', G.W / 2, 504, 13, '#9a8fb0', 'center');
-  }
-
   function drawPause(c) {
     c.fillStyle = 'rgba(8,4,14,0.72)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, 'PAUSA', G.W / 2, 200, 52, '#ffd27a', 'center');
     G.txt(c, 'Pulsa P o Esc para continuar', G.W / 2, 262, 18, '#d8cfe8', 'center');
     G.txt(c, 'WASD / flechas: mover. Las cartas atacan solas.', G.W / 2, 300, 14, '#9a8fb0', 'center');
-  }
-
-  function drawOver(c) {
-    var won = G.won, p = G.player;
-    c.fillStyle = won ? 'rgba(20,14,0,0.9)' : 'rgba(20,0,6,0.9)'; c.fillRect(0, 0, G.W, G.H);
-    G.txt(c, won ? 'MANO GANADORA' : 'HAS CAÍDO', G.W / 2, 56, 52, won ? '#ffd24a' : '#ff5a5a', 'center');
-    G.txt(c, 'Tiempo ' + G.fmtTime(G.time) + '   -   Kills ' + G.kills + '   -   Nivel ' + p.level, G.W / 2, 96, 18, '#fff', 'center');
-    var h = p.hand, i;
-    for (i = 0; i < h.length; i++) {
-      var r = G.Cards.slotRect(i, 'end');
-      if (h[i]) G.Cards.drawCard(c, { id: h[i].id, lvl: h[i].lvl }, r.x, r.y, r.w, r.h, { nocd: true });
-      else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
-    }
-    G.Cards.drawComboLines(c, 'end');
-    var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
-    if (names.length) {
-      G.txt(c, 'COMBOS ACTIVOS', G.W / 2, 340, 13, '#9a8fb0', 'center');
-      names.forEach(function (cb, k) {
-        var col = k % 3, row = Math.floor(k / 3), x = G.W / 2 + (col - 1) * 230, y = 364 + row * 22;
-        c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x - 90, y, 5, 0, 6.283); c.fill();
-        c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x - 79, y, 5, 0, 6.283); c.fill();
-        G.txt(c, cb.name, x - 66, y, 13, '#ffe9a0', 'left');
-      });
-    } else G.txt(c, 'Sin combos: la próxima vez junta etiquetas distintas', G.W / 2, 350, 14, '#9a8fb0', 'center');
-    var m = G.input.mouse, hov = H.inRetry(m.x, m.y);
-    c.fillStyle = hov ? '#ff9a3c' : '#c4601c'; c.fillRect(RETRY.x, RETRY.y, RETRY.w, RETRY.h);
-    c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.strokeRect(RETRY.x, RETRY.y, RETRY.w, RETRY.h);
-    G.txt(c, 'Una más (R)', RETRY.x + RETRY.w / 2, RETRY.y + RETRY.h / 2, 20, '#fff', 'center');
+    G.txt(c, 'B: abandonar la expedición (conservas las partes recogidas)', G.W / 2, 330, 14, '#ffb347', 'center');
   }
 })();

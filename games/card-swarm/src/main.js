@@ -7,8 +7,11 @@
   G.AW = 1440; G.AH = 810;       // arena (la cámara sigue al jugador)
   G.WALL = 28;                   // margen de pared
   G.STEP = 1000 / 60;            // paso fijo en ms
-  G.RUN_LEN = 9 * 60000;         // duración prevista de la run (9:00)
-  G.BOSS_T = 7.5 * 60000;        // el Pastor aparece a los 7:30 (margen de 1:30 para matarlo)
+  G.RUN_LEN = 9 * 60000;         // duración prevista de la run (9:00); G.setLen() la cambia (7 / 9 / 10 min, selector de la Base o ?len=)
+  G.BOSS_T = 7.5 * 60000;        // el Pastor aparece a los 7:30 (margen de 1:30 para matarlo); escala con la duración
+  G.tk = 1;                      // factor de tiempo del director: 9 / minutos de la run. G.vt() = tiempo "virtual" en la escala de 9:00
+  G.setLen = function (min) { G.RUN_LEN = min * 60000; G.BOSS_T = G.RUN_LEN * 7.5 / 9; G.tk = 9 / min; };
+  G.vt = function () { return G.time * G.tk; };
 
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
   G.speed = qnum('speed', 1); G.god = qnum('god', 0) > 0; G.t0 = qnum('t', 0) * 1000;
@@ -16,6 +19,7 @@
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
     player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
+    anchorSlots: 2,                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
       worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1, maxAlive: 40 },
@@ -117,7 +121,7 @@
 
   // ---------------------------------------------------------------- Mundo
   G.cam = { x: 0, y: 0 };
-  G.state = 'title';   // title | play | paused | cards | gameover
+  G.state = 'base';    // base | play | paused | cards | gameover
   G.time = 0; G.kills = 0; G.won = false;
 
   G.reset = function () {
@@ -134,9 +138,13 @@
 
   G.startGame = function () {
     try { Assets.unlock(); } catch (e) { /* sin audio */ }
+    G.setLen(G.lenOverride || G.Save.data.len || 9);
+    G.Loot.beginRun();
     G.reset();
-    G.state = 'cards';             // primera decisión: 1 de 3 cartas iniciales
-    G.Cards.open('start');
+    // Las anclas ya están en la mano (Cards.reset). Si no hay ningún arma, primera decisión: 1 de 3 cartas iniciales
+    var armed = G.player.hand.some(function (s) { return s && G.Cards.def(s.id).type === 'attack'; });
+    if (armed) G.state = 'play';
+    else { G.state = 'cards'; G.Cards.open('start'); }
     inp.lock = 250;
     try { Assets.music.setTrack('normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
   };
@@ -145,6 +153,7 @@
     if (G.state === 'gameover') return;
     G.won = won; G.state = 'gameover';
     G.finalHand = G.Cards.snapshot();
+    G.Loot.endRun(won);
     G.sfx(won ? 'boss_die' : 'game_over');
     if (won) { try { G.Snd.play('win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
@@ -172,8 +181,8 @@
     var dt = G.STEP;
     if (inp.lock > 0) inp.lock -= dt;
     switch (G.state) {
-      case 'title':
-        if (inp.hit('Enter', 'Space', 'Mouse0')) G.startGame();
+      case 'base':
+        G.Base.update(dt);
         break;
       case 'play':
         if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; break; }
@@ -182,6 +191,7 @@
         break;
       case 'paused':
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
+        else if (inp.hit('KeyB')) G.finish(false);   // abandonar: conserva las partes recogidas y va al botín
         break;
       case 'cards':
         G.fx.updateShake(dt);
@@ -189,7 +199,7 @@
         break;
       case 'gameover':
         G.fx.update(dt);
-        if (inp.hit('KeyR', 'Enter') || (inp.hit('Mouse0') && G.Hud.inRetry(inp.mouse.x, inp.mouse.y))) G.startGame();
+        G.Base.updateEnd();
         break;
     }
     inp.pressed = {};
@@ -247,6 +257,7 @@
     canvas = document.getElementById('game'); ctx = canvas.getContext('2d');
     G.ctx = ctx; canvas.focus();
     bindInput();
+    G.Save.applyUrl();
     var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) Assets.setBiome(bq[1]);
     G.ground = buildGround();
     G.reset();
