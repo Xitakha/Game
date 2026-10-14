@@ -206,8 +206,8 @@
   function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
   var R_GO = { x: 650, y: 440, w: 290, h: 76 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
-  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron (J2)', need: 'pastor', needName: 'el Pastor' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea (J2)', need: 'karceron', needName: 'Karceron' }];
+  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'El Pastor (Karceron llega en J2)', need: 'pastor', needName: 'el Pastor' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea (J2, sin jefe aún)', need: 'karceron', needName: 'Karceron' }];
   function biomeRect(i) { return { x: 650 + i * 98, y: 376, w: 92, h: 50 }; }
   function biomeOpen(b) { return !b.need || (SV().bossKills[b.need] || 0) > 0; }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
@@ -356,6 +356,7 @@
       var k = SET[i][0]; S.settings[k] = G.clamp(Math.round((S.settings[k] + (p ? 0.1 : -0.1)) * 10) / 10, 0, 1);
       G.Save.save(); G.Aldea.applySettings(); G.sfx('card_select', { vol: 0.5 });
     }
+    if (onR({ x: 330, y: 346, w: 300, h: 44 })) { S.settings.shake = S.settings.shake ? 0 : 1; G.shakeMul = S.settings.shake ? 1 / 3 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR({ x: 330, y: 400, w: 300, h: 62 })) { cur = 'menu'; }
     return false;
   }
@@ -368,6 +369,7 @@
       G.txt(c, Math.round(S.settings[it[0]] * 100) + '%', 660, 148 + i * 80, 20, '#fff', 'center');
       U.button(c, setRect(i, 1), '+', { size: 26 });
     });
+    U.button(c, { x: 330, y: 346, w: 300, h: 44 }, 'Reducir sacudidas: ' + (S.settings.shake ? 'SÍ' : 'NO'), { size: 15, color: S.settings.shake ? '#2a6aa8' : '#2c2438' });
     U.button(c, { x: 330, y: 400, w: 300, h: 62 }, 'ATRÁS', { size: 20 });
   }
 })();

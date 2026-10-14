@@ -43,7 +43,8 @@
       },
       weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2] }, { tag: 'steel', mul: 1.25, phases: [3] }],
       resist: [{ tag: 'poison', mul: 0.8 }],
-      hpCal: 1,   // calibración con el bot: la fórmula del doc (6000) supone DPS_ref 80; el DPS real medido es mayor (ver README, sección Jefes)
+      hpCal: 4.0, // calibración con el bot (README, Jefes v4): la fórmula del doc (6000 a 9 min) supone DPS_ref p50 = 80; el DPS real medido contra el jefe es ~210 (p25 ~120, p75 ~300),
+                  // así que el HP efectivo es 6000 x 4,0 = 24000 a 9 min (18000 a 7 min, 26400 a 10) y la duración del p50 sale en ~120 s. ?hpcal=<n> lo fuerza para pruebas.
       brasas: 150, brasasPart: 40, pf: 2, pfFirst: 3
     }
   };
@@ -175,6 +176,10 @@
       if (last != null && G.time - last < 120) return 0;
       e.lastHit[key] = G.time;
     }
+    if (!e.broken.vellon && !(o && o.viaPart) && !(o && o.dot)) {   // el Vellón (en el lomo, dentro del cuerpo) se desgasta con el daño al cuerpo: 22 % de cada golpe
+      var vp = e.parts.vellon; vp.meter -= full * 0.22; vp.flash = 60;
+      if (vp.meter <= 0 && !vp.dead) S.breakPart(e, vp);
+    }
     return full;
   };
   S.dealPart = function (pe, base, o) {
@@ -190,6 +195,7 @@
   // Suelo de HP en los umbrales de fase (la transición dispara la puerta inmune) y disparo del ataque desesperado
   S.afterHit = function (e) {
     if (e.dying || e.mode === 'intro') return;
+    if (!(e.hurtCd > 0)) { e.hurtT = 110; e.hurtCd = 380; }   // destello de daño del sprite como mucho cada 380 ms (si no, parpadea sin parar)
     var D = e.def, flo;
     if (e.phase < 3 && e.mode !== 'gate') {
       flo = D.phases[e.phase - 1].thr * e.maxHp;
@@ -417,13 +423,13 @@
 
   // ---- 8. Estampida (F3): 3 embestidas encadenadas, la última deja al jefe aturdido
   ATK.estampida = {
-    start: function (e, A) { A.aim = angTo(e, PL()); A.len = 420; A.spd = e.broken.cuernos ? 430 : 520; A.dmg = 24; A.k = 0; A.n = 3; A.sub = 'tele'; A.pose = 'estampida'; A.fixAt = A.tele - 250; A.trav = 0; A.actMs = 99999; },
+    start: function (e, A) { A.aim = angTo(e, PL()); A.len = 420; A.spd = e.broken.cuernos ? 430 : 520; A.dmg = 24; A.k = 0; A.n = 3; A.sub = 'tele'; A.pose = 'estampida'; A.fixAt = A.tele - 300; A.trav = 0; A.actMs = 99999; },
     tele: function (e, A) { if (A.t < A.fixAt) { A.aim = angTo(e, PL()); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; } },
     go: function (e, A) { A.sub = 'charge'; A.trav = 0; A.hit = false; sfx('whoosh', { pitch: 0.5, vol: 0.8 }); sfx('boss_roar', { pitch: 1.6, vol: 0.45 }); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; },
     act: function (e, A, dt) {
       if (A.sub === 'aim') {
-        A.subT += dt; if (A.subT < 250) { A.aim = angTo(e, PL()); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }
-        if (A.subT >= 500) { A.sub = 'charge'; A.trav = 0; A.hit = false; sfx('whoosh', { pitch: 0.55, vol: 0.7 }); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }
+        A.subT += dt; if (A.subT < 300) { A.aim = angTo(e, PL()); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }   // re-aim de 600 ms (el doc dice 500): con 300 ms de línea fija se cumple la regla de esquiva
+        if (A.subT >= 600) { A.sub = 'charge'; A.trav = 0; A.hit = false; sfx('whoosh', { pitch: 0.55, vol: 0.7 }); e.face = Math.cos(A.aim) >= 0 ? 1 : -1; }
         return false;
       }
       var r = chargeMove(e, A, dt);
@@ -435,11 +441,11 @@
     },
     draw: function (c, e, A) {
       if (A.step === 'tele') Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 420, a: A.aim, p: A.t / A.tele, fix: A.t >= A.fixAt, sig: true, t: G.time });
-      else if (A.sub === 'aim') Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 420, a: A.aim, p: A.subT / 500, fix: A.subT >= 250, sig: true, t: G.time });
+      else if (A.sub === 'aim') Assets.drawBossTele(c, 'lane', e.x, e.y, { w: 90, len: 420, a: A.aim, p: A.subT / 600, fix: A.subT >= 300, sig: true, t: G.time });
     },
     haz: function (e, A, out) {
       if (A.step === 'tele') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len, t0: A.tele - A.t, t1: A.tele - A.t + A.len / A.spd * 1000 });
-      else if (A.sub === 'aim') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len, t0: 500 - A.subT, t1: 500 - A.subT + A.len / A.spd * 1000 });
+      else if (A.sub === 'aim') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len, t0: 600 - A.subT, t1: 600 - A.subT + A.len / A.spd * 1000 });
       else if (A.sub === 'charge') out.push({ k: 'lane', x: e.x, y: e.y, a: A.aim, w: 90, len: A.len - A.trav, t0: 0, t1: (A.len - A.trav) / A.spd * 1000 });
     }
   };
@@ -484,13 +490,13 @@
   function startAttack(e, name) {
     var d = ATKS[name], H = ATK[name], A = { name: name, def: d, t: 0, step: 'tele', tele: teleMs(name), sig: !!d.sig, rec: 600, actMs: 300, ticks: 0 };
     S.cds[name] = d.cd * (name === 'llamada' && e.broken.cayado ? 30 / 22 : 1);
-    e.atk = A; e.bst = 'atk';
+    e.atk = A; e.bst = 'atk'; e.cadT = e.def.phases[e.phase - 1].cad;   // la cadencia (2,8 / 2,3 / 1,9 s) cuenta de inicio a inicio de ataque
     H.start(e, A);
     sfx(d.sig ? 'hit_heavy' : 'whoosh', { pitch: d.sig ? 0.55 : 0.6, vol: 0.5 });
   }
   function endAtk(e) {
     var A = e.atk; e.last = A.name; e.atk = null; e.bst = 'idle'; e.lift = 0;
-    e.cadT = e.def.phases[e.phase - 1].cad;
+    e.cadT = Math.max(e.cadT, 300);   // al menos 0,3 s de respiro entre ataques
   }
   function runAtk(e, dt) {
     var A = e.atk, H = ATK[A.name];
@@ -552,8 +558,10 @@
         if (!p.dead && G.dist(b.x, b.y, p.x, p.y) < b.r + p.r * 0.5) { G.Player.slow(p, 0.2, 350); if (S.brierTk <= 0) { S.brierTk = 600; hurt(e, 4, 'boss_zarzal', { soft: true }); } }
       }
     }
-    if (S.insetOn) {     // perímetro ardiente (F3): el área jugable se reduce ~15 % en 20 s
-      S.insetT += dt; S.inset = 44 * G.clamp(S.insetT / 20000, 0, 1); S.burnTk -= dt;
+    if (S.insetOn) {     // perímetro ardiente (F3): el área jugable se reduce ~15 % en 20 s; el Éxtasis lo apaga (si no, huir de las ondas hacia el borde mata)
+      if (e.mode === 'despair') { S.inset -= dt / 1000 * 44; if (S.inset <= 0) { S.inset = 0; S.insetOn = false; } }
+      else { S.insetT += dt; S.inset = 44 * G.clamp(S.insetT / 20000, 0, 1); }
+      S.burnTk -= dt;
       var m = G.WALL + S.inset;
       if (!p.dead && S.burnTk <= 0 && (p.x < m || p.x > G.AW - m || p.y < m || p.y > G.AH - m)) { S.burnTk = 400; hurt(e, 10, 'boss_perimetro', { soft: true }); }
     }
@@ -575,6 +583,7 @@
     if (!e || e.dead) return;
     if (S.noHurt > 0) S.noHurt -= dt;
     if (S.flash > 0) S.flash -= dt / 400;
+    if (e.hurtT > 0) e.hurtT -= dt; if (e.hurtCd > 0) e.hurtCd -= dt;
     // barra fantasma
     var fr = e.hp / e.maxHp;
     if (S.ghost > fr) { S.ghostT -= dt; if (S.ghostT <= 0) S.ghost = Math.max(fr, S.ghost - dt / 1000 * 0.35); } else S.ghost = fr;
@@ -608,7 +617,7 @@
   function updFight(e, dt) {
     var p = PL(), PH = e.def.phases[e.phase - 1];
     if (e.stagT > 0) { e.stagT -= dt; e.moveAmt = 0; return; }
-    if (e.bst === 'atk') { e.moveAmt = 0; runAtk(e, dt); return; }
+    if (e.bst === 'atk') { e.moveAmt = 0; e.cadT -= dt * S.fury; runAtk(e, dt); return; }
     // desplazamiento hacia el jugador
     var d = G.dist(e.x, e.y, p.x, p.y), spd = PH.spd * (e.slowT > 0 ? 1 - e.slowPct : 1);
     if (!p.dead && d > 90) { moveToward(e, p.x, p.y, spd, dt); e.moveAmt = 1; e.curSpd = spd; } else e.moveAmt = 0;
@@ -644,7 +653,7 @@
   }
   function updIntro(e, dt) {
     var I = S.intro; I.t += dt;
-    if (I.seen && I.t > 1000 && I.t < 3490 && !I.skipped && Object.keys(G.input.pressed).length) { I.skipped = true; I.t = 3500; }
+    if (I.seen && I.t > 1000 && I.t < 3490 && !I.skipped && G.input.hit('Space', 'Enter', 'KeyE', 'Mouse0')) { I.skipped = true; I.t = 3500; }   // ya vista: se salta pulsando Espacio / Enter / toque tras 1 s
     var t = I.t;
     e.alpha = G.clamp(t / 250, 0, 1);
     if (!I.landed) e.lift = 640 * (1 - Math.pow(G.clamp(t / 800, 0, 1), 2));
@@ -705,7 +714,7 @@
   // ================================================================= ESTADO PARA EL DIBUJO + DIBUJO
   S.stateOf = function (e) {
     var A = e.atk, ex = S.expo(e);
-    var st = { t: e.anim, facing: e.face, phase: e.phase, moving: e.bst === 'idle' && e.moveAmt > 0 ? 1 : 0, speed: e.curSpd || 0, hurt: e.flash > 0 ? 0.55 : 0,
+    var st = { t: e.anim, facing: e.face, phase: e.phase, moving: e.bst === 'idle' && e.moveAmt > 0 ? 1 : 0, speed: e.curSpd || 0, hurt: e.hurtT > 0 ? 0.6 : 0,
       broken: e.broken, lift: e.lift || 0, enraged: S.fury > 1, desperate: e.mode === 'despair', exposed: ex.mul > 1 && ex.kind !== 'stun', stun: false,
       immune: e.immune && e.mode !== 'intro' && !e.dying, roar: e.roar || 0, alpha: e.alpha == null ? 1 : e.alpha };
     if (e.stagT > 0) { st.hurt = 0.8; st.stun = false; }
@@ -713,7 +722,7 @@
       var pose = A.pose;
       if (A.step === 'tele') { st.windup = pose; st.wp = G.clamp(A.t / A.tele, 0, 0.999); }
       else if (A.step === 'act') {
-        if (A.name === 'estampida' && A.sub === 'aim') { st.windup = pose; st.wp = G.clamp(A.subT / 500, 0, 0.999); }
+        if (A.name === 'estampida' && A.sub === 'aim') { st.windup = pose; st.wp = G.clamp(A.subT / 600, 0, 0.999); }
         else { st.strike = pose; st.sp = G.clamp(A.t / (A.name === 'embestida' || A.name === 'estampida' ? 600 : (A.actMs || 300)), 0, 0.999); }
         if (pose === 'embestida' || pose === 'estampida') st.speed = A.spd;
       } else if (A.stunned) st.stun = true;
@@ -879,11 +888,11 @@
       if (u > 0.6) {
         Assets.drawBossPortrait(D.id, c, Wd / 2 - 250, cy - 40, { size: 80, mood: t > 1800 ? 1 : 0 });
         G.txt(c, D.name.toUpperCase(), Wd / 2 + 40, cy - 14, 28, '#ffd27a', 'center');
-        G.txt(c, D.name + ' - ' + D.title, Wd / 2 + 40, cy + 22, 14, '#d8cfe8', 'center');
+        G.txt(c, D.title, Wd / 2 + 40, cy + 22, 14, '#d8cfe8', 'center');
       }
       c.restore();
     }
-    if (I.seen && t > 1000 && t < 3400) G.txt(c, 'Pulsa para saltar', Wd - 20, Hd - b - 12, 11, '#9a8fb0', 'right');
+    if (I.seen && t > 1000 && t < 3400) G.txt(c, 'Espacio / toque: saltar', Wd - 20, Hd - b - 12, 11, '#9a8fb0', 'right');
   }
   S.hudBars = function () { return 0; };
 

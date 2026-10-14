@@ -1,6 +1,6 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
    Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
-   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1. Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
+   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=. Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
   var G = window.G = {};
@@ -40,6 +40,7 @@
       warlock: { hp: 30,  spd: 50, dmg: 0,  r: 13, cost: 8, from: 405000, w: 5,  spr: 'warlock', xp: 6, ash: 5, maxAlive: 2 },
       mini_bulwark: { hp: 420, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
       mini_hive:    { hp: 520, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
+      // jefe: solo se usan spr/xp/ash; HP, tamaño y IA reales viven en boss.js (G.Boss, DESIGN-v4-jefes.md)
       boss:    { hp: 1400, spd: 60, dmg: 20, r: 24, cost: 0, from: Infinity, w: 0, spr: 'boss',   xp: 60, ash: 30 }
     },
     // Curva del director: multiplicador de PESO de spawn y de TOPE (maxAlive) por tier y minuto (interpolación lineal entre filas).
@@ -207,7 +208,7 @@
     G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
     if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
-    if (G.bossUrl) { G.bossId = G.bossUrl; G.time = G.runT = G.BOSS_T - 100; }
+    if (G.bossUrl) { G.bossId = G.bossUrl; G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true }; }
     var hq = /[?&]hand=([^&]+)/.exec(location.search);
     if (hq) { decodeURIComponent(hq[1]).split(',').forEach(function (kv) { var a = kv.split(':'), n = parseInt(a[1], 10) || 1; for (var i = 0; i < n; i++) G.Cards.add(a[0]); }); G.Cards.recalc(false); }
     // Las anclas ya están en la mano (Cards.reset). Si no hay ningún arma, primera decisión: 1 de 3 cartas iniciales
@@ -341,6 +342,7 @@
     G.ctx = ctx; canvas.focus();
     bindInput();
     G.Save.applyUrl();
+    G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();
     var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);

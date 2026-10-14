@@ -29,19 +29,13 @@
       else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
     }
     G.Cards.drawComboLines(c, 'end');
-    // resumen del jefe (v4): coherente con el botín de la derecha
+    // resumen del jefe (v4): una línea bajo el título; los trofeos y el desglose de Brasas van en el panel del botín
     var bi = sm.boss;
     if (bi) {
       var PN = { cuernos: 'Cuernos', cayado: 'Cayado', vellon: 'Vellón' }, mm = Math.floor(bi.time / 60000), ss = Math.floor(bi.time / 1000) % 60;
-      G.txt(c, bi.name, 20, 104, 15, bi.won ? '#ffd24a' : '#ff8a6a', 'left');
-      G.txt(c, bi.won ? 'Derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' de combate' : 'Te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida', 20, 124, 13, '#fff', 'left');
-      G.txt(c, 'Partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k]; }).join(', ') : 'ninguna'), 20, 143, 12, '#c8b8e8', 'left');
-      G.txt(c, 'Brasas del jefe: +' + bi.brasas + (bi.won ? '' : ' (solo partes rotas)') + (bi.pf ? '   PF: +' + bi.pf + (bi.first ? ' (primera vez)' : '') : ''), 20, 162, 12, '#ff9a3c', 'left');
-      if (bi.trophies.length) {
-        G.txt(c, 'Trofeos (cada uno cuenta como 1 Esencia):', 20, 180, 11, '#9a8fb0', 'left');
-        bi.trophies.forEach(function (tk, k) { var T = G.Boss.TROPHY[tk]; if (T) { c.drawImage(Assets.sprite(T.spr, 0), 20 + k * 36, 188, 32, 32); } });
-        G.txt(c, bi.trophies.map(function (tk) { return G.Boss.TROPHY[tk].name; }).join(' - '), 20, 230, 10, '#ffe9a0', 'left');
-      } else G.txt(c, 'Rompe cuernos, cayado o vellón para conseguir trofeos.', 20, 185, 11, '#9a8fb0', 'left');
+      var bl = bi.name.toUpperCase() + (bi.won ? '  -  derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss : '  -  te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida')
+        + '  -  partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k]; }).join(', ') : 'ninguna');
+      G.txt(c, bl, G.W / 2, 92, 13, bi.won ? '#ffd24a' : '#ff9a8a', 'center');
     }
     var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
     if (names.length) {
@@ -65,9 +59,16 @@
       G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + 70, y + 1, 11, '#9a8fb0', 'left');
       shown++;
     });
+    if (bi && bi.trophies.length) bi.trophies.forEach(function (tk) {   // trofeos de jefe: cuentan como Esencia
+      var T = G.Boss.TROPHY[tk]; if (!T) return;
+      var col2 = shown % 3, row2 = Math.floor(shown / 3), x2 = 516 + col2 * 140, y2 = 146 + row2 * 34;
+      c.drawImage(Assets.sprite(T.spr, 0), x2, y2 - 14, 28, 28); G.txt(c, '+1 ' + T.name.split(' ')[0], x2 + 32, y2, 13, '#ffd27a', 'left');
+      shown++;
+    });
     if (!shown) G.txt(c, 'Sin partes esta vez', 516, 150, 14, '#9a8fb0', 'left');
     U.part(c, 'brasa', 528, 262, 11);
     G.txt(c, '+' + sm.brasas + ' Brasas   (total ' + S.brasas + ')', 548, 262, 16, '#ff9a3c', 'left');
+    if (bi) G.txt(c, 'jefe +' + bi.brasas + ' / run +' + (sm.brasas - bi.brasas), 800, 262, 10, '#c8a070', 'left');
     if (sm.rare) G.txt(c, '¡Esencia rara conseguida!', 516, 286, 13, '#e0a8ff', 'left');
     else G.txt(c, 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', 516, 286, 12, '#9a8fb0', 'left');
     if (sm.quest) U.wrap(c, 'Encargo: ' + sm.quest, 410, 11).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 516, 302 + k * 13, 11, '#ffe9a0', 'left'); });
