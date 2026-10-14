@@ -178,10 +178,10 @@
   function drawMarlo(c) {
     var t = M.t, cv;
     try { cv = Assets.sprite('player', M.moving ? 'walk:' + Math.floor(t / 80) : 'idle:' + Math.floor(time / 166)); } catch (e) { cv = null; }
-    var bob = M.moving ? Math.abs(Math.sin(t / 90)) * -3 : 0;
-    try { var sh = Assets.sprite('shadow', 0); c.save(); c.globalAlpha = 0.6; c.drawImage(sh, Math.round(M.x - sh.width / 2), Math.round(M.y - sh.height / 2)); c.restore(); } catch (e) { /* sin sombra */ }
-    c.save(); c.translate(Math.round(M.x), Math.round(M.y - 14 + bob));
-    if (M.dir < 0) c.scale(-1, 1);
+    var bob = M.moving ? Math.abs(Math.sin(t / 90)) * -3 : 0, K = 1.3;   // Marlo se dibuja a x1,3 para que case con los NPC (80x84)
+    try { var sh = Assets.sprite('shadow', 0); c.save(); c.globalAlpha = 0.6; c.drawImage(sh, Math.round(M.x - sh.width * K / 2), Math.round(M.y - sh.height * K / 2), sh.width * K, sh.height * K); c.restore(); } catch (e) { /* sin sombra */ }
+    c.save(); c.translate(Math.round(M.x), Math.round(M.y - 14 * K + bob));
+    c.scale(M.dir < 0 ? -K : K, K);
     if (cv) c.drawImage(cv, -cv.width / 2, -cv.height / 2);
     else { c.fillStyle = '#e8dcc0'; c.beginPath(); c.arc(0, 0, 12, 0, 6.283); c.fill(); }
     c.restore();
