@@ -345,7 +345,7 @@
       var it = items[i], cx = x + (i % 4) * 74, cy = y + Math.floor(i / 4) * 26, good = it.have >= it.need;
       if (!good) ok = false;
       if (it.k === 'pf') pfIcon(c, cx + 10, cy, 9); else U.part(c, it.k, cx + 10, cy, 10);
-      G.txt(c, it.have + '/' + it.need, cx + 24, cy + 1, 12, good ? '#9dffb4' : '#ff8a8a', 'left');
+      G.txt(c, (it.have >= 1000 ? (it.have / 1000).toFixed(1) + 'k' : it.have) + '/' + it.need, cx + 24, cy + 1, 11, good ? '#9dffb4' : '#ff8a8a', 'left');
     }
     return ok;
   }
@@ -385,7 +385,7 @@
 
   T.draw = function (c) {
     var S = SV(), m = inp.mouse, t = Date.now() / 1000, i;
-    c.fillStyle = 'rgba(8,4,14,0.96)'; c.fillRect(0, 0, G.W, G.H);
+    c.fillStyle = '#08040e'; c.fillRect(0, 0, G.W, G.H);
     // cabecera
     G.txt(c, 'FORJA DE GRUM', 14, 22, 24, '#ffd27a', 'left');
     pfIcon(c, 262, 22, 11); G.txt(c, 'PF libres ' + T.pfFree(), 280, 22, 16, T.pfFree() > 0 ? '#ffd24a' : '#9a8fb0', 'left');
@@ -393,7 +393,7 @@
     U.part(c, 'brasa', 430, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 446, 22, 16, '#ff9a3c', 'left');
     var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];
     // fila de partes (compacta)
-    pk.forEach(function (k, j) { var x = 14 + j * 66; U.part(c, k, x + 8, 76, 8); G.txt(c, String(S.parts[k] || 0), x + 20, 77, 12, (S.parts[k] || 0) ? '#fff' : '#6a5f78', 'left'); });
+    pk.forEach(function (k, j) { var x = 484 + j * 47; U.part(c, k, x + 7, 72, 7); G.txt(c, String(S.parts[k] || 0), x + 17, 73, 11, (S.parts[k] || 0) ? '#fff' : '#6a5f78', 'left'); });
     U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
     for (i = 0; i < 3; i++) {
       var tb = T.TABS[i], r = R_TAB(i), on = tb.id === ui.tab;
@@ -403,7 +403,7 @@
       G.txt(c, tb.name + ' [' + (i + 1) + ']', r.x + r.w / 2, r.y + r.h / 2, 15, on ? tb.color : '#8a7f96', 'center');
     }
     // mensaje
-    if (ui.msgT > 0 && ui.msg) G.txt(c, ui.msg, 480, 22, 12, '#ffe9a0', 'center');
+    if (ui.msgT > 0 && ui.msg) G.txt(c, ui.msg, 320, 508, 12, '#ffe9a0', 'center');
     if (ui.tab === 'classic') { drawClassic(c, m); return; }
     var nodes = tabNodes(), n = BY[ui.sel];
     // reespecializar árbol

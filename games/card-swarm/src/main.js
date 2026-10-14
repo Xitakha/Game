@@ -1,5 +1,6 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
-   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta */
+   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
+   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1. Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
   var G = window.G = {};
@@ -101,10 +102,10 @@
       if (!e.repeat) inp.pressed[e.code] = true;
       if (e.shiftKey) inp.pressed['ShiftDigit' + (e.code.replace('Digit', ''))] = !e.repeat && /^Digit/.test(e.code);
       try { G.Snd.unlock(); } catch (x) { /* sin audio */ }
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].indexOf(e.code) >= 0) e.preventDefault();
     });
     window.addEventListener('keyup', function (e) { inp.keys[e.code] = false; });
-    window.addEventListener('blur', function () { inp.keys = {}; if (G.state === 'play') G.state = 'paused'; });
+    window.addEventListener('blur', function () { inp.keys = {}; inp.joy = null; if (G.state === 'play') G.state = 'paused'; });
     function mpos(e) {
       var r = canvas.getBoundingClientRect();
       inp.mouse.x = (e.clientX - r.left) * G.W / r.width;
@@ -117,11 +118,63 @@
     });
     window.addEventListener('mouseup', function (e) { inp.keys['Mouse' + e.button] = false; });
     canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    bindTouch();
+  }
+
+  // Táctil: toque corto = clic (al soltar, en coordenadas del juego); joystick flotante con un toque que empieza en la mitad izquierda
+  // (solo en la aldea caminando o en la expedición); deslizar horizontal = inp.swipe (-1 izquierda / +1 derecha, un paso).
+  function bindTouch() {
+    var tc = {};
+    inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
+    function pt(e, t) {
+      var r = canvas.getBoundingClientRect();
+      return { x: (t.clientX - r.left) * G.W / r.width, y: (t.clientY - r.top) * G.H / r.height };
+    }
+    function joyOK(p) {
+      if (p.x >= 400) return false;
+      if (G.state === 'play') return true;
+      return G.state === 'aldea' && G.Aldea.joyOK();
+    }
+    canvas.addEventListener('touchstart', function (e) {
+      e.preventDefault(); try { G.Snd.unlock(); } catch (x) { /* audio */ }
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i], p = pt(e, t);
+        tc[t.identifier] = { x0: p.x, y0: p.y, t0: performance.now(), x: p.x, y: p.y, joy: false };
+        inp.mouse.x = p.x; inp.mouse.y = p.y;
+        if (!inp.joy.active && joyOK(p)) { tc[t.identifier].joy = true; inp.joy = { active: true, id: t.identifier, ox: p.x, oy: p.y, x: 0, y: 0 }; }
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i], p = pt(e, t), o = tc[t.identifier]; if (!o) continue;
+        o.x = p.x; o.y = p.y; inp.mouse.x = p.x; inp.mouse.y = p.y;
+        if (o.joy) {
+          var dx = p.x - inp.joy.ox, dy = p.y - inp.joy.oy, d = Math.hypot(dx, dy), R = 50;
+          if (d > R) { inp.joy.ox += dx / d * (d - R); inp.joy.oy += dy / d * (d - R); dx = p.x - inp.joy.ox; dy = p.y - inp.joy.oy; d = R; }
+          inp.joy.x = d > 8 ? dx / R : 0; inp.joy.y = d > 8 ? dy / R : 0;
+        }
+      }
+    }, { passive: false });
+    function end(e) {
+      e.preventDefault();
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i], p = pt(e, t), o = tc[t.identifier]; if (!o) continue;
+        delete tc[t.identifier];
+        var moved = Math.hypot(p.x - o.x0, p.y - o.y0), dur = performance.now() - o.t0;
+        if (o.joy) inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
+        inp.mouse.x = p.x; inp.mouse.y = p.y;
+        if (moved < 18 && dur < 600) inp.pressed.Mouse0 = true;
+        else if (Math.abs(p.x - o.x0) > 90 && Math.abs(p.y - o.y0) < 60 && dur < 700 && !o.joy) inp.swipe = p.x > o.x0 ? 1 : -1;
+      }
+    }
+    canvas.addEventListener('touchend', end, { passive: false });
+    canvas.addEventListener('touchcancel', end, { passive: false });
   }
 
   // ---------------------------------------------------------------- Mundo
   G.cam = { x: 0, y: 0 };
-  G.state = 'base';    // base | play | paused | cards | gameover
+  G.state = 'aldea';   // aldea | play | paused | cards | gameover
   G.time = 0; G.kills = 0; G.won = false;
 
   G.reset = function () {
@@ -139,6 +192,8 @@
   G.startGame = function () {
     try { Assets.unlock(); } catch (e) { /* sin audio */ }
     G.setLen(G.lenOverride || G.Save.data.len || 9);
+    var pd = G.Save.data.pending;   // compras de Rufo (Tónico / Imán): valen para ESTA expedición
+    G.runBuff = { tonic: !!pd.tonic, magnet: !!pd.magnet }; pd.tonic = 0; pd.magnet = 0; G.Save.save();
     G.Loot.beginRun();
     G.reset();
     // Las anclas ya están en la mano (Cards.reset). Si no hay ningún arma, primera decisión: 1 de 3 cartas iniciales
@@ -181,8 +236,8 @@
     var dt = G.STEP;
     if (inp.lock > 0) inp.lock -= dt;
     switch (G.state) {
-      case 'base':
-        G.Base.update(dt);
+      case 'aldea':
+        G.Aldea.update(dt);
         break;
       case 'play':
         if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; break; }
@@ -202,7 +257,7 @@
         G.Base.updateEnd();
         break;
     }
-    inp.pressed = {};
+    inp.pressed = {}; inp.swipe = 0;
   }
 
   // ---------------------------------------------------------------- Render
@@ -212,8 +267,16 @@
     return A.canvas;
   }
 
+  function drawJoy(c) {
+    var j = inp.joy; if (!j || !j.active) return;
+    c.save(); c.globalAlpha = 0.5; c.lineWidth = 4; c.strokeStyle = '#ffe9a0'; c.fillStyle = 'rgba(255,233,160,0.12)';
+    c.beginPath(); c.arc(j.ox, j.oy, 52, 0, 6.283); c.fill(); c.stroke();
+    c.fillStyle = '#ffe9a0'; c.beginPath(); c.arc(j.ox + j.x * 40, j.oy + j.y * 40, 22, 0, 6.283); c.fill(); c.restore();
+  }
+
   function draw() {
     ctx.imageSmoothingEnabled = false;
+    if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
@@ -240,6 +303,7 @@
     ctx.restore();
     ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     G.Hud.draw(ctx);
+    drawJoy(ctx);
   }
 
   // ---------------------------------------------------------------- Bucle
@@ -258,9 +322,11 @@
     G.ctx = ctx; canvas.focus();
     bindInput();
     G.Save.applyUrl();
+    G.Tree.sync();
     var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) Assets.setBiome(bq[1]);
     G.ground = buildGround();
     G.reset();
+    G.Aldea.open(false);
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();

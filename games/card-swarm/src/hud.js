@@ -71,7 +71,6 @@
 
   H.draw = function (c) {
     var p = G.player, i;
-    if (G.state === 'base') { G.Base.draw(c); return; }
     if (G.state === 'cards') { G.Cards.draw(c); return; }
     if (G.state === 'gameover') { G.Base.drawEnd(c); return; }
     // vida
@@ -90,6 +89,12 @@
     G.UI.part(c, 'thread', G.W - 105, 68, 7); G.txt(c, 'Partes ' + LR.total, G.W - 16, 68, 15, '#e8dcb0', 'right');
     if (LR.rare) { G.UI.part(c, 'rare', G.W - 105, 88, 7); G.txt(c, 'Rara x' + LR.rare, G.W - 16, 88, 13, '#e0a8ff', 'right'); }
     drawCombosList(c);
+    var qt = G.Quests.hudText();
+    if (qt) {
+      var qy = LR.rare ? 108 : 88, tgt = G.Quests.target();
+      G.txt(c, 'Encargo', G.W - 16, qy, 11, '#9a8fb0', 'right');
+      G.txt(c, qt, G.W - 16, qy + 17, 14, tgt ? '#ffe9a0' : '#9dffb4', 'right');
+    }
     // barra del jefe
     if (boss && boss.spawnT <= 0) {
       var bw = 460, bx = (G.W - bw) / 2, by = 72;

@@ -41,6 +41,16 @@
 </div>
 <canvas id="arena" width="960" height="540"></canvas>
 
+<div id="vilBox" style="display:none">
+<h2>Aldea Rescoldo (960x540, animada; solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px">
+  <label>Hora <input id="vtime" type="range" min="0" max="1" step="0.01" value="0.5"><output id="vtimev">ocaso</output></label>
+  <label>Animacion NPC <select id="vanim"><option>idle</option><option>work</option><option>talk</option><option>happy</option></select></label>
+  <label><input type="checkbox" id="vgrid"> mostrar colisiones</label>
+</div>
+<canvas id="village" width="960" height="540"></canvas>
+</div>
+
 <h2>Sprites</h2>
 <div class="btns" style="margin-bottom:10px"><button id="expAll">Exportar atlas PNG (todos los sprites)</button><span id="expMsg" style="color:var(--dim)"></span></div>
 <div class="grid" id="sprites"></div>
@@ -69,7 +79,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -120,7 +130,15 @@
     list.forEach(function (it) { x.drawImage(sheet(it.name), 0, y); meta[it.name] = { x: 0, y: y, w: it.w, h: it.h, frames: it.frames, anims: it.anims }; y += it.h; });
     toBlob(c, function (bl) { download(bl, 'atlas_' + A.getBiome() + '.png'); download(new Blob([JSON.stringify(meta, null, 1)], { type: 'application/json' }), 'atlas_' + A.getBiome() + '.json'); $('expMsg').textContent = ' ' + W + 'x' + H + ' px'; });
   };
+  function vilDraw(t) {
+    if (!A.drawVillage) return; var tv = +$('vtime').value; $('vtimev').textContent = tv < 0.2 ? 'dia' : tv < 0.75 ? 'ocaso' : 'noche';
+    var npcs = {}; A.NPC_NAMES.forEach(function (n) { npcs[n] = { anim: $('vanim').value }; });
+    var vc = $('village').getContext('2d'); A.drawVillage(vc, t, { time: tv, npcs: npcs });
+    if ($('vgrid').checked) { vc.strokeStyle = 'rgba(255,0,0,0.8)'; A.VILLAGE.colliders.forEach(function (r) { vc.strokeRect(r.x, r.y, r.w, r.h); }); vc.strokeStyle = 'rgba(0,255,0,0.8)'; var w = A.VILLAGE.walk; vc.strokeRect(w.x, w.y, w.w, w.h); }
+  }
+  if (A.drawVillage) $('vilBox').style.display = 'block';
   function tick(t) {
+    vilDraw(t);
     ANIMS.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); a.ctx.drawImage(A.animFrame(a.name, a.anim, t), 0, 0); });
     drawArena(t);
     requestAnimationFrame(tick);

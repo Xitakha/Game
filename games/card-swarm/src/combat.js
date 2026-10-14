@@ -80,7 +80,11 @@
     if (e.dead || e.spawnT > 0 || e.immune) return 0;   // el Espectro es inmune mientras se desvanece
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
-    if (tag === 'fire') dmg *= m.fireDmg;
+    var tf = G.Tree.fx;
+    if (tag === 'fire') {
+      dmg *= m.fireDmg;
+      if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
+    }
     if (tag === 'steel') {
       dmg *= m.steelDmg;
       if ((a.edge_ice && slowed) || Math.random() < m.steelCrit) { dmg *= 2; crit = true; }
@@ -106,7 +110,7 @@
     var blocked = false;
     if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
       if (e.shieldDown) { if (e.type === 'mini_bulwark') dmg *= 1.5; }
-      else { dmg *= 0.2; blocked = true; }
+      else { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
     }
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (blocked) {
@@ -116,7 +120,10 @@
       if (!e.sparkSfx || G.time - e.sparkSfx > 120) { e.sparkSfx = G.time; G.sfx('hit', { pitch: 2.2, vol: 0.4 }); }
     }
     // estados (antes del daño para que el veneno cuente si muere en este golpe)
-    if (o.burn || (a.forge && tag === 'steel' && o.proj)) C.burn(e, o.burn || 5, 2000);
+    if (o.burn || (a.forge && tag === 'steel' && o.proj)) {
+      if (o.id === 'spark' && tf.pavesa) C.burn(e, (o.burn || 5) * 1.3, 4000);   // Pavesa (F1-A): quemadura +2 s y +30 %
+      else C.burn(e, o.burn || 5, 2000);
+    }
     if (o.slow) C.slow(e, o.slow[0], o.slow[1]);
     if (o.poison) C.poison(e, 1);
     if (o.bleed) C.bleed(e);
@@ -240,10 +247,10 @@
       if (z.team === 'e') continue;
       c.save(); c.globalAlpha = (z.kind === 'vapor' ? 0.35 : 0.3) * u;
       var g = c.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r);
-      var k = z.kind === 'vapor' ? '232,246,255' : '110,220,70';
+      var fk = z.kind === 'napalm' || z.kind === 'embers', k = z.kind === 'vapor' ? '232,246,255' : fk ? '255,130,40' : '110,220,70';
       g.addColorStop(0, 'rgba(' + k + ',0.7)'); g.addColorStop(1, 'rgba(' + k + ',0.05)');
       c.fillStyle = g; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r * 0.8, 0, 0, 6.283); c.fill();
-      c.globalAlpha = 0.6 * u; c.strokeStyle = z.kind === 'vapor' ? '#ffffff' : '#9aff6a'; c.lineWidth = 2;
+      c.globalAlpha = 0.6 * u; c.strokeStyle = z.kind === 'vapor' ? '#ffffff' : fk ? '#ffb347' : '#9aff6a'; c.lineWidth = 2;
       c.beginPath(); c.ellipse(z.x, z.y, z.r * (0.9 + 0.05 * Math.sin(t * 5 + i)), z.r * 0.72, 0, 0, 6.283); c.stroke();
       c.restore();
     }
@@ -272,6 +279,17 @@
     else for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
     if (Math.random() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
     G.Loot.onKill(e);
+    if (e.burnT > 0) {
+      var tf = G.Tree.fx;
+      if (tf.cenizas) {   // Cenizas ardientes (F6): el quemado que muere deja fuego en el suelo
+        C.zone({ kind: 'embers', x: e.x, y: e.y, r: 35, life: 3000, dps: 6, tag: 'fire', interval: 500 });
+        fx.flames(e.x, e.y, 3, 14);
+      }
+      if (M().pira) {   // Pira (Emblema, 4+ Fuego): las quemaduras se propagan al morir
+        var pl = C.inRange(e.x, e.y, 70), pn = 0;
+        for (var pi = 0; pi < pl.length && pn < 3; pi++) if (pl[pi] !== e) { C.burn(pl[pi], e.burnDps, 2500); fx.bolt(e.x, e.y, pl[pi].x, pl[pi].y, '#ff7a2a', 2); pn++; }
+      }
+    }
     if (a.frenzy) p.frenzyT = 1500;
     if (a.pact && tag === 'fire') G.Player.heal(p, 2);
     if (e.poisonN > 0) {
@@ -309,7 +327,7 @@
   }
 
   function updateGems(dt) {
-    var p = G.player, s = dt / 1000, R = B.player.pickup * M().magnet;
+    var p = G.player, s = dt / 1000, R = B.player.pickup * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1);
     for (var i = G.gems.length - 1; i >= 0; i--) {
       var g = G.gems[i]; g.t += dt;
       var dx = p.x - g.x, dy = p.y - g.y, d = Math.hypot(dx, dy);

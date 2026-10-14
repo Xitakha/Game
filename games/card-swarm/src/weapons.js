@@ -19,6 +19,15 @@
       o: o.o || {}, hit: new Set(), t: 0, rot: 0, back: false, speed: o.speed });
   }
 
+  // Explosión de un proyectil (Bola de brasa). Mejoras de Fuego: Metralla (3 fragmentos de 8) y Napalm (suelo ardiente 2 s, 4 dps, radio 40)
+  function explodeProj(q) {
+    C().boom(q.x, q.y, q.explode, q.dmg, q.tag, { id: q.id, burn: 3, kb: 50 });
+    if (q.id !== 'ember') return;
+    var tf = G.Tree.fx;
+    if (tf.metralla) for (var k = 0; k < 3; k++) spawnProj({ x: q.x, y: q.y, ang: G.rnd(0, 6.283), speed: 300, dmg: 8, tag: 'fire', id: 'ember', kind: 'spark', r: 5, life: 520 });
+    if (tf.napalm) C().zone({ kind: 'napalm', x: q.x, y: q.y, r: 40, life: 2000, dps: 4, tag: 'fire', id: 'ember', interval: 500 });
+  }
+
   // Devuelve true si hay que eliminar el proyectil
   W.updateProj = function (q, dt, s) {
     var p = G.player, i, e, L = G.enemies;
@@ -42,13 +51,13 @@
       else if (q.tag === 'poison') fx.dot(q.x, q.y, G.rnd(-10, 10), -20, 380, '#7be34a', 3, { drag: 1 });
       else if (q.tag === 'steel' && q.kind === 'axe') fx.dot(q.x, q.y, 0, 0, 200, '#dfe6f0', 2, { add: true });
     }
-    if (out) { if (q.explode) C().boom(q.x, q.y, q.explode, q.dmg, q.tag, { id: q.id, burn: 3, kb: 50 }); return true; }
+    if (out) { if (q.explode) explodeProj(q); return true; }
     for (i = 0; i < L.length; i++) {
       e = L[i];
       if (e.dead || e.spawnT > 0 || q.hit.has(e)) continue;
       if (Math.hypot(q.x - e.x, q.y - e.y) < q.r + e.r) {
         q.hit.add(e);
-        if (q.explode) { C().boom(q.x, q.y, q.explode, q.dmg, q.tag, { id: q.id, burn: 3, kb: 50 }); return true; }
+        if (q.explode) { explodeProj(q); return true; }
         var oo = { tag: q.tag, id: q.id, ang: q.ang, kb: 30, proj: true, sx: q.x - Math.cos(q.ang) * 30, sy: q.y - Math.sin(q.ang) * 30 };   // sx/sy: origen del golpe (escudo frontal)
         for (var k in q.o) oo[k] = q.o[k];
         C().deal(e, q.dmg, oo);
@@ -179,7 +188,8 @@
   }
   function updateOrbital(s, d, L, dt, p) {
     s.ang = (s.ang || 0) + d.omega * dt / 1000;
-    var n = d.n + (s.lvl >= 3 ? 1 : 0), R = d.orbR * L.area; s.bodies = [];
+    var tf = G.Tree.fx, ring = d.id === 'ring';
+    var n = d.n + (s.lvl >= 3 ? 1 : 0) + (ring && tf.corona ? 1 : 0), R = d.orbR * L.area * (ring && tf.cometa ? 1.25 : 1); s.bodies = [];
     for (var i = 0; i < n; i++) {
       var a = s.ang + i * 6.283 / n, x = p.x + Math.cos(a) * R, y = p.y - 2 + Math.sin(a) * R;
       s.bodies.push({ x: x, y: y, a: a });
@@ -189,7 +199,7 @@
         if (!tickEnemy(e, d.id, d.tick)) continue;
         var o = { tag: d.tag, id: d.id, ang: a + Math.PI / 2, kb: d.kb || 0 };
         if (d.burn) o.burn = d.burn;
-        C().deal(e, d.dmg * L.dmg, o);
+        C().deal(e, d.dmg * L.dmg * (ring && tf.cometa ? 1.2 : 1), o);
         C().shot(d.tag);
       }
     }
@@ -225,7 +235,7 @@
       s.cd -= dt * base * (d.tag === 'lightning' ? m.lightSpd : 1);
       if (s.cd <= 0) {
         if (FIRE[d.kind](s, d, L, p)) {
-          s.cd = s.cdMax = d.cd * L.cd; s.flash = 140;
+          s.cd = s.cdMax = d.cd * L.cd * G.Tree.cdMul(d.id); s.flash = 140;
           G.Snd.play(d.tag, 1 + (i - 2) * 0.03);
           C().shot(d.tag);
         } else s.cd = 0;

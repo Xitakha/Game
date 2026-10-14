@@ -192,3 +192,11 @@ Emotes sueltos: `emote` 16x16 base = 32x32 final, frames 0 corazon, 1 '!', 2 '?'
 ## 5) Props / edificios como sprites sueltos (por si quieres componer tu escena)
 Ancla = bottom-center salvo cielo/suelo (origen 0,0 a 960x540). Tamano final:
 `vil_sky` 960x540 (frames 0 dia, 1 ocaso, 2 noche) | `vil_ground` 960x540 (transparente arriba, camino y plaza horneados) | `vil_forge` 192x152 | `vil_anvil` 44x28 | `vil_board` 128x136 (anim `wave` 3 fps, 3 frames) | `vil_archive` 144x192 | `vil_portal` 168x192 (anim `swirl` 8 fps, 6 frames) | `vil_tent` 144x128 | `vil_pot` 52x48 (anim `fire`, 3 frames) | `vil_cart` 136x104 | `vil_bonfire` 80x68 (anim `fire` 10 fps, 6 frames) | `vil_tree0` 112x144, `vil_tree1` 88x140, `vil_tree2` 88x120 (anim `sway` 1.2 fps, 2 frames) | `vil_lantern` 28x84 | `vil_torch` 24x68 (anim `fire` 9 fps, 4 frames) | `vil_fence` 64x32 | `vil_barrel` 32x40 | `vil_crate` 36x32 | `vil_hay` 44x28 | `vil_bush` 48x32 | `vil_bunting` 200x48 (anim `sway` 2 fps, 3 frames) | `vil_sign` 88x68 | `vil_cloud` 96x32 (2 frames).
+
+## Notas finales Aldea v3 (valores reales del codigo)
+- `VILLAGE.npcs[n]` = `{name, title, x, y, flip, color, top, sw, off}`: `top` = altura de la cabeza sobre los pies (px, para anclar burbuja/marcador `!`: y - top - 8), `sw` = radio X de sombra. Posiciones: grum (108,340), vesper (352,348), rufo (744,436 flip), ulalume (772,352 flip), lanudo (438,410), castana (538,352). Interaccion sugerida a <56 px de (x,y).
+- `VILLAGE.spots`: marloStart (470,440), portalReturn (850,360), bonfire (480,402), portal (872,330; el arco ocupa x 788-956, y 116-308), forge (130,308), board (300,308), archive (715,308), tent (560,308), cart (668,426).
+- Burbuja: la caja visible ocupa `x+2..x+w-2, y+3..y+h-4`; con `tail:'down'` la colita sale por debajo (+20 px), con `'up'` por arriba (-14 px). Sin `tail` (`tail:null`) solo caja.
+- Orden de dibujo: cada prop tiene `sort`; los actores usan SUS PIES (`y`). Marlo con `y` > 308 queda delante de los edificios; con y<308 detras.
+- `Assets.drawVillageLight(ctx,t,opts)` incluye vineta y el brillo del portal. Coste medido: ~5 ms/frame para `drawVillage` completo (Chromium headless).
+- Vista previa: `tools/asset-preview/index.html?game=card-swarm` (seccion "Aldea Rescoldo": hora, animacion de NPC, colisiones). Capturas: `studio/docs/capturas-aldea/`.

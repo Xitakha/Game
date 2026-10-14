@@ -75,12 +75,16 @@
     return Math.max(1, Math.round(d.maxAlive * sc));
   }
 
+  // Encargo activo (quests.js): el tipo objetivo pesa x2,5 y entra como mucho a los 2:30 virtuales
+  function qTarget() { try { return G.Quests.target(); } catch (e) { return null; } }
+  function fromOf(k, qt) { var f = B.enemy[k].from; return k === qt ? Math.min(f, G.Quests.EARLY) : f; }
+
   W.update = function (dt) {
-    var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies;
+    var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
     if (!W.bossSpawned && G.time >= G.BOSS_T) spawnBoss();
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
-    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && vt >= B.enemy[k].at) spawnElite(k); });
+    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && vt >= (k === qt ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) spawnElite(k); });
     W.t += dt;
     if (W.t < 1500) return;
     W.t -= 1500;
@@ -89,7 +93,7 @@
     var cap = B.cap(m), alive = G.enemies.length, counts = {};
     G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];
-    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && d.from <= vt && (!boss || B.light[k])) types.push(k); });
+    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && fromOf(k, qt) <= vt && (!boss || B.light[k])) types.push(k); });
     // Rotación de sabor: cada 60 s un tipo protagonista (no gusano) pesa x2.2
     W.starT -= 1500;
     if (W.starT <= 0 || (W.star && types.indexOf(W.star) < 0)) {
@@ -114,7 +118,7 @@
         return;
       }
     }
-    function wOf(k) { return B.enemy[k].w * B.tierMul(k, m) * (k === W.star ? 2.2 : 1); }
+    function wOf(k) { return B.enemy[k].w * B.tierMul(k, m) * (k === W.star ? 2.2 : 1) * (k === qt ? G.Quests.WEIGHT : 1); }
     var guard = 0, tmul = function (k) { return B.tierMul(k, m); };
     while (guard++ < 60 && alive < cap) {
       var opts = types.filter(function (k) {

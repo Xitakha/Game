@@ -222,7 +222,7 @@
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
     drawMarks(c, now, tg);
-    drawTopHud(c);
+    if (mode !== 'panel') drawTopHud(c);
     if (mode === 'walk' || D.active()) drawButtons(c, tg);
     D.draw(c);
     if (mode === 'panel') G.Panels.draw(c);

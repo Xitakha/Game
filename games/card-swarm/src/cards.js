@@ -80,8 +80,11 @@
 
   // Recalcula modificadores y combos activos; con announce=true anuncia los nuevos (banner, stinger, línea)
   C.recalc = function (announce) {
-    var m = C.mods, p = G.player;
-    m.fireDmg = 1 + 0.25 * lv('mantle'); m.slowAdd = 0.15 * lv('frost'); m.slowDur = 1000 * lv('frost');
+    var m = C.mods, p = G.player, tf = G.Tree.fx, fireN = 0, hh = hand();
+    for (var fi = 0; fi < hh.length; fi++) if (hh[fi] && C.def(hh[fi].id).tag === 'fire') fireN++;
+    m.fireN = fireN; m.pira = !!tf.emblem && fireN >= 4;
+    // Fuego: Manto de ceniza +25 %, Pulmón de fragua (nodo F4) +8 %, Emblema de Fuego (F10) +25 % con 3+ cartas Fuego en la mano
+    m.fireDmg = 1 + 0.25 * lv('mantle') + (tf.lung ? 0.08 : 0) + (tf.emblem && fireN >= 3 ? 0.25 : 0); m.slowAdd = 0.15 * lv('frost'); m.slowDur = 1000 * lv('frost');
     m.lightSpd = 1 / (1 - Math.min(0.6, 0.2 * lv('bell'))); m.lightJumps = Math.round(lv('bell'));
     m.poisonDmg = 1 + 0.5 * lv('bile'); m.poisonMax = lv('bile') > 0 ? 5 : 3;
     m.steelDmg = 1 + 0.25 * lv('whet'); m.steelCrit = 0.1 * lv('whet');
