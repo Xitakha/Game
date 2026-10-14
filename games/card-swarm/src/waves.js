@@ -4,6 +4,7 @@
   'use strict';
   var G = window.G, B = G.B, W = G.Waves = {};
 
+  W.MINI_LAST = 45000;   // ms reales: un minijefe pendiente no entra en los últimos 45 s antes del jefe final
   W.reset = function () { W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
   W.reset();
 
@@ -80,7 +81,12 @@
     if (!W.bossSpawned && G.runT >= G.BOSS_T) spawnBoss();
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
-    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && vt >= (k === qt ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) spawnElite(k); });
+    // v5: los dos minijefes nunca coexisten (la Madre Colmena espera a que el Coloso caiga) y ninguno entra en el último minuto previo al jefe final
+    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) {
+      if (!B.enemy[k].elite || W.elitesDone[k] || vt < (k === qt ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) return;
+      if (E.minis().length || G.runT >= G.BOSS_T - W.MINI_LAST) return;
+      spawnElite(k);
+    });
     W.t += dt;
     if (W.t < 1500) return;
     W.t -= 1500;

@@ -19,7 +19,7 @@
     { id: 'dart', name: 'Dardo tóxico', short: 'Dardo', tag: 'poison', type: 'attack', kind: 'proj', proj: 'dart', icon: 'dart', cd: 900, dmg: 6, speed: 380, poison: true, desc: 'Proyectil de 6 de daño + veneno (apila x3).' },
     { id: 'pool', name: 'Charco', short: 'Charco', tag: 'poison', type: 'attack', kind: 'pool', icon: 'pool', cd: 3500, poolR: 40, dps: 6, desc: 'Charco de 5 s bajo el enemigo más cercano. 6 dps + veneno.' },
     { id: 'cloud', name: 'Nube pútrida', short: 'Nube', tag: 'poison', type: 'attack', kind: 'aura', icon: 'cloud', auraR: 60, dps: 3, poison: true, desc: 'Aura de radio 60: 3 dps + veneno. Permanente.' },
-    { id: 'fang', name: 'Colmillo', short: 'Colmillo', tag: 'blood', type: 'attack', kind: 'slash', icon: 'fang', cd: 1100, dmg: 18, range: 55, desc: 'Tajo en arco de 90 grados. 18 de daño; matar cura 1 HP.' },
+    { id: 'fang', name: 'Colmillo', short: 'Colmillo', tag: 'blood', type: 'attack', kind: 'slash', icon: 'fang', cd: 1100, dmg: 18, range: 55, desc: 'Tajo en arco de 90 grados. 18 de daño; al matar, 20% de curar 3 HP.' },
     { id: 'bleed', name: 'Sangría', short: 'Sangría', tag: 'blood', type: 'attack', kind: 'mark', icon: 'drop', cd: 2000, dmg: 2, desc: 'Marca a 3 enemigos cercanos: sangrado 5 dps durante 3 s.' },
     { id: 'dagger', name: 'Daga', short: 'Daga', tag: 'steel', type: 'attack', kind: 'fan', icon: 'dagger', cd: 1200, dmg: 9, speed: 460, desc: 'Lanza 3 dagas en abanico. 9 de daño cada una.' },
     { id: 'axe', name: 'Hacha giratoria', short: 'Hacha', tag: 'steel', type: 'attack', kind: 'boomerang', icon: 'axe', cd: 2000, dmg: 22, speed: 300, desc: 'Boomerang que atraviesa. 22 de daño, ida y vuelta.' },
@@ -52,7 +52,7 @@
     { k: 'edge_ice', name: 'FILO GÉLIDO', a: 'ice', b: 'steel', desc: 'ACERO contra ralentizados: crítico garantizado (x2).' },
     { k: 'forge', name: 'FORJA', a: 'fire', b: 'steel', desc: 'Los proyectiles de ACERO queman.' },
     { k: 'plague', name: 'PLAGA CONGELADA', a: 'poison', b: 'ice', desc: 'Veneno +3 s en ralentizados; al morir se propaga a 3.' },
-    { k: 'pact', name: 'PACTO ARDIENTE', a: 'blood', b: 'fire', desc: 'Matar con FUEGO cura 2 HP; +20% de daño con HP < 50%.' },
+    { k: 'pact', name: 'PACTO ARDIENTE', a: 'blood', b: 'fire', desc: 'Matar con FUEGO: 20% de curar 4 HP; +20% de daño con HP < 50%.' },
     { k: 'discharge', name: 'DESCARGA TÓXICA', a: 'poison', b: 'lightning', desc: 'Un rayo consume el veneno: 8 de daño por stack.' }
   ];
   C.combos.forEach(function (c, i) { c.pitch = 0.8 + (i % 6) * 0.1; });
@@ -181,7 +181,7 @@
   function finish(res, id) {
     var d = C.def(id), p = G.player;
     C.recalc(true);
-    if (id === 'heart') G.Player.heal(p, 30);
+    if (id === 'heart') G.Player.heal(p, 30, 'card');
     if (res.fused) {
       var s = C.slotOf(id);
       G.Hud.banner('¡FUSIÓN! ' + d.name + ' Nv' + s.lvl, 1600, '#ffd24a');

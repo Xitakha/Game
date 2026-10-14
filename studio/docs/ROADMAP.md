@@ -15,7 +15,7 @@
 
 ## Cola de trabajo de Swarm Hand (orden)
 1. [x] Jefe Pastor J1 (arte + lógica)
-2. [ ] Ajustes de balance del playtest: menos XP por gema / curva más lenta; minijefes con más habilidades y presión; carta de curación (20% de prob. por golpe); velocidad de enemigos creciente con el tiempo (con tope); bajar de nuevo drops y costes (meta: 1 craft o 1 mejora de talento por expedición de 7 min)
+2. [x] Ajustes de balance del playtest: menos XP por gema / curva más lenta; minijefes con más habilidades y presión; carta de curación (20% de prob. por golpe); velocidad de enemigos creciente con el tiempo (con tope); bajar de nuevo drops y costes (meta: 1 craft o 1 mejora de talento por expedición de 7 min)
 3. [ ] Vista inclinada tipo Hades (Nivel 1) detrás de ?view=iso: suelo aplastado ~0.6, telegrafías elípticas, sprites en pie ordenados por y, sombras; lógica sin cambios
 4. [ ] Jefes J2 (Karceron, Letea), J3 (Peligro, cacería) y Fase 2b de la aldea (resto de árboles, Archivista, cocinera)
 5. [ ] Versión móvil (web móvil + PWA)

@@ -45,7 +45,7 @@
       resist: [{ tag: 'poison', mul: 0.8 }],
       hpCal: 4.0, // calibración con el bot (README, Jefes v4): la fórmula del doc (6000 a 9 min) supone DPS_ref p50 = 80; el DPS real medido contra el jefe es ~210 (p25 ~120, p75 ~300),
                   // así que el HP efectivo es 6000 x 4,0 = 24000 a 9 min (18000 a 7 min, 26400 a 10) y la duración del p50 sale en ~120 s. ?hpcal=<n> lo fuerza para pruebas.
-      brasas: 150, brasasPart: 40, pf: 2, pfFirst: 3
+      brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3   // v5: antes 150 / 40
     }
   };
   var TROPHY = S.TROPHY = {   // trofeo -> sprite (Assets) y nombre; cada trofeo cuenta como 1 Esencia (parts.rare)

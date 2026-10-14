@@ -6,6 +6,7 @@
   var G = window.G, Q = G.Quests = {};
 
   Q.WEIGHT = 2.5;            // multiplicador de peso del enemigo objetivo en el director
+  Q.REPEAT_MUL = 0.5;        // v5: al repetir un encargo las partes y Brasas valen la mitad (el PF no cambia)
   Q.EARLY = 150000;          // entrada adelantada (2:30 en tiempo virtual)
 
   Q.DEFS = [
@@ -48,14 +49,14 @@
   // Entrega: devuelve { text } o null
   Q.claim = function () {
     var d = Q.active(); if (!d || !Q.isReady()) return null;
-    var Sv = G.Save.data, first = Q.times(d.id) === 0, pf = first ? d.pf : d.pfRepeat, k;
-    for (k in d.rewardParts) G.Save.add(k, d.rewardParts[k]);
-    Sv.brasas += d.brasas;
+    var Sv = G.Save.data, first = Q.times(d.id) === 0, pf = first ? d.pf : d.pfRepeat, k, mul = first ? 1 : Q.REPEAT_MUL, rp = {}, br = Math.round(d.brasas * mul);
+    for (k in d.rewardParts) { rp[k] = Math.max(1, Math.round(d.rewardParts[k] * mul)); G.Save.add(k, rp[k]); }
+    Sv.brasas += br;
     var got = G.Tree.addPF(pf);
     Sv.quest.done[d.id] = Q.times(d.id) + 1; Sv.quest.prog[d.id] = 0; Sv.quest.active = null;
     G.Save.save();
-    var parts = Object.keys(d.rewardParts).map(function (p) { return d.rewardParts[p] + ' ' + G.Loot.part(p).short; }).join(', ');
-    return { text: parts + ', ' + d.brasas + ' Brasas' + (got ? ', +' + got + ' PF' : ' (PF al tope)'), first: first };
+    var parts = Object.keys(rp).map(function (p) { return rp[p] + ' ' + G.Loot.part(p).short; }).join(', ');
+    return { text: parts + ', ' + br + ' Brasas' + (got ? ', +' + got + ' PF' : ' (PF al tope)'), first: first };
   };
 
   Q.hudText = function () {

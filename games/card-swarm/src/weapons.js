@@ -158,7 +158,7 @@
       for (var i = 0; i < list.length; i++) {
         var e = list[i], ea = Math.atan2(e.y - p.y, e.x - p.x), dd = Math.hypot(e.x - p.x, e.y - p.y);
         if (dd > e.r + 8 && Math.abs(G.angDiff(ea, a)) > Math.PI / 4) continue;
-        C().deal(e, d.dmg * L.dmg, { tag: d.tag, id: d.id, ang: ea, kb: 35, lifesteal: 1, sx: p.x, sy: p.y });
+        C().deal(e, d.dmg * L.dmg, { tag: d.tag, id: d.id, ang: ea, kb: 35, lifesteal: G.B.heal.fang, sx: p.x, sy: p.y });
       }
       return true;
     },

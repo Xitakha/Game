@@ -38,10 +38,22 @@
       blinker: { hp: 18,  spd: 65, dmg: 16, r: 11, cost: 6, from: 315000, w: 7,  spr: 'enemy_blinker', xp: 6, ash: 3, maxAlive: 4 },
       scorcher:{ hp: 30,  spd: 60, dmg: 12, r: 12, cost: 6, from: 360000, w: 6,  spr: 'enemy_scorcher',xp: 6, ash: 3, maxAlive: 3 },
       warlock: { hp: 30,  spd: 50, dmg: 0,  r: 13, cost: 8, from: 405000, w: 5,  spr: 'warlock', xp: 6, ash: 5, maxAlive: 2 },
-      mini_bulwark: { hp: 420, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
-      mini_hive:    { hp: 520, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
+      mini_bulwark: { hp: 2200, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
+      mini_hive:    { hp: 2800, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
       // jefe: solo se usan spr/xp/ash; HP, tamaño y IA reales viven en boss.js (G.Boss, DESIGN-v4-jefes.md)
       boss:    { hp: 1400, spd: 60, dmg: 20, r: 24, cost: 0, from: Infinity, w: 0, spr: 'boss',   xp: 60, ash: 30 }
+    },
+    // Minijefes v5 (antes 420 / 520 HP y 2 ataques cada uno): HP, parte rompible, enrage al 50 % y ataques nuevos con telegrafía >= 400 ms. Toda telegrafía cumple la
+    // regla de esquiva (tele >= 250 + 1000 * px_de_salida / 190). Los tiempos son ms, las distancias px. Ver README "Minijefes v5".
+    mini: {
+      bulwark: { shieldPct: 0.30,     // Escudo rompible: 30 % del HP máximo en daño FRONTAL bloqueado (el golpe por la espalda/área no lo gasta) -> ventana x1,5 + sin bloqueo
+        expMul: 1.5, breakExp: 3000, enrageAt: 0.5, enrageSpd: 1.35, recMul: 0.7, atkGap: 1000, enrageGap: 600,
+        chargeTele: 800, chargeFix: 500, chargeTele2: 600, chargeFix2: 330, chargeLen: 300, chargeSpd: 340, chargeDmg: 1.1, chargeExp: 1600, ringR: 95, ringMs: 380, ringDmg: 16 / 22,
+        orbTele: 650, orbDur: 3200, orbLaunch: 500, orbR: 80, orbOmega: 2.4, orbN: 3, orbN2: 4, orbDmg: 12 / 22, bitSpd: 250 },
+      hive: { sacPct: 0.28, sacShare: 0.4,      // Saco de larvas rompible: absorbe el 40 % de TODO el daño recibido hasta el 28 % del HP máx.; al romper: ventana x1,4 y sin lluvia de larvas
+        expMul: 1.4, breakExp: 3500, enrageAt: 0.5, enrageSpd: 1.2, atkGap: 3000, enrageGap: 2200, kidsMax: 12,
+        rainTele: 750, rainN: 5, rainN2: 7, rainR: 26, rainDmg: 1.0, tideTele: 1000, tideN: 4, tideN2: 5, tideR: 50, burstTele: 1150, burstR: 150, burstN: 8, burstExp: 2200,
+        swellGap: 15000, swellGap2: 9000 }
     },
     // Curva del director: multiplicador de PESO de spawn y de TOPE (maxAlive) por tier y minuto (interpolación lineal entre filas).
     // Lo débil sale y lo fuerte entra, con presupuesto total (bp/cap) intacto. Suelo 'floor' = mínimo para no perder variedad.
@@ -69,6 +81,9 @@
     light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
     // Multiplicador GLOBAL de daño de cartas (armas, combos, zonas, estados). Aplicado en G.Combat.deal y G.Combat.dot. No afecta a enemigos. 0.98 = -2 %.
     cardDmgMul: 0.98,
+    // Curación por golpe (v5): el robo de vida (Colmillo) y el Pacto ardiente solo curan con esta probabilidad por kill, a cambio de una cantidad mayor.
+    // Cura media por kill: Colmillo 1 -> 0,6 HP (-40 %); Pacto ardiente 2 -> 0,8 HP por kill de Fuego (-60 %). Sangre envenenada (4 HP cada 15 kills) no cambia.
+    heal: { chance: 0.2, fang: 3, pact: 4, bloodpoison: 4 },
     skipAsh: 5,                                                      // Ceniza que da omitir la elección de carta al subir de nivel
     spawnTelegraph: 400,
     // presupuesto por pulso de 1,5 s; el factor tras el min 3 compensa que los enemigos fuertes cuestan más (densidad total similar)
@@ -76,7 +91,33 @@
     cap: function (m) { return Math.min(30 + 10 * m, 110); },       // tope de enemigos
     hpMult: function (m) { return Math.min(3.2, 1 + 0.22 * m); },
     dmgMult: function (m) { return 1 + 0.06 * m; },
-    xpNeed: function (L) { return L === 1 ? 8 : 8 + 6 * L; }   // la 1.ª subida llega pronto (~0:15)
+    // Velocidad creciente (v5): los enemigos NORMALES (no élites, no jefe, no adds del jefe) ganan +0,8 % de velocidad de movimiento por minuto de la escala de 9:00
+    // (G.vt, igual que hpMult/dmgMult: a 7 y 10 min se llega al mismo valor al mismo punto relativo de la run), con tope +25 % (se alcanzaría a los ~31 min virtuales).
+    // Solo escala la velocidad de DESPLAZAMIENTO (e.spd): las telegrafías y las velocidades de ataque (carga del jabalí, dash del Ascua, flechas) no cambian.
+    speedRamp: { perMin: 0.008, cap: 0.25 },
+    speedMul: function (m) { return 1 + Math.min(G.B.speedRamp.cap, G.B.speedRamp.perMin * m); },
+    // ---- Experiencia (v5) ----------------------------------------------------------------------------------------------------------------------
+    // XP para pasar del nivel L al L+1:  first (L=1)  /  round(base + lin*L + quad*L^2)  (L >= 2).  Antes: 8 + 6L (la build completa llegaba al min 3-4).
+    // Cada gema de XP vale  v * gemMul * lenMul(duración)  (x Imán de brasas +20 %).  lenMul compensa que las runs cortas comprimen el director
+    // (mas kills por minuto real): 7 min x1,30, 9 min x1,00, 10 min x0,885 (lineal entre puntos). Objetivo: la build completa (5 cartas Nv3 = 15 puntos
+    // de nivel de carta, ~nivel 16-17 con el bot) llega al ~82 % de la expedición (hacia el jefe), no a la mitad.
+    // Nivel esperado al empezar cada minuto (bot de balance tools/card-swarm-balance-bot, media de 8 runs, god, recoge gemas, fusiona primero) - antes -> ahora.
+    //   La subida a Nv3 de las 5 cartas ("build completa") exige 13 elecciones tras las 2 anclas = nivel ~14-15. El jefe aparece al 83 % de la run y congela el reloj.
+    //   minuto        1     2     3     4     5     6     7     8     9    10
+    //   7 min antes  5,0   8,0  12,0  16,0  20,1  24,0  25,3   (jefe a 5:50)   build completa (5 x Nv3) a los 3:23
+    //   7 min ahora  3,0   6,0   8,0  10,0  12,6  14,9  15,0                    build completa a los 5:23  (77 % de la run, 92 % del camino al jefe)
+    //   9 min antes  5,0   8,0  11,0  14,1  17,8  21,6  25,3  28,0              build completa a los 3:46
+    //   9 min ahora  3,0   5,0   6,0   8,0  10,0  12,0  14,0  15,0  15,0        build completa a los 6:55  (77 %; jefe a 7:30)
+    //  10 min antes  5,0   7,9  10,1  13,1  17,0  20,0  24,0  27,9  29,8  30,0  build completa a los 4:02
+    //  10 min ahora  3,0   4,0   6,0   7,0   9,0  11,0  12,0  14,0  15,0  15,0  build completa a los 7:46  (78 %; jefe a 8:20)
+    xp: { first: 6, base: 26, lin: 0, quad: 0.9, gemMul: 0.5, lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
+    xpNeed: function (L) { var x = G.B.xp; return L === 1 ? x.first : Math.round(x.base + x.lin * L + x.quad * L * L); },
+    xpGem: function () {   // multiplicador de XP por gema según la duración elegida
+      var x = G.B.xp, t = x.lenMul, m = G.RUN_LEN / 60000, i;
+      if (m <= t[0][0]) return x.gemMul * t[0][1];
+      for (i = 1; i < t.length; i++) if (m <= t[i][0]) { var u = (m - t[i - 1][0]) / (t[i][0] - t[i - 1][0]); return x.gemMul * (t[i - 1][1] + (t[i][1] - t[i - 1][1]) * u); }
+      return x.gemMul * t[t.length - 1][1];
+    }
   };
 
   // ---------------------------------------------------------------- Utilidades

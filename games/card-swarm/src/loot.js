@@ -22,27 +22,40 @@
 
   // Parte común que suelta cada enemigo normal y probabilidad (comunes 30-35 %). Los invocados (summoned) no sueltan.
   // v3 (hotfix de economía): 12-15 % (antes 30-35 %). Ver DESIGN-v3-aldea.md sección C.
+  // v5 (economía): TODAS estas probabilidades se multiplican por L.DROP_MUL (abajo). Meta: una expedición de 7 min = 1 craft de carta O 1 mejora de talento
+  // (no ambas); 9-10 min = 1 craft + medio extra (ver README, tabla "Economía v5").
+  L.DROP_MUL = 0.70;
   L.DROPS = {
     worm: ['thread', 0.12], warlock: ['thread', 0.14], archer: ['feather', 0.13], fanner: ['spine', 0.14], sower: ['spine', 0.14],
     boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15]
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)
+  // v5: los minijefes son ahora un reto real (más HP, partes rompibles, ataques nuevos) y su botín garantizado sube (antes plate 2 + feather 1 / spine 2 + thread 2, rare 20 %).
+  // Romper su parte (Escudo / Saco) suelta además L.MINI_PART_BONUS. Además dan PF: ver Tree.onElite (L.PF_SOURCES.miniFrag).
   L.GUARANTEED = {
-    mini_bulwark: { parts: { plate: 2, feather: 1 }, rare: 0.20 },
-    mini_hive:    { parts: { spine: 2, thread: 2 }, rare: 0.20 },
+    mini_bulwark: { parts: { plate: 3, feather: 2, thread: 2 }, rare: 0.35 },
+    mini_hive:    { parts: { spine: 3, thread: 3, feather: 1 }, rare: 0.35 },
     boss:         { parts: { fang: 2, thread: 2, feather: 1 }, rare: 1.0 }
   };
   L.RARE_P = 0.008;          // Esencia rara: 0,8 % por muerte de enemigo de coste >= 6 (Espectro, Ascua, Brujo; no élites)
   L.RARE_MIN_COST = 6;
   L.PITY_STEP = 0.004;       // +0,4 % por run sin rara (tope +4 %); se reinicia al conseguir una
   L.PITY_MAX = 0.04;
-  L.BRASAS_ASH = 0.12;       // Brasas = 12 % de la Ceniza sobrante...
-  L.BRASAS_MIN = 10;         // ... + 10 por minuto sobrevivido
-  L.BRASAS_WIN = 40;         // bonus por derrotar al Pastor
+  L.MINI_PART_BONUS = { mini_bulwark: { plate: 2 }, mini_hive: { thread: 2 } };   // extra por romper la parte del minijefe (Escudo / Saco de larvas)
+  // Brasas v5 (antes 12 % / 10 por min / 40 / jefe 150+40 por parte): una run de 7 min pasa de ~540 a ~340 Brasas; los crafts cuestan x1,5, así que
+  // 1 craft ~ 20-25 % de las Brasas de una run (el resto: Tónico 80, Imán 120, partes de Rufo 24, reespecializar).
+  L.BRASAS_ASH = 0.015;      // Brasas = 1,5 % de la Ceniza sobrante...
+  L.BRASAS_MIN = 18;         // ... + 18 por minuto de run (reloj de la run, se congela con el jefe) ...
+  L.BRASAS_GROW = 0.08;      // ... con un 8 % más por cada minuto acumulado: Brasas(m) = MIN * (m + GROW/2 * m^2); las runs largas rinden más que proporcionalmente
+  L.BRASAS_WIN = 0;         // bonus por derrotar al Pastor
   // Jefes v4: Brasas y PF salen de la tabla del jefe (G.Boss.DEFS: 150 Brasas + 40 por parte rota; PF 2, 3 la 1.ª vez), x Peligro. Cada trofeo cuenta como 1 Esencia (parts.rare).
+  // Coste de recetas y nodos (v5): multiplicadores GLOBALES sobre la tabla de abajo (L.COST / L.RANKCOST / L.NODE_TIER / costes fijos del Tronco). Las Esencias raras no se escalan.
+  L.COST_MUL = { recipe: { parts: 1.25, brasas: 3.9 }, node: { parts: 0.8, brasas: 5.0 } };
   L.RANK_MUL = [1, 1, 1.08, 1.16];   // multiplicador por rango de forja (0 bloqueada, I, II, III): +8 % por rango
   L.MAXRANK = 3;
 
+  // v5: L.EXPECT sigue siendo la ESCALA de las recetas (suministro v3); el suministro real ahora es x0,70 (DROP_MUL) y los costes llevan L.COST_MUL. Medido v5 (bot, 8 runs):
+  //   7 min: 99 partes/run (Mecha 6,9), 175 Brasas, ~1,0 crafts o talentos por run; 9 min: 123 partes, 226 Brasas, ~1,4; 10 min: 137 partes, 254 Brasas, ~1,6 (README "Economía v5").
   // Suministro ESPERADO de cada parte por expedición estándar de 9:00 (v3: valores originales x0,42, ver DESIGN-v3-aldea.md C.3). Las recetas planas ("Clásica")
   // se expresan como fracción de este suministro; los nodos del árbol usan L.NODE_TIER (cifras absolutas).
   // MEDIDO con el bot (?speed=25 ?god=1, jugador que recoge partes y mata al jefe; 16 runs de 7 min, 10 de 9 min, política "build mínima primero"):
@@ -77,21 +90,21 @@
   // Devuelve { parts: {id: n}, brasas, rare } para pasar a `toRank` (1 = desbloquear). Máximo 3 tipos de parte.
   L.recipe = function (id, toRank) {
     var d = G.Cards.def(id), t = L.COST[L.TIER[id] || 'c'], rc = L.RANKCOST[toRank], parts = {}, main = L.MAIN[d.tag], sec = L.SEC[d.tag];
-    parts[main] = Math.max(3, Math.ceil(t.main * rc.k * L.EXPECT[main]));
-    if (sec !== main) parts[sec] = Math.max(2, Math.ceil(t.sec * rc.k * L.EXPECT[sec]));
+    parts[main] = Math.max(3, Math.ceil(t.main * rc.k * L.EXPECT[main] * L.COST_MUL.recipe.parts));
+    if (sec !== main) parts[sec] = Math.max(2, Math.ceil(t.sec * rc.k * L.EXPECT[sec] * L.COST_MUL.recipe.parts));
     var rare = L.RARE_NEED[toRank][L.TIER[id] || 'c'];
     if (rare) parts.rare = rare;
-    return { parts: parts, brasas: Math.round(t.brasas * rc.b), rare: rare };
+    return { parts: parts, brasas: Math.round(t.brasas * rc.b * L.COST_MUL.recipe.brasas), rare: rare };
   };
   // ----------------------------------------------------------------- Constantes del árbol, trueque y tienda (Fase 2a)
   L.NODE_TIER = { T1: { pf: 1, main: 10, sec: 5, brasas: 30 }, T2: { pf: 2, main: 16, sec: 7, brasas: 60 },
     T3: { pf: 3, main: 24, sec: 9, brasas: 100, rare: 1 }, T4: { pf: 4, main: 34, sec: 12, brasas: 150, rare: 2 } };
   L.PF_CAP = 24;                                        // techo de Puntos de Forja ganados (builds duras)
   L.TRADE = { ratio: 3, hebraRatio: 6, cupo: 4 };       // 3 partes comunes -> 1 (Hebra 6:1); 4 trueques por expedición
-  L.SELL = 6; L.SELL_THREAD = 3;                        // Brasas por parte vendida
+  L.SELL = 3; L.SELL_THREAD = 1;                        // Brasas por parte vendida
   L.BUY = { tonic: 80, magnet: 120, part: 24, partCupo: 3 };
-  L.RESPEC = { brasasPerPF: 40, tree: 250, refund: 0.5 };   // reespecializar: 40 Brasas por PF devuelto o 250 el árbol; devuelve el 50 % de las partes
-  L.PF_SOURCES = { gift: 1, migrate: 2, firstElite: 1, milestoneEvery: 4 };
+  L.RESPEC = { brasasPerPF: 60, tree: 400, refund: 0.5 };   // reespecializar (v5, antes 40 / 250): 60 Brasas por PF devuelto o 400 el árbol; devuelve el 50 % de las partes
+  L.PF_SOURCES = { gift: 1, migrate: 2, firstElite: 1, milestoneEvery: 4, miniFrag: 2 };   // miniFrag: cada minijefe abatido da 1 fragmento; 2 fragmentos = 1 PF (matar los dos en una run = +1 PF)
   // Cartas que se obtienen por el árbol (no por la receta plana "Clásica"): las de Fuego y las neutras del Tronco
   L.TREE_CARDS = { spark: 1, ember: 1, ring: 1, mantle: 1, hooves: 1, magnet: 1, satchel: 1 };
   L.classic = function (id) { return !L.TREE_CARDS[id]; };
@@ -142,8 +155,13 @@
       return;
     }
     var d = L.DROPS[t]; if (!d) return;
-    if (Math.random() < d[1]) drop(e, d[0], 1);
+    if (Math.random() < d[1] * L.DROP_MUL) drop(e, d[0], 1);
     if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
+  };
+  // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
+  L.onMiniPart = function (e) {
+    var b = L.MINI_PART_BONUS[e.type]; if (!b) return;
+    for (var k in b) drop(e, k, b[k]);
   };
   L.collect = function (part, trophy) {
     var R = L.run; R.parts[part] = (R.parts[part] || 0) + 1; R.total++;
@@ -156,7 +174,7 @@
     var i, g, S = G.Save.data, R = L.run, p = G.player;
     for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } }
     var mins = Math.max(0, (G.runT - G.t0) / 60000);
-    var brasas = Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * mins + (won ? L.BRASAS_WIN : 0));
+    var brasas = Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0));
     for (var k in R.parts) G.Save.add(k, R.parts[k]);
     // jefe (v4): Brasas por parte rota siempre; las del jefe, los PF y el récord solo si cae
     var bs = R.boss, binfo = null;

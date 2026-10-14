@@ -47,7 +47,9 @@
     return true;
   };
 
-  P.heal = function (p, n) {
+  // src: etiqueta de origen para ?dbg=1 (G.dbg.heal acumula la cura bruta por fuente)
+  P.heal = function (p, n, src) {
+    if (G.dbg) { var H = G.dbg.heal || (G.dbg.heal = {}); H[src || '?'] = (H[src || '?'] || 0) + n; }
     var before = p.hp; p.hp = Math.min(p.maxHp, p.hp + n);
     if (p.hp > before) G.fx.num(p.x, p.y - 22, '+' + Math.round(p.hp - before), '#7dff9a');
   };

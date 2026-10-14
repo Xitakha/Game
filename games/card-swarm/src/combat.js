@@ -109,13 +109,14 @@
     }
     if (e.type === 'boar' && e.st === 'stun') dmg *= 1.5;
     // escudo frontal: solo cuenta si el golpe trae posición de origen (o.sx/o.sy); auras, orbitales y pulsos cuentan como por la espalda
-    var blocked = false;
+    var blocked = false, pre = dmg;
     if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
-      if (e.shieldDown) { if (e.type === 'mini_bulwark') dmg *= 1.5; }
-      else { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
+      if (!e.shieldDown) { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
     }
+    if (e.expT > 0) dmg *= e.expMul;   // ventana de exposición de los minijefes (x1,5 / x1,4) desde cualquier ángulo
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
+    if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
       if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
@@ -132,6 +133,7 @@
     if (o.bleed) C.bleed(e);
     if (o.stun) C.stun(e, o.stun);
     e.hp -= dmg; e.flash = 70; e.lastTag = tag; e.boomDepth = o.depth || 0;
+    if (e.type === 'mini_hive') G.Enemies.sacHit(e, dmg);   // Saco de larvas: absorbe parte de todo el daño
     if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
@@ -146,7 +148,7 @@
     }
     if (e.hp <= 0) {
       G.Enemies.kill(e, false, tag);
-      if (o.lifesteal) G.Player.heal(p, o.lifesteal);
+      if (o.lifesteal && Math.random() < B.heal.chance) G.Player.heal(p, o.lifesteal, 'fang');   // robo de vida: 20 % por kill
     }
     return dmg;
   };
@@ -155,7 +157,9 @@
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
+    if (e.expT > 0) n *= e.expMul;
     e.hp -= n; e.lastTag = tag;
+    if (e.type === 'mini_hive') G.Enemies.sacHit(e, n);
     if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
     if (e.dotT <= 0 && e.dotAcc >= 3) { fx.num(e.x, e.y - e.r - 8, Math.round(e.dotAcc), col(tag)); e.dotAcc = 0; e.dotT = 600; }
@@ -297,9 +301,9 @@
       }
     }
     if (a.frenzy) p.frenzyT = 1500;
-    if (a.pact && tag === 'fire') G.Player.heal(p, 2);
+    if (a.pact && tag === 'fire' && Math.random() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
     if (e.poisonN > 0) {
-      if (a.bloodpoison) { p.poisonKills++; if (p.poisonKills % 15 === 0) G.Player.heal(p, 4); }
+      if (a.bloodpoison) { p.poisonKills++; if (p.poisonKills % 15 === 0) G.Player.heal(p, B.heal.bloodpoison, 'bloodpoison'); }
       if (a.plague) {
         var n = 0, L = C.inRange(e.x, e.y, 70);
         for (var k = 0; k < L.length && n < 3; k++) if (L[k] !== e) { C.poison(L[k], 1); fx.bolt(e.x, e.y, L[k].x, L[k].y, '#7be34a', 2); n++; }
@@ -321,7 +325,7 @@
   function collect(g) {
     var p = G.player, m = M();
     if (g.kind === 'xp') {
-      p.xp += g.v * m.xpMul;
+      p.xp += g.v * m.xpMul * B.xpGem();
       var need = B.xpNeed(p.level);
       while (p.xp >= need) { p.xp -= need; p.level++; G.pendingLevels++; need = B.xpNeed(p.level); }
       G.Snd.play('gem', 1);
@@ -329,7 +333,7 @@
       G.Loot.collect(g.part, g.trophy); G.Snd.play('gem', 1.8);
     } else if (g.kind === 'ash') {
       p.ash += Math.max(1, Math.round(g.v * m.ashMul)); G.Snd.play('gem', 1.4);
-    } else { G.Player.heal(p, g.v); G.sfx('pickup'); }
+    } else { G.Player.heal(p, g.v, 'gem'); G.sfx('pickup'); }
   }
 
   function updateGems(dt) {

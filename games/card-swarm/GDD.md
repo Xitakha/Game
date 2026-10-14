@@ -76,7 +76,7 @@ Los valores son de Nv1. cd = cooldown base. Objetivo de balance: una carta de at
 | 10 | Dardo tóxico | VENENO | Proyectil, 6 de daño + veneno. cd 0.9 s |
 | 11 | Charco | VENENO | Charco radio 40 bajo el enemigo más cercano, 5 s, 6 dps + veneno. cd 3.5 s |
 | 12 | Nube pútrida | VENENO | Aura radio 60, 3 dps + veneno. Permanente |
-| 13 | Colmillo | SANGRE | Tajo en arco 90 grados hacia el más cercano, alcance 55, 18 de daño; matar cura 1 HP. cd 1.1 s |
+| 13 | Colmillo | SANGRE | Tajo en arco 90 grados hacia el más cercano, alcance 55, 18 de daño; al matar, 20 % de curar 3 HP (v5). cd 1.1 s |
 | 14 | Sangría | SANGRE | Marca a 3 enemigos aleatorios cercanos: sangrado 5 dps durante 3 s. cd 2.0 s |
 | 15 | Murciélago | SANGRE | Murciélago que persigue y pica a un enemigo (15 de daño) y rebota a otro. cd 1.6 s |
 | 16 | Daga | ACERO | Lanza 3 dagas en abanico de 30 grados, 9 de daño cada una. cd 1.2 s |
@@ -112,7 +112,7 @@ Un combo se activa si la mano contiene **al menos una carta de cada una de las d
 | 8 | **FILO GÉLIDO** | Hielo + Acero | El ACERO contra ralentizados es crítico garantizado (x2) |
 | 9 | **FORJA** | Fuego + Acero | Proyectiles de ACERO dejan estela de fuego 1.2 s (5 dps) y queman |
 | 10 | **PLAGA CONGELADA** | Veneno + Hielo | El veneno dura +3 s en ralentizados y al morir se propaga a 3 enemigos en radio 70 |
-| 11 | **PACTO ARDIENTE** | Sangre + Fuego | Matar con FUEGO cura 2 HP; +20 % de daño total mientras HP < 50 % |
+| 11 | **PACTO ARDIENTE** | Sangre + Fuego | Matar con FUEGO: 20 % de curar 4 HP (v5); +20 % de daño total mientras HP < 50 % |
 | 12 | **DESCARGA TÓXICA** | Veneno + Rayo | Un rayo consume los stacks de veneno del objetivo: 8 de daño por stack, instantáneo |
 
 Pares sin combo a propósito (fase 2): Sangre+Hielo, Veneno+Acero, Sangre+Rayo.

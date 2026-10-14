@@ -36,13 +36,13 @@
     { id: 'F11', tree: 'fire', tag: 'fire', type: 'Ma', tier: 'T4', name: 'Corazón de brasa', col: 3, row: 5, icon: 'heart', fx: 'heart', req: { all: ['F9', 'F10'] },
       desc: 'Maestría: una vez por expedición, al llegar a 0 HP revives con el 40 % de vida y una explosión de radio 120 (60 de daño).' },
     // ---- Tronco común
-    { id: 'R2', tree: 'trunk', tag: 'neutral', type: 'R', name: 'Rango de forja II', col: 2, row: 0, icon: 'II', fx: 'rank2', cost: { pf: 0, parts: { thread: 30, feather: 10 }, brasas: 100 },
+    { id: 'R2', tree: 'trunk', tag: 'neutral', type: 'R', name: 'Rango de forja II', col: 2, row: 0, icon: 'II', fx: 'rank2', cost: { pf: 0, parts: { thread: 30, feather: 10 }, brasas: 60 },
       desc: 'Abre los nodos de nivel T2 de todos los árboles.' },
-    { id: 'R3', tree: 'trunk', tag: 'neutral', type: 'R', name: 'Rango de forja III', col: 2, row: 1, icon: 'III', fx: 'rank3', req: { all: ['R2'] }, cost: { pf: 0, parts: { thread: 60, feather: 20, plate: 10 }, brasas: 300 },
+    { id: 'R3', tree: 'trunk', tag: 'neutral', type: 'R', name: 'Rango de forja III', col: 2, row: 1, icon: 'III', fx: 'rank3', req: { all: ['R2'] }, cost: { pf: 0, parts: { thread: 60, feather: 20, plate: 10 }, brasas: 120 },
       desc: 'Abre los nodos de nivel T3 (cartas épicas) y T4 (maestrías).' },
-    { id: 'ASH', tree: 'trunk', tag: 'neutral', type: 'P', name: 'Ceniza viva', col: 4, row: 1, icon: 'burst', fx: 'ash', cost: { pf: 1, parts: { thread: 20 }, brasas: 0 },
+    { id: 'ASH', tree: 'trunk', tag: 'neutral', type: 'P', name: 'Ceniza viva', col: 4, row: 1, icon: 'burst', fx: 'ash', cost: { pf: 1, parts: { thread: 20 }, brasas: 30 },
       desc: 'Pasivo: empiezas cada expedición con +20 de Ceniza.' },
-    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Tercera ancla', col: 2, row: 2, icon: '3', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 0 },
+    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Tercera ancla', col: 2, row: 2, icon: '3', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
       desc: 'Llevas 3 cartas ancla ya en la mano al salir, en vez de 2.' },
     { id: 'N1', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Pezuñas veloces', col: 1, row: 4, icon: 'boots', card: 'hooves',
       desc: 'Desbloquea la pasiva Pezuñas veloces: +12 % de velocidad de movimiento.' },
@@ -69,19 +69,31 @@
     return S.pf.earned - before;
   };
   // Primer élite abatido de cada tipo: +1 PF
+  // v5: además, cada kill de un minijefe da 1 fragmento de PF (2 fragmentos = 1 PF)
   T.onElite = function (type, e) {
-    var S = SV(); if (S.elites[type]) return;
-    S.elites[type] = 1;
-    var got = T.addPF(L.PF_SOURCES.firstElite); G.Save.save();
-    if (got) { L.run.pf = (L.run.pf || 0) + got; try { G.fx.num(e.x, e.y - 40, '+' + got + ' PF', '#ffd24a', true); G.Hud.banner('+1 PUNTO DE FORJA', 1800, '#ffd24a'); } catch (x) { /* fx */ } }
+    var S = SV(), got = 0;
+    S.pf.frag = (S.pf.frag || 0) + 1;
+    if (S.pf.frag >= L.PF_SOURCES.miniFrag) { S.pf.frag -= L.PF_SOURCES.miniFrag; got += T.addPF(1); }
+    if (!S.elites[type]) { S.elites[type] = 1; got += T.addPF(L.PF_SOURCES.firstElite); }
+    G.Save.save();
+    if (got) L.run.pf = (L.run.pf || 0) + got;
+    try {
+      G.fx.num(e.x, e.y - 40, got ? '+' + got + ' PF' : 'Fragmento de PF ' + (S.pf.frag || 0) + '/' + L.PF_SOURCES.miniFrag, '#ffd24a', true);
+      G.Hud.banner(got ? '+' + got + ' PUNTO' + (got > 1 ? 'S' : '') + ' DE FORJA' : 'FRAGMENTO DE PUNTO DE FORJA ' + (S.pf.frag || 0) + '/' + L.PF_SOURCES.miniFrag, 1800, '#ffd24a');
+    } catch (x) { /* fx */ }
   };
 
+  // Coste de un nodo: tabla L.NODE_TIER / coste fijo del Tronco x L.COST_MUL (partes y Brasas; PF y Esencias raras no se escalan)
   T.cost = function (n) {
-    if (n.cost) return n.cost;
-    var t = L.NODE_TIER[n.tier || 'T1'], parts = {}, main = L.MAIN[n.tag], sec = L.SEC[n.tag];
-    parts[main] = t.main; if (sec !== main) parts[sec] = t.sec;
+    var M = L.COST_MUL.node, parts = {}, k;
+    if (n.cost) {
+      for (k in n.cost.parts) parts[k] = k === 'rare' ? n.cost.parts[k] : Math.ceil(n.cost.parts[k] * M.parts);
+      return { pf: n.cost.pf, parts: parts, brasas: Math.round(n.cost.brasas * M.brasas) };
+    }
+    var t = L.NODE_TIER[n.tier || 'T1'], main = L.MAIN[n.tag], sec = L.SEC[n.tag];
+    parts[main] = Math.ceil(t.main * M.parts); if (sec !== main) parts[sec] = Math.ceil(t.sec * M.parts);
     if (t.rare) parts.rare = t.rare;
-    return { pf: t.pf, parts: parts, brasas: t.brasas };
+    return { pf: t.pf, parts: parts, brasas: Math.round(t.brasas * M.brasas) };
   };
   function nodeOK(id, set) { return id === 'F0' || (set ? !!set[id] : !!SV().nodes[id]); }
   function reqOK(n, set) {

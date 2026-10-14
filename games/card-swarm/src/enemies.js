@@ -32,8 +32,10 @@
       case 'sower': e.sumT = G.rnd(2500, 4500); break;
       case 'blinker': e.atkT = G.rnd(2500, 4200); break;
       case 'scorcher': e.atkT = G.rnd(1000, 3000); break;
-      case 'mini_bulwark': e.big = true; e.shield = 70 * DEG; e.atkT = 2000; e.spawnT = e.spawnMax = 900; break;
-      case 'mini_hive': e.big = true; e.atkT = 2500; e.ecT = 9000; e.spawnT = e.spawnMax = 900; break;
+      case 'mini_bulwark': e.big = true; e.shield = 70 * DEG; e.atkT = 2000; e.spawnT = e.spawnMax = 900; e.shieldHp = e.shieldMax = B.mini.bulwark.shieldPct * hp; e.shieldBroken = false;
+        e.enraged = false; e.expT = 0; e.expMul = 1; e.bag = []; e.orbs = null; e.cn = 0; e.partName = 'ESCUDO'; break;
+      case 'mini_hive': e.big = true; e.atkT = 2500; e.ecT = 9000; e.spawnT = e.spawnMax = 900; e.sacHp = e.sacMax = B.mini.hive.sacPct * hp; e.sacBroken = false;
+        e.enraged = false; e.expT = 0; e.expMul = 1; e.bag = []; e.rain = null; e.partName = 'SACO'; break;
     }
     G.enemies.push(e);
     return e;
@@ -118,7 +120,7 @@
     o = o || {};
     if (!G.hasSpr(spr)) spr = o.fb || null;
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
-      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb });
+      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null });
   };
 
   function updateProjectiles(dt, onlyPlayer) {
@@ -394,23 +396,72 @@
     }
   }
 
-  // ---- Élite: Coloso Escudero
-  function afterAttack(e) {                          // cada 3 ataques, ventana larga con el escudo bajo
-    e.ai++;
-    if (e.ai % 3 === 0) { e.st = 'rec'; e.t = 0; e.recDur = 1200; e.shieldDown = true; fx.ring(e.x, e.y, 10, 40, 400, '#ffe27a', 3); }
-    else { e.st = 'rec'; e.t = 0; e.recDur = 500; }
+  // ---- Minijefes v5 (Coloso Escudero y Madre Colmena): bolsa de ataques, enrage al 50 %, parte rompible y ventanas de exposición.
+  function shuffleBag(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  // exposición: el golpe de cualquier ángulo hace x mul durante ms (la lee Combat.deal)
+  E.expose = function (e, ms, mul) { e.expT = Math.max(e.expT || 0, ms); e.expMul = mul; fx.ring(e.x, e.y, 10, e.r + 26, 350, '#ffe27a', 3); G.sfx('card_select', { pitch: 1.6, vol: 0.5 }); };
+  function miniHeart(e) { G.Combat.dropGem(e.x + 20, e.y + 14, 'heart', B.player.heal); }
+
+  var MB = B.mini.bulwark, BASH_R = 100;
+  function setRec(e, ms, expose) {
+    e.st = 'rec'; e.t = 0; e.recDur = ms * (e.enraged ? MB.recMul : 1);
+    if (expose) { e.shieldDown = true; E.expose(e, e.recDur, MB.expMul); }
   }
+  function afterAttack(e) {                          // cada 3 ataques, ventana larga con el escudo bajo (x1,5 desde cualquier ángulo)
+    e.ai++;
+    if (e.ai % 3 === 0) setRec(e, 1200, true); else setRec(e, 500, false);
+  }
+  function atkLog(t, n) { if (G.dbg) { var A = G.dbg.atk || (G.dbg.atk = {}); A[t + ':' + n] = (A[t + ':' + n] || 0) + 1; } return n; }   // ?dbg=1: cuenta los ataques usados
+  function bulwarkOk(n, d) { return n === 'bash' ? d < BASH_R : n === 'stomp' ? d < 190 : n === 'charge' ? (d >= 130 && d <= 430) : d < 340; }
+  function bulwarkNext(e, d) {
+    if (e.force) { var f = e.force; e.force = null; return atkLog('bulwark', f); }
+    if (!e.bag.length) e.bag = shuffleBag(['bash', 'stomp', 'charge', 'shields']);
+    for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || !bulwarkOk(n, d)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('bulwark', n); }
+    return null;
+  }
+  function chargeEnd(e) {   // punto de parada de la embestida (recortado por las paredes)
+    var mg = G.WALL + e.r + 2, dx = Math.cos(e.ang), dy = Math.sin(e.ang), tm = MB.chargeLen;
+    if (dx > 1e-3) tm = Math.min(tm, (G.AW - mg - e.x) / dx); else if (dx < -1e-3) tm = Math.min(tm, (mg - e.x) / dx);
+    if (dy > 1e-3) tm = Math.min(tm, (G.AH - mg - e.y) / dy); else if (dy < -1e-3) tm = Math.min(tm, (mg - e.y) / dy);
+    e.clen = Math.max(0, tm); e.tx = e.x + dx * e.clen; e.ty = e.y + dy * e.clen;
+  }
+  function orbPos(e, i) { var n = e.orbN, a = e.oa + i * 6.283 / n; return { x: e.x + Math.cos(a) * MB.orbR, y: e.y + Math.sin(a) * MB.orbR, a: a }; }
+  function startEnrageB(e) {
+    atkLog('bulwark', 'enrage'); e.enraged = true; e.st = 'enrage'; e.t = 0; e.orbs = null; e.shieldDown = false;
+    fx.shake(9, 400); fx.ring(e.x, e.y, 20, 180, 600, '#ff4030', 6); fx.flames(e.x, e.y, 10, 30); G.sfx('boss_roar', { pitch: 0.9, vol: 0.8 });
+    G.Hud.banner('¡EL COLOSO SE ENFURECE!', 1800, '#ff6a3a');
+  }
+  // Escudo rompible: el daño frontal bloqueado (antes de reducirlo) gasta el medidor; al llegar a 0 el escudo cae para siempre
+  E.shieldHit = function (e, pre) {
+    if (e.shieldBroken || !(e.shieldHp > 0)) return;
+    e.shieldHp -= pre; e.shieldFlash = 90;
+    if (e.shieldHp > 0) return;
+    e.shieldBroken = true; e.shield = 0; e.shieldDown = false; e.orbs = null;
+    e.st = 'rec'; e.t = 0; e.recDur = MB.breakExp; E.expose(e, MB.breakExp, MB.expMul);
+    fx.hit(80); fx.shake(8, 250); fx.burst(e.x, e.y, 16, '#dfe6f0', 260, 600, 4, { add: true }); fx.ring(e.x, e.y, 10, 90, 400, '#ffd27a', 5); G.sfx('hit_heavy', { pitch: 0.8 }); G.sfx('boss_roar', { pitch: 1.7, vol: 0.5 });
+    G.Hud.banner('¡ESCUDO ROTO!', 1500, '#ffd27a');
+    miniHeart(e); G.Loot.onMiniPart(e);
+  };
+
   function ai_bulwark(e, dt, s, p, d, a) {
-    var BASH_R = 100;
+    var M = MB, i, sp = e.spd * (e.enraged ? M.enrageSpd : 1);
+    if (e.expT > 0) e.expT -= dt;
+    if (e.shieldFlash > 0) e.shieldFlash -= dt;
+    if (!e.enraged && e.hp <= e.maxHp * M.enrageAt) startEnrageB(e);
     if (e.st === 'move') {
       e.fa = a;
-      if (d > e.r + p.r + 8) moveTo(e, a, e.spd, s);
+      if (d > e.r + p.r + 8) moveTo(e, a, sp, s);
       contact(e, dt, p, d, 1000, 'bulwark');
       e.atkT -= dt;
-      var kind = e.ai % 2 === 0 ? 'bash' : 'stomp';
-      if (e.atkT <= 0 && ((kind === 'bash' && d < BASH_R) || (kind === 'stomp' && d < 190))) {
-        e.kind = kind; e.t = 0; e.st = kind === 'bash' ? 'wind' : 'swind'; e.ang = a;
+      if (e.atkT <= 0) {
+        var n = bulwarkNext(e, d);
+        if (n === 'bash') { e.st = 'wind'; e.t = 0; e.ang = a; }
+        else if (n === 'stomp') { e.st = 'swind'; e.t = 0; e.ang = a; }
+        else if (n === 'charge') { e.st = 'cwind'; e.t = 0; e.ang = a; e.cn = 0; chargeEnd(e); G.sfx('hit', { pitch: 0.6, vol: 0.5 }); }
+        else if (n === 'shields') { e.st = 'owind'; e.t = 0; e.orbN = e.enraged ? M.orbN2 : M.orbN; e.oa = Math.random() * 6.283; e.odir = Math.random() < 0.5 ? -1 : 1; G.sfx('wave_start', { pitch: 0.7, vol: 0.5 }); }
       }
+    } else if (e.st === 'enrage') {
+      e.t += dt; if (e.t >= 900) { e.st = 'move'; e.atkT = 500; }
     } else if (e.st === 'wind') {
       e.t += dt;
       if (e.t < 500) { e.fa = a; e.ang = a; }
@@ -424,57 +475,176 @@
       if (e.t >= 150) afterAttack(e);
     } else if (e.st === 'swind') {
       e.t += dt;
-      if (e.t >= 700) { e.st = 'swave'; e.t = 0; e.waves = [{ t: 0, hit: false }, { t: -250, hit: false }, { t: -500, hit: false }]; fx.shake(7, 220); G.sfx('explosion', { pitch: 0.7 }); }
+      if (e.t >= 700) {
+        var nw = e.enraged ? 4 : 3;
+        e.st = 'swave'; e.t = 0; e.waves = []; for (i = 0; i < nw; i++) e.waves.push({ t: -250 * i, hit: false });
+        fx.shake(7, 220); G.sfx('explosion', { pitch: 0.7 });
+      }
     } else if (e.st === 'swave') {
       e.t += dt;
-      for (var i = 0; i < e.waves.length; i++) {
+      for (i = 0; i < e.waves.length; i++) {
         var w = e.waves[i]; w.t += dt;
         if (w.t < 0 || w.t > 450) continue;
         w.r = 20 + 105 * (w.t / 450);
         if (!w.hit && !p.dead && Math.abs(d - w.r) <= 9 + p.r * 0.6) { w.hit = true; G.Player.hurt(p, e.dmg * 16 / 22, e.x, e.y, { src: 'bulwark', kb: 0.8 }); }
       }
-      if (e.t >= 950) afterAttack(e);
+      if (e.t >= 450 + 250 * (e.waves.length - 1) + 20) afterAttack(e);
+    // ---- Embestida con onda de choque: carril rojo + círculo de impacto; al llegar estalla un anillo; al final queda expuesta
+    } else if (e.st === 'cwind') {
+      var tele = e.cn ? M.chargeTele2 : M.chargeTele, fix = e.cn ? M.chargeFix2 : M.chargeFix;
+      e.t += dt;
+      if (e.t < fix) { e.ang = a; e.fa = a; chargeEnd(e); }
+      if (e.t >= tele) { e.st = 'charge'; e.t = 0; e.trav = 0; e.hitDone = false; G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 }); }
+    } else if (e.st === 'charge') {
+      e.t += dt; var stp = Math.min(M.chargeSpd * s, e.clen - e.trav);
+      e.x += Math.cos(e.ang) * stp; e.y += Math.sin(e.ang) * stp; e.trav += stp;
+      if (Math.random() < 0.5) fx.dust(e.x - Math.cos(e.ang) * 20, e.y + 16, 1);
+      if (!e.hitDone && !p.dead && d < e.r + p.r + 4) { e.hitDone = true; G.Player.hurt(p, e.dmg * M.chargeDmg, e.x, e.y, { src: 'bulwark_charge', kb: 1.6 }); }
+      if (e.trav >= e.clen - 0.01) { e.st = 'cring'; e.t = 0; e.ringHit = false; fx.shake(8, 220); G.sfx('explosion', { pitch: 0.6 }); fx.dust(e.x, e.y + 14, 10); }
+    } else if (e.st === 'cring') {
+      e.t += dt; var rr = 18 + (M.ringR - 18) * G.clamp(e.t / M.ringMs, 0, 1);
+      if (!e.ringHit && !p.dead && Math.abs(d - rr) <= 9 + p.r * 0.6) { e.ringHit = true; G.Player.hurt(p, e.dmg * M.ringDmg, e.x, e.y, { src: 'bulwark_ring', kb: 1 }); }
+      if (e.t >= M.ringMs) {
+        e.cn++;
+        if (e.enraged && e.cn < 2) { e.st = 'cwind'; e.t = 0; e.ang = a; chargeEnd(e); G.sfx('hit', { pitch: 0.6, vol: 0.5 }); }
+        else { e.ai++; e.recDur = M.chargeExp; e.st = 'rec'; e.t = 0; e.shieldDown = true; E.expose(e, M.chargeExp, M.expMul); }
+      }
+    // ---- Escudos giratorios: aparecen, giran (dañan al tocarlos) y salen disparados en línea recta tras un aviso
+    } else if (e.st === 'owind') {
+      e.t += dt; if (d > e.r + p.r + 8) moveTo(e, a, sp * 0.4, s);
+      if (e.t >= M.orbTele) { e.st = 'orbit'; e.t = 0; e.orbs = true; G.sfx('whoosh', { pitch: 0.7, vol: 0.6 }); }
+    } else if (e.st === 'orbit') {
+      e.t += dt; e.oa += e.odir * M.orbOmega * s; if (d > e.r + p.r + 8) moveTo(e, a, sp * 0.5, s);
+      for (i = 0; i < e.orbN; i++) {
+        var ob = orbPos(e, i);
+        if (!p.dead && G.dist(ob.x, ob.y, p.x, p.y) < 13 + p.r - 1) G.Player.hurt(p, e.dmg * M.orbDmg, ob.x, ob.y, { src: 'bulwark_orb', kb: 0.8 });
+      }
+      if (e.t >= M.orbDur) { e.st = 'olaunch'; e.t = 0; G.sfx('hit', { pitch: 1.4, vol: 0.5 }); }
+    } else if (e.st === 'olaunch') {
+      e.t += dt;
+      if (e.t >= M.orbLaunch) {
+        for (i = 0; i < e.orbN; i++) { var ob2 = orbPos(e, i); E.shoot('e', ob2.x, ob2.y, ob2.a, M.bitSpd, e.dmg * M.orbDmg, null, { r: 12, life: 1500, src: 'bulwark_orb', kind: 'shieldbit' }); }
+        G.sfx('shoot', { pitch: 0.7, vol: 0.7 }); fx.shake(4, 120); e.orbs = null;
+        afterAttack(e);
+      }
     } else if (e.st === 'rec') {
       e.t += dt;
-      if (e.t >= e.recDur) { e.st = 'move'; e.shieldDown = false; e.atkT = 1000; }
+      if (e.t >= e.recDur) { e.st = 'move'; e.shieldDown = false; e.atkT = (e.enraged ? M.enrageGap : M.atkGap) * (e.shieldBroken ? 0.8 : 1); }
     }
   }
 
-  // ---- Élite: Madre Colmena
+  // ---- Madre Colmena v5
+  var MH = B.mini.hive;
+  function hiveKids(e) { var n = 0; for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.src === e) n++; } return n; }
+  function hiveNext(e) {
+    if (e.force) { var f = e.force; e.force = null; return atkLog('hive', f); }
+    if (!e.bag.length) e.bag = shuffleBag(e.sacBroken ? ['spit', 'acid', 'tide'] : ['spit', 'acid', 'rain', 'tide']);
+    for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || (n === 'rain' && e.sacBroken)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('hive', n); }
+    e.bag = []; return atkLog('hive', 'spit');
+  }
+  function hiveDmg() { return B.enemy.worm.dmg * B.dmgMult(mins()) * 1.2; }
+  E.sacHit = function (e, dmg) {
+    if (e.sacBroken || !(e.sacHp > 0)) return;
+    e.sacHp -= dmg * MH.sacShare; e.sacFlash = 90;
+    if (e.sacHp > 0) return;
+    e.sacBroken = true; e.rain = null; e.st = 'stag'; e.t = 0; E.expose(e, MH.breakExp, MH.expMul);
+    fx.hit(80); fx.shake(8, 250); fx.burst(e.x, e.y, 18, '#ffb73a', 260, 600, 4, { add: true }); fx.ring(e.x, e.y, 10, 100, 400, '#ffd27a', 5); G.sfx('boss_roar', { pitch: 1.7, vol: 0.5 });
+    G.Hud.banner('¡SACO DE LARVAS ROTO!', 1500, '#ffd27a');
+    for (var j = 0; j < 6; j++) { var an = j * 1.047 + G.rnd(-0.2, 0.2); E.spawn('worm', e.x + Math.cos(an) * 40, e.y + Math.sin(an) * 40, { summoned: true, hp: 12, scale: 0.85, spawnT: 400, src: e }); }
+    miniHeart(e); G.Loot.onMiniPart(e);
+  };
   function ai_hive(e, dt, s, p, d, a) {
+    var i, M = MH;
+    if (e.expT > 0) e.expT -= dt;
+    if (e.sacFlash > 0) e.sacFlash -= dt;
+    if (!e.enraged && e.hp <= e.maxHp * M.enrageAt && e.st !== 'burst') {   // Estallido de enjambre: se hincha 1,15 s (círculo rojo) y revienta
+      e.enraged = true; e.st = 'burst'; e.t = 0; e.rain = null; atkLog('hive', 'burst');
+      fx.shake(7, 300); G.sfx('boss_roar', { pitch: 1.5, vol: 0.7 }); G.Hud.banner('¡LA COLMENA ESTALLA!', 1800, '#ffb73a');
+    }
+    if (e.enraged) e.spd *= M.enrageSpd;
     if (e.st === 'move') {
       kite(e, a, d, 150, 230, s);
       contact(e, dt, p, d, 1000, 'hive');
       e.atkT -= dt; e.ecT -= dt;
-      if (e.ecT <= 0) { e.st = 'swell'; e.t = 0; }
+      if (e.ecT <= 0) { e.st = 'swell'; e.t = 0; atkLog('hive', 'swell'); }
       else if (e.atkT <= 0) {
-        if (e.ai++ % 2 === 0) {
+        var n = hiveNext(e);
+        if (n === 'spit') {
           e.st = 'spit'; e.t = 0; e.land = [];
           for (var k = -1; k <= 1; k++) { var an = a + k * 0.5; e.land.push({ x: G.clamp(e.x + Math.cos(an) * 90, G.WALL + 12, G.AW - G.WALL - 12), y: G.clamp(e.y + Math.sin(an) * 90, G.WALL + 12, G.AH - G.WALL - 12) }); }
-        } else {
+        } else if (n === 'acid') {
           e.st = 'acid'; e.t = 0;
-          E.zone({ kind: 'acid', x: p.x, y: p.y, r: 55, arm: 900, life: 4000, dmg: B.enemy.worm.dmg * B.dmgMult(mins()) * 1.2, tick: 500, slow: 0.15, owner: e, src: 'hive' });
+          E.zone({ kind: 'acid', x: p.x, y: p.y, r: 55, arm: 900, life: 4000, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });
           G.sfx('wave_start', { pitch: 0.8, vol: 0.4 });
+        } else if (n === 'rain') {   // Lluvia de larvas: 5 (7 enrage) círculos rojos fijos; al caer dañan y dejan una larva
+          e.st = 'rwind'; e.t = 0; e.rain = [{ x: p.x, y: p.y }];
+          var cnt = e.enraged ? M.rainN2 : M.rainN, tries = 0;
+          while (e.rain.length < cnt && tries++ < 60) {
+            var ra = G.rnd(0, 6.283), rd = G.rnd(45, 150), cx = G.clamp(p.x + Math.cos(ra) * rd, G.WALL + 30, G.AW - G.WALL - 30), cy = G.clamp(p.y + Math.sin(ra) * rd, G.WALL + 30, G.AH - G.WALL - 30), ok = true;
+            for (var q = 0; q < e.rain.length; q++) if (G.dist(cx, cy, e.rain[q].x, e.rain[q].y) < M.rainR * 2 + 14) ok = false;
+            if (ok) e.rain.push({ x: cx, y: cy });
+          }
+          G.sfx('wave_start', { pitch: 1.1, vol: 0.5 });
+        } else if (n === 'tide') {   // Marea ácida: 4 (5 enrage) charcos de ácido en anillo alrededor del jugador (se arman en 1 s)
+          e.st = 'twind'; e.t = 0;
+          var tn = e.enraged ? M.tideN2 : M.tideN, a0 = Math.random() * 6.283;
+          for (var z = 0; z < tn; z++) {
+            var za = a0 + z * 6.283 / tn, zx = G.clamp(p.x + Math.cos(za) * 115, G.WALL + 55, G.AW - G.WALL - 55), zy = G.clamp(p.y + Math.sin(za) * 115, G.WALL + 55, G.AH - G.WALL - 55);
+            E.zone({ kind: 'acid', x: zx, y: zy, r: M.tideR, arm: M.tideTele, life: 5500, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });
+          }
+          G.sfx('wave_start', { pitch: 0.6, vol: 0.6 });
         }
       }
     } else if (e.st === 'spit') {
       e.t += dt;
       if (e.t >= 500) {
-        for (var i = 0; i < e.land.length; i++) E.spawn('worm', e.land[i].x, e.land[i].y, { summoned: true, spawnT: 120 });
-        G.sfx('shoot', { pitch: 0.7, vol: 0.5 }); e.st = 'move'; e.atkT = 3000; e.land = null;
+        for (i = 0; i < e.land.length; i++) E.spawn('worm', e.land[i].x, e.land[i].y, { summoned: true, spawnT: 120, src: e });
+        G.sfx('shoot', { pitch: 0.7, vol: 0.5 }); e.st = 'move'; e.atkT = e.enraged ? M.enrageGap : M.atkGap; e.land = null;
       }
     } else if (e.st === 'acid') {
       e.t += dt;
-      if (e.t >= 500) { e.st = 'move'; e.atkT = 3000; }
+      if (e.t >= 500) { e.st = 'move'; e.atkT = e.enraged ? M.enrageGap : M.atkGap; }
+    } else if (e.st === 'twind') {
+      e.t += dt;
+      if (e.t >= 600) { e.st = 'move'; e.atkT = e.enraged ? M.enrageGap : M.atkGap; }
+    } else if (e.st === 'rwind') {
+      e.t += dt;
+      if (e.t >= M.rainTele) {
+        var kids = hiveKids(e);
+        for (i = 0; i < e.rain.length; i++) {
+          var r = e.rain[i];
+          fx.ring(r.x, r.y, 4, M.rainR + 8, 250, '#ffb73a', 4); fx.dust(r.x, r.y, 3);
+          if (!p.dead && G.dist(r.x, r.y, p.x, p.y) <= M.rainR + p.r * 0.6) G.Player.hurt(p, e.dmg * M.rainDmg, r.x, r.y, { src: 'hive_rain', kb: 0.8 });
+          if (kids < M.kidsMax) { E.spawn('worm', r.x, r.y, { summoned: true, spawnT: 300, src: e }); kids++; }
+        }
+        G.sfx('hit_heavy', { pitch: 1.4, vol: 0.5 }); fx.shake(4, 120);
+        e.st = 'move'; e.rain = null; e.atkT = e.enraged ? M.enrageGap : M.atkGap;
+      }
+    } else if (e.st === 'burst') {
+      e.t += dt;
+      if (e.t >= M.burstTele) {
+        fx.shake(9, 300); fx.ring(e.x, e.y, 20, M.burstR, 400, '#ffb73a', 7); fx.shockwave(e.x, e.y, M.burstR * 2); G.sfx('explosion', { pitch: 0.8 });
+        if (!p.dead && d <= M.burstR + p.r * 0.5) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'hive_burst', kb: 1.2 });
+        var kb = hiveKids(e);
+        for (i = 0; i < M.burstN && kb < M.kidsMax + 4; i++, kb++) { var aa = i * 6.283 / M.burstN + G.rnd(-0.2, 0.2); E.spawn('worm', e.x + Math.cos(aa) * 70, e.y + Math.sin(aa) * 70, { summoned: true, src: e }); }
+        E.expose(e, M.burstExp, M.expMul);
+        e.st = 'move'; e.ecT = M.swellGap2; e.atkT = 1200;
+      }
+    } else if (e.st === 'stag') {
+      e.t += dt; if (e.t >= 800) { e.st = 'move'; e.atkT = 1500; }
     } else if (e.st === 'swell') {
       e.t += dt;
       if (e.t >= 800) {
-        for (var j = 0; j < 6; j++) { var aa = j * 1.047 + G.rnd(-0.2, 0.2); E.spawn('worm', e.x + Math.cos(aa) * 60, e.y + Math.sin(aa) * 60, { summoned: true }); }
+        var sn = e.enraged ? 8 : 6;
+        for (var j = 0; j < sn; j++) { var aj = j * 6.283 / sn + G.rnd(-0.2, 0.2); E.spawn('worm', e.x + Math.cos(aj) * 60, e.y + Math.sin(aj) * 60, { summoned: true, src: e }); }
         fx.ring(e.x, e.y, 10, 90, 400, '#ffb73a', 5); fx.shake(5, 200); G.sfx('boss_roar', { pitch: 1.5, vol: 0.4 });
-        e.st = 'move'; e.ecT = 15000; e.atkT = 2500;
+        e.st = 'move'; e.ecT = e.enraged ? M.swellGap2 : M.swellGap; e.atkT = 2500;
       }
     }
   }
+  // pruebas / capturas: E.forceMini(e, 'charge') encola un ataque concreto en el siguiente ciclo de ataque
+  E.forceMini = function (e, name) { e.force = name; e.atkT = 0; };
+  E.minis = function () { return G.enemies.filter(function (q) { return !q.dead && (q.type === 'mini_bulwark' || q.type === 'mini_hive'); }); };
 
   // ---- Jefe: la IA vive en boss.js (G.Boss.update se llama al principio de E.update)
   function ai_boss() { }
@@ -486,6 +656,7 @@
   E.update = function (dt) {
     var s = dt / 1000, p = PL(), list = G.enemies, i, j, e;
     G.Boss.update(dt);
+    var speedMul = B.speedMul(mins());
     if (G.frozen) { updateProjectiles(dt, true); return; }   // intro del jefe: el mundo enemigo se congela
     for (i = 0; i < list.length; i++) {
       e = list[i];
@@ -502,7 +673,7 @@
       // estados (quemado, veneno, sangrado...) y ralentización
       if (G.Combat.tickStatus(e, dt)) continue;
       var slowF = e.slowT > 0 ? 1 - e.slowPct : 1;
-      e.spd = B.enemy[e.type].spd * slowF;
+      e.spd = B.enemy[e.type].spd * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
       if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash'))) e.face = dx >= 0 ? 1 : -1;
@@ -572,6 +743,89 @@
     c.restore();
   }
 
+  // ---- Dibujo de los minijefes v5 (telegrafías en rojo; zonas persistentes en verde ácido; ventana de exposición en dorado)
+  function shieldBit(c, x, y, ang, glow) {
+    c.save(); c.translate(Math.round(x), Math.round(y)); c.rotate(ang);
+    if (glow) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.4 + 0.3 * glow; c.fillStyle = '#ff5a3a'; c.beginPath(); c.arc(0, 0, 17, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; }
+    c.fillStyle = '#8a95a8'; c.strokeStyle = '#1c2230'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(11, 0); c.lineTo(3, -11); c.lineTo(-8, -9); c.lineTo(-8, 9); c.lineTo(3, 11); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#e8c860'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(7, 0); c.lineTo(-4, 0); c.stroke();
+    c.fillStyle = '#e8c860'; c.beginPath(); c.arc(0, 0, 2.5, 0, 6.283); c.fill();
+    c.restore();
+  }
+  E.shieldBit = shieldBit;
+  function tdisc(c, x, y, r, fill, stroke, lw) {   // círculo de telegrafía con contorno oscuro (se lee sobre el círculo rojo del ritual)
+    c.save(); c.strokeStyle = 'rgba(8,4,14,0.7)'; c.lineWidth = (lw || 2) + 4; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.stroke(); c.restore();
+    disc(c, x, y, r, fill, stroke, lw);
+  }
+  function lane(c, x, y, ang, len, w, f, fixed) {
+    c.save(); c.translate(x, y); c.rotate(ang);
+    c.strokeStyle = 'rgba(8,4,14,0.7)'; c.lineWidth = 6; c.strokeRect(0, -w / 2, len, w);
+    c.fillStyle = RED(0.1 + 0.26 * f); c.fillRect(0, -w / 2, len, w);
+    c.strokeStyle = fixed ? 'rgba(255,110,90,0.95)' : 'rgba(255,90,90,0.55)'; c.lineWidth = fixed ? 2.5 : 1.5; c.strokeRect(0, -w / 2, len, w); c.restore();
+  }
+  function drawBulwark(c, e, p) {
+    var M = MB, i, u, st = e.st;
+    if (st === 'wind') fan(c, e.x, e.y, 100 + p.r, e.ang, 45 * DEG, e.t / 700);
+    else if (st === 'swind') {
+      u = e.t / 700; c.save(); c.fillStyle = RED(0.1 + 0.2 * u); c.strokeStyle = 'rgba(255,90,90,0.85)'; c.lineWidth = 2;
+      disc(c, e.x, e.y, 125, c.fillStyle, c.strokeStyle, 2); c.setLineDash([6, 6]);
+      [50, 85].forEach(function (rr) { c.beginPath(); c.arc(e.x, e.y, rr, 0, 6.283); c.stroke(); });
+      c.setLineDash([]); c.globalAlpha = 0.7; c.beginPath(); c.arc(e.x, e.y, 125 * u, 0, 6.283); c.stroke(); c.restore();
+    } else if (st === 'swave') {
+      c.save(); c.strokeStyle = 'rgba(255,70,50,0.9)'; c.lineWidth = 9;
+      for (i = 0; i < e.waves.length; i++) { var wv = e.waves[i]; if (wv.t < 0 || wv.t > 450) continue; c.globalAlpha = 1 - wv.t / 450 * 0.6; c.beginPath(); c.arc(e.x, e.y, wv.r, 0, 6.283); c.stroke(); }
+      c.restore();
+    } else if (st === 'cwind' || st === 'charge') {   // carril de la embestida (64 px) + círculo de la onda de choque en el punto de parada
+      var tele = e.cn ? M.chargeTele2 : M.chargeTele, fix = e.cn ? M.chargeFix2 : M.chargeFix, f = st === 'charge' ? 1 : e.t / tele;
+      lane(c, e.x, e.y, e.ang, st === 'charge' ? e.clen - e.trav : e.clen, 64, f, st === 'charge' || e.t >= fix);
+      c.save(); c.fillStyle = RED(0.08 + 0.14 * f); c.strokeStyle = 'rgba(255,90,90,0.8)'; c.lineWidth = 2; c.setLineDash([7, 6]); c.lineDashOffset = -G.time / 30;
+      tdisc(c, e.tx, e.ty, M.ringR, c.fillStyle, c.strokeStyle, 2); c.restore();
+    } else if (st === 'cring') {
+      u = e.t / M.ringMs; c.save(); c.strokeStyle = 'rgba(255,70,50,0.9)'; c.lineWidth = 10; c.globalAlpha = 1 - u * 0.5;
+      c.beginPath(); c.arc(e.x, e.y, 18 + (M.ringR - 18) * u, 0, 6.283); c.stroke(); c.restore();
+    } else if (st === 'owind') {   // aviso de los escudos: fantasmas en sus posiciones iniciales y círculo peligroso
+      u = e.t / M.orbTele; c.save(); c.setLineDash([6, 6]); c.lineDashOffset = -G.time / 40; c.strokeStyle = 'rgba(255,90,90,0.8)'; c.fillStyle = RED(0.06 + 0.12 * u); c.lineWidth = 2;
+      tdisc(c, e.x, e.y, M.orbR + 16, c.fillStyle, c.strokeStyle, 2); c.restore();
+      c.save(); c.globalAlpha = 0.35 + 0.4 * u; for (i = 0; i < e.orbN; i++) { var q = orbPos(e, i); shieldBit(c, q.x, q.y, q.a + Math.PI / 2, 0); } c.restore();
+    } else if (st === 'orbit' || st === 'olaunch') {
+      c.save(); c.setLineDash([6, 8]); c.lineDashOffset = -G.time / 50; c.strokeStyle = 'rgba(255,110,90,0.55)'; c.lineWidth = 1.5; c.beginPath(); c.arc(e.x, e.y, M.orbR, 0, 6.283); c.stroke(); c.restore();
+      var lf = st === 'olaunch' ? e.t / M.orbLaunch : 0;
+      for (i = 0; i < e.orbN; i++) {
+        var o2 = orbPos(e, i);
+        if (st === 'olaunch') lane(c, o2.x, o2.y, o2.a, 330, 26, lf, e.t >= 200);
+        shieldBit(c, o2.x, o2.y, o2.a + (st === 'olaunch' ? 0 : Math.PI / 2), st === 'olaunch' ? 0.5 + 0.5 * Math.sin(e.t / 30) : 0);
+      }
+    }
+    if (e.shieldDown && !e.shieldBroken) { c.save(); c.strokeStyle = 'rgba(255,230,120,0.9)'; c.lineWidth = 3; c.setLineDash([6, 4]); c.beginPath(); c.arc(e.x, e.y, e.r + 8, 0, 6.283); c.stroke(); c.restore(); }
+    if (e.expT > 0) { c.save(); c.strokeStyle = 'rgba(255,226,122,' + (0.6 + 0.3 * Math.sin(G.time / 60)) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(e.x, e.y, e.r + 12, 0, 6.283); c.stroke(); c.restore(); }
+    if (e.enraged) { c.save(); c.globalAlpha = 0.18 + 0.1 * Math.sin(G.time / 90); c.fillStyle = '#ff3010'; c.beginPath(); c.arc(e.x, e.y, e.r + 6, 0, 6.283); c.fill(); c.restore(); }
+  }
+  function drawHive(c, e, p) {
+    var M = MH, i, u, st = e.st;
+    if (st === 'spit' && e.land) {
+      u = e.t / 500; c.save();
+      for (i = 0; i < e.land.length; i++) disc(c, e.land[i].x, e.land[i].y, 18, RED(0.12 + 0.25 * u), 'rgba(255,90,90,0.85)', 2);
+      c.restore();
+    } else if (st === 'swell') {
+      u = e.t / 800; c.save(); c.strokeStyle = 'rgba(255,183,58,' + (0.5 + 0.4 * Math.sin(e.t / 40)) + ')'; c.lineWidth = 3;
+      c.beginPath(); c.arc(e.x, e.y, 20 + 50 * u, 0, 6.283); c.stroke(); c.restore();
+    } else if (st === 'rwind' && e.rain) {   // lluvia de larvas: círculos rojos que se cierran
+      u = e.t / M.rainTele; c.save();
+      for (i = 0; i < e.rain.length; i++) {
+        var r = e.rain[i]; tdisc(c, r.x, r.y, M.rainR, RED(0.12 + 0.3 * u), 'rgba(255,120,100,1)', 2.5);
+        c.strokeStyle = 'rgba(255,200,120,0.8)'; c.lineWidth = 2; c.beginPath(); c.arc(r.x, r.y, M.rainR * (1 - u * 0.85), 0, 6.283); c.stroke();
+      }
+      c.restore();
+    } else if (st === 'burst') {   // estallido: círculo rojo de 150 px que se llena
+      u = e.t / M.burstTele; c.save(); c.setLineDash([8, 6]); c.lineDashOffset = -G.time / 30;
+      tdisc(c, e.x, e.y, M.burstR, RED(0.07 + 0.2 * u), 'rgba(255,120,100,1)', 2.5); c.setLineDash([]);
+      c.strokeStyle = 'rgba(255,200,120,0.85)'; c.lineWidth = 3; c.beginPath(); c.arc(e.x, e.y, M.burstR * u, 0, 6.283); c.stroke(); c.restore();
+    }
+    if (e.expT > 0) { c.save(); c.strokeStyle = 'rgba(255,226,122,' + (0.6 + 0.3 * Math.sin(G.time / 60)) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(e.x, e.y, e.r + 12, 0, 6.283); c.stroke(); c.restore(); }
+    if (e.enraged) { c.save(); c.globalAlpha = 0.15 + 0.1 * Math.sin(G.time / 90); c.fillStyle = '#ff7a10'; c.beginPath(); c.arc(e.x, e.y, e.r + 6, 0, 6.283); c.fill(); c.restore(); }
+  }
+
   E.drawGround = function (c) {
     var i, e, p = PL(), u;
     for (i = 0; i < G.zones.length; i++) if (G.zones[i].team === 'e') drawZone(c, G.zones[i], i);
@@ -637,30 +891,8 @@
         if (e.st === 'cast') { u = e.t / 500; c.strokeStyle = 'rgba(200,140,255,0.9)'; c.lineWidth = 3; c.beginPath(); c.arc(e.x, e.y, 12 + 38 * u, 0, 6.283); c.stroke(); }
         c.restore();
       }
-      if (e.type === 'mini_bulwark') {
-        if (e.st === 'wind') fan(c, e.x, e.y, 100 + p.r, e.ang, 45 * DEG, e.t / 700);
-        else if (e.st === 'swind') {
-          u = e.t / 700; c.save(); c.fillStyle = RED(0.1 + 0.2 * u); c.strokeStyle = 'rgba(255,90,90,0.85)'; c.lineWidth = 2;
-          disc(c, e.x, e.y, 125, c.fillStyle, c.strokeStyle, 2); c.setLineDash([6, 6]);
-          [50, 85].forEach(function (rr) { c.beginPath(); c.arc(e.x, e.y, rr, 0, 6.283); c.stroke(); });
-          c.setLineDash([]); c.globalAlpha = 0.7; c.beginPath(); c.arc(e.x, e.y, 125 * u, 0, 6.283); c.stroke(); c.restore();
-        } else if (e.st === 'swave') {
-          c.save(); c.strokeStyle = 'rgba(255,70,50,0.9)'; c.lineWidth = 9;
-          for (var wi = 0; wi < e.waves.length; wi++) { var wv = e.waves[wi]; if (wv.t < 0 || wv.t > 450) continue; c.globalAlpha = 1 - wv.t / 450 * 0.6; c.beginPath(); c.arc(e.x, e.y, wv.r, 0, 6.283); c.stroke(); }
-          c.restore();
-        }
-        if (e.shieldDown) { c.save(); c.strokeStyle = 'rgba(255,230,120,0.9)'; c.lineWidth = 3; c.setLineDash([6, 4]); c.beginPath(); c.arc(e.x, e.y, e.r + 8, 0, 6.283); c.stroke(); c.restore(); }
-      }
-      if (e.type === 'mini_hive') {
-        if (e.st === 'spit' && e.land) {
-          u = e.t / 500; c.save();
-          for (var li = 0; li < e.land.length; li++) { disc(c, e.land[li].x, e.land[li].y, 18, RED(0.12 + 0.25 * u), 'rgba(255,90,90,0.85)', 2); }
-          c.restore();
-        } else if (e.st === 'swell') {
-          u = e.t / 800; c.save(); c.strokeStyle = 'rgba(255,183,58,' + (0.5 + 0.4 * Math.sin(e.t / 40)) + ')'; c.lineWidth = 3;
-          c.beginPath(); c.arc(e.x, e.y, 20 + 50 * u, 0, 6.283); c.stroke(); c.restore();
-        }
-      }
+      if (e.type === 'mini_bulwark') drawBulwark(c, e, p);
+      if (e.type === 'mini_hive') drawHive(c, e, p);
     }
   };
 
@@ -691,8 +923,8 @@
           if (e.st === 'tele' && e.kind !== 'slam') return e.t > e.dur * 0.55 ? 2 : 0;
           if (e.st === 'rec') return e.kind === 'slam' ? 3 : 2;
         } else {
-          if (e.st === 'strike' || e.st === 'swave' || e.st === 'spit') return 3;
-          if (e.st === 'wind' || e.st === 'swind' || e.st === 'swell') return 2;
+          if (e.st === 'strike' || e.st === 'swave' || e.st === 'spit' || e.st === 'charge' || e.st === 'cring' || e.st === 'twind') return 3;
+          if (e.st === 'wind' || e.st === 'swind' || e.st === 'swell' || e.st === 'cwind' || e.st === 'owind' || e.st === 'olaunch' || e.st === 'rwind' || e.st === 'burst' || e.st === 'enrage') return 2;
         }
         return 'idle:' + Math.floor(e.anim / 330);
     }
@@ -709,8 +941,8 @@
       case 'sower': return st === 'sow' ? 'sow:' + (e.t < 250 ? 0 : 1) : 'walk:' + w;
       case 'blinker': return st === 'fade' ? 'fade:' + Math.floor(e.t / 100) : st === 'slash' ? 'slash:' + (e.t < 200 ? 0 : 1) : 'idle:' + Math.floor(e.anim / 200);
       case 'scorcher': return st === 'wind' ? 'charge:0' : st === 'dash' ? 'charge:1' : st === 'rec' ? 'rec:0' : 'walk:' + w;
-      case 'mini_bulwark': return st === 'wind' ? 'bash:0' : st === 'strike' ? 'bash:1' : st === 'swind' ? 'stomp:0' : st === 'swave' ? 'stomp:1' : st === 'rec' ? 'rec:0' : 'walk:' + Math.floor(e.anim / 160);
-      case 'mini_hive': return st === 'spit' ? 'spit:0' : st === 'acid' ? 'acid:0' : st === 'swell' ? 'swell:' + Math.floor(e.t / 100) : 'float:' + Math.floor(e.anim / 140);
+      case 'mini_bulwark': return (st === 'wind' || st === 'cwind' || st === 'olaunch') ? 'bash:0' : (st === 'strike' || st === 'charge') ? 'bash:1' : (st === 'swind' || st === 'owind' || st === 'enrage') ? 'stomp:0' : (st === 'swave' || st === 'cring') ? 'stomp:1' : st === 'rec' ? 'rec:0' : 'walk:' + Math.floor(e.anim / 160);
+      case 'mini_hive': return (st === 'spit' || st === 'rwind') ? 'spit:0' : (st === 'acid' || st === 'twind' || st === 'stag') ? 'acid:0' : (st === 'swell' || st === 'burst') ? 'swell:' + Math.floor(e.t / 100) % 2 : 'float:' + Math.floor(e.anim / 140);
     }
     return 0;
   }
@@ -755,7 +987,7 @@
     else if (e.type === 'scorcher' && (e.st === 'wind' || e.st === 'dash')) { o.tint = '#ffd23a'; o.tintA = 0.25 + 0.25 * Math.sin(e.t / 50); }
     else if (e.type === 'bomb' && e.st === 'lit' && Math.floor(e.t / 80) % 2) { o.tint = '#ff3030'; o.tintA = 0.6; }
     else if (e.type === 'boar' && e.st === 'stun') { o.tint = '#ffff80'; o.tintA = 0.25 + 0.15 * Math.sin(e.t / 60); }
-    else if (e.type === 'mini_hive' && e.st === 'swell') { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * e.t / 800); o.sy = o.sx; }
+    else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = v.fb.tint; o.tintA = 0.5; }
     if (v.fb && v.fb.alpha && o.alpha == null) o.alpha = v.fb.alpha;
@@ -765,10 +997,19 @@
     if (e.spawnT <= 0 && e.type !== 'boss') {
       var elite = B.enemy[e.type].elite;
       if (elite) {
-        var bw = 52, bx2 = Math.round(e.x - bw / 2), by2 = Math.round(e.y - hh / 2 - 12);
-        var blink = e.st === 'swell' && Math.floor(e.t / 80) % 2;
+        var bw = 64, bx2 = Math.round(e.x - bw / 2), by2 = Math.round(e.y - hh / 2 - 16);
+        var blink = (e.st === 'swell' || e.st === 'burst' || e.st === 'enrage') && Math.floor(e.t / 80) % 2;
         c.fillStyle = '#1a0a12'; c.fillRect(bx2 - 1, by2 - 1, bw + 2, 7);
-        c.fillStyle = blink ? '#ffffff' : '#ffb347'; c.fillRect(bx2, by2, Math.max(0, bw * e.hp / e.maxHp), 5);
+        c.fillStyle = blink ? '#ffffff' : (e.enraged ? '#ff5a30' : '#ffb347'); c.fillRect(bx2, by2, Math.max(0, bw * e.hp / e.maxHp), 5);
+        c.fillStyle = 'rgba(255,255,255,0.8)'; c.fillRect(bx2 + bw / 2, by2 - 2, 1, 9);   // muesca del enrage (50 %)
+        var pm = e.shieldMax ? (e.shieldBroken ? 0 : e.shieldHp / e.shieldMax) : e.sacMax ? (e.sacBroken ? 0 : e.sacHp / e.sacMax) : -1;
+        if (pm >= 0) {   // medidor de la parte rompible (Escudo / Saco)
+          var pw = e.partName ? 64 : 0, flash = (e.shieldFlash > 0 || e.sacFlash > 0);
+          c.fillStyle = '#1a0a12'; c.fillRect(bx2 - 1, by2 + 7, pw + 2, 6);
+          c.fillStyle = flash ? '#ffffff' : (e.shieldMax ? '#8fb4e8' : '#c8e85a'); c.fillRect(bx2, by2 + 8, Math.max(0, pw * pm), 4);
+          G.txt(c, (pm > 0 ? e.partName : e.partName + ' ROTO'), e.x, by2 + 19, 9, pm > 0 ? '#d8cfe8' : '#ffd27a', 'center');
+        }
+        if (e.expT > 0) G.txt(c, 'x' + e.expMul + ' EXPUESTO', e.x, by2 - 9, 10, '#ffe27a', 'center');
       } else if (e.hp < e.maxHp) {
         var w = 22, bx = Math.round(e.x - w / 2), by = Math.round(e.y - hh / 2 - 6);
         c.fillStyle = '#1a0a12'; c.fillRect(bx - 1, by - 1, w + 2, 5);
@@ -786,6 +1027,7 @@
         c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r + 5, 0, 6.283); c.fill(); c.restore();
         if (!q.spr) { c.save(); c.fillStyle = '#bfeaff'; c.strokeStyle = '#4aa8ff'; c.lineWidth = 2; c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r - 1, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x - 1, q.y - 1, 3, 0, 6.283); c.fill(); c.restore(); continue; }
       }
+      if (q.kind === 'shieldbit') { E.shieldBit(c, q.x, q.y, q.t / 60, 0.4); continue; }
       if (!q.spr) continue;
       var cv = Assets.sprite(q.spr, Math.floor(q.t / 100) % 2);
       G.fx.spr(c, cv, q.x, q.y, { rot: q.orb ? 0 : q.ang });
