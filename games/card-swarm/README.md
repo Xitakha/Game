@@ -290,6 +290,60 @@ Pruebas: 0 errores de consola en intro, las 9 + 8 peleas forzadas, fases, partes
 
 Limitaciones J2 (Peligro II-V, cacería y guardianes: resueltos en J3): los trofeos cuentan como 1 Esencia genérica (no "Esencia afín" por etiqueta: la API de loot solo tiene `rare`), sin pistas ni SFX propios de los dos jefes (fallback `boss`, SFX reutilizados), zoom de combate 0,9 no implementado.
 
+## Jefes v4 (fase J3): Peligro I-V, Cacería de Vesper, Practicar y guardianes de bioma
+Diseño: `DESIGN-v4-jefes.md` 4.1-4.3 y 6 (J3). Cambios: `boss.js` (tabla `PELIGRO`, variantes, desesperado doble, HUD), `boss_karceron.js` / `boss_letea.js` (variantes y calibración), `main.js` (modos `run | hunt | practice`, `G.launchReq`), `waves.js` (director de cacería), `loot.js` / `save.js` (recompensas, desbloqueo, registro; guardado **v4**), `panels.js` (Portal con selector de Peligro, pestaña CACERÍA de Vesper), `base.js` (pantalla final de cacería / práctica), `enemies.js` (guardianes de bioma), `assets_peligro.js` (stingers por código; archivo nuevo, no se tocó ningún `assets*.js`).
+
+### Peligro I-V
+**Portal:** bajo el destino hay 5 botones (I-V; Q / E cambian). El Peligro es **por jefe**: cada destino recuerda el suyo (`Save.data.peligroSel[jefe]`). **Desbloqueo:** vencer al jefe en Peligro N (en expedición o en cacería) abre el N+1 (`Save.data.peligro[jefe]` = máximo abierto; pantalla final: "PELIGRO N DESBLOQUEADO"). Los jefes ya vencidos antes de J3 parten con el Peligro II abierto (migración).
+
+| Nivel | HP x | Daño | Telegrafía (con suelo de esquiva) | Mecánica (acumulativa) | Brasas x | Recompensa extra |
+|---|---|---|---|---|---|---|
+| I | 1,00 | +0 % | 100 % | Base | 1,00 | - |
+| II | 1,15 | +10 % | -10 % | +1 add en las invocaciones (Llamada 3, Penitentes 3, Plañideras 4) | 1,25 | Esencia extra 15 %, partes garantizadas x1,25 |
+| III | 1,30 | +20 % | -10 % | **Variante por jefe**: Pastor **Embestida doble** (tras la 1.a, re-aim de 600 ms con 300 de línea fija y 2.a carga); Karceron **Lluvia de 9 brasas**; Letea **Rayo del cielo con 6 rayos desde la F1** | 1,50 | +1 PF la 1.a vez, Esencia extra 30 %, partes x1,5 |
+| IV | 1,50 | +30 % | -10 % | Furia a los 120 s, medidores de parte +30 %, derribos 2,4 s; Éxtasis 12 s (Pastor), Marea cada 20 s (Karceron), cabezas rebrotan en 14 s (Letea) | 1,75 | **2 trofeos por parte rota**, Esencia extra 45 %, partes x1,75 |
+| V | 1,75 | +40 % | -10 % | **Fase 4 "Último aliento"**: dos ataques desesperados seguidos (el HP no baja del 3 % hasta el 2.o; Pastor: dos Éxtasis, Karceron: dos Réquiem, Letea: dos Coros); tope de 6 adds | 2,00 | +1 PF la 1.a vez, Esencia extra 60 %, partes x2,0 |
+
+- **Reglas que se respetan al escalar:** ningún golpe directo de ataque grande pasa de 32 de daño por Peligro (`HIT_CAP`; la Furia sí multiplica encima, como en el doc: "el 1.er golpe de un ataque grande nunca pasa de 30"), y la telegrafía de cada ataque no baja de `250 + 1000 x salida / 190 + 100 ms` (`Boss.EXIT`: tabla de salida por ataque), así que el -10 % solo afecta a los ataques con margen (Salto, Grilletes y Martillazo se quedan casi como en I).
+- **PF:** run normal 2 (3 la 1.a vez que vences al jefe) + extra la 1.a vez en III y V; cacería: solo la 1.a victoria de ese jefe en ese Peligro (sin farmeo). Techo global de 24 PF intacto. Trofeos: siguen contando como 1 Esencia.
+- **HUD y botín:** chip "PELIGRO IV" (y "CACERÍA" / "PRÁCTICA") junto al nombre en la barra grande; la pantalla final muestra Peligro, Brasas x y desbloqueo. Recomendación en el Portal para IV-V: DPS >= 110 (forja con maestría).
+- **Calibración con el bot:** ver "Calibración J3" abajo. Los HP x del doc se mantienen; para que el bot de manos fijas (sin forja) pueda ganar en IV-V se mide con una **mano forjada**: `?cmul=` multiplica el daño de las cartas (x1,00 / 1,10 / 1,15 / 1,35 / 1,70 en I-V; el doc recomienda DPS_ref >= 110 = x1,4 sobre el p50 en IV-V).
+
+### Cacería de Vesper (modo `hunt`)
+- **Entrada:** Vesper -> pestaña **CACERÍA** (o la opción "Cacería" de su diálogo: "Hay una bestia que merece la pena. ¿Vamos?"). Aparece por jefe tras vencerlo una vez en una expedición normal; un encargo de cacería por **jefe y Peligro desbloqueado** (selector de jefe + 5 chips de Peligro). La tarjeta muestra debilidades, partes con su trofeo, recompensa estimada, victorias / intentos y mejor tiempo. Teclas: F cazar, P practicar, Q / E Peligro.
+- **Reglas:** sin hordas (solo los adds del jefe + una **oleada de limpieza de 3 gusanos cada 25 s**, nunca en intro, puertas de fase, desesperados ni ataques firma; `Waves.huntUpdate`), **HP x0,75** (`G.huntHpMul`), reloj de la run parado (no hay Brasas por minutos) y arena del bioma del jefe (se mantiene la de 1440 x 810: los jefes tienen sus obstáculos y zonas colocados en ella; el 1200 x 700 del doc se descartó). **Preparación:** al salir llegan **6 ofertas de carta seguidas** (`G.prep`, "PREPARACIÓN n/6"; reroll y omitir funcionan) sobre las anclas del Portal; luego entra el jefe con su intro.
+- **Recompensa:** Brasas del jefe y de sus partes x Peligro, trofeos (x2 en IV-V), partes garantizadas del jefe x multiplicador de Peligro y PF solo la 1.a vez por jefe y Peligro; **sin Esencia segura** y sin Esencia extra. No cuenta para victorias de "Mano ganadora" ni encargos de duración / etiqueta. Registro en el guardado: `hunts[jefe][Peligro] = { wins, tries, best }` (mejor tiempo en s), `pelWins`, `trophies`, `bossKills`.
+- **Encargos nuevos del Tablón** (doc 4.5): "Rompe el cuerno" (romper los Cuernos del Pastor) y "Sin Salto aplastante" (vencer al Pastor sin que te alcance el Salto).
+
+### Practicar (modo `practice`)
+Pestaña CACERÍA -> PRACTICAR (con fase de inicio I / II / III). Jefe a **HP x0,5, sin Peligro, sin recompensas ni pérdida de progreso** (no se consumen Tónico / Imán / plato, los encargos no avanzan, no hay botín ni PF; solo suben los contadores `practice[jefe] = { tries, wins }`). **Reinicio rápido:** el primer intento hace las 6 ofertas y guarda la mano (`G.practiceHand`); a partir de ahí los reinicios (R en la pantalla final, o P y luego R en pleno combate; 1-3 reinician en esa fase) reutilizan la mano y se saltan la intro. El HUD muestra "PRÁCTICA - intento N".
+
+### Guardianes (minijefes de los 3:30 y 5:30)
+- **Revisión contra el doc (4.1):** Coloso Escudero (3:30) y Madre Colmena (5:30) siguen cumpliendo lo previsto (parte rompible, enrage al 50 %, banner de 2 s, recompensa sin cambios) con las diferencias deliberadas de v5 (HP 2200 / 2800 en vez de 700 / 1050, parte Escudo 30 % y Saco 28 %, 2 ataques nuevos cada uno; ver "Minijefes v5"). **Nuevo en J3:** usan ahora una **barra grande propia** (520 px, muesca del enrage y medidor de la parte), como pide el doc. **No se solapan con el jefe final:** nunca hay dos guardianes a la vez, ninguno entra en los últimos 45 s previos (`Waves.MINI_LAST`) y al aparecer el jefe se retiran en silencio (probado con `?t=`).
+- **Guardianes de bioma (ligeros; el doc solo prevé los dos):** mismo motor y mismas partes rompibles, 2 ataques y otro nombre / color. **Cripta: Centinela de Brasa** (en lugar del Coloso; Embestida con onda de choque + Escudos giratorios; parte PETO). **Asfodelo: Plañidera Anegada** (en lugar de la Colmena; Lluvia de larvas + Marea ácida; parte BOLSA). Siguen siendo `mini_bulwark` / `mini_hive` (`e.variant = 'warden' | 'wraith'`) para que botín, PF y encargos ("Mata al Coloso", "Quema la Colmena") valgan igual.
+
+### Música y SFX
+`Assets.music` solo ofrece las pistas `normal` y `boss` (intensidad 0..1), así que la variación por fase se hace con la **intensidad** (0,55 / 0,78 / 1,0, ya existente) y con **stingers por código** propios de cada jefe y fase (`assets_peligro.js`, voces `stg_<jefe>_<intro|p2|p3|despair>`, `stg_part`, `stg_prep`, `stg_peligro` sobre `G.Snd`): Pastor zampoña disonante + tambor, Karceron yunque + cadenas + sirena, Letea arpegio acuático con eco. **Zoom de combate 0,9:** parámetro opcional `?zoom=0.9` (por defecto 1,0).
+
+### Ajuste de Letea
+Letea quedó demasiado fácil (83 % en J2 con el bot sin lapsos). **Mordisco cd 2800 -> 2500 ms y `hpCal` 3,5 -> 3,6** (el Mordisco es casi todo su daño: más mordiscos = más presión; subir los `cd` de los ataques elementales no servía, como se vio en J2). Karceron: `hpCal` 2,6 -> 2,3 (con lapsos del bot estaba ~50 %). Peligro V de Karceron: el 2.o desesperado es solo la Marea (7 s, sin lluvia de brasas; doc: "Réquiem + Marea"); en cualquier Peligro V el 2.o desesperado da 2 corazones.
+
+### Calibración J3 (bot esquivador, 12 peleas por build = 36 por celda)
+Bot de J1 (`tools/card-swarm-boss-bot/`; reacción 250 ms, decisión cada 100 ms, 10 % de movimiento al azar y **10 % de pasos distraídos**, como la cifra de J1). Con 0 % de lapsos el bot gana 10-15 puntos más (en Peligro I: Pastor 81 %, Karceron 79 %, Letea 94 % antes del ajuste, medido en J3: la cifra "83 % de Letea" de J2 es de ese perfil). Herramienta nueva: `table.sh <jefe> "1 2 3 4 5" <peleas> <puerto>` (`FORGE="1 1.1 1.15 1.35 1.7"` = `?cmul` por Peligro; `INATTN=`), `caps_j3.js`. Manos p25 / p50 / p75 de J1, ponderado 25 / 50 / 25.
+
+| Jefe | I | II | III | IV | V | Duración p50 de las victorias (s) |
+|---|---|---|---|---|---|---|
+| Pastor | 69 % | 58 % | 67 % | 54 % | 35 % | 116-143 (V: 124-136) |
+| Karceron | 60 % | 46 % | 33 % | 33 % | 10 % | 88-116 |
+| Letea | 52 % | 60 % | 52 % | 25 % | 27 % | 110-146 (V: 114-128) |
+| **Media** | **60 %** | **55 %** | **51 %** | **37 %** | **24 %** | |
+| Objetivo | 65 % | 55 % | 45 % | 35 % | 25 % | 90-150 (V hasta 180) |
+
+Por mano (victorias de 12): p25 casi siempre 0 (la build floja solo gana en Peligro I-II, 0-2/12), p50 11/12 -> 4/12 en el Pastor y 9/12 -> 0/12 en Karceron de I a V, p75 11-12/12 hasta IV. Ruido: +-12 puntos por celda (n = 36); las celdas sueltas (Pastor III 67 %, Karceron V 10 %) se dejaron porque la media por nivel cae en el objetivo. **Karceron V es el punto débil**: el Martillazo / Barrido (golpes de 32) matan en 3-4 aciertos y el bot no los esquiva con la telegrafía recortada (el suelo de esquiva ya la deja casi igual); un jugador con forja alta lo ve más fácil que el bot.
+Qué se aprendió: (1) con los multiplicadores del doc tal cual y la mano sin forjar el bot gana 29 % en II y 0 % en V; la telegrafía -10 % sola cuesta ~19 puntos, de ahí el suelo de esquiva y el tope de 32 por golpe; (2) HP, daño y recorte del doc se mantienen y la diferencia la pone la mano forjada de la calibración; (3) el bot no tiene regeneración y solo recibe 12 HP por corazón: por eso los 2 corazones del segundo desesperado.
+Pruebas J3: 0 errores de consola en Portal / Vesper / preparación / cacería / práctica / peligros 1-5 / guardianes / zoom; flujo aldea -> Vesper (clic en CAZAR) -> 6 ofertas -> pelea -> botín (PF, trofeos, registro `hunts`) -> aldea -> Portal (clic en Peligro II) -> expedición con Peligro II; migración v3 -> v4 (copia en `swarmhand.save.v3`, Peligro II abierto en los jefes ya vencidos, persiste al recargar, guardado corrupto cae a valores por defecto); táctil 844x390 (toque en los botones de Peligro, joystick); fps en Chromium sin GPU: Pastor 57,7 antes del jefe y 43-46 en pelea; Letea táctil 42 (paridad con J2). Capturas en `studio/docs/capturas-jefes-j3/` (j01-j14).
+
+
 ## Balance v5 (pasada de experiencia, minijefes, curación, velocidad y drops)
 Feedback del dueño tras jugar la aldea y una expedición de 7 min. Todo medido con `tools/card-swarm-balance-bot/` (ver al final); "antes" = el código anterior a esta pasada, mismo bot, mismas condiciones.
 

@@ -478,13 +478,13 @@
     if (e.despT >= 2000) {
       a.islR = ISL_R - 50 * G.clamp((e.despT - 2000) / 8000, 0, 1);   // las islas se encogen hasta r 70
       a.rainT += dt;
-      if (a.rainT >= 1000) {   // un impacto por segundo sobre las islas (r 50, telegrafía de 900 ms)
+      if (a.rainT >= (e.despLeft === 0 && pel().x2 ? 1e9 : 1000)) {   // Peligro V: el 2.o desesperado es solo la Marea (doc: "Réquiem + Marea"): sin lluvia de brasas   // un impacto por segundo sobre las islas (r 50, telegrafía de 900 ms)
         a.rainT -= 1000;
         var ii = Math.random() < 0.6 ? nearestIsland(p.x, p.y) : Math.floor(Math.random() * 3), an = Math.random() * TAU, rr = Math.random() * a.islR * 0.8;
         a.rain.push({ x: ISLANDS[ii][0] + Math.cos(an) * rr, y: ISLANDS[ii][1] + Math.sin(an) * rr, r: 50, dmg: 18, t: 0, imp: 900, puddles: false });
       }
     }
-    if (e.despT >= 10500) {
+    if (e.despT >= (e.despLeft === 0 && pel().x2 ? 7000 : 10500)) {   // la Marea final dura 7 s
       a.flood = { state: 'off', t: 0, dur: 0, req: false }; a.islR = ISL_R; a.rain.length = 0;
       setChest(e, false); e.exps = e.exps.filter(function (x) { return x.kind !== 'despair'; });
       e.mode = 'fight'; e.cadT = 1800; G.Hud.banner('El Carcelero se recompone...', 1400, '#ffb070');
