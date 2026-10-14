@@ -22,7 +22,8 @@
       elites: {},                              // primer élite abatido de cada tipo (+1 PF)
       quest: { active: null, prog: {}, done: {} },
       shop: { trade: 0, tonic: 0, magnet: 0, part: 0 }, pending: { tonic: 0, magnet: 0 },
-      flags: {} };
+      flags: {},
+      bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque' };   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   S.save = function () {
@@ -43,7 +44,7 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
     ['prog', 'done'].forEach(function (key) { if (!d.quest[key] || typeof d.quest[key] !== 'object') d.quest[key] = {}; });
     if (typeof d.pf.earned !== 'number') d.pf.earned = 1;
     if (!Array.isArray(d.anchors)) d.anchors = f.anchors;

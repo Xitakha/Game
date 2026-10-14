@@ -24,12 +24,7 @@
   function spawnBoss() {
     W.bossSpawned = true;
     for (var i = 0; i < G.enemies.length; i++) if (B.enemy[G.enemies[i].type].elite) G.Enemies.kill(G.enemies[i], true);   // los élites desaparecen
-    var p = G.player, x = G.AW / 2, y = G.WALL + 120;
-    if (G.dist(x, y, p.x, p.y) < 260) y = G.AH - G.WALL - 120;
-    G.Enemies.spawn('boss', x, y);
-    G.Hud.banner('¡JEFE: EL PASTOR CORRUPTO!', 2200, '#ff5a5a');
-    G.sfx('boss_roar');
-    try { Assets.music.setTrack('boss'); Assets.music.setIntensity(1); } catch (e) { /* audio */ }
+    G.Boss.spawn(G.bossId || 'pastor');   // intro de 3,5 s, música de jefe y todo lo demás: boss.js
   }
 
   function spawnElite(type) {
@@ -81,19 +76,22 @@
 
   W.update = function (dt) {
     var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
-    if (!W.bossSpawned && G.time >= G.BOSS_T) spawnBoss();
+    if (G.frozen) return;   // intro del jefe
+    if (!W.bossSpawned && G.runT >= G.BOSS_T) spawnBoss();
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
     if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) { if (B.enemy[k].elite && !W.elitesDone[k] && vt >= (k === qt ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) spawnElite(k); });
     W.t += dt;
     if (W.t < 1500) return;
     W.t -= 1500;
-    var bp = B.bp(m) * (boss ? 0.4 : 1);
+    var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
+    var bp = B.bp(m) * (bm ? bm.mul : 1);
     W.budget = Math.min(W.budget + bp, bp * 2.5);
-    var cap = B.cap(m), alive = G.enemies.length, counts = {};
+    var cap = bm ? bm.cap : B.cap(m), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
+    if (bm && bm.mul <= 0) return;
     G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];
-    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && fromOf(k, qt) <= vt && (!boss || B.light[k])) types.push(k); });
+    Object.keys(B.enemy).forEach(function (k) { var d = B.enemy[k]; if (k !== 'boss' && !d.elite && fromOf(k, qt) <= vt && (!boss || (bm && bm.allow[k]))) types.push(k); });
     // Rotación de sabor: cada 60 s un tipo protagonista (no gusano) pesa x2.2
     W.starT -= 1500;
     if (W.starT <= 0 || (W.star && types.indexOf(W.star) < 0)) {

@@ -26,6 +26,7 @@
   P.hurt = function (p, dmg, sx, sy, o) {
     o = o || {};
     if (p.dead || p.hurtT > 0) return false;
+    if (G.Boss.noHurt > 0 || G.Boss.intro) return false;   // intro del jefe y victoria: invulnerable
     if (o.slow) P.slow(p, o.slow[0], o.slow[1]);
     var a = Math.atan2(p.y - sy, p.x - sx), k = 12 * (o.kb != null ? o.kb : 1);
     if (G.dbg) { var D = G.dbg.dmg; D[o.src || '?'] = (D[o.src || '?'] || 0) + dmg; }
@@ -73,6 +74,7 @@
     if (ix !== 0) p.dirx = ix > 0 ? 1 : -1;
     var spd = B.player.speed * G.Cards.mods.speed * (p.slowT > 0 ? 1 - p.slowPct : 1);
     p.x += ix * spd * s; p.y += iy * spd * s;
+    G.Boss.collide(p, p.r);   // troncos de la arena del jefe
     wallClamp(p);
     if (p.moving && Math.random() < 0.06) G.fx.dust(p.x, p.y + 12, 1);
   };

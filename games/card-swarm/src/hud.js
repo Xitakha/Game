@@ -77,9 +77,9 @@
     bar(c, 16, 14, 220, 18, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
     G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, 126, 24, 13, '#fff', 'center');
     // tiempo y jefe
-    G.txt(c, G.fmtTime(G.time), G.W / 2, 20, 22, '#ffd27a', 'center');
+    G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo
     var boss = G.Enemies.boss();
-    if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.time)), G.W / 2, 42, 12, G.BOSS_T - G.time < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
     // kills, ceniza
     G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
     c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();
@@ -94,12 +94,6 @@
       var qy = LR.rare ? 108 : 88, tgt = G.Quests.target();
       G.txt(c, 'Encargo', G.W - 16, qy, 11, '#9a8fb0', 'right');
       G.txt(c, qt, G.W - 16, qy + 17, 14, tgt ? '#ffe9a0' : '#9dffb4', 'right');
-    }
-    // barra del jefe
-    if (boss && boss.spawnT <= 0) {
-      var bw = 460, bx = (G.W - bw) / 2, by = 72;
-      G.txt(c, 'EL PASTOR CORRUPTO', G.W / 2, by - 11, 14, boss.rage ? '#ff6a6a' : '#ffd27a', 'center');
-      bar(c, bx, by, bw, 14, boss.hp / boss.maxHp, boss.rage ? '#ff3030' : '#c03a8a', '#3a1020');
     }
     // mano y XP
     drawHand(c);
@@ -116,6 +110,7 @@
       c.restore();
     }
     drawBanner(c);
+    G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
     if (G.state === 'paused') drawPause(c);
     if (p.hurtT > 300) { c.fillStyle = 'rgba(255,0,0,' + (0.18 * (p.hurtT - 300) / 300) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };

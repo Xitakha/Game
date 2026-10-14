@@ -39,6 +39,7 @@
   L.BRASAS_ASH = 0.12;       // Brasas = 12 % de la Ceniza sobrante...
   L.BRASAS_MIN = 10;         // ... + 10 por minuto sobrevivido
   L.BRASAS_WIN = 40;         // bonus por derrotar al Pastor
+  // Jefes v4: Brasas y PF salen de la tabla del jefe (G.Boss.DEFS: 150 Brasas + 40 por parte rota; PF 2, 3 la 1.ª vez), x Peligro. Cada trofeo cuenta como 1 Esencia (parts.rare).
   L.RANK_MUL = [1, 1, 1.08, 1.16];   // multiplicador por rango de forja (0 bloqueada, I, II, III): +8 % por rango
   L.MAXRANK = 3;
 
@@ -120,7 +121,7 @@
   };
 
   // ----------------------------------------------------------------- Drops en la run
-  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0 }; };
+  L.resetRun = function () { L.run = { parts: {}, total: 0, rare: 0, kills: {}, pf: 0, trophies: [], boss: null }; };
   L.resetRun();
 
   function drop(e, part, n) {
@@ -144,18 +145,32 @@
     if (Math.random() < d[1]) drop(e, d[0], 1);
     if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
   };
-  L.collect = function (part) {
+  L.collect = function (part, trophy) {
     var R = L.run; R.parts[part] = (R.parts[part] || 0) + 1; R.total++;
     if (part === 'rare') R.rare++;
+    if (trophy) R.trophies.push(trophy);
   };
 
   // Fin de expedición: auto-recoge lo que quede en el suelo, calcula Brasas, aplica pity, guarda y prepara el resumen
   L.endRun = function (won) {
     var i, g, S = G.Save.data, R = L.run, p = G.player;
-    for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part); G.gems.splice(i, 1); } }
-    var mins = Math.max(0, (G.time - G.t0) / 60000);
+    for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } }
+    var mins = Math.max(0, (G.runT - G.t0) / 60000);
     var brasas = Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * mins + (won ? L.BRASAS_WIN : 0));
     for (var k in R.parts) G.Save.add(k, R.parts[k]);
+    // jefe (v4): Brasas por parte rota siempre; las del jefe, los PF y el récord solo si cae
+    var bs = R.boss, binfo = null;
+    if (bs && G.Boss.DEFS[bs.id]) {
+      var BD = G.Boss.DEFS[bs.id], bm = G.Boss.PELIGRO[G.clamp(Math.round(G.peligro || 1), 1, 5)].brasas, be = G.Boss.e;
+      var bb = Math.round(((bs.won ? BD.brasas : 0) + BD.brasasPart * bs.parts.length) * bm), bpf = 0;
+      if (bs.won) {
+        var kn = S.bossKills[bs.id] || 0; S.bossKills[bs.id] = kn + 1;
+        bpf = G.Tree.addPF(kn === 0 ? BD.pfFirst : BD.pf); R.pf = (R.pf || 0) + bpf;
+      }
+      brasas += bb;
+      R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; });
+      binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: bs.won && bpf >= BD.pfFirst };
+    }
     S.brasas += brasas; S.runs++; if (won) S.wins++;
     S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);
     S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0 };   // cupos de Rufo: se reinician al volver de una salida
@@ -163,7 +178,7 @@
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
-    L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0 };
+    L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
   };
   L.beginRun = function () { L.resetRun(); L.startAff = L.affordable(); L.summary = null; };
 })();

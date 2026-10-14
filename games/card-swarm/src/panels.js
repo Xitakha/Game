@@ -205,6 +205,11 @@
   function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
   function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
   var R_GO = { x: 650, y: 440, w: 290, h: 76 };
+  // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
+  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron (J2)', need: 'pastor', needName: 'el Pastor' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea (J2)', need: 'karceron', needName: 'Karceron' }];
+  function biomeRect(i) { return { x: 650 + i * 98, y: 376, w: 92, h: 50 }; }
+  function biomeOpen(b) { return !b.need || (SV().bossKills[b.need] || 0) > 0; }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
     var S = SV(), a = S.anchors, i = a.indexOf(id);
@@ -216,6 +221,10 @@
     var S = SV(), i, list = unlockedList();
     for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
+    for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
+      if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+      else say('Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
+    }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     if (onR(R_GO) || inp.hit('Enter')) { G.Base.launch(); }
     return false;
@@ -252,11 +261,17 @@
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
     for (i = 0; i < ls.length && i < 3; i++) G.txt(c, ls[i], 662, 230 + i * 16, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
     if (Q.target()) G.txt(c, 'Objetivo: pesa x2,5 y llega antes', 662, 282, 10, '#9dffb4', 'left');
-    U.panel(c, 650, 304, 290, 66);
-    G.txt(c, 'COMPRAS PARA ESTA SALIDA', 662, 322, 12, '#9a8fb0', 'left');
-    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 346, 12, '#ffe9a0', 'left');
-    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 346, 12, '#8a7f96', 'left');
-    G.txt(c, 'Peligro I-V: próximamente', 650, 392, 11, '#5a4f68', 'left');
+    U.panel(c, 650, 300, 290, 50);
+    G.txt(c, 'COMPRAS PARA ESTA SALIDA', 662, 314, 11, '#9a8fb0', 'left');
+    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 335, 12, '#ffe9a0', 'left');
+    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 335, 12, '#8a7f96', 'left');
+    var cb = BIOMES.filter(function (b) { return b.id === (S.biome || 'bosque'); })[0] || BIOMES[0];
+    G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 364, 11, '#9a8fb0', 'left');
+    BIOMES.forEach(function (b, k) {
+      var open = biomeOpen(b), on = (S.biome || 'bosque') === b.id && open;
+      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 13, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro I') : 'bloqueado' });
+    });
+    G.txt(c, 'Peligro I (II-V: próximamente)', 650, 434, 10, '#5a4f68', 'left');
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
     U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 19, sub: 'Enter  -  anclas: ' + names });
   }

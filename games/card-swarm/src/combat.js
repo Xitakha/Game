@@ -77,7 +77,9 @@
   // o: { tag, id, ang, kb, burn:dps, slow:[pct,ms], poison, bleed, stun, proj, lifesteal, noChain, zone, depth }
   C.deal = function (e, base, o) {
     o = o || {};
-    if (e.dead || e.spawnT > 0 || e.immune) return 0;   // el Espectro es inmune mientras se desvanece
+    if (e.dead || e.spawnT > 0) return 0;
+    if (e.partOf) return G.Boss.dealPart(e, base, o);   // parte rompible del jefe: reparte al jefe y llena su medidor
+    if (e.immune) return 0;   // el Espectro es inmune mientras se desvanece; el jefe en la puerta de fase
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     var tf = G.Tree.fx;
@@ -113,6 +115,7 @@
       else { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
     }
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
+    if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
       if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
@@ -129,6 +132,7 @@
     if (o.bleed) C.bleed(e);
     if (o.stun) C.stun(e, o.stun);
     e.hp -= dmg; e.flash = 70; e.lastTag = tag; e.boomDepth = o.depth || 0;
+    if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
     var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && e.st === 'charge');   // e.big = super armor de los élites
@@ -150,7 +154,9 @@
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
+    if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     e.hp -= n; e.lastTag = tag;
+    if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
     if (e.dotT <= 0 && e.dotAcc >= 3) { fx.num(e.x, e.y - e.r - 8, Math.round(e.dotAcc), col(tag)); e.dotAcc = 0; e.dotT = 600; }
     if (e.hp <= 0) { G.Enemies.kill(e, false, tag); return true; }
@@ -320,7 +326,7 @@
       while (p.xp >= need) { p.xp -= need; p.level++; G.pendingLevels++; need = B.xpNeed(p.level); }
       G.Snd.play('gem', 1);
     } else if (g.kind === 'part') {
-      G.Loot.collect(g.part); G.Snd.play('gem', 1.8);
+      G.Loot.collect(g.part, g.trophy); G.Snd.play('gem', 1.8);
     } else if (g.kind === 'ash') {
       p.ash += Math.max(1, Math.round(g.v * m.ashMul)); G.Snd.play('gem', 1.4);
     } else { G.Player.heal(p, g.v); G.sfx('pickup'); }
@@ -349,7 +355,11 @@
       if (g.x < G.cam.x - 20 || g.x > G.cam.x + G.W + 20 || g.y < G.cam.y - 20 || g.y > G.cam.y + G.H + 20) continue;
       var bob = Math.sin(t * 5 + i) * 1.5, x = Math.round(g.x), y = Math.round(g.y + bob);
       c.save();
-      if (g.kind === 'part') {
+      if (g.kind === 'part' && g.trophy && G.Boss.TROPHY[g.trophy]) {   // trofeo de jefe
+        c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = '#ffd27a';
+        c.beginPath(); c.arc(x, y, 14, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+        c.drawImage(Assets.sprite(G.Boss.TROPHY[g.trophy].spr, 0), x - 14, y - 14, 28, 28);
+      } else if (g.kind === 'part') {
         c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.3 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = G.Loot.part(g.part).color;
         c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
         G.UI.part(c, g.part, x, y, 7);

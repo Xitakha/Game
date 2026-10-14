@@ -11,6 +11,7 @@
 
   // Shake: amplitud en px y duración en ms; se queda con el más fuerte
   fx.shake = function (amp, ms) {
+    amp = Math.min(12, amp * (G.shakeMul != null ? G.shakeMul : 1));   // tope 12 px; G.shakeMul = 1/3 para la opción de accesibilidad "reducir sacudidas"
     var cur = fx.shakeT > 0 ? fx.shakeAmp * (fx.shakeT / fx.shakeMax) : 0;
     if (amp >= cur) { fx.shakeAmp = amp; fx.shakeT = ms; fx.shakeMax = ms; }
   };

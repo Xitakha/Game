@@ -21,7 +21,7 @@
     var won = G.won, p = G.player, h = p.hand, i, S = G.Save.data, sm = G.Loot.summary || { parts: {}, total: 0, brasas: 0, newCards: [] };
     c.fillStyle = won ? 'rgba(20,14,0,0.92)' : 'rgba(20,0,6,0.92)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, won ? 'MANO GANADORA' : 'HAS CAÍDO', G.W / 2, 34, 44, won ? '#ffd24a' : '#ff5a5a', 'center');
-    G.txt(c, 'Tiempo ' + G.fmtTime(G.time) + '   -   Kills ' + G.kills + '   -   Nivel ' + p.level, G.W / 2, 72, 16, '#fff', 'center');
+    G.txt(c, 'Tiempo ' + G.fmtTime(G.runT) + '   -   Kills ' + G.kills + '   -   Nivel ' + p.level, G.W / 2, 72, 16, '#fff', 'center');
     G.txt(c, 'TU MANO FINAL', 20, 246, 13, '#9a8fb0', 'left');
     for (i = 0; i < h.length; i++) {
       var r = G.Cards.slotRect(i, 'end');
@@ -29,6 +29,20 @@
       else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
     }
     G.Cards.drawComboLines(c, 'end');
+    // resumen del jefe (v4): coherente con el botín de la derecha
+    var bi = sm.boss;
+    if (bi) {
+      var PN = { cuernos: 'Cuernos', cayado: 'Cayado', vellon: 'Vellón' }, mm = Math.floor(bi.time / 60000), ss = Math.floor(bi.time / 1000) % 60;
+      G.txt(c, bi.name, 20, 104, 15, bi.won ? '#ffd24a' : '#ff8a6a', 'left');
+      G.txt(c, bi.won ? 'Derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' de combate' : 'Te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida', 20, 124, 13, '#fff', 'left');
+      G.txt(c, 'Partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k]; }).join(', ') : 'ninguna'), 20, 143, 12, '#c8b8e8', 'left');
+      G.txt(c, 'Brasas del jefe: +' + bi.brasas + (bi.won ? '' : ' (solo partes rotas)') + (bi.pf ? '   PF: +' + bi.pf + (bi.first ? ' (primera vez)' : '') : ''), 20, 162, 12, '#ff9a3c', 'left');
+      if (bi.trophies.length) {
+        G.txt(c, 'Trofeos (cada uno cuenta como 1 Esencia):', 20, 180, 11, '#9a8fb0', 'left');
+        bi.trophies.forEach(function (tk, k) { var T = G.Boss.TROPHY[tk]; if (T) { c.drawImage(Assets.sprite(T.spr, 0), 20 + k * 36, 188, 32, 32); } });
+        G.txt(c, bi.trophies.map(function (tk) { return G.Boss.TROPHY[tk].name; }).join(' - '), 20, 230, 10, '#ffe9a0', 'left');
+      } else G.txt(c, 'Rompe cuernos, cayado o vellón para conseguir trofeos.', 20, 185, 11, '#9a8fb0', 'left');
+    }
     var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
     if (names.length) {
       G.txt(c, 'COMBOS ACTIVOS', 20, 276, 13, '#9a8fb0', 'left');
@@ -57,7 +71,7 @@
     if (sm.rare) G.txt(c, '¡Esencia rara conseguida!', 516, 286, 13, '#e0a8ff', 'left');
     else G.txt(c, 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', 516, 286, 12, '#9a8fb0', 'left');
     if (sm.quest) U.wrap(c, 'Encargo: ' + sm.quest, 410, 11).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 516, 302 + k * 13, 11, '#ffe9a0', 'left'); });
-    if (sm.pfGained) G.txt(c, '+' + sm.pfGained + ' Punto de Forja (primer élite)', 730, 286, 12, '#ffd24a', 'left');
+    if (sm.pfGained) G.txt(c, '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja', 730, 286, 12, '#ffd24a', 'left');
     G.txt(c, sm.newCards.length ? 'NUEVAS CARTAS YA FORJABLES (Clásica)' : 'PF libres ' + G.Tree.pfFree() + '  -  nodos comprables ' + G.Tree.availableCount(), 516, 336, 13, sm.newCards.length ? '#9dffb4' : '#9a8fb0', 'left');
     sm.newCards.slice(0, 6).forEach(function (id, k) {
       G.Cards.drawCard(c, { id: id, lvl: 0 }, 516 + k * 68, 348, 56, 74, { nocd: true, glow: '#9dffb4' });

@@ -87,7 +87,8 @@
     e.dead = true;
     if (silent) { fx.smoke(e.x, e.y, 4); return; }
     var p = PL(), i;
-    fx.corpse(B.enemy[e.type].spr, e.x, e.y, e.face < 0); fx.puff(e.x, e.y, 2);
+    if (e.type !== 'boss') fx.corpse(B.enemy[e.type].spr, e.x, e.y, e.face < 0);
+    fx.puff(e.x, e.y, 2);
     fx.smoke(e.x, e.y, 5); fx.ember(e.x, e.y, 3, 10);
     var now = performance.now(); if (now - (E._dieSfx || 0) > 70) { E._dieSfx = now; G.sfx('enemy_die', { vol: 0.5 }); }
     if (e.type === 'bomb' && e.st === 'lit') explode(e);
@@ -102,8 +103,8 @@
     }
     if (B.enemy[e.type].elite) { fx.hit(80); fx.shake(8, 300); fx.ring(e.x, e.y, 10, 120, 500, '#ffd27a', 6); fx.flames(e.x, e.y, 18, 36); G.sfx('boss_roar', { pitch: 1.2, vol: 0.7 }); }
     if (e.type === 'boss') {
-      fx.hit(120); fx.shake(10, 350); fx.ring(e.x, e.y, 10, 150, 500, '#ffd27a', 6);
-      fx.flames(e.x, e.y, 30, 50); G.sfx('boss_roar');
+      G.Boss.onDeath(e);   // muerte espectacular, recompensas y limpieza (boss.js)
+      fx.ring(e.x, e.y, 10, 150, 500, '#ffd27a', 6); fx.flames(e.x, e.y, 30, 50);
       G.bossDead = true;
       for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) E.kill(G.enemies[i], true);
       for (i = G.zones.length - 1; i >= 0; i--) if (G.zones[i].team === 'e') G.zones.splice(i, 1);
@@ -120,13 +121,15 @@
       spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb });
   };
 
-  function updateProjectiles(dt) {
+  function updateProjectiles(dt, onlyPlayer) {
     var s = dt / 1000, p = PL(), hand = p.hand || [];
     for (var i = G.projectiles.length - 1; i >= 0; i--) {
       var q = G.projectiles[i];
       if (q.team === 'p') { if (G.Weapons.updateProj(q, dt, s)) G.projectiles.splice(i, 1); continue; }
+      if (onlyPlayer) continue;   // intro del jefe: los proyectiles enemigos quedan congelados
       q.x += q.vx * s; q.y += q.vy * s; q.life -= dt; q.t += dt;
       var dead = q.life <= 0 || q.x < G.WALL || q.y < G.WALL || q.x > G.AW - G.WALL || q.y > G.AH - G.WALL;
+      if (!dead && G.Boss.obs.length && G.Boss.blocks(q.x, q.y, q.r)) { fx.burst(q.x, q.y, 4, '#c89060', 100, 250, 3); dead = true; }   // los troncos de la arena frenan proyectiles
       if (!dead && q.hp) {   // el orbe de hielo se destruye con cualquier golpe de carta (proyectil u orbital)
         var j, o2;
         for (j = 0; j < G.projectiles.length && !dead; j++) {
@@ -473,83 +476,8 @@
     }
   }
 
-  // ---- Jefe: Pastor Corrupto
-  function ai_boss(e, dt, s, p, d, a) {
-    if (!e.rage && e.hp < e.maxHp * 0.5) {
-      e.rage = true; fx.shake(8, 300); G.sfx('boss_roar'); fx.ring(e.x, e.y, 10, 120, 500, '#ff3030', 6);
-      G.Hud.banner('¡EL PASTOR ENFURECE!', 1400, '#ff5a5a');
-    }
-    e.age += dt;
-    if (!e.fury && e.age * G.tk > 120000) {   // Furia: si sigue vivo a los 2 min, +50% daño y velocidad de ataque
-      e.fury = true; e.dmg *= 1.5; fx.shake(8, 300); G.sfx('boss_roar'); G.Hud.banner('¡FURIA DEL PASTOR!', 1600, '#ff3030');
-    }
-    var rate = (e.rage ? 1.25 : 1) * (e.fury ? 1.5 : 1);
-    e.callT -= dt;
-    if (e.callT <= 0) {   // llamada del rebaño: 2 enemigos ya desbloqueados, con aviso de 600 ms
-      e.callT = 20000;
-      var pool = ['fanner', 'shield', 'moth'].filter(function (k) { return B.enemy[k].from <= G.vt(); });
-      if (pool.length) {
-        for (var c2 = 0; c2 < 2; c2++) {
-          var ty = pool[Math.floor(Math.random() * pool.length)], ca = G.rnd(0, 6.283), cx = e.x + Math.cos(ca) * 90, cy = e.y + Math.sin(ca) * 90;
-          if (G.dist(cx, cy, p.x, p.y) < 90) { cx = e.x - Math.cos(ca) * 90; cy = e.y - Math.sin(ca) * 90; }
-          E.spawn(ty, cx, cy, { summoned: true, spawnT: 600 });
-        }
-        fx.ring(e.x, e.y, 10, 100, 500, '#a060ff', 5); G.sfx('wave_start', { pitch: 0.7 }); G.Hud.banner('¡LLAMADA DEL REBAÑO!', 1100, '#c090ff');
-      }
-    }
-    if (e.rage) {
-      e.sporeT -= dt;
-      if (e.sporeT <= 0) {   // fase 2: 2 zonas de esporas a ~140 px del jugador
-        e.sporeT = 10000;
-        for (var sp = 0; sp < 2; sp++) {
-          var sa = G.rnd(0, 6.283), mg = G.WALL + 40;
-          E.zone({ kind: 'spore', x: G.clamp(p.x + Math.cos(sa) * 140, mg, G.AW - mg), y: G.clamp(p.y + Math.sin(sa) * 140, mg, G.AH - mg), r: 42, arm: 900, life: 4000, dmg: 8, tick: 500, slow: 0.15, src: 'boss_spore' });
-        }
-      }
-    }
-    if (e.rage) {
-      e.sumT -= dt;
-      if (e.sumT <= 0) { e.sumT = 12000; for (var i = 0; i < 4; i++) { var ang = i * Math.PI / 2 + 0.7; E.spawn('worm', e.x + Math.cos(ang) * 50, e.y + Math.sin(ang) * 50, { summoned: true }); } }
-    }
-    if (e.st === 'move') {
-      if (d > 50) moveTo(e, a, e.spd, s);
-      e.atkT -= dt * rate;
-      if (e.atkT <= 0) {
-        var pick = e.ai++ % 3;
-        e.kind = pick === 0 ? (d < 150 ? 'staff' : 'slam') : pick === 1 ? 'slam' : 'thorns';
-        e.st = 'tele'; e.t = 0; e.ang = a; e.dur = e.kind === 'slam' ? 800 : 700;
-        e.sx = e.x; e.sy = e.y; e.tx = p.x; e.ty = p.y;
-        G.sfx('hit_heavy', { pitch: 0.6, vol: 0.4 });
-      }
-    } else if (e.st === 'tele') {
-      e.t += dt * rate;
-      if (e.kind === 'staff' && e.t < e.dur * 0.5) e.ang = a;
-      if (e.kind === 'thorns') e.ang = a;
-      if (e.kind === 'slam') {
-        var jstart = e.dur - 300;
-        if (e.t > jstart) { var u = Math.min(1, (e.t - jstart) / 300); e.x = e.sx + (e.tx - e.sx) * u; e.y = e.sy + (e.ty - e.sy) * u; e.jump = Math.sin(u * Math.PI) * 50; }
-      }
-      if (e.t >= e.dur) {
-        e.jump = 0;
-        if (e.kind === 'staff') {
-          fx.shake(4, 120); fx.ring(e.x, e.y, 20, 80, 220, '#ffcf7a', 4); G.sfx('hit_heavy');
-          var ok = d <= 80 + p.r && Math.abs(G.angDiff(Math.atan2(p.y - e.y, p.x - e.x), e.ang)) <= Math.PI / 3;
-          if (ok && !p.dead) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'boss' });
-        } else if (e.kind === 'slam') {
-          fx.shake(8, 220); fx.dust(e.x, e.y, 14); fx.ring(e.x, e.y, 10, 70, 300, '#ff6a2a', 5); G.sfx('explosion', { pitch: 0.8 });
-          if (!p.dead && G.dist(e.x, e.y, p.x, p.y) <= 70 + p.r) G.Player.hurt(p, e.dmg * 1.25, e.x, e.y, { src: 'boss' });
-        } else {
-          var n = e.rage ? 7 : 5, spread = Math.PI / 3;
-          for (var k = 0; k < n; k++) E.shoot('e', e.x, e.y, e.ang - spread / 2 + spread * k / (n - 1), 200, e.dmg * 0.5, 'thorn', { r: 6, life: 5000, src: 'boss' });
-          G.sfx('shoot', { pitch: 0.7 });
-        }
-        e.st = 'rec'; e.t = 0;
-      }
-    } else if (e.st === 'rec') {
-      e.t += dt;
-      if (e.t >= 400) { e.st = 'move'; e.atkT = 2500; }
-    }
-  }
+  // ---- Jefe: la IA vive en boss.js (G.Boss.update se llama al principio de E.update)
+  function ai_boss() { }
 
   var AI = { worm: ai_worm, archer: ai_archer, boar: ai_boar, bomb: ai_bomb, warlock: ai_warlock, boss: ai_boss, fanner: ai_fanner, shield: ai_shield, moth: ai_moth,
     sower: ai_sower, blinker: ai_blinker, scorcher: ai_scorcher, mini_bulwark: ai_bulwark, mini_hive: ai_hive };
@@ -557,9 +485,11 @@
   // ------------------------------------------------------------- Update
   E.update = function (dt) {
     var s = dt / 1000, p = PL(), list = G.enemies, i, j, e;
+    G.Boss.update(dt);
+    if (G.frozen) { updateProjectiles(dt, true); return; }   // intro del jefe: el mundo enemigo se congela
     for (i = 0; i < list.length; i++) {
       e = list[i];
-      if (e.dead) continue;
+      if (e.dead || e.partOf) continue;
       if (e.flash > 0) e.flash -= dt;
       e.anim += dt;
       if (e.spawnT > 0) { e.spawnT -= dt; continue; }
@@ -575,16 +505,16 @@
       e.spd = B.enemy[e.type].spd * slowF;
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
-      if (Math.abs(dx) > 2 && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash'))) e.face = dx >= 0 ? 1 : -1;
+      if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash'))) e.face = dx >= 0 ? 1 : -1;
       if (!p.dead) AI[e.type](e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
       var m = G.WALL + e.r;
       e.x = G.clamp(e.x, m, G.AW - m); e.y = G.clamp(e.y, m, G.AH - m);
     }
     // separación entre enemigos
     for (i = 0; i < list.length; i++) {
-      var A = list[i]; if (A.dead || A.spawnT > 0) continue;
+      var A = list[i]; if (A.dead || A.spawnT > 0 || A.partOf) continue;
       for (j = i + 1; j < list.length; j++) {
-        var C = list[j]; if (C.dead || C.spawnT > 0) continue;
+        var C = list[j]; if (C.dead || C.spawnT > 0 || C.partOf) continue;
         var ox = C.x - A.x, oy = C.y - A.y, dd2 = Math.hypot(ox, oy), min = (A.r + C.r) * 0.85;
         if (dd2 < min && dd2 > 0.01) {
           var push = (min - dd2) / 2, wA = A.type === 'boss' ? 0 : A.big ? 0.25 : 1, wC = C.type === 'boss' ? 0 : C.big ? 0.25 : 1;
@@ -622,7 +552,9 @@
         c.globalAlpha = a; disc(c, z.x, z.y, z.r, 'rgba(255,70,20,' + (0.45 + 0.15 * Math.sin(z.t / 60 + i)) + ')', 'rgba(255,150,60,0.9)', 1.5);
         disc(c, z.x, z.y - 1, z.r * 0.5, 'rgba(255,220,90,0.7)');
       }
-    } else if (z.arm > 0) {            // telegrafía: de rojo claro a verde, anillo punteado que se cierra
+    } else if (z.arm > 0) {
+      if (z.noArmDraw) { c.restore(); return; }   // la telegrafía la dibuja boss.js (drawBossTele)
+      // telegrafía: de rojo claro a verde, anillo punteado que se cierra
       var u = 1 - z.arm / z.armMax, rr = Math.round(255 + (155 - 255) * u), gg = Math.round(110 + (255 - 110) * u), bb = Math.round(100 + (74 - 100) * u);
       disc(c, z.x, z.y, z.r, 'rgba(' + rr + ',' + gg + ',' + bb + ',' + (0.1 + 0.16 * u) + ')');
       c.strokeStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',0.9)'; c.lineWidth = 2; c.setLineDash([6, 6]); c.lineDashOffset = -t * 20;
@@ -645,7 +577,7 @@
     for (i = 0; i < G.zones.length; i++) if (G.zones[i].team === 'e') drawZone(c, G.zones[i], i);
     for (i = 0; i < G.enemies.length; i++) {
       e = G.enemies[i];
-      if (e.dead) continue;
+      if (e.dead || e.partOf) continue;
       if (e.spawnT > 0) { // telegrafía de aparición (morado si es una invocación)
         u = 1 - e.spawnT / (e.spawnMax || B.spawnTelegraph);
         var big = e.type === 'boss' || e.big, sm = e.summoned, ca = sm ? '176,96,255' : '255,60,60';
@@ -729,19 +661,6 @@
           c.beginPath(); c.arc(e.x, e.y, 20 + 50 * u, 0, 6.283); c.stroke(); c.restore();
         }
       }
-      if (e.type === 'boss' && e.st === 'tele') {
-        var f2 = Math.min(1, e.t / e.dur);
-        c.save(); c.fillStyle = 'rgba(255,40,40,' + (0.12 + 0.28 * f2) + ')'; c.strokeStyle = 'rgba(255,90,90,0.8)'; c.lineWidth = 2;
-        if (e.kind === 'staff') {
-          c.beginPath(); c.moveTo(e.x, e.y); c.arc(e.x, e.y, 80, e.ang - Math.PI / 3, e.ang + Math.PI / 3); c.closePath(); c.fill(); c.stroke();
-        } else if (e.kind === 'slam') {
-          c.beginPath(); c.arc(e.tx, e.ty, 70, 0, 6.283); c.fill(); c.stroke();
-          c.beginPath(); c.arc(e.tx, e.ty, 70 * f2, 0, 6.283); c.stroke();
-        } else {
-          c.beginPath(); c.moveTo(e.x, e.y); c.arc(e.x, e.y, 220, e.ang - Math.PI / 6, e.ang + Math.PI / 6); c.closePath(); c.globalAlpha = 0.5; c.fill(); c.stroke();
-        }
-        c.restore();
-      }
     }
   };
 
@@ -818,6 +737,8 @@
   var SHADOW = { boss: 2.5, boar: 1.4, shield: 1.2, scorcher: 1.5, mini_bulwark: 1.9, mini_hive: 2 };
 
   E.draw = function (c, e) {
+    if (e.type === 'boss') { G.Boss.draw(c, e); return; }
+    if (e.partOf) return;
     var v = visual(e), cv = v.cv, sc = v.sc * (e.sc || 1);
     var jump = e.jump || 0, hh = cv.height * sc;
     G.fx.spr(c, Assets.sprite('shadow', 0), e.x, e.y + hh / 2 - 6, { alpha: 0.6, sx: SHADOW[e.type] || (e.sc || 1) });

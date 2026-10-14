@@ -12,10 +12,14 @@
   G.BOSS_T = 7.5 * 60000;        // el Pastor aparece a los 7:30 (margen de 1:30 para matarlo); escala con la duración
   G.tk = 1;                      // factor de tiempo del director: 9 / minutos de la run. G.vt() = tiempo "virtual" en la escala de 9:00
   G.setLen = function (min) { G.RUN_LEN = min * 60000; G.BOSS_T = G.RUN_LEN * 7.5 / 9; G.tk = 9 / min; };
-  G.vt = function () { return G.time * G.tk; };
+  G.runT = 0;                    // reloj de la RUN: se congela mientras el jefe vive (v4). G.time sigue corriendo (temporizadores, animaciones)
+  G.vt = function () { return G.runT * G.tk; };
 
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
   G.speed = qnum('speed', 1); G.god = qnum('god', 0) > 0; G.t0 = qnum('t', 0) * 1000;
+  // Jefes v4: ?boss=pastor salta a la pelea, ?peligro=<n> (1-5), ?phase=2|3, ?hp=0.3, ?nointro=1, ?hand=spark:3,ember:2 (mano de prueba)
+  G.bossUrl = (/[?&]boss=(\w+)/.exec(location.search) || [])[1] || null; G.peligro = qnum('peligro', 1);
+  G.dbgHpCal = qnum('hpcal', 0); G.dbgPhase = qnum('phase', 0); G.dbgHp = qnum('hp', 0); G.nointro = qnum('nointro', 0) > 0;
 
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
@@ -178,13 +182,14 @@
   G.time = 0; G.kills = 0; G.won = false;
 
   G.reset = function () {
-    G.time = G.t0; G.kills = 0; G.deadT = 0; G.won = false; G.pendingLevels = 0; G.endT = 0;
+    G.time = G.t0; G.runT = G.t0; G.kills = 0; G.deadT = 0; G.won = false; G.pendingLevels = 0; G.endT = 0;
     G.enemies = []; G.projectiles = []; G.zones = []; G.gems = [];
     G.fx.clear();
     G.player = G.Player.create();
     G.Cards.reset();
     G.Weapons.reset();
     G.Waves.reset();
+    G.Boss.reset();
     G.cam.x = G.clamp(G.player.x - G.W / 2, 0, G.AW - G.W);
     G.cam.y = G.clamp(G.player.y - G.H / 2, 0, G.AH - G.H);
   };
@@ -196,6 +201,15 @@
     G.runBuff = { tonic: !!pd.tonic, magnet: !!pd.magnet }; pd.tonic = 0; pd.magnet = 0; G.Save.save();
     G.Loot.beginRun();
     G.reset();
+    // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (J1: siempre el Pastor)
+    var biome = G.biomeUrl || G.Save.data.biome || 'bosque';
+    if (biome !== 'bosque' && !G.biomeUrl && !G.Save.data.bossKills.pastor) biome = 'bosque';
+    G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
+    if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
+    G.bossId = G.Boss.bossFor(biome);
+    if (G.bossUrl) { G.bossId = G.bossUrl; G.time = G.runT = G.BOSS_T - 100; }
+    var hq = /[?&]hand=([^&]+)/.exec(location.search);
+    if (hq) { decodeURIComponent(hq[1]).split(',').forEach(function (kv) { var a = kv.split(':'), n = parseInt(a[1], 10) || 1; for (var i = 0; i < n; i++) G.Cards.add(a[0]); }); G.Cards.recalc(false); }
     // Las anclas ya están en la mano (Cards.reset). Si no hay ningún arma, primera decisión: 1 de 3 cartas iniciales
     var armed = G.player.hand.some(function (s) { return s && G.Cards.def(s.id).type === 'attack'; });
     if (armed) G.state = 'play';
@@ -217,6 +231,7 @@
   // ---------------------------------------------------------------- Actualización
   function updateWorld(dt) {
     G.time += dt;
+    if (!(G.Boss.active || G.Boss.defeated)) G.runT += dt;   // el reloj de la run se congela mientras el jefe vive
     G.Player.update(G.player, dt);
     G.Weapons.update(dt);
     G.Enemies.update(dt);
@@ -226,9 +241,10 @@
     G.fx.update(dt);
     var p = G.player;
     var tx = G.clamp(p.x - G.W / 2, 0, G.AW - G.W), ty = G.clamp(p.y - G.H / 2, 0, G.AH - G.H);
-    G.cam.x += (tx - G.cam.x) * 0.15; G.cam.y += (ty - G.cam.y) * 0.15;
+    var ct = G.Boss.camTarget(tx, ty);   // la intro del jefe desplaza la cámara y hace zoom
+    G.cam.x += (ct.x - G.cam.x) * 0.15; G.cam.y += (ct.y - G.cam.y) * 0.15;
     if (p.dead) { G.deadT += dt; if (G.deadT > 900) G.finish(false); return; }
-    if (G.bossDead) { G.endT += dt; if (G.endT > 1500) G.finish(true); return; }
+    if (G.bossDead) { G.endT += dt; if (G.endT > 3000) G.finish(true); return; }
     if (G.pendingLevels > 0) { G.state = 'cards'; G.Cards.open('level'); }
   }
 
@@ -280,17 +296,20 @@
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
+    var zm = G.cam.zoom || 1;
+    if (zm !== 1) { ctx.translate(G.W / 2, G.H / 2); ctx.scale(zm, zm); ctx.translate(-G.W / 2, -G.H / 2); }
     ctx.translate(-Math.round(G.cam.x + off.x), -Math.round(G.cam.y + off.y));
     ctx.drawImage(G.ground, 0, 0);
     G.Combat.drawZones(ctx);
     G.Weapons.drawGround(ctx);
     G.Enemies.drawGround(ctx);
+    G.Boss.drawGround(ctx);
     G.fx.drawCorpses(ctx);
     G.Combat.drawGems(ctx);
-    var items = G.enemies.slice(); items.push(G.player);
-    items.sort(function (a, b) { return a.y - b.y; });
+    var items = G.enemies.filter(function (q) { return q.type !== 'bosspart'; }); items.push(G.player); G.Boss.items(items);
+    items.sort(function (a, b) { return (a.sortY != null ? a.sortY : a.y) - (b.sortY != null ? b.sortY : b.y); });
     for (var i = 0; i < items.length; i++) {
-      if (items[i] === G.player) G.Player.draw(ctx, G.player); else G.Enemies.draw(ctx, items[i]);
+      if (items[i] === G.player) G.Player.draw(ctx, G.player); else if (items[i].draw) items[i].draw(ctx, items[i]); else G.Enemies.draw(ctx, items[i]);
     }
     G.Weapons.drawAir(ctx);
     G.Enemies.drawProjectiles(ctx);
@@ -323,10 +342,12 @@
     bindInput();
     G.Save.applyUrl();
     G.Tree.sync();
-    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) Assets.setBiome(bq[1]);
-    G.ground = buildGround();
+    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }
+    else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
+    G.ground = buildGround(); G.groundBiome = Assets.getBiome();
     G.reset();
     G.Aldea.open(false);
+    if (G.bossUrl) G.startGame();   // ?boss=pastor: salta directo a la pelea
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();
