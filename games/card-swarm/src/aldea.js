@@ -236,7 +236,7 @@
       var kind = null;
       if (id === 'grum') { if (T.availableCount() > 0 || Object.keys(G.Loot.affordable()).length) kind = 'green'; }
       else if (id === 'vesper') { var mk = Q.mark(); kind = mk === 'ready' ? 'green' : mk === 'new' ? 'gold' : null; }
-      if (!kind || D.active() || mode === 'panel') return;
+      if (!kind || D.active() || mode === 'panel' || (tg && tg.id === id)) return;
       var p = npcPos(id), cv = anim(kind === 'green' ? 'ui_mark_green' : 'ui_mark_gold', 'shine', now), by = Math.sin(now / 300) * 3;
       if (cv) c.drawImage(cv, Math.round(p.x - cv.width / 2), Math.round(p.y - 112 + by));
       else { c.fillStyle = kind === 'green' ? '#7dff9a' : '#ffd24a'; c.beginPath(); c.arc(p.x, p.y - 100 + by, 11, 0, 6.283); c.fill(); G.txt(c, '!', p.x, p.y - 99 + by, 16, '#1a1024', 'center', 'rgba(0,0,0,0)'); }
@@ -270,7 +270,7 @@
   // Zona del joystick táctil: mitad izquierda, solo en modo caminar sin diálogo
   A.joyOK = function () { return G.state === 'aldea' && mode === 'walk' && !D.active() && !fade; };
   A.pos = M;
-  A.state = function () { return { mode: mode, panel: panel, dialog: D.active(), x: M.x, y: M.y, target: (target() || {}).id || null }; };
+  A.state = function () { return { mode: mode, panel: (G.Panels.current() || panel), dialog: D.active(), x: M.x, y: M.y, target: (target() || {}).id || null }; };
   // Depuración/bot: teletransporta a Marlo junto a un interactuable
   A.goto = function (id) { var L = ints().filter(function (i) { return i.id === id; })[0]; if (L) { M.x = L.x; M.y = L.y + 34; } };
   A.talk = function (id) { var L = ints().filter(function (i) { return i.id === id; })[0]; if (L) talk(L); };

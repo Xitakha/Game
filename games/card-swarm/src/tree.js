@@ -226,7 +226,7 @@
   var R_BUY = { x: 654, y: 470, w: 286, h: 52 };
   var R_CH = [{ x: 654, y: 470, w: 140, h: 52 }, { x: 800, y: 470, w: 140, h: 52 }];
   var R_UNDO = { x: 754, y: 418, w: 186, h: 44 };
-  var NX = 72, NY = 138, SX = 100, SY = 68, NR = 28;
+  var NX = 72, NY = 132, SX = 100, SY = 64, NR = 28;
   function pos(n) { return { x: NX + n.col * SX, y: NY + n.row * SY }; }
   function say(t) { ui.msg = t; ui.msgT = 3200; }
   function tabNodes() { return NODES.filter(function (n) { return n.tree === ui.tab; }); }
