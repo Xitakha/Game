@@ -17,3 +17,4 @@ Candidatos a bajar cuando haya acceso (todos CC0, Kenney): Tiny Dungeon, Tiny To
 | Sprites pixel-art (jugador, enemigos, jefe, proyectiles, tiles, decoracion, particulas) | Generado por codigo | games/survival-lamb/src/assets.js | tools-engineer (original) | Propia/libre, sin restricciones | survival-lamb |
 | SFX y musica procedural (WebAudio) | Generado por codigo | games/survival-lamb/src/assets.js | tools-engineer (original) | Propia/libre, sin restricciones | survival-lamb |
 Sin dependencias ni descargas; API en games/survival-lamb/ASSETS_API.md; visor en tools/asset-preview/.
+| Marlo + enemigos v2 de Swarm Hand | Sprites | Generados por código (assets.js, assets_enemies2.js) | Estudio | Propia/libre | games/card-swarm |

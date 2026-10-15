@@ -41,6 +41,72 @@
 </div>
 <canvas id="arena" width="960" height="540"></canvas>
 
+<div id="vilBox" style="display:none">
+<h2>Aldea Rescoldo (960x540, animada; solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px">
+  <label>Hora <input id="vtime" type="range" min="0" max="1" step="0.01" value="0.5"><output id="vtimev">ocaso</output></label>
+  <label>Animacion NPC <select id="vanim"><option>idle</option><option>work</option><option>talk</option><option>happy</option></select></label>
+  <label><input type="checkbox" id="vgrid"> mostrar colisiones</label>
+</div>
+<canvas id="village" width="960" height="540"></canvas>
+</div>
+
+<div id="bossBox" style="display:none">
+<h2>Jefe (Pastor / Karceron / Letea; solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px">
+  <label>Jefe <select id="bid"></select></label>
+  <label>Ataque <select id="bwin"><option value="">(ninguno)</option></select></label>
+  <label>Fase de ataque <select id="bmode"><option value="windup">telegrafia (windup)</option><option value="strike">golpe (strike)</option></select></label>
+  <label>Progreso <input id="bprog" type="range" min="0" max="1" step="0.01" value="0.6"><output id="bprogv">0.60</output></label>
+  <label><input type="checkbox" id="bloop" checked> auto</label>
+  <label>Fase <select id="bphase"><option>1</option><option>2</option><option>3</option></select></label>
+  <label>Vel. (px/s) <input id="bspeed" type="range" min="0" max="520" step="5" value="0"><output id="bspeedv">0</output></label>
+  <label>Salto (px) <input id="blift" type="range" min="0" max="160" step="2" value="0"><output id="bliftv">0</output></label>
+</div>
+<div style="margin-bottom:8px">
+  <label><input type="checkbox" id="bf"> mira a la izquierda</label>
+  <label><input type="checkbox" id="bh"> herido</label>
+  <label><input type="checkbox" id="be"> furia</label>
+  <label><input type="checkbox" id="bd"> desesperado (extasis)</label>
+  <label><input type="checkbox" id="bx"> ventana (expuesto)</label>
+  <label><input type="checkbox" id="bs"> aturdido</label>
+  <label><input type="checkbox" id="bi"> inmune (cambio de fase)</label>
+  <label><input type="checkbox" id="br"> rugido</label>
+  <label>Rotas: <input type="checkbox" id="bb1"> <span id="bl1">cuernos</span> <input type="checkbox" id="bb2"> <span id="bl2">cayado</span> <input type="checkbox" id="bb3"> <span id="bl3">vellon</span></label>
+  <label><input type="checkbox" id="bdy"> muerte (dt <input id="bdt" type="range" min="0" max="3200" step="20" value="0" style="width:120px">)</label>
+  <label><input type="checkbox" id="bdbg"> anclajes/hitboxes</label>
+  <label><input type="checkbox" id="btele" checked> telegrafia</label>
+  <label><input type="checkbox" id="bplayer" checked> Marlo de referencia</label>
+</div>
+<div style="margin-bottom:8px" id="bextra">
+  <label>Karceron: pecho abierto <input id="bopen" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label>hundido <input id="bsunk" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label>entrada (emerge) <input id="bemerge" type="range" min="0" max="1" step="0.01" value="1" style="width:90px"></label>
+  <label><input type="checkbox" id="bhungry"> hambriento</label>
+  <label><input type="checkbox" id="bstuck"> maza clavada</label>
+  <label>apuntar (rad) <input id="baim" type="range" min="-3.14" max="3.14" step="0.05" value="0.6" style="width:110px"></label>
+  <label><input type="checkbox" id="barena" checked> arena de ejemplo</label>
+</div>
+<div style="margin-bottom:8px" id="bextraL">
+  <label>Letea: sumergida <input id="bsub" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label>cabeza que ataca <select id="bhead"><option value="acid">acida (verde)</option><option value="ice">helada (azul)</option><option value="bolt">rayo (amarilla)</option><option value="all">las tres</option></select></label>
+  <label>rebrote <input id="bregrow" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label>cauterizado <input id="bcauter" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label><input type="checkbox" id="bhexp"> cabezas expuestas</label>
+  <label><input type="checkbox" id="bhhurt"> cabezas heridas</label>
+</div>
+<canvas id="bossCv" width="960" height="540" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
+
+<canvas id="bossCv2" width="960" height="270" style="width:100%;max-width:960px;border:1px solid var(--line);margin-top:6px"></canvas>
+</div>
+
+<div id="treeBox" style="display:none">
+<h2>Arbol de forja (iconos, nodos, conectores; solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px"><label>Etiqueta <select id="ttag"><option>fire</option><option>ice</option><option>lightning</option><option>poison</option><option>blood</option><option>steel</option><option>neutral</option></select></label>
+<label><input type="checkbox" id="tsel"> seleccionado</label></div>
+<canvas id="treeCv" width="960" height="440" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
+</div>
+
 <h2>Sprites</h2>
 <div class="btns" style="margin-bottom:10px"><button id="expAll">Exportar atlas PNG (todos los sprites)</button><span id="expMsg" style="color:var(--dim)"></span></div>
 <div class="grid" id="sprites"></div>
@@ -65,7 +131,12 @@
 </div>
 <div class="btns" id="sfx"></div>
 
-<script src="../../games/survival-lamb/src/assets.js"></script>
+<script>
+// ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
+(function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
+  document.write('<script src="' + b + 'assets.js"><\/script>');
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); } })();
+</script>
 <script>
 (function () {
   var A = window.Assets, $ = function (id) { return document.getElementById(id); };
@@ -115,7 +186,15 @@
     list.forEach(function (it) { x.drawImage(sheet(it.name), 0, y); meta[it.name] = { x: 0, y: y, w: it.w, h: it.h, frames: it.frames, anims: it.anims }; y += it.h; });
     toBlob(c, function (bl) { download(bl, 'atlas_' + A.getBiome() + '.png'); download(new Blob([JSON.stringify(meta, null, 1)], { type: 'application/json' }), 'atlas_' + A.getBiome() + '.json'); $('expMsg').textContent = ' ' + W + 'x' + H + ' px'; });
   };
+  function vilDraw(t) {
+    if (!A.drawVillage) return; var tv = +$('vtime').value; $('vtimev').textContent = tv < 0.2 ? 'dia' : tv < 0.75 ? 'ocaso' : 'noche';
+    var npcs = {}; A.NPC_NAMES.forEach(function (n) { npcs[n] = { anim: $('vanim').value }; });
+    var vc = $('village').getContext('2d'); A.drawVillage(vc, t, { time: tv, npcs: npcs });
+    if ($('vgrid').checked) { vc.strokeStyle = 'rgba(255,0,0,0.8)'; A.VILLAGE.colliders.forEach(function (r) { vc.strokeRect(r.x, r.y, r.w, r.h); }); vc.strokeStyle = 'rgba(0,255,0,0.8)'; var w = A.VILLAGE.walk; vc.strokeRect(w.x, w.y, w.w, w.h); }
+  }
+  if (A.drawVillage) $('vilBox').style.display = 'block';
   function tick(t) {
+    vilDraw(t); bossDraw(t); treeDraw(t);
     ANIMS.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); a.ctx.drawImage(A.animFrame(a.name, a.anim, t), 0, 0); });
     drawArena(t);
     requestAnimationFrame(tick);
@@ -154,6 +233,189 @@
 
   A.biomes().forEach(function (b) { var o = document.createElement('option'); o.value = b; o.textContent = A.biomeInfo(b).label; $('biome').appendChild(o); });
   $('biome').onchange = function () { A.setBiome($('biome').value); buildCards(); buildArena(); };
+
+  // --- vista Jefe (Pastor / Karceron / Letea)
+  var BCOL = { barrido: 'arc', embestida: 'rect', pisoton: 'ring', salto: 'circle', abanico: 'cone', llamada: 'summon', esporas: 'spore', estampida: 'rect' };
+  var BIOME_OF = { pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' }, bossGround = {};
+  var HEAD_ATK = { mordisco: 1, escupitajo: 1, aliento: 1, rayo: 1 };
+  function groundFor(id) {
+    if (bossGround[id]) return bossGround[id];
+    var prev = A.getBiome(); A.setBiome(BIOME_OF[id] || 'bosque'); var g = A.arena(960, 540, { seed: 99, wall: 20 }).canvas; A.setBiome(prev); return (bossGround[id] = g);
+  }
+  var BLAB = { pastor: ['cuernos', 'cayado', 'vellon'], karceron: ['brazo-maza', 'brazo-grillete', 'nucleo'], letea: ['cabeza acida', 'cabeza helada', 'cabeza rayo'] };
+  function fillAtk() {
+    var id = $('bid').value || 'pastor', sel = $('bwin'); sel.innerHTML = '<option value="">(ninguno)</option>';
+    A.bossPoseNames(id).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+    var L = BLAB[id]; for (var i = 0; i < 3; i++) $('bl' + (i + 1)).textContent = L[i];
+    $('bextra').style.display = id === 'karceron' ? 'block' : 'none'; $('bextraL').style.display = id === 'letea' ? 'block' : 'none';
+  }
+  function bossInit() {
+    if (!A.bossIds) return; $('bossBox').style.display = 'block';
+    A.bossIds().forEach(function (id) { var o = document.createElement('option'); o.value = id; o.textContent = A.bossInfo(id).name; $('bid').appendChild(o); });
+    var qb = new URLSearchParams(location.search).get('boss'); if (qb && A.bossInfo(qb)) $('bid').value = qb;
+    fillAtk(); $('bid').onchange = fillAtk;
+    $('bprog').oninput = function () { $('bprogv').textContent = (+$('bprog').value).toFixed(2); };
+    $('bspeed').oninput = function () { $('bspeedv').textContent = $('bspeed').value; };
+    $('blift').oninput = function () { $('bliftv').textContent = $('blift').value; };
+    if (A.drawTreeNode) $('treeBox').style.display = 'block';
+  }
+  var BS0 = performance.now();
+  function bossState(t) {
+    var id = $('bid').value || 'pastor', w = $('bwin').value, mode = $('bmode').value, p = +$('bprog').value;
+    if ($('bloop').checked) p = (t % (mode === 'windup' ? 1400 : 600)) / (mode === 'windup' ? 1400 : 600);
+    var b1 = $('bb1').checked, b2 = $('bb2').checked, b3 = $('bb3').checked;
+    var s = { t: t, facing: $('bf').checked ? -1 : 1, phase: +$('bphase').value, hurt: $('bh').checked ? (0.5 + 0.5 * Math.sin(t / 120)) : 0, enraged: $('be').checked, desperate: $('bd').checked,
+      exposed: $('bx').checked, stun: $('bs').checked, immune: $('bi').checked, roar: $('br').checked ? 1 : 0, speed: +$('bspeed').value, moving: +$('bspeed').value > 4 ? 1 : 0, lift: +$('blift').value,
+      broken: id === 'karceron' ? { maza: b1, grillete: b2, nucleo: b3 } : { cuernos: b1, cayado: b2, vellon: b3 }, dying: $('bdy').checked, dt: +$('bdt').value };
+    if ($('bdy').checked && $('bloop').checked) s.dt = (t % (id === 'pastor' ? 4200 : 4600));
+    var aim = +$('baim').value;
+    if (id === 'karceron') {
+      var op = +$('bopen').value; if (op > 0) s.open = op; if (+$('bsunk').value > 0) s.sunk = +$('bsunk').value; if (+$('bemerge').value < 1) s.emerge = +$('bemerge').value;
+      s.hungry = $('bhungry').checked; s.aim = aim; s.tx = Math.cos(aim) * 250; s.ty = Math.sin(aim) * 250 + 20; s.stuck = $('bstuck').checked;
+      if (w === 'erupcion' && mode === 'strike' && !op) s.open = 1;
+    }
+    if (id === 'letea') {
+      s.broken = undefined; s.heads = {}; var hk = ['acid', 'ice', 'bolt'], sel = $('bhead').value;
+      hk.forEach(function (k, i) { s.heads[k] = { broken: [b1, b2, b3][i], regrow: +$('bregrow').value, cauter: +$('bcauter').value, exposed: $('bhexp').checked, hurt: $('bhhurt').checked ? 0.6 + 0.4 * Math.sin(t / 100) : 0 }; });
+      if (+$('bsub').value > 0) s.submerge = +$('bsub').value; if (+$('bemerge').value < 1) s.emerge = +$('bemerge').value;
+      s.aim = aim;
+      if (w && HEAD_ATK[w]) { hk.forEach(function (k) { if (sel === 'all' || sel === k) { var H = s.heads[k]; H.aim = aim; if (mode === 'windup') { H.windup = w; H.wp = p; } else { H.strike = w; H.sp = p; } } }); w = ''; }
+    }
+    if (w) { if (mode === 'windup') { s.windup = w; s.wp = p; } else { s.strike = w; s.sp = p; } }
+    s.pp = p; s.w = w; s.id = id; return s;
+  }
+  function bossTele(x, id, s, bx, by, an) {
+    var f = s.facing, w = s.w, p = s.pp, aim = +$('baim').value, DEG = Math.PI / 180;
+    if (id === 'pastor') {
+      var k = BCOL[w], o = { p: p, a: f > 0 ? 0 : Math.PI, sig: w === 'embestida' || w === 'salto' || w === 'pisoton' };
+      if (k === 'arc') { o.r = 190; } if (k === 'rect') { o.w = 90; o.len = 420; } if (k === 'ring') { o.r = 300; o.th = 24; o.gap = Math.PI / 3; o.a = f > 0 ? Math.PI : 0; } if (k === 'circle') { o.r = 120; } if (k === 'cone') { o.r = 300; } if (k === 'summon') { o.r = 150; } if (k === 'spore') { o.r = 60; }
+      if (k) A.drawBossTele(x, k, bx, by, o); return;
+    }
+    var tx = bx + Math.cos(aim) * 250, ty = by + Math.sin(aim) * 250 + 20, i;
+    if (id === 'karceron') {
+      if (w === 'martillazo') A.drawBossTele(x, 'mace', tx, ty, { r: 90, p: p, sig: true });
+      else if (w === 'barrido') A.drawBossTele(x, 'arc', bx, by, { r: 340, inner: 110, arc: 140 * DEG, a: aim, p: p, sig: true });
+      else if (w === 'brasas') { for (i = 0; i < 6; i++) A.drawBossTele(x, 'meteor', bx + Math.cos(aim + i * 1.1) * (120 + i * 28), by + Math.sin(aim + i * 1.1) * (90 + i * 22), { r: 55, p: clamp01(p * 1.4 - i * 0.12) }); }
+      else if (w === 'aliento') A.drawBossTele(x, 'breath', bx, by - 60, { r: 560, arc: 50 * DEG, sweep: 40 * DEG, a: aim, p: p, sig: true });
+      else if (w === 'costillas') A.drawBossTele(x, 'ribs', bx, by - 10, { n: 12, len: 420, a: s.t / 4000, p: p });
+      else if (w === 'erupcion') A.drawBossTele(x, 'erupt', bx, by - 10, { r: 250, p: p, sig: true });
+      else if (w === 'penitentes') { for (i = 0; i < 4; i++) A.drawBossTele(x, 'summon', bx + Math.cos(i * 1.57 + 0.8) * 190, by + Math.sin(i * 1.57 + 0.8) * 120 + 20, { r: 44, p: p }); }
+      else if (w === 'marea' || w === 'requiem') A.drawBossTele(x, 'flood', 0, 0, { rect: { x: 40, y: 40, w: 880, h: 460 }, islands: [{ x: 210, y: 150, r: 110 }, { x: 750, y: 150, r: 110 }, { x: 480, y: 410, r: 110 }], p: p, sig: true });
+    } else if (id === 'letea') {
+      if (w === 'coletazo') A.drawBossTele(x, 'donut', bx, by + 10, { r: 240, inner: 110, p: p });
+      else if (w === 'sumersion') A.drawBossTele(x, 'bubbles', tx, ty, { r: 140, p: p, sig: true });
+      else if (w === 'plaideras') { for (i = 0; i < 3; i++) A.drawBossTele(x, 'summon', bx + Math.cos(i * 2.1 + 0.5) * 170, by + Math.sin(i * 2.1 + 0.5) * 100 + 20, { r: 44, p: p }); }
+      else if (w === 'marea') { A.drawBossBand(x, 60, 270, 0, 460, 90, { gaps: [[90, 190], [290, 390]], style: 'water', tele: true, p: p, t: s.t }); }
+    }
+  }
+  function bossHeadTele(x, id, s, an) {
+    if (id !== 'letea') return; var nm = null, aim = +$('baim').value, DEG = Math.PI / 180, mode = $('bmode').value, p = s.pp;
+    var w = $('bwin').value; if (!HEAD_ATK[w] || mode !== 'windup') return;
+    var sel = $('bhead').value, keys = sel === 'all' ? ['acid', 'ice', 'bolt'] : [sel], bx = 480, by = 250;
+    keys.forEach(function (k, i) {
+      var h = an[k], B = an['neckBase_' + k], ox = bx + h.x, oy = by + h.y;
+      if (w === 'mordisco') A.drawBossTele(x, 'lane', bx + B.x, by + B.y, { w: 70, len: 320, a: aim, p: p, sig: true });
+      else if (w === 'escupitajo') { for (var j = 0; j < 3; j++) A.drawBossTele(x, 'acid', bx + Math.cos(aim + (j - 1) * 0.9) * (180 + j * 20), by + Math.sin(aim + (j - 1) * 0.9) * (140 + j * 20) + 30, { r: 50, p: p }); }
+      else if (w === 'aliento') A.drawBossTele(x, 'frost', ox, oy, { r: 420, arc: 40 * DEG, a: aim, p: p });
+      else if (w === 'rayo') { for (var j2 = 0; j2 < 4; j2++) A.drawBossTele(x, 'bolt', bx + Math.cos(aim + (j2 - 1.5) * 0.7) * (160 + j2 * 30), by + Math.sin(aim + (j2 - 1.5) * 0.7) * (120 + j2 * 20) + 30, { r: 45, p: clamp01(p * 1.5 - j2 * 0.15) }); }
+    });
+  }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function bossArena(x, id, s, t) {
+    if (!$('barena').checked) return;
+    if (id === 'karceron') {
+      A.drawLavaPool(x, 130, 420, 70, t); A.drawLavaPool(x, 840, 130, 70, t);
+      var w = s.w;
+      if (w === 'marea' || w === 'requiem') { var isl = [{ x: 210, y: 150, r: 110 }, { x: 750, y: 150, r: 110 }, { x: 480, y: 410, r: 110 }]; if (s.strike) { A.drawLavaFlood(x, { x: 40, y: 40, w: 880, h: 460 }, isl, t, 0.95); isl.forEach(function (c) { A.drawIsland(x, c.x, c.y, c.r, {}); }); } else isl.forEach(function (c) { A.drawIsland(x, c.x, c.y, c.r, { lit: s.pp, t: t }); }); }
+      else A.drawLavaEdge(x, { x: 0, y: 0, w: 960, h: 540 }, 30, t, $('bphase').value >= 2 ? 0.9 : 0);
+    } else if (id === 'letea') {
+      A.drawWaterPool(x, 120, 400, 90, t); A.drawWaterPool(x, 850, 400, 90, t); A.drawWaterPool(x, 150, 100, 70, t);
+      if (s.w === 'marea' && s.strike) A.drawBossBand(x, 60 + s.pp * 800, 270, 0, 460, 90, { gaps: [[90, 190], [290, 390]], style: 'water', t: t });
+    }
+  }
+  function bossPillars(x, id, t) {
+    if (!$('barena').checked) return;
+    if (id === 'karceron') { [[250, 120], [710, 120], [250, 400], [710, 400]].forEach(function (p, i) { A.drawPillar(x, 'bone', p[0], p[1], { hp: [1, 0.4, 0, 1][i], rebuild: 0.6 }); }); }
+    if (id === 'letea') { [[250, 130], [710, 130], [250, 400], [710, 400]].forEach(function (p, i) { A.drawPillar(x, 'crystal', p[0], p[1], { hp: [1, 0.4, 0, 1][i], struck: i === 0 && (Math.floor(t / 400) % 2) }); }); }
+  }
+  function bossDraw(t) {
+    if (!A.bossIds) return; var c = $('bossCv'), x = c.getContext('2d'), id = $('bid').value || 'pastor';
+    x.imageSmoothingEnabled = false; x.drawImage(groundFor(id), 0, 0);
+    var s = bossState(t), bx = 480, by = 250, BI = A.bossInfo(id);
+    bossArena(x, id, s, t);
+    if (s.w && $('btele').checked && s.windup) bossTele(x, id, s, bx, by);
+    if ($('btele').checked) { var an0 = A.bossAnchors(id, s); bossHeadTele(x, id, s, an0); }
+    if (id === 'pastor' && s.w === 'pisoton' && s.strike) A.drawBossWave(x, bx, by, 40 + 260 * s.pp, { gap: Math.PI / 3, a: s.facing > 0 ? Math.PI : 0 });
+    if (s.desperate) A.drawBossArenaTint(x, 960, 540, t, 1);
+    bossPillars(x, id, t);
+    if ($('bplayer').checked) { var pl = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl, 250 - 24, 330 - 24); }
+    A.drawBoss(id, x, bx, by, s);
+    if ($('bplayer').checked) { var pl2 = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl2, 250 - 24, 380 - 24); }
+    var an = A.bossAnchors(id, s);
+    if ($('bdbg').checked) {
+      x.lineWidth = 1.5; Object.keys(an).forEach(function (k) { var a = an[k]; if (!a.r) return; x.strokeStyle = k === 'body' ? '#ff4040' : '#40ffff'; x.beginPath(); x.arc(bx + a.x, by + a.y, a.r, 0, 6.2832); x.stroke(); x.fillStyle = '#fff'; x.font = '10px monospace'; x.fillText(k, bx + a.x - 10, by + a.y + 3); });
+      x.strokeStyle = '#ffcc00'; x.beginPath(); x.arc(bx, by, BI.r, 0, 6.2832); x.stroke(); x.fillStyle = '#ffcc00'; x.fillRect(bx - 2, by - 2, 4, 4);
+    }
+    // retratos
+    for (var m = 0; m < 3; m++) A.drawBossPortrait(id, x, 8 + m * 104, 8, { mood: m, size: 96 });
+    bossProps(id, t);
+  }
+  function bossProps(id, t) {
+    var c = $('bossCv2'), x = c.getContext('2d'); x.clearRect(0, 0, 960, 270); x.fillStyle = '#17121f'; x.fillRect(0, 0, 960, 270); x.imageSmoothingEnabled = false;
+    x.fillStyle = '#9a90b0'; x.font = '11px monospace'; x.fillText('iconos de parte / trofeo (normal y roto), debilidad / resistencia', 8, 12);
+    var ic = id === 'pastor' ? ['trophy_pastor_horn', 'trophy_pastor_staff', 'trophy_pastor_fleece'] : id === 'karceron' ? ['trophy_karceron_mace', 'trophy_karceron_shackle', 'trophy_karceron_core'] : ['trophy_letea_acid', 'trophy_letea_ice', 'trophy_letea_bolt'];
+    ic.forEach(function (n, k) { x.drawImage(A.sprite(n, 0), 8 + k * 40, 20); x.drawImage(A.sprite(n, 1), 8 + k * 40, 56); });
+    var weak = id === 'pastor' ? [['fire', 0], ['steel', 0], ['poison', 1]] : id === 'karceron' ? [['ice', 0], ['lightning', 0], ['fire', 1], ['poison', 1]] : [['blood', 0], ['poison', 0], ['ice', 1]];
+    weak.forEach(function (w, k) { A.drawWeakIcon(x, w[0], 150 + k * 70, 24, { resist: w[1], mult: w[1] ? '0.8' : '1.25' }); });
+    var X0 = 8, Y0 = 100;
+    if (id === 'karceron') {
+      x.fillText('arena: pilar (4 estados), charco, isla (3), brasas, grietas, splash, meteoro, puas, brazo caido, maza', 8, 96);
+      for (var i = 0; i < 4; i++) A.drawPillar(x, 'bone', 30 + i * 70, 190, { hp: [1, 0.4, 0, 0][i], rebuild: i === 3 ? 0.7 : 0 });
+      x.drawImage(A.sprite('obs_bone_pillar', 3), 300, 124);
+      A.drawLavaPool(x, 400, 190, 60, t); A.drawIsland(x, 530, 190, 50, {}); A.drawIsland(x, 640, 190, 50, { lit: 1, t: t }); A.drawIsland(x, 750, 190, 50, { crack: true });
+      A.drawEmberPatch(x, 840, 190, 30, t); x.drawImage(A.animFrame('fx_boss_crack_lava', 'grow', t % 1200), 880, 140);
+      x.drawImage(A.animFrame('fx_lava_splash', 'burst', t % 1000), 8, 215); x.drawImage(A.animFrame('proj_ember_big', 'loop', t), 120, 225); x.drawImage(A.animFrame('proj_bone_spike', 'loop', t), 170, 235);
+      x.drawImage(A.sprite('obs_karceron_arm', 0), 230, 215); x.drawImage(A.sprite('obs_karceron_arm', 1), 350, 215); x.drawImage(A.sprite('boss_karceron_mace', 0), 480, 140, 40, 64); x.drawImage(A.sprite('boss_karceron_core', 0), 540, 225); x.drawImage(A.sprite('boss_karceron_core', 1), 580, 225); x.drawImage(A.sprite('boss_karceron_core', 2), 620, 225);
+      x.drawImage(A.sprite('boss_karceron_hand_l', 0), 670, 215, 34, 36); x.drawImage(A.sprite('boss_karceron_hand_r', 1), 710, 215, 34, 36); x.drawImage(A.sprite('boss_karceron_stump', 0), 760, 220);
+    } else if (id === 'letea') {
+      x.fillText('arena: pilar de cristal (4), charco de agua, acido, rayo, globo, splash, estanque, cabezas (7 frames)', 8, 96);
+      for (var j = 0; j < 4; j++) A.drawPillar(x, 'crystal', 30 + j * 70, 190, { hp: [1, 0.4, 0, 1][j], struck: j === 3 });
+      A.drawWaterPool(x, 360, 190, 60, t); A.drawWaterPool(x, 470, 190, 50, t, { acid: true });
+      x.drawImage(A.sprite('fx_lightning_strike', Math.floor(t / 80) % 3), 520, 0, 48, 160); x.drawImage(A.animFrame('fx_water_splash', 'burst', t % 1000), 600, 130); x.drawImage(A.animFrame('proj_acid_glob', 'loop', t), 660, 160);
+      x.drawImage(A.sprite('fx_letea_pond', Math.floor(t / 330) % 3), 700, 100, 180, 64);
+      for (var f = 0; f < 7; f++) { x.drawImage(A.sprite('boss_letea_head_acid', f), 150 + f * 40, 215, 40, 40); }
+      for (var f2 = 0; f2 < 7; f2++) { x.drawImage(A.sprite('boss_letea_head_ice', f2), 440 + f2 * 36, 215, 36, 36); x.drawImage(A.sprite('boss_letea_head_bolt', f2), 440 + f2 * 36, 175, 36, 36); }
+    } else {
+      x.fillText('arena: tronco, zarzal, espina, grieta, estallido, aro, puas, esporas', 8, 96);
+      x.drawImage(A.sprite('obs_log', 0), 8, 110); x.drawImage(A.sprite('obs_log', 1), 80, 110); x.drawImage(A.sprite('obs_log', 2), 152, 110);
+      x.drawImage(A.animFrame('fx_thorn_patch', 'sway', t), 230, 120); x.drawImage(A.animFrame('fx_boss_spike', 'rise', t % 900), 330, 120); x.drawImage(A.sprite('fx_boss_crack', Math.floor(t / 400) % 3), 380, 110);
+      x.drawImage(A.animFrame('fx_part_break', 'burst', t % 1000), 480, 110); x.drawImage(A.animFrame('fx_window_ring', 'loop', t), 620, 110);
+      x.drawImage(A.animFrame('proj_boss_thorn', 'loop', t), 760, 150); x.drawImage(A.sprite('fx_spore_puff', Math.floor(t / 200) % 4), 800, 140);
+    }
+  }
+  // --- vista Arbol
+  function treeDraw(t) {
+    if (!A.drawTreeNode) return; var c = $('treeCv'), x = c.getContext('2d'), tag = $('ttag').value, k = A.TREE_TAGS[tag], sel = $('tsel').checked;
+    x.clearRect(0, 0, 960, 440); x.fillStyle = '#17121f'; x.fillRect(0, 0, 960, 440);
+    ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel', 'neutral'].forEach(function (tg, i) { A.drawTreeTab(x, 10 + i * 56, 10, tg, { sel: tg === tag, dim: tg !== tag, t: t, badge: i === 2 ? 3 : 0 }); });
+    x.fillStyle = '#9a90b0'; x.font = '11px monospace'; x.fillText('pestanas (7) | tipos de nodo x estados (locked / avail / owned / excluded)', 10, 82);
+    var types = ['root', 'C', 'M', 'P', 'X', 'S', 'Ma', 'R'], states = ['locked', 'avail', 'owned', 'excluded'];
+    var ik = { root: 'root', C: 'card', M: 'upgrade', P: 'passive', X: 'branch', S: 'set', Ma: 'mastery', R: 'rank' };
+    types.forEach(function (ty, i) { states.forEach(function (st, j) {
+      var nx = 40 + i * 76, ny = 124 + j * 70; A.drawTreeNode(x, nx, ny, { type: ty, tag: tag, state: st, choice: ty === 'M' && st === 'owned' ? 'A' : null, sel: sel && i === 0 && j === 1, t: t, r: 26 });
+      A.drawTreeIcon(x, ik[ty], nx, ny, 12, { color: st === 'owned' ? '#1a1024' : k, dim: st === 'locked' || st === 'excluded' });
+    }); });
+    // conectores
+    x.fillStyle = '#9a90b0'; x.fillText('conectores: owned / avail / locked / xor / or', 650, 82);
+    var sts = ['owned', 'avail', 'locked']; sts.forEach(function (st, i) { A.drawTreeNode(x, 680, 120 + i * 80, { type: 'C', tag: tag, state: st === 'locked' ? 'locked' : 'owned', t: t, r: 22 }); A.drawTreeNode(x, 780, 150 + i * 80 - 0, { type: 'C', tag: tag, state: st, t: t, r: 22 }); A.drawTreeLink(x, 680, 120 + i * 80, 780, 150 + i * 80, { state: st, color: k, t: t, inset: 22 }); });
+    A.drawTreeLink(x, 840, 110, 900, 190, { state: 'avail', color: k, kind: 'xor', t: t, inset: 6 }); A.drawTreeLink(x, 900, 190, 880, 290, { state: 'owned', color: k, kind: 'or', t: t, inset: 6 });
+    A.drawTreeBurst(x, 880, 380, (t % 1200) / 1200, k);
+    // iconos grandes
+    x.fillStyle = '#9a90b0'; x.fillText('iconos de etiqueta (tree_tag_*) y de nodo (drawTreeIcon)', 10, 408);
+    ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel', 'neutral'].forEach(function (tg, i) { x.drawImage(A.sprite('tree_tag_' + tg, 0), 10 + i * 54, 380 - 0, 48, 48); });
+    ['root', 'card', 'upgrade', 'passive', 'branch', 'set', 'mastery', 'rank', 'trunk'].forEach(function (n, i) { A.drawTreeIcon(x, n, 430 + i * 38, 404, 14, { color: k }); });
+  }
+  bossInit();
   buildCards(); buildArena(); requestAnimationFrame(tick);
 
   // --- sonido

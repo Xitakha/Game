@@ -1,0 +1,4 @@
+
+# Capturas de pruebas: se regeneran con los bots de tools/ (solo se versiona capturas-movil)
+studio/docs/capturas-*/
+!studio/docs/capturas-movil/
