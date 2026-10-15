@@ -620,7 +620,7 @@
   function lavaDisc(c, x, y, r, t, fresh) {
     var g = c.createRadialGradient(x, y, r * 0.15, x, y, r);
     g.addColorStop(0, 'rgba(255,230,110,0.95)'); g.addColorStop(0.55, 'rgba(255,106,26,0.9)'); g.addColorStop(1, 'rgba(190,50,10,0.85)');
-    c.fillStyle = g; c.beginPath(); c.ellipse(x, y, r, r * 0.8, 0, 0, TAU); c.fill();
+    c.fillStyle = G.fg(g, 'rgba(255,106,26,0.85)'); c.beginPath(); c.ellipse(x, y, r, r * 0.8, 0, 0, TAU); c.fill();
     c.strokeStyle = 'rgba(255,230,90,' + (0.7 + 0.2 * Math.sin(t / 200)) + ')'; c.lineWidth = 3; c.stroke();
     c.fillStyle = 'rgba(255,240,150,0.5)'; for (var i = 0; i < 3; i++) { var an = t / 700 + i * 2.1; c.beginPath(); c.arc(x + Math.cos(an) * r * 0.45, y + Math.sin(an) * r * 0.35, r * 0.1, 0, TAU); c.fill(); }
   }

@@ -1,0 +1,57 @@
+# Publica los juegos en GitHub Pages: https://xitakha.github.io/Game/  (Swarm Hand en /card-swarm/, Ember Flock en /survival-lamb/)
+# Solo se sube lo necesario para jugar: nada de studio/, documentación (*.md) ni capturas.
+name: Desplegar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Ensamblar el sitio
+        run: |
+          set -euo pipefail
+          mkdir -p _site/card-swarm _site/survival-lamb
+          cp tools/site/index.html _site/index.html
+          touch _site/.nojekyll
+          cp -a games/card-swarm/. _site/card-swarm/
+          cp -a games/survival-lamb/. _site/survival-lamb/
+          find _site -type f -name '*.md' -delete
+          rm -f _site/card-swarm/src/assets_village_tmp.js
+          # versión del service worker = hash del contenido; falla si falta algún archivo del precache
+          python3 tools/card-swarm-pwa/stamp.py _site/card-swarm
+          find _site -type f | sort
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir el artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

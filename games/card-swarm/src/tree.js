@@ -376,13 +376,13 @@
 
   // ------------------------------------------------------------- UI
   var ui = { tab: 'fire', sel: 'F1', msg: '', msgT: 0, confirm: '', confirmT: 0, flash: null, flashT: 0, fade: 0 };
-  var R_CLOSE = { x: 904, y: 2, w: 52, h: 42 };
+  var R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
   var R_TAB = function (i) { return { x: 8 + i * 134, y: 44, w: 128, h: 48 }; };
   var R_RESET = { x: 590, y: 4, w: 156, h: 38 };
   var DET = { x: 644, y: 100, w: 306, h: 432 };
   var R_BUY = { x: 654, y: 470, w: 286, h: 52 };
   var R_CH = [{ x: 654, y: 470, w: 140, h: 52 }, { x: 800, y: 470, w: 140, h: 52 }];
-  var R_UNDO = { x: 754, y: 418, w: 186, h: 44 };
+  var R_UNDO = { x: 754, y: 416, w: 186, h: 48 };
   var NX = 72, NY = 138, SX = 100, SY = 65, NR = 28;
   function pos(n) { return { x: NX + n.col * SX, y: NY + n.row * SY }; }
   function say(t) { ui.msg = t; ui.msgT = 3200; }
@@ -587,7 +587,7 @@
     // selección
     if (!ART) { var sp = pos(n); c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.setLineDash([4, 4]); c.lineDashOffset = -t * 20; c.beginPath(); c.arc(sp.x, sp.y, NR + 8, 0, 6.283); c.stroke(); c.setLineDash([]); }
     drawDetail(c, n, m);
-    G.txt(c, 'Flechas: mover  F/G: forjar  U: deshacer  R: respec.  Q/E o 1-7: pestaña  Esc: salir', 14, 526, 10, '#6f6480', 'left');
+    G.txt(c, G.Sys.isTouch() ? 'Toca un nodo para verlo  -  desliza para cambiar de árbol  -  X para salir' : 'Flechas: mover  F/G: forjar  U: deshacer  R: respec.  Q/E o 1-7: pestaña  Esc: salir', 14, 526, 10, '#6f6480', 'left');
   };
 
   function drawDetail(c, n, m) {

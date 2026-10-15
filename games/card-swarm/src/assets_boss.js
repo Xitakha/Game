@@ -937,6 +937,7 @@
   };
   // viñeta roja de borde para ataques firma (p = 0..1, pulsa en los ultimos 300 ms: pasar p alto)
   A.drawBossVignette = function (ctx, W, H, p, color) {
+    if (window.G && G.Q && G.Q.flat) return;   // calidad baja: sin viñeta de ataque firma
     var c = color || '255,30,20', g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.72);
     g.addColorStop(0, 'rgba(' + c + ',0)'); g.addColorStop(1, 'rgba(' + c + ',' + (0.1 * clamp(p, 0, 1)).toFixed(3) + ')');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);

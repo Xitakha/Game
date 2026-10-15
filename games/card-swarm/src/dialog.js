@@ -26,11 +26,11 @@
   function done(s) { return s.n >= pageLen(s); }
   function lastPage(s) { return s.p >= s.pages.length - 1; }
   function choiceRect(s, i) {
-    var b = box(s), n = s.choices.length, bw = Math.min(104, (W - 6 * (n - 1)) / n);
-    return { x: b.x + i * (bw + 6), y: b.y + b.h + 6, w: bw, h: 44 };
+    var b = box(s), n = s.choices.length, bw = Math.min(104, (W - 4 * (n - 1)) / n);
+    return { x: b.x + i * (bw + 4), y: b.y + b.h + 6, w: bw, h: 50 };
   }
   function box(s) {
-    var h = 62, x = G.clamp(s.who.x - W / 2, 8, G.W - W - 8), y = s.who.y - h - 4 - (s.choices.length ? 52 : 0);
+    var h = 62, x = G.clamp(s.who.x - W / 2, 8, G.W - W - 8), y = s.who.y - h - 4 - (s.choices.length ? 58 : 0);
     return { x: x, y: Math.max(8, y), w: W, h: h };
   }
 

@@ -33,8 +33,13 @@
       peligro: { pastor: 1, karceron: 1, letea: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
+  var warned = false;
   S.save = function () {
-    try { localStorage.setItem(KEY, JSON.stringify(S.data)); S.ok = true; } catch (e) { S.ok = false; }
+    try { localStorage.setItem(KEY, JSON.stringify(S.data)); S.ok = true; }
+    catch (e) {
+      S.ok = false;   // modo privado, cuota llena o almacenamiento bloqueado: se sigue jugando en memoria y se avisa una vez
+      if (!warned && G.Sys && G.Sys.toast) { warned = true; G.Sys.toast('El navegador no deja guardar el progreso. Exporta tu guardado en Ajustes.', { close: true, ms: 9000 }); }
+    }
   };
 
   function migrate(d) {
@@ -64,6 +69,11 @@
         d = migrate(parsed);
       }
     } catch (e) { d = null; S.ok = false; }
+    return S.adopt(d);
+  };
+
+  // Rellena los campos que falten con los valores por defecto y lo deja como guardado actual (lo usa también la importación)
+  S.adopt = function (d) {
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
@@ -80,6 +90,26 @@
     STARTERS.forEach(function (id) { if (!d.cards[id]) d.cards[id] = 1; });
     S.data = d;
     return d;
+  };
+
+  // Exportar / importar como texto (copia de seguridad que sobrevive a limpiar el navegador o cambiar de móvil). Formato: 'SWARM1:' + base64(JSON utf-8)
+  S.exportText = function () {
+    S.save();
+    return 'SWARM1:' + btoa(unescape(encodeURIComponent(JSON.stringify(S.data))));
+  };
+  S.importText = function (txt) {
+    txt = String(txt || '').trim();
+    var d;
+    try {
+      var json = /^SWARM1:/.test(txt) ? decodeURIComponent(escape(atob(txt.slice(7).replace(/\s+/g, '')))) : txt;
+      d = JSON.parse(json);
+    } catch (e) { return { ok: false, err: 'Ese texto no es un guardado de Swarm Hand.' }; }
+    if (d && d.v > VERSION) return { ok: false, err: 'El guardado es de una versión más nueva del juego.' };
+    d = migrate(d);
+    if (!d) return { ok: false, err: 'Guardado no reconocido.' };
+    try { var cur = localStorage.getItem(KEY); if (cur) localStorage.setItem(KEY + '.antes-de-importar', cur); } catch (e2) { /* sin storage */ }
+    S.adopt(d); S.save();
+    return { ok: true };
   };
 
   S.reset = function () {

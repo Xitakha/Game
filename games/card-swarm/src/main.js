@@ -151,75 +151,78 @@
       inp.keys[e.code] = true;
       if (!e.repeat) inp.pressed[e.code] = true;
       if (e.shiftKey) inp.pressed['ShiftDigit' + (e.code.replace('Digit', ''))] = !e.repeat && /^Digit/.test(e.code);
+      if (G.Sys) G.Sys.touchActive = false;
       try { G.Snd.unlock(); } catch (x) { /* sin audio */ }
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].indexOf(e.code) >= 0) e.preventDefault();
     });
     window.addEventListener('keyup', function (e) { inp.keys[e.code] = false; });
     window.addEventListener('blur', function () { inp.keys = {}; inp.joy = null; if (G.state === 'play') G.state = 'paused'; });
-    function mpos(e) {
-      var r = canvas.getBoundingClientRect();
-      inp.mouse.x = (e.clientX - r.left) * G.W / r.width;
-      inp.mouse.y = (e.clientY - r.top) * G.H / r.height;
-    }
-    canvas.addEventListener('mousemove', mpos);
-    canvas.addEventListener('mousedown', function (e) {
-      mpos(e); inp.keys['Mouse' + e.button] = true; inp.pressed['Mouse' + e.button] = true; e.preventDefault();
-      try { G.Snd.unlock(); } catch (x) { /* sin audio */ }
-    });
     window.addEventListener('mouseup', function (e) { inp.keys['Mouse' + e.button] = false; });
-    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-    bindTouch();
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    bindPointer();
   }
 
-  // Táctil: toque corto = clic (al soltar, en coordenadas del juego); joystick flotante con un toque que empieza en la mitad izquierda
-  // (solo en la aldea caminando o en la expedición); deslizar horizontal = inp.swipe (-1 izquierda / +1 derecha, un paso).
-  function bindTouch() {
+  // Entrada unificada con Pointer Events: ratón (hover, clic izquierdo / derecho) y táctil / lápiz (varios dedos a la vez, cada uno con su pointerId).
+  // Táctil: toque corto = clic (al soltar, en coordenadas del juego); joystick flotante con un dedo que empieza en la mitad izquierda
+  // (solo en la aldea caminando o en la expedición); deslizar horizontal = inp.swipe (-1 izquierda / +1 derecha, un paso); arrastre vertical = inp.drag (scroll de listas).
+  function bindPointer() {
     var tc = {};
     inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
-    function pt(e, t) {
+    inp.dragY = 0;
+    function pt(e) {
       var r = canvas.getBoundingClientRect();
-      return { x: (t.clientX - r.left) * G.W / r.width, y: (t.clientY - r.top) * G.H / r.height };
+      return { x: (e.clientX - r.left) * G.W / r.width, y: (e.clientY - r.top) * G.H / r.height };
     }
     function joyOK(p) {
-      if (p.x >= 400) return false;
+      if (p.x >= G.W / 2) return false;
+      if (G.Sys && G.Sys.onButton(p)) return false;
       if (G.state === 'play') return true;
       return G.state === 'aldea' && G.Aldea.joyOK();
     }
-    canvas.addEventListener('touchstart', function (e) {
+    canvas.addEventListener('pointerdown', function (e) {
       e.preventDefault(); try { G.Snd.unlock(); } catch (x) { /* audio */ }
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        var t = e.changedTouches[i], p = pt(e, t);
-        tc[t.identifier] = { x0: p.x, y0: p.y, t0: performance.now(), x: p.x, y: p.y, joy: false };
-        inp.mouse.x = p.x; inp.mouse.y = p.y;
-        if (!inp.joy.active && joyOK(p)) { tc[t.identifier].joy = true; inp.joy = { active: true, id: t.identifier, ox: p.x, oy: p.y, x: 0, y: 0 }; }
+      try { canvas.setPointerCapture(e.pointerId); } catch (x2) { /* sin captura */ }
+      var p = pt(e);
+      if (e.pointerType === 'mouse') {
+        if (G.Sys) G.Sys.touchActive = false;
+        inp.mouse.x = p.x; inp.mouse.y = p.y; inp.keys['Mouse' + e.button] = true; inp.pressed['Mouse' + e.button] = true;
+        return;
       }
-    }, { passive: false });
-    canvas.addEventListener('touchmove', function (e) {
+      if (G.Sys) G.Sys.touchActive = true;
+      tc[e.pointerId] = { x0: p.x, y0: p.y, t0: performance.now(), x: p.x, y: p.y, joy: false };
+      inp.mouse.x = p.x; inp.mouse.y = p.y;
+      if (!inp.joy.active && joyOK(p)) { tc[e.pointerId].joy = true; inp.joy = { active: true, id: e.pointerId, ox: p.x, oy: p.y, x: 0, y: 0 }; }
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      var p = pt(e);
+      if (e.pointerType === 'mouse') { inp.mouse.x = p.x; inp.mouse.y = p.y; return; }
+      var o = tc[e.pointerId]; if (!o) return;
       e.preventDefault();
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        var t = e.changedTouches[i], p = pt(e, t), o = tc[t.identifier]; if (!o) continue;
-        o.x = p.x; o.y = p.y; inp.mouse.x = p.x; inp.mouse.y = p.y;
-        if (o.joy) {
-          var dx = p.x - inp.joy.ox, dy = p.y - inp.joy.oy, d = Math.hypot(dx, dy), R = 50;
-          if (d > R) { inp.joy.ox += dx / d * (d - R); inp.joy.oy += dy / d * (d - R); dx = p.x - inp.joy.ox; dy = p.y - inp.joy.oy; d = R; }
-          inp.joy.x = d > 8 ? dx / R : 0; inp.joy.y = d > 8 ? dy / R : 0;
-        }
+      if (!o.joy) inp.dragY += p.y - o.y;
+      o.x = p.x; o.y = p.y; inp.mouse.x = p.x; inp.mouse.y = p.y;
+      if (o.joy) {
+        var dx = p.x - inp.joy.ox, dy = p.y - inp.joy.oy, d = Math.hypot(dx, dy), R = 56;
+        if (d > R) { inp.joy.ox += dx / d * (d - R); inp.joy.oy += dy / d * (d - R); dx = p.x - inp.joy.ox; dy = p.y - inp.joy.oy; d = R; }
+        inp.joy.x = d > 8 ? dx / R : 0; inp.joy.y = d > 8 ? dy / R : 0;
       }
-    }, { passive: false });
+    });
     function end(e) {
+      if (e.pointerType === 'mouse') { inp.keys['Mouse' + e.button] = false; return; }
+      var o = tc[e.pointerId]; if (!o) return;
       e.preventDefault();
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        var t = e.changedTouches[i], p = pt(e, t), o = tc[t.identifier]; if (!o) continue;
-        delete tc[t.identifier];
-        var moved = Math.hypot(p.x - o.x0, p.y - o.y0), dur = performance.now() - o.t0;
-        if (o.joy) inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
-        inp.mouse.x = p.x; inp.mouse.y = p.y;
-        if (moved < 18 && dur < 600) inp.pressed.Mouse0 = true;
-        else if (Math.abs(p.x - o.x0) > 90 && Math.abs(p.y - o.y0) < 60 && dur < 700 && !o.joy) inp.swipe = p.x > o.x0 ? 1 : -1;
-      }
+      var p = pt(e); delete tc[e.pointerId];
+      var moved = Math.hypot(p.x - o.x0, p.y - o.y0), dur = performance.now() - o.t0;
+      if (o.joy) inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
+      inp.mouse.x = p.x; inp.mouse.y = p.y;
+      if (e.type === 'pointercancel') return;
+      if (moved < 18 && dur < 600) inp.pressed.Mouse0 = true;
+      else if (Math.abs(p.x - o.x0) > 90 && Math.abs(p.y - o.y0) < 60 && dur < 700 && !o.joy) inp.swipe = p.x > o.x0 ? 1 : -1;
     }
-    canvas.addEventListener('touchend', end, { passive: false });
-    canvas.addEventListener('touchcancel', end, { passive: false });
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+    canvas.addEventListener('lostpointercapture', function (e) { if (tc[e.pointerId]) end({ pointerId: e.pointerId, pointerType: e.pointerType, type: 'pointercancel', preventDefault: function () {} }); });
+    // suelta todos los dedos / teclas (pausa automática, cambio de pestaña, orientación)
+    inp.releaseAll = function () { tc = {}; inp.keys = {}; inp.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }; };
   }
 
   // ---------------------------------------------------------------- Mundo
@@ -332,12 +335,13 @@
   function step() {
     var dt = G.STEP;
     if (inp.lock > 0) inp.lock -= dt;
+    if (inp.pressed.Mouse0 && G.Sys && G.Sys.tap(inp.mouse)) inp.pressed.Mouse0 = false;   // botones de sistema (pausa, silencio, pantalla completa)
     switch (G.state) {
       case 'aldea':
         G.Aldea.update(dt);
         break;
       case 'play':
-        if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; break; }
+        if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; G.Hud.pauseOpen(); break; }
         if (G.fx.hitstop > 0) { G.fx.hitstop -= dt; G.fx.updateShake(dt); break; }
         updateWorld(dt);
         break;
@@ -345,6 +349,7 @@
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
         else if (inp.hit('KeyB')) G.finish(false);   // abandonar: conserva las partes recogidas y va al botín
         else if (inp.hit('KeyR') && G.mode === 'practice') G.Base.retryPractice();   // práctica: reinicio rápido
+        else if (inp.hit('Mouse0')) G.Hud.pauseClick(inp.mouse);   // táctil / ratón: CONTINUAR, CALIDAD, SONIDO, REINICIAR, ABANDONAR
         break;
       case 'cards':
         G.fx.updateShake(dt);
@@ -355,7 +360,7 @@
         G.Base.updateEnd();
         break;
     }
-    inp.pressed = {}; inp.swipe = 0;
+    inp.pressed = {}; inp.swipe = 0; inp.dragY = 0;
   }
 
   // ---------------------------------------------------------------- Render
@@ -373,8 +378,10 @@
   }
 
   function draw() {
+    var rs = G.rs || 1;
+    ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
-    if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); return; }
+    if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
@@ -407,18 +414,22 @@
       Assets.drawTorchFire(ctx, tq.x, tq.y, tt, tq.o);
       P.down(ctx);
     }
-    Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: 60, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
-    Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: 2 });
+    var Q = G.Q;
+    if (Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
+    if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
     ctx.restore();
-    ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
+    if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     G.Hud.draw(ctx);
     drawJoy(ctx);
+    if (G.state === 'play') G.Sys.drawBar(ctx);
   }
 
   // ---------------------------------------------------------------- Bucle
   var last = 0, acc = 0;
+  G.resetClock = function () { last = performance.now(); acc = 0; };   // tras una pausa del navegador: sin saltos de tiempo
   function frame(t) {
-    var d = Math.min(100, t - last); last = t; acc += d * G.speed;
+    var raw = t - last, d = Math.min(100, raw); last = t; acc += d * G.speed;
+    G.Sys.frame(raw);
     var n = 0, maxN = Math.ceil(6 * G.speed);
     while (acc >= G.STEP && n < maxN) { step(); acc -= G.STEP; n++; }
     if (n === maxN) acc = 0;
@@ -431,6 +442,7 @@
     G.ctx = ctx; canvas.focus();
     bindInput();
     G.Save.applyUrl();
+    G.Sys.init(canvas);   // móvil: escala, calidad, pausa automática, audio, pantalla completa (mobile.js)
     G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();

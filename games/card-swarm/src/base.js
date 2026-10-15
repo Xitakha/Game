@@ -11,7 +11,7 @@
   // Reintentar la misma salida: normal, cacería (misma bestia y Peligro) o práctica (misma mano; la fase de inicio puede cambiarse con 1-3)
   Bs.retry = function () { G.launchReq = G.lastReq ? { mode: G.lastReq.mode, boss: G.lastReq.boss, peligro: G.lastReq.peligro, phase: G.lastReq.phase } : null; Bs.launch(); };
   Bs.retryPractice = function () { if (G.mode === 'practice') Bs.retry(); };
-  var PH_BTN = function (i) { return { x: 516 + i * 140, y: 330, w: 130, h: 44 }; };
+  var PH_BTN = function (i) { return { x: 516 + i * 140, y: 328, w: 130, h: 48 }; };
   Bs.open = function (fromRun) { G.Aldea.open(!!fromRun); };
 
   // ------------------------------------------------------------- Pantalla de fin / botín

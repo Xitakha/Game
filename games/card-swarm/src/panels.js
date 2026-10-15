@@ -6,7 +6,7 @@
   'use strict';
   var G = window.G, P = G.Panels = {}, U = G.UI, inp = G.input, L = G.Loot;
   var cur = null, msg = '', msgT = 0, confirm = '', confirmT = 0;
-  var R_CLOSE = { x: 904, y: 2, w: 52, h: 42 };
+  var R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
   var st = { rt: 0, give: 'wick', get: 'thread', qty: 1, buy: 'thread', csel: 0 };
   var LENS = [7, 9, 10];
   G.touchUI = ('ontouchstart' in window) && !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);   // táctil: el renombrado de loadouts usa el teclado nativo
@@ -92,11 +92,11 @@
     if (!huntAvail(B[st.hb])) { var f = B.filter(huntAvail)[0]; st.hb = f ? B.indexOf(f) : 0; }
     st.hp = G.clamp(st.hp || 1, 1, G.Save.pelMax(B[st.hb]));
   }
-  function tabRect(i) { return { x: 150 + i * 138, y: 4, w: 130, h: 40 }; }
+  function tabRect(i) { return { x: 150 + i * 138, y: 2, w: 130, h: 48 }; }
   function hbRect(i) { return { x: 20 + i * 152, y: 56, w: 144, h: 52 }; }
   function hpRect(i) { return { x: 20 + i * 64, y: 116, w: 58, h: 38 }; }
   var R_HUNT = { x: 648, y: 168, w: 280, h: 62 }, R_PRAC = { x: 648, y: 396, w: 280, h: 56 };
-  function phRect(i) { return { x: 648 + i * 94, y: 340, w: 90, h: 40 }; }
+  function phRect(i) { return { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
   function startHunt(practice) {
     var id = G.Save.BOSSES[st.hb]; if (!huntAvail(id)) return;
     G.launchReq = { mode: practice ? 'practice' : 'hunt', boss: id, peligro: practice ? 1 : st.hp, phase: practice ? st.hph : 0 };
@@ -295,14 +295,14 @@
   function handRect(i) { return { x: 20 + i * 84, y: 120, w: 72, h: 96 }; }
   function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
   function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
-  var R_GO = { x: 650, y: 486, w: 290, h: 44 };
+  var R_GO = { x: 650, y: 482, w: 290, h: 52 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
     { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' }];
-  function biomeRect(i) { return { x: 650 + i * 98, y: 338, w: 92, h: 44 }; }
+  function biomeRect(i) { return { x: 650 + i * 98, y: 336, w: 92, h: 48 }; }
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
-  function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 38 }; }
+  function pelRect(i) { return { x: 650 + i * 58, y: 404, w: 54, h: 48 }; }
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
     var S = SV(), id = S.biome || 'bosque';
     if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
@@ -400,7 +400,7 @@
   var CELL = { w: 56, h: 76, gx: 60, gy: 82, x0: 14, y0: 104, cols: 10 };
   function cellRect(i) { return { x: CELL.x0 + (i % CELL.cols) * CELL.gx, y: CELL.y0 + Math.floor(i / CELL.cols) * CELL.gy, w: CELL.w, h: CELL.h }; }
   function chipRect(i) { return { x: 14 + i * 76, y: 64, w: 72, h: 30 }; }
-  var R_ANC = { x: 626, y: 306, w: 312, h: 44 };
+  var R_ANC = { x: 626, y: 304, w: 312, h: 48 };
   var LOX = 620, LOW = 324;
   function loRect(i) { return { x: LOX, y: 388 + i * 46, w: LOW, h: 44 }; }
   function loName(i) { return { x: LOX, y: 388 + i * 46, w: 120, h: 44 }; }
@@ -607,7 +607,7 @@
     U.part(c, d.icon, 80, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 94, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
   };
   function dRow(i) { return { x: 14, y: 70 + i * 63, w: 932, h: 57 }; }
-  function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 6, w: 156, h: 45 }; }
+  function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 4, w: 156, h: 48 }; }
   function updCook() {
     for (var i = 0; i < Cook.DISHES.length; i++) if (onR(dBtn(i)) || inp.hit('Digit' + (i + 1))) {
       var r = Cook.cook(Cook.DISHES[i].id); say(r.msg); if (r.ok) { G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } if (G.Aldea.onCooked) G.Aldea.onCooked(); } else G.sfx('discard', { vol: 0.5 });
@@ -669,7 +669,7 @@
     else if (onR(MB(1))) { cur = 'settings'; }
     else if (onR(MB(2))) {
       if (confirm === 'del') { G.Save.reset(); G.Aldea.open(false); say('Progreso borrado.'); return false; }
-      confirm = 'del'; confirmT = 3000; say('Pulsa otra vez para BORRAR todo el progreso.');
+      confirm = 'del'; confirmT = 4000; say('Pulsa otra vez para BORRAR todo el progreso (no se puede deshacer; exporta antes si dudas).');
     }
     return false;
   }
@@ -679,11 +679,18 @@
     G.txt(c, 'Expediciones ' + S.runs + '   Victorias ' + S.wins + (S.pity > 0 ? '   Rara +' + (S.pity * 100).toFixed(1) + '%' : ''), 480, 88, 13, '#9a8fb0', 'center');
     U.button(c, MB(0), 'COLECCIÓN', { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, MB(2), confirm === 'del' ? 'SEGURO? PULSA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
+    U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
     U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
   }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
-  function setRect(i, plus) { return { x: plus ? 700 : 560, y: 120 + i * 80, w: 60, h: 56 }; }
+  function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
+  var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
+    shake: { x: 150, y: 236, w: 320, h: 48 }, iso: { x: 490, y: 236, w: 320, h: 48 },
+    qual: { x: 150, y: 292, w: 320, h: 48 }, fs: { x: 490, y: 292, w: 320, h: 48 },
+    mute: { x: 150, y: 348, w: 320, h: 48 }, inst: { x: 490, y: 348, w: 320, h: 48 },
+    exp: { x: 150, y: 404, w: 320, h: 48 }, imp: { x: 490, y: 404, w: 320, h: 48 },
+    back: { x: 330, y: 466, w: 300, h: 52 }
+  };
   function updSettings() {
     var S = SV();
     if (!S.settings) S.settings = (function () { try { return Assets.getVolume(); } catch (e) { return { master: 0.8, music: 0.6, sfx: 0.8 }; } })();
@@ -691,22 +698,36 @@
       var k = SET[i][0]; S.settings[k] = G.clamp(Math.round((S.settings[k] + (p ? 0.1 : -0.1)) * 10) / 10, 0, 1);
       G.Save.save(); G.Aldea.applySettings(); G.sfx('card_select', { vol: 0.5 });
     }
-    if (onR({ x: 330, y: 340, w: 300, h: 40 })) { S.settings.shake = S.settings.shake ? 0 : 1; G.shakeMul = S.settings.shake ? 1 / 3 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    if (onR({ x: 330, y: 388, w: 300, h: 40 })) { G.Proj.toggle(); G.sfx('card_select', { vol: 0.5 }); }   // vista inclinada tipo Hades (se guarda en settings.view)
-    if (onR({ x: 330, y: 436, w: 300, h: 56 })) { cur = 'menu'; }
+    if (onR(SB.shake)) { S.settings.shake = S.settings.shake ? 0 : 1; G.shakeMul = S.settings.shake ? 1 / 3 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(SB.iso)) { G.Proj.toggle(); G.sfx('card_select', { vol: 0.5 }); }   // vista inclinada tipo Hades (se guarda en settings.view)
+    if (onR(SB.qual)) { G.Sys.cycleQuality(); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(SB.fs)) G.Sys.toggleFullscreen();
+    if (onR(SB.mute)) G.Sys.toggleMute();
+    if (onR(SB.inst)) G.PWA.install();
+    if (onR(SB.exp)) G.PWA.exportSave();
+    if (onR(SB.imp)) G.PWA.importSave();
+    if (onR(SB.back)) { cur = 'menu'; }
     return false;
   }
   function drawSettings(c) {
     var S = SV(); if (!S.settings) S.settings = (function () { try { return Assets.getVolume(); } catch (e) { return { master: 0.8, music: 0.6, sfx: 0.8 }; } })();
     bg(c, 'AJUSTES');
     SET.forEach(function (it, i) {
-      G.txt(c, it[1], 200, 148 + i * 80, 20, '#ffd27a', 'left');
+      G.txt(c, it[1], 200, 64 + i * 56 + 24, 20, '#ffd27a', 'left');
       U.button(c, setRect(i, 0), '-', { size: 26 });
-      G.txt(c, Math.round(S.settings[it[0]] * 100) + '%', 660, 148 + i * 80, 20, '#fff', 'center');
+      G.txt(c, Math.round(S.settings[it[0]] * 100) + '%', 660, 64 + i * 56 + 24, 20, '#fff', 'center');
       U.button(c, setRect(i, 1), '+', { size: 26 });
     });
-    U.button(c, { x: 330, y: 340, w: 300, h: 40 }, 'Reducir sacudidas: ' + (S.settings.shake ? 'SÍ' : 'NO'), { size: 15, color: S.settings.shake ? '#2a6aa8' : '#2c2438' });
-    U.button(c, { x: 330, y: 388, w: 300, h: 40 }, 'Vista inclinada (exped.): ' + (G.Proj.iso ? 'SÍ' : 'NO'), { size: 15, color: G.Proj.iso ? '#2a6aa8' : '#2c2438' });
-    U.button(c, { x: 330, y: 436, w: 300, h: 56 }, 'ATRÁS', { size: 20 });
+    var on = '#2a6aa8', off = '#2c2438', Sy = G.Sys;
+    U.button(c, SB.shake, 'Reducir sacudidas: ' + (S.settings.shake ? 'SÍ' : 'NO'), { size: 14, color: S.settings.shake ? on : off });
+    U.button(c, SB.iso, 'Vista inclinada: ' + (G.Proj.iso ? 'SÍ' : 'NO'), { size: 14, color: G.Proj.iso ? on : off });
+    U.button(c, SB.qual, 'Gráficos: ' + Sy.qualityLabel(), { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, SB.fs, Sy.isFullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa', { size: 14, off: !Sy.fsSupported(), color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: Sy.fsSupported() ? null : 'no disponible aquí' });
+    U.button(c, SB.mute, Sy.muted ? 'Silencio: SÍ' : 'Silencio: NO', { size: 14, color: Sy.muted ? '#7a3a3a' : off });
+    U.button(c, SB.inst, Sy.standalone() ? 'App instalada' : 'Instalar app', { size: 14, off: Sy.standalone(), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    U.button(c, SB.exp, 'Exportar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, SB.back, 'ATRÁS', { size: 20 });
+    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 10, G.Save.ok ? '#6f6480' : '#ff8a8a', 'center');
   }
 })();

@@ -119,6 +119,7 @@
   E.shoot = function (team, x, y, ang, speed, dmg, spr, o) {
     o = o || {};
     if (!G.hasSpr(spr)) spr = o.fb || null;
+    if (G.projectiles.length > G.Q.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
       spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null });
   };
@@ -740,7 +741,7 @@
       c.globalAlpha = fa;
       var g = c.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r);
       g.addColorStop(0, 'rgba(155,255,74,0.42)'); g.addColorStop(1, 'rgba(155,255,74,0.2)');
-      disc(c, z.x, z.y, z.r, g, '#9bff4a', 2);
+      disc(c, z.x, z.y, z.r, G.fg(g, 'rgba(155,255,74,0.3)'), '#9bff4a', 2);
       if (G.hasSpr('fx_spore_zone')) { var sp = Assets.sprite('fx_spore_zone', 1 + Math.floor(z.t / 250) % 2); c.globalAlpha = fa * 0.8; c.drawImage(sp, z.x - z.r, z.y - z.r, z.r * 2, z.r * 2); }
       else { c.globalAlpha = fa * 0.5; c.strokeStyle = '#d8ff9a'; c.lineWidth = 1.5; c.beginPath(); c.arc(z.x, z.y, z.r * (0.6 + 0.08 * Math.sin(t * 5 + i)), 0, 6.283); c.stroke(); }
     }

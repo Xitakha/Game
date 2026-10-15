@@ -51,6 +51,7 @@
 
   // Partícula genérica con sprite
   function part(name, x, y, vx, vy, life, o) {
+    var Q = G.Q; if (fx.parts.length >= Q.partCap || (Q.pm < 1 && Math.random() > Q.pm)) return;   // calidad adaptativa: menos partículas
     o = o || {};
     fx.parts.push({ name: name, f: Math.floor(Math.random() * 3), x: x, y: y, vx: vx, vy: vy, life: life, max: life,
       g: o.g || 0, drag: o.drag || 0, sc: o.sc || 1, grow: o.grow || 0, add: !!o.add, anim: !!o.anim, rot: o.rot || 0 });
@@ -99,7 +100,7 @@
   };
   // Partícula de color (cuadradito) para las etiquetas
   fx.dot = function (x, y, vx, vy, life, color, size, o) {
-    if (fx.cps.length > 500) return;
+    var Q = G.Q; if (fx.cps.length > Q.cpsCap || (Q.pm < 1 && Math.random() > Q.pm)) return;
     o = o || {};
     fx.cps.push({ x: x, y: y, vx: vx, vy: vy, life: life, max: life, color: color, size: size || 3, add: !!o.add, g: o.g || 0, drag: o.drag || 3 });
   };
@@ -117,7 +118,16 @@
   // Tajo en arco (usa el sprite de tajo del juego teñido)
   fx.slash = function (x, y, ang, sc, color) { fx.slashes.push({ x: x, y: y, ang: ang, sc: sc, color: color, t: 0, max: 220, flip: Math.random() < 0.5 }); };
   fx.num = function (x, y, text, color, big) {
-    if (fx.nums.length > 70 && !big) return;
+    var Q = G.Q;
+    if (fx.nums.length > Q.nums && !big) return;
+    if (Q.agg && !big && /^\d+$/.test(String(text))) {   // calidad baja: los números de daño cercanos se suman en uno solo
+      for (var i = fx.nums.length - 1; i >= 0 && i > fx.nums.length - 12; i--) {
+        var q = fx.nums[i];
+        if (q.val != null && q.t < 260 && Math.abs(q.x - x) < 46 && Math.abs(q.y - (y - 14) - 0) < 60) { q.val += +text; q.text = String(q.val); q.size = Math.min(22, q.size + 0.4); q.t = Math.min(q.t, 120); return; }
+      }
+      fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), val: +text, color: color || '#fff', size: 14 });
+      return;
+    }
     fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), color: color || '#fff', size: big ? 20 : 14 });
   };
 

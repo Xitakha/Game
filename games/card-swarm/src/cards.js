@@ -205,7 +205,7 @@
   C.pick = function (i) {
     var O = C.off, id = O.cards[i]; if (!id) return;
     if (C.slotOf(id) || C.count() < SLOTS) { finish(C.add(id), id); return; }
-    O.replacing = id; G.Snd.play('flip'); msg('Mano llena: elige el slot a reemplazar (1-5 o clic). Esc cancela.');
+    O.replacing = id; G.Snd.play('flip'); msg(G.Sys.isTouch() ? 'Mano llena: toca el slot a reemplazar.' : 'Mano llena: elige el slot a reemplazar (1-5 o clic). Esc cancela.');
   };
   C.replace = function (slot) {
     var O = C.off, h = hand(), id = O.replacing; if (!id || !h[slot]) return;
@@ -240,8 +240,10 @@
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
     return { x: 280 + i * 82, y: 428, w: 72, h: 96 };
   };
-  C.skipRect = { x: 580, y: 440, w: 250, h: 26 };
-  C.rerollRect = { x: 580, y: 360, w: 250, h: 46 };
+  C.skipRect = { x: 580, y: 440, w: 250, h: 48 };
+  C.rerollRect = { x: 580, y: 352, w: 250, h: 48 };
+  C.discardRect = { x: 110, y: 460, w: 430, h: 48 };   // táctil: activa el modo descartar y se toca la carta de la mano
+  function U_btn(c, r, label, col, border, size) { c.fillStyle = col; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = border; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3); G.txt(c, label, r.x + r.w / 2, r.y + r.h / 2, size, '#fff', 'center'); }
   function inR(r, m) { return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }
 
   C.update = function (dt) {
@@ -257,10 +259,13 @@
       }
       return;
     }
+    if (inp.hit('Mouse0') && inR(C.discardRect, m)) { O.discardMode = !O.discardMode; G.Snd.play('flip'); return; }
     for (i = 0; i < SLOTS; i++) {
       if (shift && inp.hit('Digit' + (i + 1))) { C.discard(i); return; }
       if (inp.hit('Mouse2') && inR(C.slotRect(i, true), m)) { C.discard(i); return; }
+      if (O.discardMode && inp.hit('Mouse0') && inR(C.slotRect(i, true), m)) { if (G.player.hand[i]) { O.discardMode = false; C.discard(i); } return; }
     }
+    if (O.discardMode && inp.hit('Mouse0')) { O.discardMode = false; return; }   // tocar en otro sitio cancela
     if (O.mode === 'level' && (inp.hit('Digit4', 'Numpad4', 'Space') || (inp.hit('Mouse0') && inR(C.skipRect, m)))) { C.skip(); return; }
     if (inp.hit('KeyR') || (inp.hit('Mouse0') && inR(C.rerollRect, m))) { C.reroll(); return; }
     for (i = 0; i < O.cards.length; i++) {
@@ -493,20 +498,22 @@
     C.drawComboLines(c, true);
     // reroll
     var rr = C.rerollRect, cost = C.rerollCost(), can = p.ash >= cost, rh = inR(rr, m);
+    var tch = G.Sys.isTouch();
     c.fillStyle = can ? (rh ? '#d97a2a' : '#a85a1a') : '#3a2f3d'; c.fillRect(rr.x, rr.y, rr.w, rr.h);
     c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x, rr.y, rr.w, rr.h);
-    G.txt(c, 'REROLL (R)  -  ' + cost + ' Ceniza', rr.x + rr.w / 2, rr.y + rr.h / 2, 16, can ? '#fff' : '#9a8fa0', 'center');
-    G.txt(c, 'Ceniza: ' + p.ash, rr.x + rr.w / 2, rr.y + rr.h + 20, 16, '#ff9a3c', 'center');
+    G.txt(c, (tch ? 'REROLL' : 'REROLL (R)') + '  -  ' + cost + ' Ceniza', rr.x + rr.w / 2, rr.y + rr.h / 2, 16, can ? '#fff' : '#9a8fa0', 'center');
+    G.txt(c, 'Ceniza: ' + p.ash, rr.x + rr.w / 2, rr.y + rr.h + 18, 16, '#ff9a3c', 'center');
+    var dr = C.discardRect, dOn = !!O.discardMode;
+    U_btn(c, dr, dOn ? 'TOCA LA CARTA QUE QUIERES DESCARTAR' : (tch ? 'DESCARTAR UNA CARTA DE LA MANO  (+10 Ceniza)' : 'DESCARTAR (Shift+1..5 / clic dcho.)  +10 Ceniza'), dOn ? '#a02030' : '#3a2f48', dOn ? '#ff8a8a' : '#8a6a8a', 13);
     if (O.mode === 'level') {
       var sk = C.skipRect, sh = inR(sk, m);
       c.fillStyle = sh ? '#4a6a4a' : '#324a38'; c.fillRect(sk.x, sk.y, sk.w, sk.h);
       c.strokeStyle = '#9be59b'; c.lineWidth = 3; c.strokeRect(sk.x, sk.y, sk.w, sk.h);
-      G.txt(c, 'OMITIR (4 / Espacio)  +' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + sk.h / 2, 14, '#fff', 'center');
+      G.txt(c, (tch ? 'OMITIR' : 'OMITIR (4 / Espacio)') + '  +' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + sk.h / 2, 14, '#fff', 'center');
     }
     // ayuda
-    G.txt(c, '1 / 2 / 3 o clic: elegir     4 / Espacio: omitir     R: reroll', G.W / 2, 474, 13, '#d8cfe8', 'center');
-    G.txt(c, 'Descartar: Shift+1..5 o clic derecho en el slot (+10 Ceniza)', G.W / 2, 494, 13, '#d8cfe8', 'center');
-    if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 522, 14, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
+    if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 524, 14, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
+    else G.txt(c, tch ? 'Toca una carta para elegirla' : '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 524, 13, '#d8cfe8', 'center');
     c.restore();
   };
 })();

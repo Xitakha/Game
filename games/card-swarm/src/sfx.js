@@ -9,14 +9,20 @@
     if (!ac) {
       try {
         ac = new (window.AudioContext || window.webkitAudioContext)();
-        master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+        master = ac.createGain(); master.gain.value = S.muted ? 0 : 0.55; master.connect(ac.destination);
         var n = ac.sampleRate * 0.5, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
         for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
         noise = b;
       } catch (e) { ac = null; }
     }
-    if (ac && ac.state === 'suspended') ac.resume();
+    if (ac && ac.state !== 'running') { try { ac.resume(); } catch (e2) { /* audio */ } }
   };
+
+  // Móvil: el contexto se suspende al ocultar la página y se reanuda con el primer toque (iOS lo deja en 'interrupted')
+  S.suspend = function () { try { if (ac && ac.state === 'running') ac.suspend(); } catch (e) { /* audio */ } };
+  S.resume = function () { try { if (ac && ac.state !== 'running') ac.resume(); } catch (e) { /* audio */ } };
+  S.setMuted = function (m) { S.muted = !!m; if (master) master.gain.value = S.muted ? 0 : 0.55; };
+  S.state = function () { return ac ? ac.state : 'none'; };
 
   function tone(type, f0, f1, dur, vol, delay) {
     var t = ac.currentTime + (delay || 0), o = ac.createOscillator(), g = ac.createGain();

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Estudio - juegos</title>
+<meta name="theme-color" content="#07050c">
+<link rel="icon" type="image/png" href="card-swarm/icons/icon-192.png">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#07050c;color:#e8dcb0;font:bold 16px "Courier New",monospace}
+  body{padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+    background:radial-gradient(ellipse at 50% 0,#2a1d3a 0,#07050c 70%) no-repeat;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+  h1{color:#ffd27a;font-size:28px;margin:18px 0 4px;text-shadow:0 3px #0a0610}
+  p.sub{color:#9a8fb0;margin:0 0 22px;text-align:center}
+  .grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:760px;width:100%}
+  .card{flex:1 1 300px;background:#1a1226;border:3px solid #8a7aa6;padding:14px;text-decoration:none;color:inherit;display:block}
+  .card:active,.card:hover{border-color:#ffd27a;background:#241a32}
+  .card img{width:72px;height:72px;float:left;margin-right:12px;image-rendering:auto}
+  .card h2{margin:0 0 6px;color:#ffd27a;font-size:20px}
+  .card span{color:#d8cfe8;font-size:14px;font-weight:normal}
+  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;margin-top:10px;background:#2a8a4a;border:3px solid #9dffb4;color:#fff;font:inherit;text-decoration:none;cursor:pointer}
+  .btn.alt{background:#4a3a66;border-color:#8a7aa6}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:20px 0}
+  small{color:#6f6480;margin-top:auto;padding-top:24px;text-align:center}
+</style>
+</head>
+<body>
+<h1>Mini Estudio</h1>
+<p class="sub">Juegos hechos con cariño. Se juegan en el navegador, también en el móvil.</p>
+<div class="grid">
+  <a class="card" href="card-swarm/">
+    <img src="card-swarm/icons/icon-192.png" alt="">
+    <h2>Swarm Hand</h2>
+    <span>Survivors donde tu mano de cartas dispara sola y los combos de etiquetas hacen el resto. Instalable y sin conexión. Mejor en horizontal.</span>
+  </a>
+  <a class="card" href="survival-lamb/">
+    <h2>Ember Flock</h2>
+    <span>El prototipo anterior: un cordero, un rebaño y mucha ceniza. Pensado para teclado y ratón.</span>
+  </a>
+</div>
+<div class="row">
+  <a class="btn" href="card-swarm/?install=1">Instalar Swarm Hand</a>
+  <a class="btn alt" href="card-swarm/">Jugar ahora</a>
+</div>
+<small>Android: abre Swarm Hand y pulsa "Instalar". iPhone: Compartir, "Añadir a pantalla de inicio".</small>
+</body>
+</html>

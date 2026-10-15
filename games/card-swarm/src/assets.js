@@ -1835,6 +1835,8 @@
       return ok;
     }, function () { return false; });
   };
+  Assets.suspendAudio = function () { try { if (ctx && ctx.state === 'running') ctx.suspend(); } catch (e) { /* audio */ } };
+  Assets.resumeAudio = function () { try { if (ctx && ctx.state !== 'running') ctx.resume(); } catch (e) { /* audio */ } };
   Assets.isUnlocked = function () { return !!ctx && ctx.state === 'running'; };
   Assets.setVolume = function (v) { for (var k in v) if (k in vol) vol[k] = Math.max(0, Math.min(1, v[k])); applyVol(); };
   Assets.getVolume = function () { return { master: vol.master, sfx: vol.sfx, music: vol.music }; };

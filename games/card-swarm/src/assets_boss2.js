@@ -1227,7 +1227,7 @@
       }
       var g = ctx.createLinearGradient(-th, 0, 0, 0);
       if (lava) { g.addColorStop(0, 'rgba(255,106,26,0.35)'); g.addColorStop(1, 'rgba(255,170,40,0.95)'); } else { g.addColorStop(0, 'rgba(40,150,170,0.3)'); g.addColorStop(1, 'rgba(70,190,200,0.95)'); }
-      ctx.fillStyle = g; ctx.fillRect(-th, y0, th, h);
+      ctx.fillStyle = (window.G && G.fg) ? G.fg(g, lava ? 'rgba(255,140,34,0.7)' : 'rgba(55,170,185,0.65)') : g; ctx.fillRect(-th, y0, th, h);
       ctx.beginPath(); ctx.moveTo(0, y0); for (var yy = y0; yy <= y1; yy += 8) ctx.lineTo(Math.sin(yy / 9 + t / 120) * 5, yy); ctx.lineTo(-10, y1); ctx.lineTo(-10, y0); ctx.closePath();
       ctx.strokeStyle = lava ? '#ffe45a' : '#e8fffa'; ctx.lineWidth = 4; ctx.stroke();
       ctx.fillStyle = lava ? 'rgba(255,230,120,0.7)' : 'rgba(232,255,250,0.75)'; for (i = 0; i < Math.floor(h / 22); i++) { var by2 = y0 + 11 + i * 22; ctx.beginPath(); ctx.arc(-4 - ((i * 7 + t / 20) % 24), by2 + Math.sin(i + t / 200) * 4, 3, 0, TAU); ctx.fill(); }

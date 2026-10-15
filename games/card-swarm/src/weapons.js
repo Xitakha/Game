@@ -16,6 +16,7 @@
 
   // ------------------------------------------------------------- Proyectiles del jugador
   function spawnProj(o) {
+    if (G.projectiles.length > G.Q.projCap * 1.5) return;
     G.projectiles.push({ team: 'p', x: o.x, y: o.y, vx: Math.cos(o.ang) * o.speed, vy: Math.sin(o.ang) * o.speed, ang: o.ang, dmg: o.dmg,
       tag: o.tag, id: o.id, kind: o.kind, r: o.r || 6, life: o.life || 1600, pierce: !!o.pierce, explode: o.explode || 0,
       o: o.o || {}, hit: new Set(), t: 0, rot: 0, back: false, speed: o.speed, bounce: o.bounce || 0 });
@@ -362,7 +363,7 @@
       c.save();
       var g = c.createRadialGradient(p.x, p.y, R * 0.3, p.x, p.y, R);
       g.addColorStop(0, 'rgba(' + k + ',0.04)'); g.addColorStop(1, 'rgba(' + k + ',0.28)');
-      c.fillStyle = g; c.beginPath(); c.arc(p.x, p.y, R, 0, 6.283); c.fill();
+      c.fillStyle = G.fg(g, 'rgba(' + k + ',0.14)'); c.beginPath(); c.arc(p.x, p.y, R, 0, 6.283); c.fill();
       c.strokeStyle = 'rgba(' + k + ',0.7)'; c.lineWidth = 2; c.setLineDash([8, 10]); c.lineDashOffset = -t * 30;
       c.beginPath(); c.arc(p.x, p.y, R * (0.97 + 0.03 * Math.sin(t * 4)), 0, 6.283); c.stroke(); c.restore();
       if (Math.random() < 0.25) { var a = G.rnd(0, 6.283), r = G.rnd(0.2, 1) * R; fx.dot(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 0, d.tag === 'ice' ? 10 : -25, 600, d.tag === 'ice' ? '#d8f2ff' : '#7be34a', 3, { drag: 1 }); }

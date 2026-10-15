@@ -610,7 +610,7 @@
       else {
         var g = c.createRadialGradient(POOLS[i][0], POOLS[i][1], r * 0.2, POOLS[i][0], POOLS[i][1], r);
         g.addColorStop(0, 'rgba(110,200,235,0.8)'); g.addColorStop(0.8, 'rgba(60,140,200,0.7)'); g.addColorStop(1, 'rgba(40,110,170,0.5)');
-        c.fillStyle = g; c.beginPath(); c.ellipse(POOLS[i][0], POOLS[i][1], r, r * 0.8, 0, 0, TAU); c.fill();
+        c.fillStyle = G.fg(g, 'rgba(60,140,200,0.7)'); c.beginPath(); c.ellipse(POOLS[i][0], POOLS[i][1], r, r * 0.8, 0, 0, TAU); c.fill();
         c.strokeStyle = 'rgba(210,245,255,' + (0.5 + 0.2 * Math.sin(t / 300 + i)) + ')'; c.lineWidth = 3; c.stroke();
         c.strokeStyle = 'rgba(210,245,255,0.35)'; c.lineWidth = 2; c.beginPath(); c.ellipse(POOLS[i][0], POOLS[i][1], r * (0.45 + 0.1 * Math.sin(t / 400 + i)), r * 0.36, 0, 0, TAU); c.stroke();
       }

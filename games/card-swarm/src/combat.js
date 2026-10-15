@@ -275,7 +275,7 @@
       var g = c.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r);
       var fk = z.kind === 'napalm' || z.kind === 'embers', k = z.kind === 'vapor' ? '232,246,255' : fk ? '255,130,40' : '110,220,70';
       g.addColorStop(0, 'rgba(' + k + ',0.7)'); g.addColorStop(1, 'rgba(' + k + ',0.05)');
-      c.fillStyle = g; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r * 0.8, 0, 0, 6.283); c.fill();
+      c.fillStyle = G.fg(g, 'rgba(' + k + ',0.4)'); c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r * 0.8, 0, 0, 6.283); c.fill();
       c.globalAlpha = 0.6 * u; c.strokeStyle = z.kind === 'vapor' ? '#ffffff' : fk ? '#ffb347' : '#9aff6a'; c.lineWidth = 2;
       c.beginPath(); c.ellipse(z.x, z.y, z.r * (0.9 + 0.05 * Math.sin(t * 5 + i)), z.r * 0.72, 0, 0, 6.283); c.stroke();
       c.restore();

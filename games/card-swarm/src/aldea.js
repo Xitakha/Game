@@ -235,7 +235,7 @@
   }
 
   // ------------------------------------------------------------- Botones de pantalla
-  var R_TALK = { x: 850, y: 430, w: 96, h: 96 }, R_PORTAL = { x: 12, y: 486, w: 76, h: 44 }, R_MENU = { x: 906, y: 6, w: 48, h: 44 };
+  var R_TALK = { x: 850, y: 430, w: 96, h: 96 }, R_PORTAL = { x: 12, y: 482, w: 100, h: 48 }, R_MENU = { x: 896, y: 4, w: 58, h: 50 };
 
   A.update = function (dt) {
     time += dt;
@@ -413,16 +413,17 @@
     G.txt(c, q ? 'Encargo: ' + q : 'Sin encargo (habla con Vesper)', 14, 39, 10, q && Q.isReady() ? '#9dffb4' : '#d8cfe8', 'left');
     var h = U.inR(R_MENU, inp.mouse);
     c.fillStyle = h ? '#4a3a66' : 'rgba(10,6,18,0.72)'; c.fillRect(R_MENU.x, R_MENU.y, R_MENU.w, R_MENU.h); c.strokeStyle = '#8a7aa6'; c.lineWidth = 3; c.strokeRect(R_MENU.x + 1.5, R_MENU.y + 1.5, R_MENU.w - 3, R_MENU.h - 3);
-    c.fillStyle = '#fff'; for (var i = 0; i < 3; i++) c.fillRect(R_MENU.x + 12, R_MENU.y + 11 + i * 8, 24, 4);
+    c.fillStyle = '#fff'; for (var i = 0; i < 3; i++) c.fillRect(R_MENU.x + 17, R_MENU.y + 14 + i * 9, 24, 4);
   }
 
   function drawButtons(c, tg) {
-    U.button(c, R_PORTAL, 'PORTAL', { size: 12, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: 'Tab' });
-    if (tg && !D.active()) U.button(c, R_TALK, tg.id === 'portal' ? 'PORTAL' : 'HABLAR', { size: 17, sub: '[E]' });
+    U.button(c, R_PORTAL, 'PORTAL', { size: 14, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.Sys.isTouch() ? null : 'Tab' });
+    if (tg && !D.active()) U.button(c, R_TALK, tg.id === 'portal' ? 'PORTAL' : 'HABLAR', { size: 17, sub: G.Sys.isTouch() ? null : '[E]' });
   }
 
   // Zona del joystick táctil: mitad izquierda, solo en modo caminar sin diálogo
   A.joyOK = function () { return G.state === 'aldea' && mode === 'walk' && !D.active() && !fade; };
+  A.sysBarOK = function () { return G.state === 'aldea' && mode === 'walk' && !D.active() && !fade; };
   A.pos = M;
   A.state = function () { return { mode: mode, panel: (G.Panels.current() || panel), dialog: D.active(), x: M.x, y: M.y, target: (target() || {}).id || null }; };
   // Depuración/bot: teletransporta a Marlo junto a un interactuable

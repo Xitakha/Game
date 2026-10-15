@@ -116,7 +116,7 @@
     var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
     var bp = B.bp(m) * (bm ? bm.mul : 1);
     W.budget = Math.min(W.budget + bp, bp * 2.5);
-    var cap = bm ? bm.cap : B.cap(m), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
+    var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.Q.enemyMul)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
     if (bm && bm.mul <= 0) return;
     G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];
