@@ -12,6 +12,14 @@ python3 -m http.server 8123
 ```
 (También funciona abriendo `index.html` directamente.)
 
+## Móvil y PWA (Nivel 1 + 2)
+Guía para el dueño: `MOVIL.md`. Código: `src/mobile.js` (`G.Sys`: escala 16:9 con letterbox y `env(safe-area-inset-*)`, DPR máx. 2, aviso "gira el teléfono", pantalla completa, pausa automática en visibilitychange / pagehide / blur / orientationchange con `G.resetClock()`, audio suspendido y reanudado, silencio, botones de pausa / silencio / pantalla completa en el lienzo, medidor de fps y calidad adaptativa `G.Q`) y `src/pwa.js` (`G.PWA`: service worker, aviso de versión nueva, Instalar / ayuda iOS, exportar / importar guardado). Entrada unificada con Pointer Events en `main.js` (ratón, táctil, lápiz; varios dedos). `sw.js` + `manifest.webmanifest` + `icons/` (generados por código con `tools/card-swarm-pwa/make-icons.js`); `tools/card-swarm-pwa/stamp.py` regenera la lista de precache y la versión (hash del contenido).
+- **Calidad (Ajustes -> Gráficos, `settings.quality` en el save):** Alta (resolución interna hasta x2, todo), Media (x1,5, 60 % de partículas, 1 capa de niebla, 24 luciérnagas, tope de proyectiles 260, 90 % de enemigos), Baja (x1, 30 % de partículas, sin niebla / viñeta / luciérnagas, números de daño sumados, degradados planos en zonas y telegrafías, tope de proyectiles 150, 75 % de enemigos), Auto (arranca en Media en móvil y en Alta en escritorio; baja un nivel si la media de los últimos 45 fotogramas es < 45 fps durante 3 s; guarda `settings.qlast`). Escritorio: lienzo 960x540 pixelado como siempre.
+- **Táctil:** joystick flotante (mitad izquierda), toque = clic, deslizar horizontal = cambiar pestaña, pausa con menú táctil (CONTINUAR, GRÁFICOS, SONIDO, REINICIAR práctica, ABANDONAR con doble toque), modo DESCARTAR en la pantalla de cartas, OMITIR / REROLL de 48 px.
+- **URL de depuración:** `?q=alta|media|baja|auto`, `?fps=1` (contador), `?safe=t,r,b,l` (simula la muesca), `?mobile=1`, `?nosw=1`.
+- **Despliegue:** `.github/workflows/pages.yml` (push a `main` o manual) ensambla `_site/` con `tools/site/index.html`, `card-swarm/` y `survival-lamb/` sin `.md`.
+- **Pruebas (Playwright, Chromium emulando 844x390 / 390x844 / 360x640 con DPR 3):** recorrido solo con toques aldea -> Vesper -> Tablón -> Portal -> expedición -> cartas (descartar, omitir) -> pausa multitáctil -> botín -> Forja -> Cacería -> práctica -> jefe -> fin; 0 errores de consola; service worker, offline, versión nueva, manifest e iconos; capturas en `studio/docs/capturas-movil/`. fps con CPU 4x en Chromium sin GPU (horda / minijefe / jefe): antes 9,3 / 8,8 / 8,5; Auto 15,7 / 16,0 / 14,8 (baja a Baja); fijo Alta x1,45 5,3 / 4,8 / 5,0 y Media 7,0 / 6,0 / 6,5 (la resolución interna pesa mucho sin GPU; en móviles reales el lienzo va acelerado).
+
 ## Bucle completo (v3: Aldea, Fases 2a y 2b)
 **Aldea -> Portal -> Expedición -> Botín (R = repetir sin pasar por la aldea) -> Aldea.** La pantalla principal es **Rescoldo** (`src/aldea.js`), una aldea caminable de una pantalla
 (960x540, escala a cualquier tamaño). Marlo se mueve con WASD / flechas (o el joystick táctil flotante de la mitad izquierda), interactúa con **E / Enter** (o el botón táctil
@@ -152,7 +160,7 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 | Reintentar mismo build (pantalla final) | R / Enter / botón |
 | Ir a la Aldea desde el botín | B / Esc / botón |
 | Aldea: mover / hablar / portal / menú | WASD o flechas / E o Enter / Tab / Esc |
-| Táctil | toque = clic; joystick flotante a la izquierda (aldea y expedición); botón HABLAR 96 px; deslizar = cambiar pestaña |
+| Táctil | toque = clic; joystick flotante a la izquierda (aldea y expedición); botón HABLAR 96 px; icono de pausa; DESCARTAR en cartas; deslizar = cambiar pestaña (ver "Móvil y PWA") |
 
 ## Contenido
 - **28 cartas** (18 de ataque + 10 pasivas): las 26 de siempre + **Bobina** (Rayo, torreta) y **Murciélago** (Sangre, persigue y rebota) de la Fase 2b (las 28 del GDD original), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
