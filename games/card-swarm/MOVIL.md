@@ -19,7 +19,7 @@ Todas las rutas son relativas, así que funciona bajo la subruta `/Game/` (manif
 - Después de la primera carga el juego funciona **sin conexión**. Cuando subas una versión nueva, el juego muestra "Hay una versión nueva - RECARGAR" (nunca recarga solo en mitad de una expedición).
 
 ## 4. Controles táctiles
-Aldea: joystick flotante en la mitad izquierda, botón HABLAR (96 px), PORTAL y menú. Expedición: joystick flotante a la izquierda, iconos de pausa y silencio arriba, tocar la carta para elegirla, OMITIR, REROLL y DESCARTAR (se pulsa y luego se toca la carta). Todo lo demás (Tablón, Forja, Archivo, Portal, Cacería, Práctica, Ajustes) se maneja con toques. Calidad gráfica: Ajustes -> Gráficos (Auto / Alta / Media / Baja).
+Aldea: joystick flotante en la mitad izquierda, botón HABLAR (96 px), PORTAL y menú. Expedición: joystick flotante a la izquierda, iconos de pausa y silencio arriba, tocar la carta para elegirla, OMITIR, REROLL y DESCARTAR (se pulsa y luego se toca la carta). El selector de duración del Portal (Rápida / Normal / Larga) son tres botones táctiles de 92 x 52 px. Todo lo demás (Tablón, Forja, Archivo, Portal, Cacería, Práctica, Ajustes) se maneja con toques. Calidad gráfica: Ajustes -> Gráficos (Auto / Alta / Media / Baja).
 
 ## 5. Copia del guardado
 Ajustes -> **Exportar guardado** (texto + archivo, copiar o compartir) e **Importar guardado**. Úsalo antes de limpiar datos del navegador, cambiar de móvil o si el navegador avisa de que bloquea el guardado (modo privado).

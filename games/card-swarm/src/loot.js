@@ -13,13 +13,14 @@
   //   brasas   x Brasas de la run y del jefe (no toca los trofeos ni la recompensa fija de encargos)
   //   pf       x PF del jefe (redondeado: 2 -> 3 en Rápida) y x fragmentos de PF por minijefe (1,4 por kill; 2 fragmentos = 1 PF). No toca el primer élite ni los encargos
   //   rare     x probabilidad de Esencia rara (por muerte, de minijefes y extra del Peligro; la del pity también). El trofeo / Esencia segura del jefe no cambia
-  //   bossHp   x HP del jefe encima de G.Boss.durMul()      bossDmg  x daño del jefe encima del Peligro
+  //   bossHp   x HP del jefe encima de G.Boss.durMul() (que ya da x0,75 / x1 / x1,10)      bossDmg  x daño del jefe encima del Peligro
+  //            Medido (bot, Pastor Peligro I, 24 peleas x 3 builds): Larga con 1,00/1,00 = 59 % de victorias vs 67 % Normal; con 1,04 = 51 %; con 1,18 / 1,04 = 48 %. Sube bossHp/bossDmg para endurecerla.
   //   guardHp  x HP de los guardianes (minijefes: Coloso Escudero / Madre Colmena / sus variantes)
   //   Cacería: no hay hordas ni botín de run, así que la duración solo cambia el HP del jefe (bossHp x durMul) y el PF (pf); partes y Brasas de la cacería no se escalan.
   L.DUR = {
     7:  { id: 'rapida', name: 'Rápida', min: 7,  parts: 0.80, brasas: 0.80, pf: 1.4, rare: 1.0, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.00, tag: 'Menos botín, más PF',        gives: '+40 % PF', costs: 'Botín x0,8' },
     9:  { id: 'normal', name: 'Normal', min: 9,  parts: 1.00, brasas: 1.00, pf: 1.0, rare: 1.0, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.00, tag: 'Equilibrada',                gives: 'Referencia', costs: '' },
-    10: { id: 'larga',  name: 'Larga',  min: 10, parts: 1.15, brasas: 1.15, pf: 1.0, rare: 1.5, bossHp: 1.15, bossDmg: 1.05, guardHp: 1.25, tag: 'Más botín, jefe más duro', gives: 'Botín x1,15, Esencia x1,5', costs: 'Jefe +15 % HP' }
+    10: { id: 'larga',  name: 'Larga',  min: 10, parts: 1.15, brasas: 1.15, pf: 1.0, rare: 1.5, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.25, tag: 'Más botín, jefe más duro', gives: 'Botín x1,15, Esencia x1,5', costs: 'Jefe +15 % HP' }
   };
   L.durKey = function (min) { return min <= 7 ? 7 : min >= 10 ? 10 : 9; };
   L.dur = function (min) { return L.DUR[L.durKey(min == null ? G.RUN_LEN / 60000 : min)]; };

@@ -367,12 +367,12 @@
     G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 650, 191, 10, '#9dffb4', 'left');
     G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 650, 202, 10, '#ffb08a', 'left');
     // encargo y compras pendientes
-    U.panel(c, 650, 208, 290, 54);
-    G.txt(c, 'ENCARGO ACTIVO', 662, 220, 11, '#9a8fb0', 'left');
+    U.panel(c, 650, 210, 290, 52);
+    G.txt(c, 'ENCARGO ACTIVO', 662, 222, 11, '#9a8fb0', 'left');
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
-    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 234 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    if (Q.target()) G.txt(c, 'Objetivo: peso x2,5', 930, 220, 10, '#9dffb4', 'right');
+    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 236 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
+    if (Q.target()) G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right');
     U.panel(c, 650, 266, 290, 56);
     G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
     var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 309, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');

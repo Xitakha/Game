@@ -32,10 +32,29 @@ si no existe, se dibuja un fallback de rectángulos. Luz: Día al abrir o tras g
   El enemigo objetivo de los encargos de caza pesa **x2,5** en el director (`waves.js`) y su entrada se adelanta a 2:30 virtuales. Son repetibles.
 - **Rufo (mercader):** **Trueque** (3 partes comunes por 1; Hebra 6 por 1; cupo de 4 por expedición, se reinicia al volver de una salida), **Vender** (3 Brasas por parte, Hebra 1; v5, antes 6 / 3) y
   **Comprar** (Tónico de ceniza 80: +40 Ceniza; Imán de bolsillo 120: radio x1,5; parte común 24, cupo 3). Las raras no se truecan ni se venden.
-- **Portal:** mano al salir (anclas), selector 7 / 9 / 10 min, encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
+- **Portal:** mano al salir (anclas), selector de duración Rápida 7 / Normal 9 / Larga 10 min (con resumen de lo que ofrece y cuesta), encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
 - **Ulalume (archivista):** colección completa con filtros por etiqueta, anclas con vista previa de combos y 3 loadouts. **Tía Castaña:** platos con buff de expedición. **Abuelo Lanudo:** lore, consejos y logros (ver "Fase 2b").
 - **Anclas:** `G.B.anchorSlots` = 2 (3 con el nodo Tercera ancla). Se eligen en el Archivo de Ulalume o en el Portal. Los otros slots se llenan al subir de nivel con cartas desbloqueadas.
-- **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`.
+- **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`. Es una elección de riesgo/recompensa: ver "Duraciones de expedición" abajo.
+
+## Duraciones de expedición (Rápida / Normal / Larga)
+Todos los multiplicadores viven en **una tabla: `G.Loot.DUR`** (`src/loot.js`, con comentarios; `G.Loot.dur()` devuelve la fila de la duración activa). Se guarda la última elegida en `Save.data.len` (guardado v4; un valor ausente o desconocido migra a 9 min). `?len=7|9|10` la fuerza sin tocar el guardado.
+
+| | Rápida (7 min) | Normal (9 min) | Larga (10 min) |
+|---|---|---|---|
+| Lema en el Portal | Menos botín, más PF | Equilibrada | Más botín, jefe más duro |
+| Partes / Brasas (x por minuto jugado, sobre el ritmo base) | x0,80 | x1 | x1,15 |
+| Puntos de Forja (jefe, y fragmentos por minijefe) | x1,4 (jefe 2 -> 3, 3 -> 4; fragmento 1,4) | x1 | x1 |
+| Esencia rara (por muerte, minijefes, extra de Peligro; con pity) | x1 | x1 | x1,5 |
+| HP del jefe (`durMul` x `bossHp`) | x0,75 | x1 | x1,10 x 1,00 = x1,10 |
+| Daño del jefe | x1 | x1 | x1 |
+| HP de guardianes | x1 | x1 | x1,25 |
+
+- Las partes garantizadas (élites y jefe) usan redondeo estocástico (media exacta). Los trofeos del jefe y los encargos no se escalan; el primer élite sigue dando +1 PF.
+- **Cacería:** sin hordas ni botín de run; la duración solo cambia el HP del jefe y el PF de la primera victoria (x1,4 en Rápida). Partes y Brasas de la cacería no se escalan. La práctica no da nada.
+- **Encargos:** recompensas fijas (no se escalan); "Corto y dulce" exige ganar en 7 min y "Maratón" (nuevo) ganar en 10 min; los de caza/kills cuentan lo que se mate en la duración elegida.
+- **UI:** el Portal muestra nombre, minutos, lema y los multiplicadores de la elegida (botones de 52 px); el HUD de la run muestra `RÁPIDA 7 min - botín x0,8 ...`; la pantalla de botín muestra la duración y sus multiplicadores.
+
 
 ## Fase 2b: árboles completos, Archivista, cocina, Lanudo, encargos y vida en la aldea
 Diseño: `DESIGN-v3-aldea.md` secciones B.4 y D. Arte del árbol en `assets_tree.js` (contrato en `ASSETS_API.md`; `tree.js` usa `Assets.drawTreeNode/Link/Tab/Burst/Icon` si existen y, si no, un dibujo propio).
