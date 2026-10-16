@@ -74,12 +74,12 @@
     for (var i = 2; i <= 5; i++) if (!m[2] || +m[2] === i) PEL[i][m[1]] = parseFloat(a[1]);
   });
   function pel() { return PEL[G.clamp(Math.round(G.peligro || 1), 1, 5)]; }
-  S.durMul = function () {
-    var m = G.RUN_LEN / 60000;
+  S.durMul = function (min) {
+    var m = min == null ? G.RUN_LEN / 60000 : min;
     if (m <= 7) return 0.75; if (m >= 10) return 1.1;
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
-  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
+  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
   S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
@@ -158,11 +158,11 @@
   }
 
   // ================================================================= UTILIDADES DE COMBATE
-  function dmgMul() { return pel().dmg * S.fury; }
+  function dmgMul() { return pel().dmg * G.Loot.dur().bossDmg * S.fury; }
   var HIT_CAP = 32;   // DESIGN 1.0: "el 1.er golpe de un ataque grande nunca pasa de 30": el daño de Peligro (+10 %/nivel) no lo sube de ~32 (la Furia sí multiplica encima)
   function hurt(e, base, src, o) {
     var p = PL(); if (p.dead || S.noHurt > 0) return false;
-    var b = base * pel().dmg; if (base <= HIT_CAP && b > HIT_CAP) b = HIT_CAP;
+    var b = base * pel().dmg * G.Loot.dur().bossDmg; if (base <= HIT_CAP && b > HIT_CAP) b = HIT_CAP;
     return G.Player.hurt(p, b * S.fury, e.x, e.y, o ? (o.src = src, o) : { src: src });
   }
   S.shoot = function (x, y, ang, speed, dmg) {

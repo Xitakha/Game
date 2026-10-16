@@ -12,7 +12,7 @@
   E.spawn = function (type, x, y, o) {
     o = o || {};
     var d = B.enemy[type], m = mins(), hp, dmg;
-    if (type === 'boss' || d.elite) { hp = d.hp; dmg = d.dmg; }       // jefe y élites no escalan por minuto
+    if (type === 'boss' || d.elite) { hp = d.hp * (d.elite ? G.Loot.dur().guardHp : 1); dmg = d.dmg; }   // guardianes: x guardHp de la duración (L.DUR)       // jefe y élites no escalan por minuto
     else { hp = d.hp * B.hpMult(m); dmg = d.dmg * B.dmgMult(m); }
     if (o.hp) hp = o.hp;
     var sc = o.scale || 1, r = d.r * sc, mg = G.WALL + r;

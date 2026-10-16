@@ -1,6 +1,6 @@
 /* quests.js - Encargos de Vesper (Fase 2b) y logros de Lanudo.
    Hay un pool de 20 encargos de 8 tipos: cazar enemigos (hunt), matar minijefes (mini), bajas totales (kills), romper partes de jefes (part, hook Q.onBossPart),
-   ganar con una etiqueta (wintag), sobrevivir sin recibir daño N s (clean) y ganar con la duración de 7 min (win7). El Tablón muestra 3 ofertas que ROTAN con el día y con
+   ganar con una etiqueta (wintag), sobrevivir sin recibir daño N s (clean) y ganar con la duración de 7 min o de 10 min (win7 / win10: la duración Rápida / Larga del Portal). El Tablón muestra 3 ofertas que ROTAN con el día y con
    cada expedición (una fácil, una media y una de condición; Q.offers) y, aparte, el encargo activo. Solo hay uno activo; el progreso persiste entre expediciones.
    El director (waves.js) lee Q.target(): el tipo objetivo de un encargo hunt/mini pesa x2,5 y entra como mucho a los 2:30 virtuales (Q.WEIGHT / Q.EARLY).
    Recompensas escalonadas por tier (1 fácil, 2 medio, 3 difícil): partes + Brasas + PF (+ 1 Esencia rara la primera vez en los de condición difíciles).
@@ -50,7 +50,9 @@
     { id: 'clean90', cat: 'C', tier: 3, kind: 'clean', name: 'Fantasma de Rescoldo', goal: 90, label: 'Sin daño', unit: ' s', rare: 1,
       desc: 'Aguanta 90 segundos seguidos sin recibir daño en una expedición.', rewardParts: { feather: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'win7', cat: 'C', tier: 2, kind: 'win7', name: 'Corto y dulce', goal: 1, label: 'Victoria en 7 min',
-      desc: 'Vence al jefe en una expedición de 7 minutos (selector del Portal).', rewardParts: { thread: 12, feather: 4 }, brasas: 110, pf: 1, pfRepeat: 1 }
+      desc: 'Vence al jefe en una expedición de 7 minutos (selector del Portal).', rewardParts: { thread: 12, feather: 4 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'win10', cat: 'C', tier: 3, kind: 'win7', len: 10, name: 'Maratón', goal: 1, label: 'Victoria en 10 min', rare: 1,
+      desc: 'Vence al jefe en una expedición Larga de 10 minutos: el jefe y los guardianes aguantan más.', rewardParts: { thread: 10, plate: 6 }, brasas: 160, pf: 2, pfRepeat: 1 }
   ];
   // Una variante "gana con una etiqueta" por etiqueta: victoria con 3 o más cartas de esa etiqueta en la mano final
   Object.keys(TAGN).forEach(function (tg) {
@@ -141,7 +143,7 @@
     else if (d.kind === 'clean') { var s = Math.floor(info.clean || 0); if (s > Q.progress(d.id)) { S().prog[d.id] = Math.min(d.goal, s); } }
     else if (d.kind === 'partkey') { if ((info.parts || []).indexOf(d.key) >= 0) S().prog[d.id] = 1; }
     else if (d.kind === 'nojump') { if (info.won && info.bossId === 'pastor' && !((info.hitBy || {}).boss_salto > 0)) S().prog[d.id] = 1; }
-    else if (d.kind === 'win7') { if (info.won && info.lenMin === 7) S().prog[d.id] = 1; }
+    else if (d.kind === 'win7') { if (info.won && info.lenMin === (d.len || 7)) S().prog[d.id] = 1; }
     else if (d.kind === 'wintag') {
       var n = (info.hand || []).filter(function (id) { var c = G.Cards.def(id); return c && c.tag === d.tag; }).length;
       if (info.won && n >= 3) S().prog[d.id] = 1;
@@ -169,7 +171,7 @@
     var d = Q.active(); if (!d) return null;
     if (d.kind === 'clean') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.cleanSecs()))) + '/' + d.goal + ' s';
     if (d.kind === 'wintag') return d.label + ' ' + Math.min(3, (G.Cards.mods.tagN || {})[d.tag] || 0) + '/3';
-    if (d.kind === 'win7') return d.label + (G.RUN_LEN === 7 * 60000 ? '' : ' (elige 7 min)');
+    if (d.kind === 'win7') return d.label + (G.RUN_LEN === (d.len || 7) * 60000 ? '' : ' (elige ' + (d.len || 7) + ' min)');
     if (d.kind === 'nojump') return d.label + (G.Boss.active ? ' - ¡cuidado!' : '');
     return d.label + ' ' + Math.min(d.goal, Q.progress(d.id)) + '/' + d.goal;
   };

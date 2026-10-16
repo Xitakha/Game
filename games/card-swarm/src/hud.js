@@ -84,6 +84,8 @@
     } else {
     G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo
     if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
+    G.txt(c, DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : ''), G.W / 2, 58, 10, '#8a7f96', 'center');
     }
     // kills, ceniza
     G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');

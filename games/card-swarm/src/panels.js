@@ -128,7 +128,8 @@
     U.panel(c, 20, 162, 612, 336, { border: '#6a4a30' });
     G.txt(c, D.name.toUpperCase(), 36, 184, 20, '#ffd27a', 'left');
     G.txt(c, D.title + '   -   Peligro ' + G.Boss.ROMAN[st.hp] + ': HP x' + PD.hp.toFixed(2).replace('.', ',') + ' x0,75 (cacería), daño +' + Math.round((PD.dmg - 1) * 100) + ' %', 36, 206, 12, '#c8b8e8', 'left');
-    G.txt(c, 'DEBILIDADES', 36, 232, 11, '#9a8fb0', 'left');
+    G.txt(c, 'Duración ' + L.dur(SV().len).name + ' (' + SV().len + ' min, la del Portal): HP jefe x' + (G.Boss.durMul(SV().len) * L.dur(SV().len).bossHp).toFixed(2).replace('.', ',') + ', PF x' + String(L.dur(SV().len).pf).replace('.', ','), 36, 220, 11, '#9dffb4', 'left');
+    G.txt(c, 'DEBILIDADES', 36, 236, 11, '#9a8fb0', 'left');
     var x = 36;
     D.weak.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, TAGC[w.tag] || '#9dffb4', 'left'); x += (t.length + 6) * 8.2 + 14; });
     D.resist.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, '#8a8a98', 'left'); x += (t.length + 6) * 8.2 + 14; });
@@ -141,7 +142,7 @@
     var bmin = Math.round(D.brasas * PD.brasas), bmax = Math.round((D.brasas + D.brasasPart * 3) * PD.brasas), pw = (S.pelWins[id] || {})[st.hp] || 0, hr = (S.hunts[id] || {})[st.hp] || { wins: 0, tries: 0, best: 0 }, pr = S.practice[id] || { tries: 0, wins: 0 };
     G.txt(c, 'RECOMPENSA', 36, 380, 11, '#9a8fb0', 'left');
     G.txt(c, bmin + '-' + bmax + ' Brasas, trofeos de las partes rotas, partes del jefe x' + PD.gmul.toFixed(2).replace('.', ','), 36, 398, 12, '#ffe9a0', 'left');
-    G.txt(c, 'PF: ' + (pw > 0 ? 'ya cobrados en este Peligro (sin farmeo)' : '+' + (D.pf + PD.pfx) + ' la primera vez') + '   -   sin Esencia segura, sin hordas', 36, 416, 12, pw > 0 ? '#9a8fb0' : '#ffd24a', 'left');
+    G.txt(c, 'PF: ' + (pw > 0 ? 'ya cobrados en este Peligro (sin farmeo)' : '+' + Math.round((D.pf + PD.pfx) * L.dur(SV().len).pf) + ' la primera vez') + '   -   sin Esencia segura, sin hordas', 36, 416, 12, pw > 0 ? '#9a8fb0' : '#ffd24a', 'left');
     G.txt(c, 'Cacería en Peligro ' + G.Boss.ROMAN[st.hp] + ': ' + hr.wins + ' victorias / ' + hr.tries + ' intentos' + (hr.best ? '   mejor ' + G.fmtTime(hr.best * 1000) : ''), 36, 444, 12, '#9dffb4', 'left');
     G.txt(c, 'Práctica: ' + pr.wins + ' victorias / ' + pr.tries + ' intentos', 36, 462, 12, '#9dffb4', 'left');
     G.txt(c, 'Preparación: 6 ofertas de carta seguidas; luego entra la bestia.', 36, 484, 11, '#c8b8e8', 'left');
@@ -294,7 +295,7 @@
   // ============================================================= PORTAL
   function handRect(i) { return { x: 20 + i * 84, y: 120, w: 72, h: 96 }; }
   function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
-  function lenRect(i) { return { x: 650 + i * 98, y: 100, w: 92, h: 56 }; }
+  function lenRect(i) { return { x: 650 + i * 98, y: 94, w: 92, h: 52 }; }
   var R_GO = { x: 650, y: 482, w: 290, h: 52 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
@@ -346,6 +347,7 @@
       else { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '?'); G.txt(c, 'ABIERTO', r.x + r.w / 2, r.y + r.h - 10, 10, '#6f6480', 'center'); }
     }
   }
+  function fx(v) { return String(v).replace('.', ','); }
   function drawPortal(c) {
     var S = SV(), list = unlockedList(), i, Q = G.Quests;
     bg(c, '¿LISTO, MARLO?'); header(c, 360);
@@ -358,22 +360,24 @@
       G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y + 8, r.w, r.h - 8, { nocd: true, glow: isA ? '#ffd24a' : null });
       if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 12, r.w, 12); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 6, 9, '#2a1a00', 'center', '#ffd24a'); }
     }
-    G.txt(c, 'DURACIÓN', 650, 86, 12, '#9a8fb0', 'left');
-    var subs = { 7: 'corta', 9: 'estándar', 10: 'larga' };
-    LENS.forEach(function (n, k) { var on = S.len === n; U.button(c, lenRect(k), n + ' min', { size: 17, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: subs[n] }); });
-    G.txt(c, 'Jefe a los ' + G.fmtTime(S.len * 60000 * 7.5 / 9) + '. Más tiempo = más botín.', 650, 172, 11, '#9a8fb0', 'left');
+    G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 650, 84, 12, '#9a8fb0', 'left');
+    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 16, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
+    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; G.txt(c, D.name + ': ' + D.tag, 650, 157 + k * 11, 10, on ? '#ffe9a0' : '#7a7086', 'left'); });
+    var dd = L.DUR[S.len] || L.DUR[9], pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp;
+    G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 650, 191, 10, '#9dffb4', 'left');
+    G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 650, 202, 10, '#ffb08a', 'left');
     // encargo y compras pendientes
-    U.panel(c, 650, 184, 290, 70);
-    G.txt(c, 'ENCARGO ACTIVO', 662, 200, 12, '#9a8fb0', 'left');
+    U.panel(c, 650, 208, 290, 54);
+    G.txt(c, 'ENCARGO ACTIVO', 662, 220, 11, '#9a8fb0', 'left');
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
-    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 220 + i * 15, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    if (Q.target()) G.txt(c, 'Objetivo: pesa x2,5 y llega antes', 662, 247, 10, '#9dffb4', 'left');
-    U.panel(c, 650, 258, 290, 62);
-    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 272, 11, '#9a8fb0', 'left');
-    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 307, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
-    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 291, 12, '#ffe9a0', 'left');
-    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 291, 12, '#8a7f96', 'left');
+    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 234 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
+    if (Q.target()) G.txt(c, 'Objetivo: peso x2,5', 930, 220, 10, '#9dffb4', 'right');
+    U.panel(c, 650, 266, 290, 56);
+    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
+    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 309, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
+    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 293, 12, '#ffe9a0', 'left');
+    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 293, 12, '#8a7f96', 'left');
     var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel];
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
