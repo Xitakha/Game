@@ -86,6 +86,7 @@
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     var tf = G.Tree.fx;
+    if (e.mat) dmg *= B.matMul(e, tag);   // debilidad / resistencia por material (A.8), antes de resonancia y talentos; e.mat solo existe con G.B.mat.on
     if (tag === 'fire') {
       dmg *= m.fireDmg;
       if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
@@ -171,6 +172,7 @@
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
+    if (e.mat) n *= B.matMul(e, tag);   // también los ticks de estados (A.8)
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     if (e.expT > 0) n *= e.expMul;
     e.hp -= n; e.lastTag = tag;

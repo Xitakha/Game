@@ -14,16 +14,23 @@
     var d = B.enemy[type], m = mins(), hp, dmg;
     if (type === 'boss' || d.elite) { hp = d.hp * (d.elite ? G.Loot.dur().guardHp : 1); dmg = d.dmg; }   // guardianes: x guardHp de la duración (L.DUR)       // jefe y élites no escalan por minuto
     else { hp = d.hp * B.hpMult(m); dmg = d.dmg * B.dmgMult(m); }
+    // Familia del bioma activo (families.js): piel, multiplicadores hp/spd/dmg y material. o.nofam = sin familia. Sin familia ready, fe = null (roster legado).
+    var fe = (type === 'boss' || d.elite || o.nofam) ? null : B.entry(type), spdK = 1, spr = d.spr;
+    if (fe) {
+      hp *= fe.hp || 1; dmg *= fe.dmg || 1; spdK = fe.spd || 1;
+      if (fe.spr && G.hasSpr(fe.spr)) spr = fe.spr;   // sprite propio de la familia; si no existe, el sprite actual del rol
+    }
     if (o.hp) hp = o.hp;
     var sc = o.scale || 1, r = d.r * sc, mg = G.WALL + r;
     var e = {
       type: type, x: G.clamp(x, mg, G.AW - mg), y: G.clamp(y, mg, G.AH - mg), r: r, hp: hp, maxHp: hp, spd: d.spd, dmg: dmg, sc: sc,
-      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: Math.random() * 1000,
+      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, spdBase: d.spd * spdK, spr: spr, skin: fe && fe.skin || null, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: Math.random() * 1000,
       hitCd: 0, burnT: 0, burnDps: 0, poisonT: 0, poisonN: 0, bleedT: 0, slowT: 0, slowPct: 0, stunT: 0, vaporCd: 0,
       acc: { fire: 0, poison: 0, blood: 0 }, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, boomDepth: 0, lastTag: 'neutral', summoned: !!o.summoned, src: o.src || null,
       shootT: G.rnd(1200, 2600), sumT: G.rnd(2500, 6000), atkT: 2000, ai: 0, strafe: Math.random() < 0.5 ? 1 : -1, fa: 0
     };
     e.spawnMax = e.spawnT;
+    if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
     switch (type) {
       case 'boss': e.spawnT = e.spawnMax = 900; e.sumT = 12000; e.atkT = 1500; e.callT = 14000; e.sporeT = 8000; e.age = 0; break;
       case 'fanner': e.shootT = G.rnd(1500, 3000); break;
@@ -89,7 +96,7 @@
     e.dead = true;
     if (silent) { fx.smoke(e.x, e.y, 4); return; }
     var p = PL(), i;
-    if (e.type !== 'boss') fx.corpse(B.enemy[e.type].spr, e.x, e.y, e.face < 0);
+    if (e.type !== 'boss') fx.corpse(e.spr || B.enemy[e.type].spr, e.x, e.y, e.face < 0);
     fx.puff(e.x, e.y, 2);
     fx.smoke(e.x, e.y, 5); fx.ember(e.x, e.y, 3, 10);
     var now = performance.now(); if (now - (E._dieSfx || 0) > 70) { E._dieSfx = now; G.sfx('enemy_die', { vol: 0.5 }); }
@@ -678,7 +685,7 @@
       // estados (quemado, veneno, sangrado...) y ralentización
       if (G.Combat.tickStatus(e, dt)) continue;
       var slowF = e.slowT > 0 ? 1 - e.slowPct : 1;
-      e.spd = B.enemy[e.type].spd * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
+      e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
       if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash'))) e.face = dx >= 0 ? 1 : -1;
@@ -955,7 +962,7 @@
 
   // Devuelve { cv, sc, fb } con el canvas actual del enemigo
   function visual(e) {
-    var name = B.enemy[e.type].spr, fb = FB[name];
+    var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
     if (!fb) return { cv: Assets.sprite(name, oldAnim(name, e)), sc: 1, fb: null };
     if (G.hasSpr(name)) { try { return { cv: Assets.sprite(name, newAnim(e)), sc: 1, fb: null }; } catch (x) { /* anim desconocida: usa el reemplazo */ } }
     return { cv: Assets.sprite(fb.spr, oldAnim(fb.spr, e)), sc: fb.sc || 1, fb: fb };
@@ -996,6 +1003,7 @@
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
+    if (e.skin && o.tint == null) { o.tint = e.skin.tint; o.tintA = e.skin.a != null ? e.skin.a : 0.35; }   // tinte de la piel de familia (si no hay ya un tinte de estado)
     if (v.fb && v.fb.alpha && o.alpha == null) o.alpha = v.fb.alpha;
     if (e.immune) { o.alpha = 0.25 + 0.1 * Math.sin(e.t / 40); }
     if (e.type === 'boss' && e.st === 'tele' && e.kind !== 'slam') { o.sx = 1 + 0.05 * Math.sin(e.t / 40); }

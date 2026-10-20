@@ -1,5 +1,6 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
    Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
+   familias v5 (src/families.js): ?fam=0 (roster legado) | ?fam=1 (fuerza familias) ?mat=1|0 (tabla de debilidades por material),
    ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
@@ -75,7 +76,7 @@
     ],
     tierFloor: 0.12,
     tierMul: function (type, m) {
-      var t = G.B.tier[type]; if (t == null) return 1;
+      var t = G.B.tierOf(type); if (t == null) return 1;   // tierOf: tier de la familia del bioma activo (families.js) o G.B.tier
       var c = G.B.tierCurve, i = 1;
       if (m <= c[0][0]) return c[0][t + 1];
       while (i < c.length - 1 && m > c[i][0]) i++;
