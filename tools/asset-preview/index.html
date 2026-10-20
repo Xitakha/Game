@@ -108,8 +108,9 @@
 </div>
 
 <div id="famBox" style="display:none">
-<h2>Familias P1: Bosque y Cripta (solo con ?game=card-swarm)</h2>
-<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option></select></label>
+<h2>Familias P1 y P2: Bosque, Cripta y Asfodelo (solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option><option value="asfodelo">Asfodelo (P2)</option></select></label>
+<label><input type="checkbox" id="famMix"> mezclar las 3 familias en la prueba</label>
 <label>Zoom <select id="famZoom"><option>1</option><option selected>2</option><option>3</option></select></label>
 <label>Enemigos en la prueba de densidad <input id="famN" type="range" min="10" max="150" step="10" value="100" style="width:120px"><output id="famNv">100</output></label></div>
 <div class="grid" id="famCards"></div>
@@ -145,7 +146,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -458,12 +459,12 @@
 // Vista "Familias P1": cada sprite de Assets.FAM1 con todos sus frames y animaciones en bucle + prueba de 100 enemigos
 (function () {
   var A = window.Assets, $ = function (id) { return document.getElementById(id); };
-  if (!A || !A.FAM1) return; $('famBox').style.display = 'block';
+  if (!A || !A.FAM1) return; var FAMS = {}; [A.FAM1, A.FAM2].forEach(function (o) { for (var k in (o || {})) FAMS[k] = o[k]; }); $('famBox').style.display = 'block';
   var live = [], mob = [];
   function el(t, c, txt) { var e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; }
   function build() {
     var z = +$('famZoom').value, fam = $('famSel').value; $('famCards').innerHTML = ''; live = []; mob = [];
-    A.FAM1[fam].forEach(function (n) {
+    FAMS[fam].forEach(function (n) {
       var it = A.info(n), card = el('div', 'card'); card.appendChild(el('h3', null, n)); card.appendChild(el('small', null, it.w / 2 + 'x' + it.h / 2 + ' -> ' + it.w + 'x' + it.h + ' px, ' + it.frames + ' frames'));
       var strip = el('div', 'strip'), i;
       for (i = 0; i < it.frames; i++) {
@@ -481,15 +482,16 @@
       $('famCards').appendChild(card);
       if (n.indexOf('enemy_') === 0) mob.push(n);
     });
+    if ($('famMix').checked) { mob = []; Object.keys(FAMS).forEach(function (f) { FAMS[f].forEach(function (n) { if (n.indexOf('enemy_') === 0) mob.push(n); }); }); }
     seed();
   }
   var swarm = [];
   function seed() {
     swarm = []; var N = +$('famN').value, r = 12345, k; function rnd() { r = (r * 1103515245 + 12345) & 0x7fffffff; return r / 0x7fffffff; }
-    for (k = 0; k < N; k++) { var n = mob[(rnd() * mob.length) | 0], it = A.info(n); swarm.push({ n: n, x: 30 + rnd() * 900, y: 30 + rnd() * 340, vx: (rnd() - 0.5) * 60, vy: (rnd() - 0.5) * 40, ph: rnd() * 1000, an: it.anims.walk ? 'walk' : it.anims.slither ? 'slither' : it.anims.fly ? 'fly' : it.anims.float ? 'float' : 'idle' }); }
+    for (k = 0; k < N; k++) { var n = mob[(rnd() * mob.length) | 0], it = A.info(n); swarm.push({ n: n, x: 30 + rnd() * 900, y: 30 + rnd() * 340, vx: (rnd() - 0.5) * 60, vy: (rnd() - 0.5) * 40, ph: rnd() * 1000, an: it.anims.walk ? 'walk' : it.anims.swim ? 'swim' : it.anims.slither ? 'slither' : it.anims.fly ? 'fly' : it.anims.float ? 'float' : 'idle' }); }
     $('famNv').textContent = N;
   }
-  ['famSel', 'famZoom'].forEach(function (id) { $(id).onchange = build; }); $('famN').oninput = seed;
+  ['famSel', 'famZoom', 'famMix'].forEach(function (id) { $(id).onchange = build; }); $('famN').oninput = seed;
   var last = 0, acc = 0, cnt = 0;
   function tick(t) {
     var dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;

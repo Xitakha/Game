@@ -485,3 +485,29 @@ Timbres: charco = burbujas ascendentes; hielo = cristalino agudo; olvido = campa
 | `drown_wail` | move | Alma errante: lamento al morir/disiparse (min 300) |
 
 Consejo: con muchos enemigos usar `vol` 0.5-0.7 en `drown_*`, `pond_swim` y `head_*`. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` con borde dorado).
+
+
+---
+# Familias P2 (Asfodelo) (src/assets_fam2.js, cargado tras assets_fam1.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets` (mismo estilo y reglas que P1: miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo al final de los frames, ancla de enemigos = (final_w/2, final_h-4)). Diseno: `DESIGN-v5-biomas.md` A.5, C.4-A. `Assets.FAM2.asfodelo` lista todo. Paleta: verde azulado #2f6f6a, crema #e8e4d4, acentos acido #7be34a / hielo #6ac8ff / rayo #ffe45a; olvido #7fffe0.
+
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_asf_alma_errante` | 20x22 -> 40x44 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 8; die | voluta teal clara con alpha 0,8 YA horneado (no volver a aplicar alpha) |
+| `enemy_asf_sanguijuela` | 18x10 -> 36x20 | 10: 0-1 swim, 2-3 lunge, 4 exposed, 5-9 die | swim [0,1] 7 (`idle` = igual); lunge [2,3] 14; exposed [4]; die | gusano oliva con franja roja y ventosa dentada; `exposed` = panza crema boca arriba |
+| `enemy_asf_rana` | 26x22 -> 52x44 | 11: 0-1 idle, 2 crouch, 3 air, 4 land, 5 rest, 6-10 die | idle 3; crouch [2]; air [3]; land [4] (salpicaduras); rest [5]; hop [2,3,4] 6; die | rana verde acido, ojos saltones; `rest` = ojos cerrados y lengua fuera |
+| `enemy_asf_medusa` | 24x28 -> 48x56 | 11: 0-3 float, 4 charge, 5 throw, 6-10 die | float/idle [0..3] 6; charge [4] (orbe azul entre tentaculos); throw [5,0] 8; die | proyectil: `proj_frost_orb` (existente, 12x12 base) |
+| `enemy_asf_cabeza_menor` | 28x36 -> 56x72 | 17: 0-3 emerge, 4-5 idle, 6-7 bite, 8 stump, 9-11 regrow, 12-16 die | emerge [0..3] 7 sin ciclo; idle [4,5] 3; bite [6,7] 8 (6 = aviso, cabeza atras; 7 = embestida a +x, alcance ~+20 px final); stump [8]; regrow [9,10,11] 4 sin ciclo; die | cuello+cabeza de serpiente con cresta acido/hielo/rayo, incluye su aro de agua en la base (pies = base del aro) |
+| `enemy_asf_lirio` | 22x24 -> 44x48 | 13: 0-1 idle, 2-5 walk, 6-7 sow, 8-12 die | idle 3; walk [0,2,1,3,4,5] 7; sow [6,7] 6; die | nenufar con flor crema y bulbo turquesa; `sow` = petalos abiertos con esporas |
+| `enemy_asf_anguila` | 40x14 -> 80x28 | 14: 0-1 idle, 2-5 slither, 6 wind, 7 dash, 8 rec, 9-13 die | idle 4; slither/walk [2..5] 10; wind [6] (chispas, rayas encendidas); dash [7] (recta, boca abierta, estela); rec [8] (apagada, ojos X); die | |
+| `enemy_asf_sacerdotisa` | 24x28 -> 48x56 | 12: 0-1 idle, 2-4 float, 5-6 cast, 7-11 die | idle 3; float/walk [2,3,4] 5; cast [5,6] 6; cast_hold [6]; die | el anillo morado del `cast` va dibujado a los pies |
+
+## VFX / props (nombre, base -> final, frames, anims)
+- `fx_pond_ripple` 48x24 -> 96x48, 3 fr (`ripple` 3 fps): SOLO anillos de ondas centrados (donde se oculta la Sanguijuela).
+- `fx_pond` 80x48 -> 160x96, 3 fr (`ripple` 3 fps): charco fijo; agua de ~r36-40 final centrada en (80,52) con juncos y piedras (sobresalen del radio). Dibujar en el suelo, ordenar por y.
+- `fx_olvido_zone` 48x48 -> 96x96, 3 fr: 0 = aviso (`arm`, aro punteado), 1-2 = activa (`active` 3 fps); disco turquesa #7fffe0 de r42 final centrado.
+- `fx_lightning_lane` 32x32 -> 64x64, 3 fr (`loop` 18 fps): tile de rayo horizontal repetible en x (empalma en y central). Para el carril de 300 px: repetir y rotar al angulo; el rayo ocupa ~+-22 px de alto final.
+- `fx_frog_acid` 30x30 -> 60x60, 3 fr (`bubble` 4 fps): charco acido de la rana (r28 final), centrado.
+- `icon_olvido` 16x16 -> 32x32, 2 fr (`loop` 2 fps): reloj roto turquesa para el estado 'olvido' (dibujar a 16x16 = escala 0,5 si hace falta).
+- `fx_ambush_bubbles` 24x24 -> 48x48, 4 fr (`rise` 8 fps, 3 = estallido): burbujas del aviso de emboscada/brote.
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias P1 y P2", familia Asfodelo, casilla "mezclar las 3 familias" (prueba de 100). Capturas: `studio/docs/capturas-p2/`. Nota: `sw.js` aun no precachea `assets_fam2.js`.
