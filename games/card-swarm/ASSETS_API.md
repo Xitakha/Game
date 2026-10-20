@@ -415,3 +415,39 @@ Tipos: **tele** = telegrafia (bajo, tono distintivo; usar `vol` ~0.6-1 al inicio
 | `soul_blink` | move | Alma prisionera: teletransporte (min 150) |
 
 Consejos: llamar a los `tele` una vez al empezar el aviso (no por frame); los `move` a lo sumo cada 0.3-1 s por enemigo; para un enjambre usar `vol` 0.5-0.7 si hay > 5 en pantalla. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` tienen borde dorado).
+
+
+---
+# Familias P1 (Bosque y Cripta) (src/assets_fam1.js, cargado tras assets_enemies2.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Mismo estilo que `assets_enemies2.js`. Diseno: `DESIGN-v5-biomas.md` A.3, A.4, C.4-A. Todos miran a la DERECHA (voltear con scale -1). Tamano "base" x2 = final (px reales del canvas devuelto por `Assets.sprite`). `die` = 5 frames, 9 fps, no cicla, indices justo despues de los normales (`Assets.animFrame(n,'die',msDesdeMuerte)`). Los frames se precomponen al cargar: en juego es un `drawImage`. `Assets.FAM1 = {bosque:[nombres], cripta:[nombres]}` lista todo. Ancla sugerida de enemigos: pies = (final_w/2, final_h-4).
+Paleta (para que 100 enemigos se lean): Bosque = lana crema/negra, puas moradas, ojos naranja, granate, corteza marron. Cripta = hueso, hierro gris, magma naranja, cuero/rojo oscuro. Ninguna usa el verde/azul/rojo planos de los sprites antiguos.
+
+## Bosque
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_bos_cordero` | 20x20 -> 40x40 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle [0,1] 4; walk [0,2,1,3,4,5] 9; die | oveja crema con cara negra y puas moradas en el lomo (`worm`) |
+| `enemy_bos_zarzal` | 24x24 -> 48x48 | 13: 0-1 idle, 2-5 walk, 6 aim, 7 fire, 8-12 die | idle 3; walk 7; aim [6]; fire [7]; shoot [7,1] 8; die | arbusto de corteza con espinas moradas (`archer`; Zarzal mayor = mismo sprite a escala 1,15 + tinte). `aim` = espinas amarillas y cuerpo inflado; `fire` = una espina saliendo a la derecha |
+| `enemy_bos_perro` | 26x18 -> 52x36 | 14: 0-1 idle, 2-5 walk, 6 bark, 7-8 dash, 9-13 die | idle 4; walk 11; bark [6]; dash [7,8] 14; die | border collie negro/crema con collar granate; `bark` = hocico arriba y boca abierta con rayitas de sonido (anillo rojo lo pone el juego) |
+| `enemy_bos_polilla` | 20x20 -> 40x40 | 11: 0-3 fly, 4 charge, 5 throw, 6-10 die | fly [0,1,2,3] 14 (`idle` = igual); charge [4]; throw [5,0] 8; die | polilla de lana crema/marron con antenas naranja. `charge` lleva el orbe de lana con anillo azul claro entre las patas |
+| `enemy_bos_zamponero` | 20x24 -> 40x48 | 9: 0-1 idle, 2-3 cast, 4-8 die | idle [0,1] 4 (`walk` = igual, 6 fps); cast [2,3] 6; cast_hold [3]; die | fauno de cuernos de cabra, tunica granate, zampona. `cast` 3 = anillo morado y notas |
+| `proj_wool_orb` | 12x12 -> 24x24 | 2 | `loop` [0,1] 8 | orbe de lana crema con anillo azul claro punteado (azul = ralentiza), centrado |
+
+Reusados SIN arte nuevo (como pide el doc): Jabalí = `boar`; Micelio = `enemy_sower`; espina del Zarzal = `proj_thorn_small` (16x8 final, apunta a la derecha); Zarzal mayor = `enemy_bos_zarzal` x1,15 con tinte oscuro. No hay pieles de Jabalí (el doc no las pide).
+
+## Cripta
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_cri_esqueleto` | 20x22 -> 40x44 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 8; die | esqueleto con garrote, grillete y paño violeta (`worm`) |
+| `enemy_cri_arquero` | 22x22 -> 44x44 | 13: 0-1 idle, 2-5 walk, 6 aim, 7 fire, 8-12 die | idle 4; walk 8; aim [6]; fire [7]; shoot [6,7,1] 8; die | calavera con capucha violeta y arco de hueso; `aim` = cuerda tensa + flecha encajada |
+| `proj_bone_arrow` | 16x6 -> 32x12 | 2 | `loop` [0,1] 10 | flecha de hueso con plumas naranja, apunta a la derecha (rotar al angulo), centrada |
+| `enemy_cri_calavera_exp` | 18x18 -> 36x36 | 12: 0-3 walk, 4-5 lit, 6 prime, 7-11 die | walk [0,1,2,3] 9 (`idle` = igual); lit [4,5] 10; prime [6]; die | calavera flotante con mecha y grietas de magma; `prime` = hinchada, aro rojo, grietas blancas |
+| `enemy_cri_calavera_rod` | 24x24 -> 48x48 | 15: 0-1 idle, 2-3 walk, 4 wind, 5-8 roll, 9 stun, 10-14 die | idle 3; walk [2,3] 5; wind [4]; roll [5,6,7,8] 16; stun [9]; die | calavera grande con aro de hierro y puas; `roll` gira 90 grados por frame con rayas de velocidad (el juego puede ademas rotar el sprite) |
+| `enemy_cri_carcelero` | 26x26 -> 52x52 | 14: 0-1 idle, 2-5 walk, 6 wind, 7 bash, 8 rec, 9-13 die | idle 4; walk 7; wind [6]; bash [6,7,8] 10; rec [8]; die | casco de hierro con ranura naranja y puerta de celda como escudo (`shield`). `wind` = escudo atras con marco naranja, `bash` = impacto, `rec` = jadeando y bajo |
+| `enemy_cri_salamandra` | 30x16 -> 60x32 | 11: 0-1 idle, 2-5 slither, 6-10 die | idle 3; slither [0,2,1,3,4,5] 8 (`walk` = igual); die | lagarto negro con grietas de magma y vientre naranja. El charco es `fx_fire_cell` (existente) |
+| `enemy_cri_guardian_cadenas` | 28x30 -> 56x60 | 14: 0-1 idle, 2-5 walk, 6 wind, 7-8 throw, 9-13 die | idle 3; walk 6; wind [6]; throw [7,8] 8; die | encapuchado rojo oscuro con cadenas cruzadas y candado dorado. `wind` = cadena girando sobre la cabeza; `throw` = brazo extendido (frame 8 con chispas) |
+| `proj_chain` | 24x8 -> 48x16 | 3 | `loop` [0,1,2] 12 | cadena con gancho a la DERECHA (cabeza); rotar al angulo; centrada; para alargarla dibujar varios o estirar en x |
+| `fx_chain_link` | 16x16 -> 32x32 | 1 | - | eslabon grande con halo azul claro: marca de impacto/ralentizado de la cadena (azul = ralentizado). Centrado |
+| `enemy_cri_alma` | 22x26 -> 44x52 | 11: 0-1 float, 2-3 fade, 4-5 slash, 6-10 die | float [0,1] 5 (`idle` = igual); fade [2,3] 10; slash [4,5,0] 12; die | espiritu palido con uniforme de preso y grillete con cadena rota. Los frames `fade` ya llevan alpha y el anillo naranja en el suelo (sin `fx_blink_ring`); el resto alpha 0,9 |
+
+Reusados sin arte nuevo: Ascua = `enemy_scorcher`; charco de lava = `fx_fire_cell` (44x44 final, centrado). Calavera explosiva usa la telegrafia circular existente.
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> seccion "Familias P1" (cada sprite con todas sus animaciones y prueba de 100 enemigos mezclados). Capturas: `studio/docs/capturas-p1/`.

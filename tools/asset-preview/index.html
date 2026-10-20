@@ -107,6 +107,16 @@
 <canvas id="treeCv" width="960" height="440" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
 </div>
 
+<div id="famBox" style="display:none">
+<h2>Familias P1: Bosque y Cripta (solo con ?game=card-swarm)</h2>
+<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option></select></label>
+<label>Zoom <select id="famZoom"><option>1</option><option selected>2</option><option>3</option></select></label>
+<label>Enemigos en la prueba de densidad <input id="famN" type="range" min="10" max="150" step="10" value="100" style="width:120px"><output id="famNv">100</output></label></div>
+<div class="grid" id="famCards"></div>
+<p class="sub" style="margin:8px 0 4px">Prueba de densidad: mezcla de los enemigos de la familia en una arena oscura (coste por frame: <span id="famCost">-</span> ms)</p>
+<canvas id="famCv" width="960" height="400" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
+</div>
+
 <h2>Sprites</h2>
 <div class="btns" style="margin-bottom:10px"><button id="expAll">Exportar atlas PNG (todos los sprites)</button><span id="expMsg" style="color:var(--dim)"></span></div>
 <div class="grid" id="sprites"></div>
@@ -135,7 +145,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -441,6 +451,57 @@
   $('mwav').onclick = function () { $('mwav').textContent = 'Renderizando...'; A.exportMusicWav({ track: $('track').value, intensity: +$('inten').value }).then(function (bl) { download(bl, 'music_' + $('track').value + '.wav'); $('mwav').textContent = 'Exportar musica WAV'; }); };
   $('vol').oninput = function () { A.setVolume({ sfx: +$('vol').value }); };
   $('mvol').oninput = function () { A.setVolume({ master: +$('mvol').value }); };
+})();
+</script>
+<script>
+// Vista "Familias P1": cada sprite de Assets.FAM1 con todos sus frames y animaciones en bucle + prueba de 100 enemigos
+(function () {
+  var A = window.Assets, $ = function (id) { return document.getElementById(id); };
+  if (!A || !A.FAM1) return; $('famBox').style.display = 'block';
+  var live = [], mob = [];
+  function el(t, c, txt) { var e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; }
+  function build() {
+    var z = +$('famZoom').value, fam = $('famSel').value; $('famCards').innerHTML = ''; live = []; mob = [];
+    A.FAM1[fam].forEach(function (n) {
+      var it = A.info(n), card = el('div', 'card'); card.appendChild(el('h3', null, n)); card.appendChild(el('small', null, it.w / 2 + 'x' + it.h / 2 + ' -> ' + it.w + 'x' + it.h + ' px, ' + it.frames + ' frames'));
+      var strip = el('div', 'strip'), i;
+      for (i = 0; i < it.frames; i++) {
+        var fig = el('figure'), c = el('canvas'), src = A.sprite(n, i); c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0);
+        c.style.width = c.width * z / 2 + 'px'; c.style.height = c.height * z / 2 + 'px'; fig.appendChild(c); fig.appendChild(document.createTextNode(String(i))); strip.appendChild(fig);
+      }
+      card.appendChild(strip);
+      if (it.anims) {
+        var row = el('div', 'anim'); Object.keys(it.anims).forEach(function (an) {
+          var box = el('div'), c2 = el('canvas'); c2.width = it.w; c2.height = it.h; c2.style.width = it.w * z / 2 + 'px'; c2.style.height = it.h * z / 2 + 'px';
+          box.appendChild(c2); box.appendChild(el('br')); box.appendChild(document.createTextNode(an)); row.appendChild(box);
+          live.push({ n: n, an: an, ctx: c2.getContext('2d'), w: it.w, h: it.h, t0: 0, die: an === 'die' });
+        }); card.appendChild(row);
+      }
+      $('famCards').appendChild(card);
+      if (n.indexOf('enemy_') === 0) mob.push(n);
+    });
+    seed();
+  }
+  var swarm = [];
+  function seed() {
+    swarm = []; var N = +$('famN').value, r = 12345, k; function rnd() { r = (r * 1103515245 + 12345) & 0x7fffffff; return r / 0x7fffffff; }
+    for (k = 0; k < N; k++) { var n = mob[(rnd() * mob.length) | 0], it = A.info(n); swarm.push({ n: n, x: 30 + rnd() * 900, y: 30 + rnd() * 340, vx: (rnd() - 0.5) * 60, vy: (rnd() - 0.5) * 40, ph: rnd() * 1000, an: it.anims.walk ? 'walk' : it.anims.slither ? 'slither' : it.anims.fly ? 'fly' : it.anims.float ? 'float' : 'idle' }); }
+    $('famNv').textContent = N;
+  }
+  ['famSel', 'famZoom'].forEach(function (id) { $(id).onchange = build; }); $('famN').oninput = seed;
+  var last = 0, acc = 0, cnt = 0;
+  function tick(t) {
+    var dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
+    live.forEach(function (a) { a.ctx.clearRect(0, 0, a.w, a.h); var tt = a.die ? (t % 1400) : t; a.ctx.drawImage(A.animFrame(a.n, a.an, tt), 0, 0); });
+    var cv = $('famCv'), x = cv.getContext('2d'), p0 = performance.now(); x.fillStyle = '#1a1426'; x.fillRect(0, 0, cv.width, cv.height);
+    swarm.forEach(function (s) {
+      s.x += s.vx * dt; s.y += s.vy * dt; if (s.x < 20 || s.x > 940) s.vx = -s.vx; if (s.y < 20 || s.y > 380) s.vy = -s.vy;
+      var f = A.animFrame(s.n, s.an, t + s.ph), flip = s.vx < 0; x.save(); x.translate(s.x, s.y); if (flip) x.scale(-1, 1); x.drawImage(f, -f.width / 2, -f.height + 4); x.restore();
+    });
+    acc += performance.now() - p0; if (++cnt >= 30) { $('famCost').textContent = (acc / cnt).toFixed(2); acc = 0; cnt = 0; }
+    requestAnimationFrame(tick);
+  }
+  build(); requestAnimationFrame(tick);
 })();
 </script>
 </body>

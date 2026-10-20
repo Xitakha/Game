@@ -21,7 +21,7 @@ async function one(b, i) {
     const st = await pg.evaluate(() => ({ s: G.state, t: (G.time - G.t0) / 1000 }));
     if (st.s === 'gameover' || (cfg.stop && st.t >= cfg.stop)) break;
   }
-  const res = await pg.evaluate(() => ({ census: window.__census, allow: window.censusAllowCheck(), state: G.state, won: G.won, t: Math.round((G.time - G.t0) / 1000), kills: G.kills, parts: G.Loot.run.total, lvl: G.player.level, fam: !!G.B.famOf(), biome: G.curBiome }));
+  const res = await pg.evaluate(() => ({ census: window.__census, allow: window.censusAllowCheck(), state: G.state, won: G.won, t: Math.round((G.time - G.t0) / 1000), kills: G.kills, parts: G.Loot.run.total, lvl: G.player.level, fam: !!(G.B.famOf && G.B.famOf()), biome: G.curBiome }));
   await ctx.close(); res.errs = errs.slice(0, 5); res.wall = Math.round((Date.now() - t0) / 1000); res.i = i;
   return res;
 }
