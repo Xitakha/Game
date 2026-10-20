@@ -48,7 +48,8 @@
   L.DROP_MUL = 0.70;
   L.DROPS = {
     worm: ['thread', 0.12], warlock: ['thread', 0.14], archer: ['feather', 0.13], fanner: ['spine', 0.14], sower: ['spine', 0.14],
-    boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15]
+    boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15],
+    dog: ['fang', 0.13], salamander: ['wick', 0.14], chainer: ['plate', 0.14]   // monstruos nuevos de las familias v5 (A.10)
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)
   // v5: los minijefes son ahora un reto real (más HP, partes rompibles, ataques nuevos) y su botín garantizado sube (antes plate 2 + feather 1 / spine 2 + thread 2, rare 20 %).

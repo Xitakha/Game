@@ -49,8 +49,9 @@
       var ang = Math.atan2(p.y - pos[1], p.x - pos[0]), px = -Math.sin(ang), py = Math.cos(ang), h = (A[1] - 1) / 2;
       for (j = 0; j < A[1]; j++) E.spawn(A[0], pos[0] + px * 44 * (j - h), pos[1] + py * 44 * (j - h));
       if (Z) E.spawn(Z[0], pos[0] - Math.cos(ang) * 60, pos[1] - Math.sin(ang) * 60);
-    } else if (pk.layout === 'cross') {   // pareja en lados opuestos
+    } else if (pk.layout === 'cross') {   // pareja en lados opuestos (+ nube del segundo rol, p. ej. Pastoreo y Boliche de las familias P1)
       var m = mirror(pos); E.spawn(A[0], pos[0], pos[1]); E.spawn(A[0], m[0], m[1]);
+      if (Z) for (j = 0; j < Z[1]; j++) E.spawn(Z[0], pos[0] + G.rnd(-50, 50), pos[1] + G.rnd(-50, 50));
     } else if (pk.layout === 'pincer') {   // pareja opuesta + uno por un flanco
       var m2 = mirror(pos); E.spawn(A[0], pos[0], pos[1]); E.spawn(A[0], m2[0], m2[1]);
       var pa = G.rnd(0, 6.283); E.spawn(Z[0], p.x + Math.cos(pa) * 520, p.y + Math.sin(pa) * 420);

@@ -54,11 +54,15 @@
   C.stun = function (e, ms) { if (e.type === 'boss' || e.big) return; e.stunT = Math.max(e.stunT, ms); };
 
   // ------------------------------------------------------------- Números y partículas
+  // Indicador de debilidad / resistencia por material (A.8): x1,25 = número verde claro, más grande y con "!"; x0,75 = gris, pequeño y entre paréntesis (los críticos siguen dorados)
+  C.MAT_WEAK = '#b6ff7a'; C.MAT_RES = '#9a9aa8';
   C.num = function (e, amt, tag, crit) {
     e.numAcc += amt;
     if (crit || e.numT <= 0) {
-      var c = (tag === 'steel' || tag === 'neutral') ? '#ffffff' : col(tag);
-      fx.num(e.x, e.y - e.r - 8, Math.round(e.numAcc), crit ? '#ffe14a' : c, crit || e.numAcc >= 30);
+      var c = (tag === 'steel' || tag === 'neutral') ? '#ffffff' : col(tag), n = Math.round(e.numAcc), mm = e.mm || 1;
+      if (mm > 1.02 && !crit) fx.num(e.x, e.y - e.r - 8, n + '!', C.MAT_WEAK, false, { size: 18 });
+      else if (mm < 0.98 && !crit) fx.num(e.x, e.y - e.r - 8, '(' + n + ')', C.MAT_RES, false, { size: 11 });
+      else fx.num(e.x, e.y - e.r - 8, n, crit ? '#ffe14a' : c, crit || e.numAcc >= 30);
       e.numAcc = 0; e.numT = 150;
     }
   };
@@ -86,7 +90,7 @@
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     var tf = G.Tree.fx;
-    if (e.mat) dmg *= B.matMul(e, tag);   // debilidad / resistencia por material (A.8), antes de resonancia y talentos; e.mat solo existe con G.B.mat.on
+    if (e.mat) { e.mm = B.matMul(e, tag); dmg *= e.mm; }   // debilidad / resistencia por material (A.8), antes de resonancia y talentos; e.mat solo existe con G.B.mat.on. e.mm = último multiplicador (lo lee C.num)
     if (tag === 'fire') {
       dmg *= m.fireDmg;
       if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
@@ -150,7 +154,7 @@
     if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
-    var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && e.st === 'charge');   // e.big = super armor de los élites
+    var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && (e.st === 'charge' || e.st === 'roll' || e.st === 'roll2'));   // e.big = super armor de los élites
     if (o.kb && !armor) { var k = 12; e.kx = Math.cos(o.ang || 0) * o.kb * k; e.ky = Math.sin(o.ang || 0) * o.kb * k; }
     if (e.type === 'archer' && e.st === 'aim' && o.kb) { e.st = 'move'; e.shootT = 1200; }
     if (e.type === 'fanner' && e.st === 'aim' && o.kb && !blocked) { e.st = 'move'; e.shootT = 1200; }   // un empujón interrumpe la ráfaga
@@ -172,14 +176,18 @@
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
-    if (e.mat) n *= B.matMul(e, tag);   // también los ticks de estados (A.8)
+    if (e.mat) { e.mm = B.matMul(e, tag); n *= e.mm; }   // también los ticks de estados (A.8)
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     if (e.expT > 0) n *= e.expMul;
     e.hp -= n; e.lastTag = tag;
     if (e.type === 'mini_hive') G.Enemies.sacHit(e, n);
     if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
-    if (e.dotT <= 0 && e.dotAcc >= 3) { fx.num(e.x, e.y - e.r - 8, Math.round(e.dotAcc), col(tag)); e.dotAcc = 0; e.dotT = 600; }
+    if (e.dotT <= 0 && e.dotAcc >= 3) {
+      var dm = e.mm || 1, dn = Math.round(e.dotAcc);
+      if (e.mat && dm > 1.02) fx.num(e.x, e.y - e.r - 8, dn + '!', C.MAT_WEAK, false, { size: 16 }); else if (e.mat && dm < 0.98) fx.num(e.x, e.y - e.r - 8, '(' + dn + ')', C.MAT_RES, false, { size: 11 }); else fx.num(e.x, e.y - e.r - 8, dn, col(tag));
+      e.dotAcc = 0; e.dotT = 600;
+    }
     if (e.hp <= 0) { G.Enemies.kill(e, false, tag); return true; }
     return false;
   };

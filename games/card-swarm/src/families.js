@@ -4,8 +4,8 @@
    - G.B.famOf / entry / has / val / tierOf   (resolución según el bioma activo G.curBiome)
    - G.B.mat          = tabla de materiales x etiquetas (A.8) + G.B.matMul(e, tag), aplicada en Combat.deal / Combat.dot
    - G.B.packsLegacy  = los 4 packs actuales (estructura de datos que consume waves.js)
-   P0 no cambia nada visible ni de balance: todas las entradas son la identidad (heredan from/w/cost/maxAlive de G.B.enemy, hp/spd/dmg = 1,
-   spr = null -> sprite actual), ningún bioma está `ready` y la tabla de materiales está apagada (G.B.mat.on = false).
+   P0 = infraestructura (entradas identidad). P1 (v5.1): Bosque y Cripta tienen su familia propia y `ready:true` (tablas A.3 / A.4 de DESIGN-v5-biomas.md);
+   Asfodelo sigue con el roster legado (ready:false) hasta P2. La tabla de materiales (A.8) se enciende sola solo en biomas con familia activa (G.B.mat.sync()).
    Parámetros de URL: ?fam=0 (fuerza el roster legado), ?fam=1 (fuerza las familias donde existan), ?mat=1|0 (tabla de materiales).
    Ver README, sección "Familias por bioma (P0)". */
 (function () {
@@ -21,7 +21,8 @@
 
   // ---------------------------------------------------------------- Materiales (A.8): 13 materiales x 6 etiquetas, +-25 %
   B.mat = {
-    on: false,                                   // P0: apagado (balance idéntico). Se enciende cuando una familia pase a ready, o con ?mat=1
+    on: false,                                   // lo fija G.B.mat.sync() al empezar la run: true si el bioma tiene familia activa (ready) o ?mat=1; ?mat=0 la apaga siempre
+    force: null,                                 // ?mat=1|0 (null = automático)
     min: 0.75, max: 1.25,                        // límites del multiplicador
     tags: ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'],
     //            fuego  hielo  rayo   veneno sangre acero
@@ -41,7 +42,8 @@
       miel:     [1,    1.25, 1,    0.75, 1,    1]
     }
   };
-  var mq = qnum('mat'); if (mq != null) B.mat.on = mq > 0;
+  var mq = qnum('mat'); if (mq != null) { B.mat.force = mq > 0; B.mat.on = mq > 0; }
+  B.mat.sync = function () { B.mat.on = B.mat.force != null ? B.mat.force : !!B.famOf(); };   // (famOf: bioma activo con familia ready, o ?fam=1; ?fam=0 -> false)
   B.mat.index = {}; B.mat.tags.forEach(function (t, i) { B.mat.index[t] = i; });
 
   // Multiplicador de material de un enemigo para una etiqueta (1 si no hay material, la tabla está apagada o la etiqueta no cuenta).
@@ -75,23 +77,47 @@
   function amb() { return { flies: 1, fog: 1, vig: 1, tint: null }; }   // ambiente por bioma: multiplicadores sobre la calidad actual (1 = aspecto actual). Sin consumidor en P0.
 
   B.fam = {
+    // ---- BOSQUE (P1, A.3): el rebaño del Pastor. 8 tipos propios; Escudero/Bomba/Espectro/Ascua ya no existen aquí (decisión del dueño) y los guardianes (Coloso, Madre Colmena) se quedan.
+    //      Suma de w por tier = 55 / 44 / 29 / 25 (A.2). `proj`/`sfx` = proyectil y SFX propios de la telegrafía; `sc` = escala de cuerpo y sprite.
     bosque: {
-      name: 'El rebaño del Pastor', ready: false, boss: 'pastor', ponds: 0, star: null, light: light(), amb: amb(), packs: B.packsLegacy,
-      use: fill({
-        worm: U('Cordero corrupto', 'lana'), archer: U('Zarzal menor', 'vegetal'), fanner: U('Zarzal mayor', 'vegetal'),
-        boar: U('Jabalí', 'carne'), moth: U('Polilla de lana', 'lana'), sower: U('Micelio', 'vegetal'), warlock: U('Zampoñero', 'carne'),
-        shield: U('Escudero', 'metal', { host: true }), bomb: U('Bomba', 'hueso', { host: true }),
-        blinker: U('Espectro', 'espectro', { host: true }), scorcher: U('Ascua', 'magma', { host: true })
-      })
+      name: 'El rebaño del Pastor', ready: true, boss: 'pastor', ponds: 0, star: null, light: { worm: 1, archer: 1, fanner: 1, moth: 1 }, amb: amb(), packs: [
+        { id: 'cruce',    layout: 'cross', parts: [['fanner', 2]] },                    // 2 Zarzales mayores en lados opuestos
+        { id: 'campo',    layout: 'field', parts: [['sower', 2], ['worm', 4]] },       // 2 Micelios + 4 Corderos
+        { id: 'pastoreo', layout: 'cross', parts: [['dog', 2], ['worm', 3]] },         // 2 Perros pastores opuestos + 3 Corderos
+        { id: 'zamponero', layout: 'line', parts: [['boar', 2], ['warlock', 1]] }      // 2 Jabalíes en línea + Zampoñero detrás
+      ],
+      lens: { best: ['fire'], worst: ['ice', 'poison', 'blood'] },                     // lo que ve el jugador en el Portal (A.8, lectura por bioma)
+      use: {
+        worm:    U('Cordero corrupto', 'lana',    { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, spr: 'enemy_bos_cordero', sfx: { spawn: 'lamb_bleat' } }),
+        archer:  U('Zarzal menor',     'vegetal', { tier: 1, from: 45000,  w: 26, cost: 3, maxAlive: 12, hp: 1.2, spr: 'enemy_bos_zarzal', proj: 'proj_thorn_small', fb: 'thorn', sfx: { shoot: 'thorn_shot' } }),
+        fanner:  U('Zarzal mayor',     'vegetal', { tier: 1, from: 90000,  w: 18, cost: 4, maxAlive: 8,  spr: 'enemy_bos_zarzal', sc: 1.15, skin: { tint: '#2a1236', a: 0.38 }, sfx: { shoot: 'thorn_shot' } }),
+        boar:    U('Jabalí',           'carne',   { tier: 2, from: 120000, w: 14, cost: 5, maxAlive: 8 }),
+        moth:    U('Polilla de lana',  'lana',    { tier: 2, from: 240000, w: 15, cost: 4, maxAlive: 6, spd: 0.9, spr: 'enemy_bos_polilla', proj: 'proj_wool_orb', orbSlow: [0.30, 2000], sfx: { shoot: 'wool_puff', move: 'moth_flutter' } }),
+        dog:     U('Perro pastor',     'lana',    { tier: 3, from: 165000, w: 8,  cost: 5, maxAlive: 3, capGrow: 1.3, spr: 'enemy_bos_perro' }),
+        sower:   U('Micelio',          'vegetal', { tier: 3, from: 270000, w: 9,  cost: 5, maxAlive: 3, capGrow: 1.7, sfx: { tele: 'spore_puff' } }),
+        warlock: U('Zampoñero',        'carne',   { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 2, capGrow: 2, spr: 'enemy_bos_zamponero', sfx: { tele: 'zampona_pipe' } })
+      }
     },
+    // ---- CRIPTA (P1, A.4): los presos de Karceron. 9 tipos; no usa fanner/moth/sower/warlock. Las invocaciones de Karceron (Ascuas + Alma prisionera) ya son de la familia.
     cripta: {
-      name: 'Los presos de Karceron', ready: false, boss: 'karceron', ponds: 0, star: null, light: light(), amb: amb(), packs: B.packsLegacy,
-      use: fill({
-        worm: U('Esqueleto', 'hueso'), archer: U('Arquero de huesos', 'hueso'), bomb: U('Calavera explosiva', 'hueso'),
-        boar: U('Calavera rodante', 'hueso'), shield: U('Carcelero menor', 'metal'), blinker: U('Alma prisionera', 'espectro'), scorcher: U('Ascua', 'magma'),
-        fanner: U('Arquero ardiente', 'hueso', { host: true }), moth: U('Salamandra de lava', 'magma', { host: true }),
-        sower: U('Guardián de cadenas', 'metal', { host: true }), warlock: U('Brujo', 'espectro', { host: true })
-      })
+      name: 'Los presos de Karceron', ready: true, boss: 'karceron', ponds: 0, star: null, light: { worm: 1, archer: 1, bomb: 1 }, amb: amb(), packs: [
+        { id: 'presos',  layout: 'line',   parts: [['shield', 3], ['blinker', 1]] },    // Fila de presos: 3 Carceleros + 1 Alma prisionera detrás
+        { id: 'hornos',  layout: 'pincer', parts: [['scorcher', 2], ['salamander', 1]] }, // Hornos: 2 Ascuas opuestas + 1 Salamandra
+        { id: 'boliche', layout: 'cross',  parts: [['boar', 2], ['worm', 3]] },          // Boliche: 2 Calaveras rodantes opuestas + 3 Esqueletos
+        { id: 'cadena',  layout: 'line',   parts: [['shield', 2], ['chainer', 1]] }      // Cadena de presos: 2 Carceleros en línea + Guardián de cadenas detrás
+      ],
+      lens: { best: ['ice', 'steel', 'lightning'], worst: ['fire', 'poison', 'blood'] },
+      use: {
+        worm:       U('Esqueleto',          'hueso',    { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, hp: 1.15, spd: 0.95, spr: 'enemy_cri_esqueleto', sfx: { spawn: 'bone_rattle' } }),
+        archer:     U('Arquero de huesos',  'hueso',    { tier: 1, from: 45000,  w: 30, cost: 3, maxAlive: 14, spr: 'enemy_cri_arquero', proj: 'proj_bone_arrow', fb: 'arrow', sfx: { shoot: 'bone_arrow' } }),
+        bomb:       U('Calavera explosiva', 'hueso',    { tier: 1, from: 90000,  w: 14, cost: 2, maxAlive: 6,  spr: 'enemy_cri_calavera_exp', sfx: { boom: 'skull_explode' } }),
+        boar:       U('Calavera rodante',   'hueso',    { tier: 2, from: 120000, w: 10, cost: 5, maxAlive: 6,  hp: 0.8, spr: 'enemy_cri_calavera_rod', roll: true }),
+        shield:     U('Carcelero menor',    'metal',    { tier: 2, from: 165000, w: 10, cost: 5, maxAlive: 6,  hp: 1.1, spr: 'enemy_cri_carcelero', sfx: { bash: 'shield_bash' } }),
+        salamander: U('Salamandra de lava', 'magma',    { tier: 2, from: 240000, w: 9,  cost: 5, maxAlive: 4,  spr: 'enemy_cri_salamandra' }),
+        chainer:    U('Guardián de cadenas','metal',    { tier: 3, from: 270000, w: 8,  cost: 6, maxAlive: 3, capGrow: 1.5, spr: 'enemy_cri_guardian_cadenas' }),
+        blinker:    U('Alma prisionera',    'espectro', { tier: 3, from: 315000, w: 9,  cost: 6, maxAlive: 4,  spr: 'enemy_cri_alma' }),
+        scorcher:   U('Ascua',              'magma',    { tier: 3, from: 360000, w: 8,  cost: 6, maxAlive: 3 })
+      }
     },
     asfodelo: {
       name: 'El río de Letea', ready: false, boss: 'letea', ponds: 0, star: null, light: light(), amb: amb(), packs: B.packsLegacy,
@@ -118,7 +144,8 @@
   };
   B.entry = function (type, biome) { var f = B.famOf(biome); return f ? f.use[type] || null : null; };
   // ¿Existe el rol en el bioma activo? (sin familia: todos los roles). Élites y jefe no pasan por aquí.
-  B.has = function (type) { var f = B.famOf(); return !f || !!f.use[type]; };
+  // Los roles nuevos (B.enemy[x].famOnly: dog, salamander, chainer...) solo existen dentro de una familia activa.
+  B.has = function (type) { var f = B.famOf(); return f ? !!f.use[type] : !B.enemy[type].famOnly; };
   // Parámetro del rol (from, w, cost, maxAlive, capGrow...) con override de la familia y herencia de G.B.enemy.
   B.val = function (type, field) {
     var f = B.famOf(), u = f && f.use[type], v = u && u[field];
@@ -131,4 +158,30 @@
   // Entrada de material del rol en el bioma activo: NO exige `ready` (la tabla de materiales se prueba con ?mat=1 aunque la familia aún no esté activa); ?fam=0 la anula.
   B.matEntry = function (type) { if (B.famMode === 0) return null; var f = B.fam[G.curBiome]; return f && f.use[type] ? f.use[type] : null; };
   B.packsOf = function () { var f = B.famOf(); return f && f.packs && f.packs.length ? f.packs : B.packsLegacy; };
+  // ---------------------------------------------------------------- Telegrafías de las familias P1 (única fuente de tiempos: las lee enemies.js; las audita B.teleAudit y tools p1_tests.js)
+  // ms = aviso (desde que empieza hasta que hace daño); exit = px que el jugador debe recorrer para salir del peligro (radio de contacto incluido);
+  // strong = ataque fuerte (>= 400 ms exigidos). Regla de esquiva: ms >= 250 + 1000 * exit / 190 (el jugador va a 190 px/s y tarda 250 ms en reaccionar).
+  B.tele = {
+    archer:   { name: 'Zarzal menor / Arquero de huesos (aim)', ms: 400, exit: 16, strong: true },
+    fanner:   { name: 'Zarzal mayor (cono 40 grados)',          ms: 500, exit: 30, strong: true },
+    boar:     { name: 'Jabalí (carga)',                         ms: 600, exit: 50, strong: true },
+    moth:     { name: 'Polilla de lana (orbe)',                 ms: 450, exit: 20, strong: true },
+    dog:      { name: 'Perro pastor (ladrido)',                 ms: 450, exit: 30, strong: true },
+    sower:    { name: 'Micelio (zona de esporas)',              ms: 900, exit: 52, strong: true },
+    warlock:  { name: 'Zampoñero (invocación)',                 ms: 500, exit: 0,  strong: false },
+    bomb:     { name: 'Calavera explosiva (mecha)',             ms: 700, exit: 70, strong: true },
+    roll:     { name: 'Calavera rodante (rueda)',               ms: 600, exit: 50, strong: true },
+    bounce:   { name: 'Calavera rodante (2.º tramo tras rebote)', ms: 400, exit: 26, strong: true },
+    shield:   { name: 'Carcelero menor (empellón)',             ms: 500, exit: 40, strong: true },
+    salamander: { name: 'Salamandra (charco de lava)',          ms: 600, exit: 35, strong: true },
+    chainer:  { name: 'Guardián de cadenas (cadena)',           ms: 700, exit: 30, strong: true },
+    blinker:  { name: 'Alma prisionera (desvanece + tajo)',     ms: 850, exit: 60, strong: true },
+    scorcher: { name: 'Ascua (carga)',                          ms: 600, exit: 30, strong: true }
+  };
+  B.teleOf = function (id) { return B.tele[id].ms; };
+  B.teleRule = function (t) { return 250 + 1000 * t.exit / 190; };
+  B.teleAudit = function () { return Object.keys(B.tele).map(function (k) { var t = B.tele[k], need = Math.round(B.teleRule(t)); return { id: k, name: t.name, ms: t.ms, exit: t.exit, need: need, ok: t.exit === 0 || (t.ms >= need && (!t.strong || t.ms >= 400)) }; }); };
+
+  // Lectura de debilidades de un bioma para el Portal (A.8): { best:[etiquetas], worst:[etiquetas] } (solo si el bioma tiene familia lista y los materiales no están apagados por ?mat=0)
+  B.matLens = function (biome) { var f = B.fam[biome]; if (!f || !f.lens || !f.ready || B.famMode === 0 || B.mat.force === false) return null; return f.lens; };
 })();

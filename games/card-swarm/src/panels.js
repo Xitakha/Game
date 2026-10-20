@@ -300,10 +300,10 @@
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
     { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' }];
-  function biomeRect(i) { return { x: 650 + i * 98, y: 336, w: 92, h: 48 }; }
+  function biomeRect(i) { return { x: 650 + i * 98, y: 336, w: 92, h: 42 }; }
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
-  function pelRect(i) { return { x: 650 + i * 58, y: 404, w: 54, h: 48 }; }
+  function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
     var S = SV(), id = S.biome || 'bosque';
     if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
@@ -372,7 +372,8 @@
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
     for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 236 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    if (Q.target()) G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right');
+    var qt = Q.target(), qf = qt && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
+    if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 930, 222, 10, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right'); }
     U.panel(c, 650, 266, 290, 56);
     G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
     var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 309, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
@@ -384,7 +385,16 @@
       var open = biomeOpen(b), on = cb.id === b.id;
       U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 13, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
     });
-    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax], 650, 398, 11, '#9a8fb0', 'left');
+    // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
+    var ln = G.B.matLens(cb.id);
+    if (ln) {
+      var lx = 650, ly = 383;
+      G.txt(c, 'MEJOR', lx, ly + 6, 9, '#9dffb4', 'left'); lx += 38;
+      ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { size: 12 }); lx += 15; });
+      lx += 10; G.txt(c, 'PEOR', lx, ly + 6, 9, '#ff9a8a', 'left'); lx += 30;
+      ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { resist: true, size: 12 }); lx += 15; });
+    }
+    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax], 650, 401, 11, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
       U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 16, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });

@@ -55,8 +55,8 @@
   // Familia de enemigo de una fuente de daño (platos de resistencia): ranged (proyectiles), blast (explosivos y fuego), big (élites y jefes), melee (el resto)
   P.family = function (src) {
     src = src || '';
-    if (/^(archer|fanner|moth|sower|proj|thorn|arrow)/.test(src)) return 'ranged';
-    if (/^(bomb|scorcher)/.test(src)) return 'blast';
+    if (/^(archer|fanner|moth|sower|proj|thorn|arrow|chainer)/.test(src)) return 'ranged';
+    if (/^(bomb|scorcher|salamander)/.test(src)) return 'blast';
     if (/^(boss|bulwark|hive)/.test(src)) return 'big';
     return 'melee';
   };

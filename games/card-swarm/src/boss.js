@@ -452,7 +452,7 @@
     start: function (e, A) {
       var P = pel(), room = P.cap - addsAlive(), p = PL(), worms = e.broken.cayado;
       var n = (e.phase === 3 ? 3 : 2) + P.adds; if (worms) n += 2; n = Math.min(n, room);
-      var pool = worms ? ['worm'] : ['fanner', 'shield', 'moth'];
+      var pool = worms ? ['worm'] : B.has('dog') ? ['fanner', 'dog', 'moth'] : ['fanner', 'shield', 'moth'];   // v5 A.7: el rebaño del Pastor (Zarzal mayor, Perro pastor, Polilla de lana)
       A.pose = 'llamada'; A.actMs = 300; A.rec = 600; A.spots = [];
       for (var i = 0; i < n; i++) {
         var ty = pool[Math.floor(Math.random() * pool.length)], a0 = Math.random() * TAU, cx, cy, tries = 0;

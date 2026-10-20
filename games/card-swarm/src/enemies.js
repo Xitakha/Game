@@ -1,4 +1,5 @@
-/* enemies.js - 11 enemigos (gusano, arquero, espinoso, jabalí, escudero, bomba, polilla, sembrador, espectro, ascua, brujo), 2 élites
+/* enemies.js - 11 enemigos (gusano, arquero, espinoso, jabalí, escudero, bomba, polilla, sembrador, espectro, ascua, brujo) + 3 de las familias v5 P1
+   (dog = Perro pastor, salamander = Salamandra de lava, chainer = Guardián de cadenas; solo existen con la familia de su bioma, ver families.js), 2 élites
    (Coloso Escudero, Madre Colmena) y el jefe Pastor Corrupto, con estados, telegrafía, zonas de daño (G.zones team 'e') y escalado por minuto. */
 (function () {
   'use strict';
@@ -21,10 +22,10 @@
       if (fe.spr && G.hasSpr(fe.spr)) spr = fe.spr;   // sprite propio de la familia; si no existe, el sprite actual del rol
     }
     if (o.hp) hp = o.hp;
-    var sc = o.scale || 1, r = d.r * sc, mg = G.WALL + r;
+    var sc = o.scale || (fe && fe.sc) || 1, r = d.r * sc, mg = G.WALL + r;
     var e = {
       type: type, x: G.clamp(x, mg, G.AW - mg), y: G.clamp(y, mg, G.AH - mg), r: r, hp: hp, maxHp: hp, spd: d.spd, dmg: dmg, sc: sc,
-      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, spdBase: d.spd * spdK, spr: spr, skin: fe && fe.skin || null, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: Math.random() * 1000,
+      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, spdBase: d.spd * spdK, spr: spr, skin: fe && fe.skin || null, fe: fe || null, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: Math.random() * 1000,
       hitCd: 0, burnT: 0, burnDps: 0, poisonT: 0, poisonN: 0, bleedT: 0, slowT: 0, slowPct: 0, stunT: 0, vaporCd: 0,
       acc: { fire: 0, poison: 0, blood: 0 }, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, boomDepth: 0, lastTag: 'neutral', summoned: !!o.summoned, src: o.src || null,
       shootT: G.rnd(1200, 2600), sumT: G.rnd(2500, 6000), atkT: 2000, ai: 0, strafe: Math.random() < 0.5 ? 1 : -1, fa: 0
@@ -33,12 +34,16 @@
     if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
     switch (type) {
       case 'boss': e.spawnT = e.spawnMax = 900; e.sumT = 12000; e.atkT = 1500; e.callT = 14000; e.sporeT = 8000; e.age = 0; break;
+      case 'worm': e.sndT = G.rnd(3000, 12000); break;
       case 'fanner': e.shootT = G.rnd(1500, 3000); break;
       case 'shield': e.shield = 70 * DEG; e.bashT = G.rnd(2000, 4000); break;
       case 'moth': e.shootT = G.rnd(1500, 3500); break;
       case 'sower': e.sumT = G.rnd(2500, 4500); break;
       case 'blinker': e.atkT = G.rnd(2500, 4200); break;
       case 'scorcher': e.atkT = G.rnd(1000, 3000); break;
+      case 'dog': e.orbT = G.rnd(600, 1400); e.orR = G.rnd(170, 200); break;
+      case 'salamander': e.lx = null; break;
+      case 'chainer': e.atkT = G.rnd(2500, 4200); break;
       case 'mini_bulwark': e.big = true; e.shield = 70 * DEG; e.atkT = 2000; e.spawnT = e.spawnMax = 900; e.shieldHp = e.shieldMax = B.mini.bulwark.shieldPct * hp; e.shieldBroken = false;
         e.enraged = false; e.expT = 0; e.expMul = 1; e.bag = []; e.orbs = null; e.cn = 0; e.partName = 'ESCUDO'; break;
       case 'mini_hive': e.big = true; e.atkT = 2500; e.ecT = 9000; e.spawnT = e.spawnMax = 900; e.sacHp = e.sacMax = B.mini.hive.sacPct * hp; e.sacBroken = false;
@@ -81,12 +86,14 @@
   E.aliveCount = function () { var n = 0; for (var i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead) n++; return n; };
   E.boss = function () { for (var i = 0; i < G.enemies.length; i++) if (G.enemies[i].type === 'boss' && !G.enemies[i].dead) return G.enemies[i]; return null; };
 
+  // SFX propio de la familia (families.js, campo sfx de la entrada); sin familia no suena nada extra (el roster legado queda idéntico)
+  function fsfx(e, k, o) { var n = e.fe && e.fe.sfx && e.fe.sfx[k]; if (n) G.sfx(n, o); }
   // ------------------------------------------------------------- Daño y muerte
   // El daño de las cartas pasa por G.Combat.deal; aquí solo la explosión de la bomba y la muerte.
   function explode(e) {
     fx.ring(e.x, e.y, 8, 60, 300, '#ff6a2a', 5);
     fx.part('explosion', e.x, e.y, 0, 0, 350, { sc: 1.1, add: true, anim: true }); fx.shockwave(e.x, e.y, 130);
-    fx.flames(e.x, e.y, 10, 40); fx.shake(7, 180); G.sfx('explosion');
+    fx.flames(e.x, e.y, 10, 40); fx.shake(7, 180); G.sfx('explosion'); fsfx(e, 'boom', { vol: 0.9 });
     var p = PL();
     if (!p.dead && G.dist(e.x, e.y, p.x, p.y) <= 60 + p.r) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'bomb' });
   }
@@ -105,6 +112,7 @@
     if (e.type === 'warlock') {   // matar al invocador disipa a sus gusanos
       for (i = 0; i < G.enemies.length; i++) { var w = G.enemies[i]; if (!w.dead && w.owner === e) { w.dead = true; fx.puff(w.x, w.y, 1); fx.burst(w.x, w.y, 6, '#a060ff', 120, 400, 3, { add: true }); } }
     }
+    if (e.type === 'salamander') E.zone({ kind: 'fire', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg * 5 / 8, tick: 400, owner: null, src: 'salamander_pool' });   // al morir deja un charco r 30 de 2 s
     if (e.type === 'sower') E.zone({ kind: 'spore', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg, tick: 500, slow: 0.15, owner: null, src: 'sower' });
     if (e.type === 'mini_hive') {   // se divide en 3 gusanos grandes
       for (i = 0; i < 3; i++) { var an = i * 2.094 + 0.5; E.spawn('worm', e.x + Math.cos(an) * 30, e.y + Math.sin(an) * 30, { summoned: true, hp: 40, scale: 1.3, spawnT: 500 }); }
@@ -128,7 +136,7 @@
     if (!G.hasSpr(spr)) spr = o.fb || null;
     if (G.projectiles.length > G.Q.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
-      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null });
+      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null });
   };
 
   function updateProjectiles(dt, onlyPlayer) {
@@ -153,7 +161,7 @@
         if (dead) { fx.burst(q.x, q.y, 8, '#bfeaff', 140, 350, 3, { add: true }); fx.ring(q.x, q.y, 3, 18, 200, '#7fd4ff', 2); G.sfx('hit', { pitch: 1.8, vol: 0.4 }); G.projectiles.splice(i, 1); continue; }
       }
       if (!dead && !p.dead && G.dist(q.x, q.y, p.x, p.y) < q.r + p.r - 2) {
-        if (G.Player.hurt(p, q.dmg, q.x - q.vx, q.y - q.vy, { slow: q.slow, src: q.src }) || G.god) dead = true;
+        if (G.Player.hurt(p, q.dmg, q.x - q.vx, q.y - q.vy, { slow: q.slow, src: q.src }) || G.god) { dead = true; if (q.sfxHit) { G.sfx(q.sfxHit, { vol: 0.8 }); if (q.kind === 'chain') fx.ring(p.x, p.y, 4, 26, 260, '#7fd4ff', 3); } }
       }
       if (dead) G.projectiles.splice(i, 1);
     }
@@ -164,6 +172,7 @@
 
   function ai_worm(e, dt, s, p, d, a) {
     moveTo(e, a, e.spd, s);
+    if (e.fe && (e.sndT -= dt) <= 0) { e.sndT = G.rnd(6000, 14000); if (d < 420) fsfx(e, 'spawn', { vol: 0.4 }); }   // Cordero / Esqueleto: sonido ambiental esporádico
     if (e.hitCd > 0) e.hitCd -= dt;
     else if (!p.dead && d < e.r + p.r + 3) { G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'worm' }); e.hitCd = 700; }
   }
@@ -176,18 +185,22 @@
       // si está contra una pared, cambia el sentido del giro
       if (e.x < G.WALL + 20 || e.x > G.AW - G.WALL - 20 || e.y < G.WALL + 20 || e.y > G.AH - G.WALL - 20) e.strafe *= -1;
       e.shootT -= dt;
-      if (e.shootT <= 0) { e.st = 'aim'; e.t = 0; }
+      if (e.shootT <= 0) { e.st = 'aim'; e.t = 0; e.ang = a; }
+      if (e.flT > 0) e.flT -= dt;
     } else if (e.st === 'aim') {
       e.t += dt;
-      if (e.t >= 400) {
-        E.shoot('e', e.x, e.y, Math.atan2(p.y - e.y, p.x - e.x), 220, e.dmg, 'arrow', { r: 6, src: 'archer' });
-        G.sfx('shoot', { vol: 0.6 });
+      var fe = e.fe;
+      if (fe && e.t < 250) e.ang = a;   // familia: el apunte se fija en los últimos 150 ms (la línea fina del aviso es la trayectoria real)
+      if (e.t >= B.tele.archer.ms) {
+        if (fe) { E.shoot('e', e.x, e.y, e.ang, 220, e.dmg, fe.proj, { r: 6, src: 'archer', fb: fe.fb }); fsfx(e, 'shoot', { vol: 0.6 }); e.flT = 220; }
+        else { E.shoot('e', e.x, e.y, Math.atan2(p.y - e.y, p.x - e.x), 220, e.dmg, 'arrow', { r: 6, src: 'archer' }); G.sfx('shoot', { vol: 0.6 }); }
         e.st = 'move'; e.shootT = 2400;
       }
     }
   }
 
   function ai_boar(e, dt, s, p, d, a) {
+    if (e.fe && e.fe.roll) return ai_skull(e, dt, s, p, d, a);   // Calavera rodante (M2)
     if (e.st === 'move') {
       moveTo(e, a, e.spd, s);
       if (d < 250) { e.st = 'wind'; e.t = 0; e.ang = a; }
@@ -229,7 +242,7 @@
         moveTo(e, fa, e.spd, s);
       }
       e.sumT -= dt;
-      if (e.sumT <= 0) { e.st = 'cast'; e.t = 0; }
+      if (e.sumT <= 0) { e.st = 'cast'; e.t = 0; fsfx(e, 'tele', { vol: 0.8 }); }
     } else if (e.st === 'cast') {
       e.t += dt;
       if (e.t >= 500) {
@@ -272,7 +285,7 @@
       if (e.t < 350) e.ang = a;                       // se fija en los últimos 150 ms
       if (e.t >= 500) {
         for (var k = -1; k <= 1; k++) E.shoot('e', e.x, e.y, e.ang + k * 14 * DEG, 190, e.dmg, 'proj_thorn_small', { r: 5, life: 3500, fb: 'thorn', src: 'fanner' });
-        G.sfx('shoot', { pitch: 1.3, vol: 0.5 });
+        G.sfx('shoot', { pitch: 1.3, vol: 0.5 }); fsfx(e, 'shoot', { vol: 0.6 });
         e.st = 'rec'; e.t = 0;
       }
     } else if (e.st === 'rec') {
@@ -294,7 +307,7 @@
       if (e.t < 350) e.fa = a;
       moveTo(e, e.fa + Math.PI, 12, s);               // retrocede ~6 px
       if (e.t >= 500) {
-        e.st = 'bash'; e.t = 0; fx.shake(3, 100); G.sfx('hit_heavy', { vol: 0.5 });
+        e.st = 'bash'; e.t = 0; fx.shake(3, 100); G.sfx('hit_heavy', { vol: 0.5 }); fsfx(e, 'bash', { vol: 0.7 });
         if (!p.dead && inFan(e, p, e.fa, 45 * DEG, e.r + p.r + SH_REACH)) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'shield', kb: 1 });
         fx.ring(e.x + Math.cos(e.fa) * e.r, e.y + Math.sin(e.fa) * e.r, 4, 36, 200, '#ffffff', 3);
       }
@@ -314,12 +327,13 @@
       kite(e, a, d, 150, 190, s, w);
       contact(e, dt, p, d, 900, 'moth');
       e.shootT -= dt;
-      if (e.shootT <= 0) { e.st = 'charge'; e.t = 0; e.ang = a; }
+      if (e.shootT <= 0) { e.st = 'charge'; e.t = 0; e.ang = a; fsfx(e, 'move', { vol: 0.5 }); }
     } else if (e.st === 'charge') {
       e.t += dt; e.ang = a;
-      if (e.t >= 450) {
-        E.shoot('e', e.x, e.y - 4, e.ang, 150, e.dmg, 'proj_frost_orb', { r: 8, life: 4500, hp: 1, slow: [0.35, 2000], orb: true, src: 'moth' });
-        G.sfx('shoot', { pitch: 1.8, vol: 0.4 });
+      if (e.t >= B.tele.moth.ms) {
+        var mf = e.fe;   // familia: orbe de lana (anillo azul claro = ralentiza 30 % durante 2 s); legado: orbe de hielo 35 %
+        E.shoot('e', e.x, e.y - 4, e.ang, 150, e.dmg, mf && mf.proj || 'proj_frost_orb', { r: 8, life: 4500, hp: 1, slow: mf && mf.orbSlow || [0.35, 2000], orb: true, src: 'moth' });
+        G.sfx('shoot', { pitch: 1.8, vol: 0.4 }); fsfx(e, 'shoot', { vol: 0.6 });
         e.st = 'throw'; e.t = 0;
       }
     } else if (e.st === 'throw') {
@@ -339,8 +353,8 @@
     } else if (e.st === 'sow') {
       e.t += dt;
       if (e.t >= 500) {
-        E.zone({ kind: 'spore', x: p.x, y: p.y, r: 42, arm: 900, life: 4000, dmg: e.dmg, tick: 500, slow: 0.15, owner: e, src: 'sower' });
-        G.sfx('wave_start', { pitch: 1.6, vol: 0.35 });
+        E.zone({ kind: 'spore', x: p.x, y: p.y, r: 42, arm: B.tele.sower.ms, life: 4000, dmg: e.dmg, tick: 500, slow: 0.15, owner: e, src: 'sower' });
+        G.sfx('wave_start', { pitch: 1.6, vol: 0.35 }); fsfx(e, 'tele', { vol: 0.7 });
         e.st = 'move'; e.sumT = 4000;
       }
     }
@@ -353,7 +367,7 @@
       kite(e, a, d, 190, 220, s);
       e.atkT -= dt;
       if (e.atkT <= 0) {
-        e.st = 'fade'; e.t = 0; e.immune = true;
+        e.st = 'fade'; e.t = 0; e.immune = true; if (e.fe) G.sfx('soul_whisper', { vol: 0.8 });
         var an = G.rnd(0, 6.283), m = G.WALL + 20;
         e.tx = G.clamp(p.x + Math.cos(an) * 55, m, G.AW - m); e.ty = G.clamp(p.y + Math.sin(an) * 55, m, G.AH - m);
         fx.puff(e.x, e.y, 1);
@@ -363,7 +377,7 @@
       if (e.t >= 500) {
         e.immune = false; fx.puff(e.x, e.y, 1);
         e.x = e.tx; e.y = e.ty; fx.puff(e.x, e.y, 2); fx.burst(e.x, e.y, 8, '#a98aff', 140, 400, 3, { add: true });
-        e.st = 'slash'; e.t = 0; e.ang = Math.atan2(p.y - e.y, p.x - e.x);
+        e.st = 'slash'; e.t = 0; e.ang = Math.atan2(p.y - e.y, p.x - e.x); if (e.fe) G.sfx('soul_blink', { vol: 0.6 });
       }
     } else if (e.st === 'slash') {
       e.t += dt;
@@ -390,7 +404,7 @@
       e.t += dt;
       if (e.t < 450) { e.ang = a; e.face = Math.cos(a) >= 0 ? 1 : -1; }
       if (e.t % 120 < dt && Math.random() < 0.8) fx.smoke(e.x, e.y, 1);
-      if (e.t >= 600) { e.st = 'dash'; e.t = 0; e.hitDone = false; e.trailT = 0; G.sfx('boss_roar', { pitch: 2, vol: 0.3 }); }
+      if (e.t >= B.tele.scorcher.ms) { e.st = 'dash'; e.t = 0; e.hitDone = false; e.trailT = 0; G.sfx('boss_roar', { pitch: 2, vol: 0.3 }); if (e.fe) G.sfx('lava_trail_hiss', { vol: 0.6 }); }
     } else if (e.st === 'dash') {
       e.t += dt; e.trailT -= dt;
       moveTo(e, e.ang, 300, s);
@@ -401,6 +415,134 @@
     } else if (e.st === 'rec') {
       e.t += dt;
       if (e.t >= 700) { e.st = 'move'; e.atkT = 3500; }
+    }
+  }
+
+  // ---------------------------------------------------------------- Familias v5 P1: mecánicas nuevas (DESIGN-v5-biomas.md A.6, M1-M4)
+  // Tiempos de aviso: G.B.tele (families.js). El resto de números de abajo son los del doc (A.3 / A.4).
+  var DG = { w: 1.1, orbMs: [1300, 1900], dashSpd: 320, dashMin: 250, dashMax: 700, push: 55, rec: 600, ring: 28 };   // Perro pastor
+  var SK = { len: 280, spd: 300, len2: 200, stun1: 400, stun: 900 };                                                    // Calavera rodante
+  var SL = { every: 70, r: 22, life: 5000, max: 6, dmg: 5 / 8 };                                                       // Salamandra: un charco cada 70 px, máx. 6, daño 5/400 ms (= dmg x 5/8)
+  var CH = { range: 300, spd: 420, slow: [0.45, 1800], gap: 5000, fix: 300 };                                           // Guardián de cadenas
+  function centerPush(p) {   // punto de origen tal que el empuje de Player.hurt aleje al jugador del punto y lo mande hacia el centro de la arena
+    var cx = G.AW / 2 - p.x, cy = G.AH / 2 - p.y, l = Math.hypot(cx, cy) || 1;
+    return [p.x - cx / l * 10, p.y - cy / l * 10];
+  }
+
+  // M1 Perro pastor: órbita a 170-200 px (w 1,1 rad/s) -> ladrido 450 ms (anillo r 28 + línea al punto de arreo, el rumbo se fija en los últimos 150 ms) -> arreo a 320 px/s
+  // (250-700 ms según la distancia: llega hasta donde estaba el jugador) -> 8 de daño y empuje de 55 px hacia el CENTRO de la arena -> descansa 600 ms (vulnerable).
+  function dogPath(e, d) { return G.clamp(d + 20, 80, DG.dashMax * DG.dashSpd / 1000); }
+  function ai_dog(e, dt, s, p, d, a) {
+    if (e.st === 'move') {   // órbita
+      e.orbT -= dt;
+      if (d > e.orR + 50) moveTo(e, a, e.spd * 1.3, s);   // aún lejos: se acerca hasta su radio de órbita
+      else {
+        var rr = d + G.clamp(e.orR - d, -e.spd * s, e.spd * s), th = Math.atan2(e.y - p.y, e.x - p.x) + e.strafe * Math.min(DG.w, e.spd * 1.6 / rr) * s;
+        var nx = p.x + Math.cos(th) * rr, ny = p.y + Math.sin(th) * rr, m = G.WALL + e.r + 12;
+        if (nx < m || nx > G.AW - m || ny < m || ny > G.AH - m) { e.strafe *= -1; moveTo(e, a, e.spd * 0.6, s); }   // pared: cambia el sentido del giro
+        else { e.x = nx; e.y = ny; }
+      }
+      if (e.orbT <= 0 && d < 330) { e.st = 'bark'; e.t = 0; e.ang = a; e.bk2 = false; G.sfx('dog_bark', { vol: 0.9 }); }
+      else if (e.orbT <= 0) e.orbT = 500;
+    } else if (e.st === 'bark') {
+      e.t += dt;
+      if (e.t < B.tele.dog.ms - 150) e.ang = a;
+      e.face = Math.cos(e.ang) >= 0 ? 1 : -1;
+      if (!e.bk2 && e.t >= 220) { e.bk2 = true; G.sfx('dog_bark', { vol: 0.7, pitch: 1.15 }); }   // dos ladridos
+      if (e.t >= B.tele.dog.ms) {
+        e.st = 'dash'; e.t = 0; e.hitDone = false; e.dashMs = G.clamp((dogPath(e, d)) / DG.dashSpd * 1000, DG.dashMin, DG.dashMax);
+        G.sfx('dog_dash', { vol: 0.8 });
+      }
+    } else if (e.st === 'dash') {
+      e.t += dt; moveTo(e, e.ang, DG.dashSpd, s); e.face = Math.cos(e.ang) >= 0 ? 1 : -1;
+      if (!e.hitDone && !p.dead && d < e.r + p.r + 2) {
+        e.hitDone = true; var o = centerPush(p);
+        G.Player.hurt(p, e.dmg, o[0], o[1], { src: 'dog', kb: DG.push / 60 });
+        fx.ring(p.x, p.y, 4, 30, 220, '#d8cfae', 3); e.st = 'rec'; e.t = 0;
+      } else if (e.t >= e.dashMs) { e.st = 'rec'; e.t = 0; fx.dust(e.x, e.y, 3); }
+    } else if (e.st === 'rec') {
+      e.t += dt;
+      if (e.t >= DG.rec) { e.st = 'move'; e.orbT = G.rnd(DG.orbMs[0], DG.orbMs[1]); e.orR = G.rnd(170, 200); e.strafe = Math.random() < 0.5 ? 1 : -1; }
+    }
+  }
+
+  // M2 Calavera rodante: aviso 600 ms (carril rojo hacia el jugador, fijo en los últimos 200 ms), rueda 300 px/s hasta 280 px. Si choca con pared / pilar REBOTA una vez:
+  // se aturde 400 ms (ventana x1,3) y muestra una flecha roja de 400 ms hacia el segundo tramo (200 px); si no choca, descansa aturdida 900 ms (como el Jabalí).
+  function skullBounce(e) {   // true si choca con pared o pilar (y refleja la dirección)
+    var m = G.WALL + e.r + 1, nx = 0, ny = 0, i, ob = G.Boss.obs;
+    if (e.x <= m) nx = 1; else if (e.x >= G.AW - m) nx = -1;
+    if (e.y <= m) ny = 1; else if (e.y >= G.AH - m) ny = -1;
+    for (i = 0; i < ob.length; i++) { var o = ob[i]; if (!o.dead && Math.hypot(o.x - e.x, o.y - e.y) < o.r + e.r * 0.8) { var dx = e.x - o.x, dy = e.y - o.y, l = Math.hypot(dx, dy) || 1; nx = dx / l; ny = dy / l; break; } }
+    if (!nx && !ny) return false;
+    var nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
+    var vx = Math.cos(e.ang), vy = Math.sin(e.ang), dp = vx * nx + vy * ny;
+    if (dp < 0) { vx -= 2 * dp * nx; vy -= 2 * dp * ny; e.ang = Math.atan2(vy, vx); }
+    return true;
+  }
+  function ai_skull(e, dt, s, p, d, a) {
+    var st = e.st;
+    if (e.expT > 0) e.expT -= dt;
+    if (st === 'move') {
+      moveTo(e, a, e.spd, s);
+      if (d < 250) { e.st = 'wind'; e.t = 0; e.ang = a; G.sfx('skull_roll', { vol: 0.9 }); }
+    } else if (st === 'wind') {
+      e.t += dt;
+      if (e.t < B.tele.roll.ms - 200) e.ang = a;
+      if (e.t >= B.tele.roll.ms) { e.st = 'roll'; e.t = 0; e.trav = 0; e.hitDone = false; e.len = SK.len; e.face = Math.cos(e.ang) >= 0 ? 1 : -1; }
+    } else if (st === 'roll' || st === 'roll2') {
+      e.t += dt; var step = SK.spd * s; moveTo(e, e.ang, SK.spd, s); e.trav += step;
+      if (Math.random() < 0.3) fx.dust(e.x, e.y + 10, 1);
+      if (!e.hitDone && !p.dead && d < e.r + p.r) { e.hitDone = true; G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'boar' }); }
+      var hit = skullBounce(e);
+      if (hit && st === 'roll' && e.trav < e.len) {   // rebote: aturdida con el aviso del segundo tramo
+        e.st = 'bounce'; e.t = 0; e.expT = SK.stun1; e.expMul = 1.3; fx.shake(5, 150); fx.dust(e.x, e.y, 6); G.sfx('skull_bounce', { vol: 0.9 }); G.sfx('skull_roll', { vol: 0.6, pitch: 1.2 });
+        e.x = G.clamp(e.x, G.WALL + e.r + 2, G.AW - G.WALL - e.r - 2); e.y = G.clamp(e.y, G.WALL + e.r + 2, G.AH - G.WALL - e.r - 2);
+      } else if (hit || e.trav >= e.len) {
+        e.st = 'stun'; e.t = 0; if (hit) { fx.shake(4, 120); fx.dust(e.x, e.y, 6); G.sfx('skull_bounce', { vol: 0.8 }); }
+      }
+    } else if (st === 'bounce') {
+      e.t += dt;
+      if (e.t >= B.tele.bounce.ms) { e.st = 'roll2'; e.t = 0; e.trav = 0; e.hitDone = false; e.len = SK.len2; e.face = Math.cos(e.ang) >= 0 ? 1 : -1; }
+    } else if (st === 'stun') {
+      e.t += dt;
+      if (e.t >= SK.stun) { e.st = 'move'; e.t = 0; }
+    }
+  }
+
+  // M3 Salamandra de lava: camina hacia el jugador y deja un charco cada 70 px (r 22: aviso naranja punteado 600 ms sin daño, 5 s activo, 5 de daño / 400 ms); máx. 6 por salamandra
+  function layPool(e) {
+    var n = 0, i, oldest = -1;
+    for (i = 0; i < G.zones.length; i++) { var z = G.zones[i]; if (z.team === 'e' && z.owner === e && z.kind === 'fire') { n++; if (oldest < 0) oldest = i; } }
+    if (n >= SL.max && oldest >= 0) G.zones.splice(oldest, 1);   // se apaga el más viejo
+    E.zone({ kind: 'fire', x: e.x, y: e.y + 4, r: SL.r, arm: B.tele.salamander.ms, life: SL.life, dmg: e.dmg * SL.dmg, tick: 400, owner: e, src: 'salamander_pool' });
+    var now = performance.now(); if (now - (E._poolSfx || 0) > 180) { E._poolSfx = now; G.sfx('lava_pool', { vol: 0.5 }); }
+  }
+  function ai_salamander(e, dt, s, p, d, a) {
+    if (e.lx == null) { e.lx = e.x; e.ly = e.y; }
+    moveTo(e, a, e.spd, s);
+    contact(e, dt, p, d, 900, 'salamander');
+    if (Math.hypot(e.x - e.lx, e.y - e.ly) >= SL.every) { layPool(e); e.lx = e.x; e.ly = e.y; }
+  }
+
+  // M4 Guardián de cadenas: mantiene distancia; cada 5 s apunta 700 ms (línea fina naranja, fija los últimos 300 ms) y lanza una cadena a 420 px/s, alcance 300:
+  // 6 de daño y ralentiza 45 % durante 1,8 s. No se puede interceptar con cartas, solo esquivar.
+  function ai_chainer(e, dt, s, p, d, a) {
+    if (e.st === 'move') {
+      kite(e, a, d, 180, 260, s);
+      contact(e, dt, p, d, 900, 'chainer');
+      e.atkT -= dt;
+      if (e.atkT <= 0 && d < CH.range + 50) { e.st = 'wind'; e.t = 0; e.ang = a; G.sfx('chain_rattle', { vol: 0.9 }); }
+    } else if (e.st === 'wind') {
+      e.t += dt;
+      if (e.t < B.tele.chainer.ms - CH.fix) e.ang = a;
+      e.face = Math.cos(e.ang) >= 0 ? 1 : -1;
+      if (e.t >= B.tele.chainer.ms) {
+        E.shoot('e', e.x, e.y - 4, e.ang, CH.spd, e.dmg, 'proj_chain', { r: 9, life: CH.range / CH.spd * 1000, slow: CH.slow, src: 'chainer', kind: 'chain', ox: e.x, oy: e.y - 4, sfxHit: 'chain_hit' });
+        G.sfx('chain_throw', { vol: 0.8 }); e.st = 'throw'; e.t = 0;
+      }
+    } else if (e.st === 'throw') {
+      e.t += dt;
+      if (e.t >= 300) { e.st = 'move'; e.atkT = CH.gap; }
     }
   }
 
@@ -662,7 +804,7 @@
   function ai_boss() { }
 
   var AI = { worm: ai_worm, archer: ai_archer, boar: ai_boar, bomb: ai_bomb, warlock: ai_warlock, boss: ai_boss, fanner: ai_fanner, shield: ai_shield, moth: ai_moth,
-    sower: ai_sower, blinker: ai_blinker, scorcher: ai_scorcher, mini_bulwark: ai_bulwark, mini_hive: ai_hive };
+    sower: ai_sower, blinker: ai_blinker, scorcher: ai_scorcher, dog: ai_dog, salamander: ai_salamander, chainer: ai_chainer, mini_bulwark: ai_bulwark, mini_hive: ai_hive };
 
   // ------------------------------------------------------------- Update
   E.update = function (dt) {
@@ -688,7 +830,7 @@
       e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
-      if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash'))) e.face = dx >= 0 ? 1 : -1;
+      if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash' || e.st === 'roll' || e.st === 'roll2' || e.st === 'bounce')) && !((e.type === 'dog' || e.type === 'chainer') && e.st !== 'move' && e.st !== 'rec')) e.face = dx >= 0 ? 1 : -1;
       if (!p.dead) AI[e.type](e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
       var m = G.WALL + e.r;
       e.x = G.clamp(e.x, m, G.AW - m); e.y = G.clamp(e.y, m, G.AH - m);
@@ -727,7 +869,14 @@
   function drawZone(c, z, i) {
     var t = G.time / 1000;
     c.save();
-    if (z.kind === 'fire') {
+    if (z.kind === 'fire' && z.arm > 0) {   // charco de lava armándose (Salamandra): círculo naranja punteado, sin daño
+      var ua = 1 - z.arm / z.armMax;
+      disc(c, z.x, z.y, z.r, 'rgba(255,130,40,' + (0.08 + 0.16 * ua) + ')');
+      c.strokeStyle = 'rgba(8,4,14,0.6)'; c.lineWidth = 5; c.beginPath(); c.arc(z.x, z.y, z.r, 0, 6.283); c.stroke();
+      c.strokeStyle = 'rgba(255,150,60,0.95)'; c.lineWidth = 2; c.setLineDash([5, 5]); c.lineDashOffset = -t * 24;
+      c.beginPath(); c.arc(z.x, z.y, z.r, 0, 6.283); c.stroke(); c.setLineDash([]);
+      c.globalAlpha = 0.7; c.beginPath(); c.arc(z.x, z.y, z.r * ua, 0, 6.283); c.stroke();
+    } else if (z.kind === 'fire') {
       var a = Math.min(1, z.life / 400);
       if (G.hasSpr('fx_fire_cell')) {
         c.globalAlpha = a; var cv = Assets.sprite('fx_fire_cell', Math.floor(z.t / 110 + i) % 3); c.drawImage(cv, Math.round(z.x - z.r - 2), Math.round(z.y - z.r - 2), z.r * 2 + 4, z.r * 2 + 4);
@@ -838,6 +987,42 @@
     if (e.enraged) { c.save(); c.globalAlpha = 0.15 + 0.1 * Math.sin(G.time / 90); c.fillStyle = '#ff7a10'; c.beginPath(); c.arc(e.x, e.y, e.r + 6, 0, 6.283); c.fill(); c.restore(); }
   }
 
+  // Telegrafías propias de las familias P1 (rojo = daño directo; contorno oscuro para leerse con 100 enemigos y sobre los círculos del ritual)
+  function thinLine(c, x, y, ang, len, col, w, dash) {
+    c.save(); c.translate(x, y); c.rotate(ang);
+    c.strokeStyle = 'rgba(8,4,14,0.65)'; c.lineWidth = w + 3; c.beginPath(); c.moveTo(0, 0); c.lineTo(len, 0); c.stroke();
+    c.strokeStyle = col; c.lineWidth = w; if (dash) c.setLineDash(dash); c.beginPath(); c.moveTo(0, 0); c.lineTo(len, 0); c.stroke(); c.restore();
+  }
+  function drawFamTele(c, e, p) {
+    var u, ty = e.type, st = e.st, hw = e.r + p.r;
+    if (ty === 'archer' && st === 'aim') {   // línea fina de la flecha (parpadeo amarillo en el cuerpo)
+      u = e.t / B.tele.archer.ms; thinLine(c, e.x, e.y, e.ang, 260, 'rgba(255,226,122,' + (0.35 + 0.5 * u) + ')', 1.5, e.t >= 250 ? null : [5, 5]);
+    } else if (ty === 'dog' && (st === 'bark' || st === 'dash')) {
+      u = st === 'bark' ? e.t / B.tele.dog.ms : 1;
+      var ln = st === 'bark' ? dogPath(e, G.dist(e.x, e.y, p.x, p.y)) : e.dashMs * DG.dashSpd / 1000;
+      if (st === 'bark') {   // anillo rojo r 28 + carril (fijo los últimos 150 ms) con línea fina hasta el punto de arreo
+        c.save(); c.translate(e.x, e.y); c.rotate(e.ang); c.fillStyle = RED(0.05 + 0.13 * u); c.fillRect(0, -hw, ln, hw * 2); c.restore();
+        thinLine(c, e.x, e.y, e.ang, ln, 'rgba(255,90,90,' + (0.5 + 0.45 * u) + ')', 1.5, e.t >= B.tele.dog.ms - 150 ? null : [6, 4]);
+        tdisc(c, e.x, e.y, DG.ring + 3 * Math.sin(e.t / 40), RED(0.1 + 0.25 * u), 'rgba(255,100,90,0.95)', 2);
+      }
+    } else if (ty === 'boar' && e.fe.roll) {
+      if (st === 'wind') {   // carril rojo del primer tramo (honesto: ancho = radios de contacto)
+        u = e.t / B.tele.roll.ms; lane(c, e.x, e.y, e.ang, SK.len + e.r, hw * 2, u, e.t >= B.tele.roll.ms - 200);
+      } else if (st === 'bounce') {   // flecha roja del segundo tramo
+        u = e.t / B.tele.bounce.ms; lane(c, e.x, e.y, e.ang, SK.len2 + e.r, hw * 2, u, e.t >= 150);
+        c.save(); c.translate(e.x + Math.cos(e.ang) * (SK.len2 * 0.5 + e.r), e.y + Math.sin(e.ang) * (SK.len2 * 0.5 + e.r)); c.rotate(e.ang);
+        c.fillStyle = 'rgba(255,60,50,0.9)'; c.strokeStyle = 'rgba(8,4,14,0.8)'; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(22, 0); c.lineTo(2, -13); c.lineTo(2, 13); c.closePath(); c.fill(); c.stroke(); c.restore();
+      } else if (st === 'roll' || st === 'roll2') {
+        lane(c, e.x, e.y, e.ang, Math.max(0, e.len - e.trav) + e.r, hw * 2, 1, true);
+      }
+    } else if (ty === 'chainer' && st === 'wind') {   // línea fina naranja hasta el jugador; fija los últimos 300 ms
+      u = e.t / B.tele.chainer.ms; var fx2 = e.t >= B.tele.chainer.ms - CH.fix;
+      thinLine(c, e.x, e.y - 4, e.ang, CH.range, 'rgba(255,150,50,' + (0.45 + 0.5 * u) + ')', fx2 ? 2.5 : 1.5, fx2 ? null : [6, 5]);
+      if (fx2) { c.save(); c.translate(e.x, e.y - 4); c.rotate(e.ang); c.fillStyle = 'rgba(255,140,40,0.1)'; c.fillRect(0, -9, CH.range, 18); c.restore(); }
+    }
+  }
+
   E.drawGround = function (c) {
     var i, e, p = PL(), u;
     for (i = 0; i < G.zones.length; i++) if (G.zones[i].team === 'e') drawZone(c, G.zones[i], i);
@@ -852,7 +1037,8 @@
         c.beginPath(); c.arc(e.x, e.y, (big ? 40 : 18) * (0.5 + 0.5 * u), 0, 6.283); c.fill(); c.stroke(); c.restore();
         continue;
       }
-      if (e.type === 'boar' && e.st === 'wind') {
+      if (e.fe) drawFamTele(c, e, p);   // telegrafías de las familias (Zarzal / Arquero, Perro, Calavera rodante, Guardián de cadenas)
+      if (e.type === 'boar' && e.st === 'wind' && !(e.fe && e.fe.roll)) {
         var len = 171 + e.r, w = e.r * 2, f = e.t / 600;
         c.save(); c.translate(e.x, e.y); c.rotate(e.ang);
         c.fillStyle = 'rgba(255,40,40,' + (0.12 + 0.25 * f) + ')'; c.fillRect(0, -w / 2, len, w);
@@ -960,9 +1146,28 @@
     return 0;
   }
 
+  // animación de los sprites de las familias P1 (assets_fam1.js: nombres de anim en ASSETS_API.md); los roles que comparten nombres de anim con el sprite legado reutilizan newAnim
+  function famAnim(e) {
+    var w = Math.floor(e.anim / 110), st = e.st;
+    switch (e.type) {
+      case 'worm': return 'walk:' + w;
+      case 'archer': return st === 'aim' ? 'aim' : e.flT > 0 ? 'fire' : 'walk:' + w;
+      case 'fanner': case 'shield': case 'moth': case 'blinker': return newAnim(e);
+      case 'bomb': return st === 'lit' ? (e.t > 550 ? 'prime' : 'lit:' + Math.floor(e.t / 100)) : 'walk:' + w;
+      case 'boar': return st === 'wind' ? 'wind' : (st === 'roll' || st === 'roll2') ? 'roll:' + Math.floor(e.t / 60) : (st === 'stun' || st === 'bounce') ? 'stun' : 'walk:' + Math.floor(e.anim / 200);
+      case 'warlock': return st === 'cast' ? 'cast:' + Math.floor(e.t / 150) : 'idle:' + Math.floor(e.anim / 250);
+      case 'dog': return st === 'bark' ? 'bark' : st === 'dash' ? 'dash:' + Math.floor(e.t / 70) : st === 'rec' ? 'idle:' + Math.floor(e.anim / 250) : 'walk:' + Math.floor(e.anim / 90);
+      case 'salamander': return 'slither:' + Math.floor(e.anim / 125);
+      case 'chainer': return st === 'wind' ? 'wind' : st === 'throw' ? 'throw:' + (e.t < 150 ? 0 : 1) : 'walk:' + Math.floor(e.anim / 160);
+    }
+    return 0;
+  }
+  var FAMSPR = /^enemy_(bos|cri)_/;
+
   // Devuelve { cv, sc, fb } con el canvas actual del enemigo
   function visual(e) {
     var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
+    if (!fb && FAMSPR.test(name)) return { cv: Assets.sprite(name, famAnim(e)), sc: 1, fb: null };
     if (!fb) return { cv: Assets.sprite(name, oldAnim(name, e)), sc: 1, fb: null };
     if (G.hasSpr(name)) { try { return { cv: Assets.sprite(name, newAnim(e)), sc: 1, fb: null }; } catch (x) { /* anim desconocida: usa el reemplazo */ } }
     return { cv: Assets.sprite(fb.spr, oldAnim(fb.spr, e)), sc: fb.sc || 1, fb: fb };
@@ -979,7 +1184,7 @@
     return l[Math.floor(e.anim / 260) % l.length];
   }
 
-  var SHADOW = { boss: 2.5, boar: 1.4, shield: 1.2, scorcher: 1.5, mini_bulwark: 1.9, mini_hive: 2 };
+  var SHADOW = { boss: 2.5, boar: 1.4, shield: 1.2, scorcher: 1.5, mini_bulwark: 1.9, mini_hive: 2, dog: 1.3, salamander: 1.5, chainer: 1.3 };
 
   E.draw = function (c, e) {
     if (e.type === 'boss') { G.Boss.draw(c, e); return; }
@@ -999,7 +1204,11 @@
     else if (e.type === 'sower' && e.st === 'sow') { o.tint = '#9bff4a'; o.tintA = 0.3; }
     else if (e.type === 'scorcher' && (e.st === 'wind' || e.st === 'dash')) { o.tint = '#ffd23a'; o.tintA = 0.25 + 0.25 * Math.sin(e.t / 50); }
     else if (e.type === 'bomb' && e.st === 'lit' && Math.floor(e.t / 80) % 2) { o.tint = '#ff3030'; o.tintA = 0.6; }
-    else if (e.type === 'boar' && e.st === 'stun') { o.tint = '#ffff80'; o.tintA = 0.25 + 0.15 * Math.sin(e.t / 60); }
+    else if (e.type === 'boar' && (e.st === 'stun' || e.st === 'bounce')) { o.tint = '#ffff80'; o.tintA = 0.25 + 0.15 * Math.sin(e.t / 60); }
+    else if (e.type === 'boar' && e.st === 'wind' && e.fe) { o.tint = '#ff6a5a'; o.tintA = 0.2 + 0.3 * (e.t / 600); }
+    else if (e.type === 'dog' && e.st === 'bark') { o.tint = '#ff4040'; o.tintA = 0.2 + 0.3 * Math.abs(Math.sin(e.t / 45)); }
+    else if (e.type === 'chainer' && e.st === 'wind') { o.tint = '#ff9a2a'; o.tintA = 0.2 + 0.3 * (e.t / 700); }
+    else if (e.type === 'warlock' && e.st === 'cast' && e.fe) { o.tint = '#b070ff'; o.tintA = 0.25; }
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
@@ -1049,6 +1258,13 @@
         if (!q.spr) { c.save(); c.fillStyle = '#bfeaff'; c.strokeStyle = '#4aa8ff'; c.lineWidth = 2; c.beginPath(); c.arc(Math.round(q.x), Math.round(q.y), q.r - 1, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x - 1, q.y - 1, 3, 0, 6.283); c.fill(); c.restore(); return; }
       }
       if (q.kind === 'shieldbit') { E.shieldBit(c, q.x, q.y, q.t / 60, 0.4); return; }
+      if (q.kind === 'chain' && q.ox != null) {   // la cadena: eslabones desde el guardián hasta la cabeza (proj_chain)
+        var cd = Math.hypot(q.x - q.ox, q.y - q.oy), cn = Math.max(1, Math.floor(cd / 14)), ci;
+        c.save(); c.strokeStyle = 'rgba(8,4,14,0.8)'; c.lineWidth = 5; c.beginPath(); c.moveTo(q.ox, q.oy); c.lineTo(q.x, q.y); c.stroke();
+        c.strokeStyle = '#8f98ab'; c.lineWidth = 2.5; c.setLineDash([5, 3]); c.beginPath(); c.moveTo(q.ox, q.oy); c.lineTo(q.x, q.y); c.stroke(); c.setLineDash([]);
+        if (G.hasSpr('fx_chain_link')) { var lk = Assets.sprite('fx_chain_link', 0); for (ci = 1; ci < cn; ci += 2) c.drawImage(lk, Math.round(q.ox + (q.x - q.ox) * ci / cn - 8), Math.round(q.oy + (q.y - q.oy) * ci / cn - 8), 16, 16); }
+        c.restore();
+      }
       if (!q.spr) return;
       var cv = Assets.sprite(q.spr, Math.floor(q.t / 100) % 2);
       G.fx.spr(c, cv, q.x, q.y, { rot: q.orb ? 0 : G.Proj.ang(q.ang) });
