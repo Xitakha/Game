@@ -726,3 +726,11 @@ Nada de esto exige perder partidas guardadas (guardado v5 compatible hacia atrá
 9. Plan en 9 fases (P0-P8), 38 días en un flujo o ~26 con dos; publicable tras P1, P2, P4, P6, P7 y P8.
 10. Arte: 120 sprites / 759 frames (114 nuevos + 6 variantes); riesgo principal: arte y física de hielo, mitigados con prioridad, variantes y orden de desbloqueo como dato.
 11. Preguntas: ¿el Bosque pierde 4 roles?, ¿poder permanente "Ruta" sin PF?
+
+---
+
+## Decisiones del dueño (confirmadas)
+1. **Sí**: el Bosque pierde Escudero, Bomba, Espectro y Ascua (quedan solo en la Cripta); el Bosque tiene 8 tipos propios y conserva Coloso y Madre Colmena como guardianes.
+2. **Sí**: poder permanente situacional sin Puntos de Forja (rama "Ruta") con los trofeos de Yarlak y la Reina.
+3. Jefes nuevos elegidos: Yarlak (Tundra) y Melaria, la Reina Abeja (Panal). Orden del portal: Pastor → Karceron → Letea → Yarlak → Reina.
+4. Empezar por P0 (infraestructura de familias).
