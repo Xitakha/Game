@@ -461,3 +461,54 @@ Infraestructura de `DESIGN-v5-biomas.md` parte A (fase P0). **No cambia nada vis
 - `census.js '{"runs":8,"par":4,"fam":"0|1|","mat":"","biome":"","label":"x","stop":445,"base":"http://localhost:<puerto>"}'` (+ `census_page.js`): recorre la run con el bot y guarda los vivos medios por minuto, rol, tier y nombre de familia, el pico por rol y las altas por minuto (`$CENSUS_DIR/census_<label>.json`). `census_compare.js A.json B.json [--minutes=1-7]` compara (vivos +-8 % con margen de ruido de 3 errores estándar y proporción por tier +-10 puntos; también comprueba 0 errores y la intersección `allow` de cada fase de jefe con la familia, A.7). Para medir el "antes", sirve una copia del commit anterior (`git archive HEAD games/card-swarm`) con `python3 -m http.server` y pasa su `base`.
 - `p0_tests.js unit|flow|bosses|bosses0|fps|all [base] [baseAntes]`: pruebas unitarias (resolución de modos, identidad, override y fallback de sprite, `capGrow`, materiales en `deal`/`dot`, parámetros de URL), flujo aldea -> portal -> expedición -> botín -> aldea (con y sin `?fam=1`), los 3 jefes con adds y fps (horda de 7:15, 3 rondas alternadas, contra el código anterior).
 - Resultado P0 (Chromium sin GPU): **prueba exacta** (`p0_tests.js det`): con la misma semilla de `Math.random` la secuencia de altas del director (991 altas, tipo y posición, 440 s) es idéntica al commit anterior a P0 y entre `?fam=0`, auto y `?fam=1` en los 3 biomas. **Censo estadístico** (Bosque, 16 runs por celda, media de vivos de los minutos 1-7; dos runs del mismo código ya difieren ~5 %): anterior 18,1 -> auto 17,7 (-2,3 %) / `?fam=1` 17,3 (-4,7 %), tiers dentro de +-3,5 puntos, 0 errores (Cripta y Asfodelo, 8 runs: `?fam=1` vs `?fam=0` -5,7 % y -2,7 %). fps (horda 7:15, 3 rondas): 58,6 anterior / 58,7 `?fam=0` / 58,0 auto / 58,8 `?fam=1`. Flujo completo y los 3 jefes ganan con `?fam=0` y `?fam=1`.
+
+## Familias por bioma (P1: Bosque y Cripta, v5.1)
+`G.B.fam.bosque` y `G.B.fam.cripta` están `ready:true` (tablas A.3 / A.4 de `DESIGN-v5-biomas.md`); Asfodelo sigue con el roster legado hasta P2. `?fam=0` reproduce el juego anterior (misma semilla, mismas altas). Los roles nuevos `dog`, `salamander`, `chainer` (`famOnly:true` en `G.B.enemy`) solo existen dentro de una familia activa (`G.B.has`). Arte `assets_fam1.js`, audio `sfx_fam1.js`.
+
+| Bosque (Pastor) | Rol | Tier | Entra | w | Coste | Tope (capGrow) | HP/Vel | Mat. |
+|---|---|---|---|---|---|---|---|---|
+| Cordero corrupto | worm | 0 | 0:00 | 55 | 1 | 40 | x1/x1 | Lana |
+| Zarzal menor | archer | 1 | 0:45 | 26 | 3 | 12 | x1,2/x1 | Vegetal |
+| Zarzal mayor | fanner | 1 | 1:30 | 18 | 4 | 8 | x1/x1 (escala 1,15) | Vegetal |
+| Jabalí | boar | 2 | 2:00 | 14 | 5 | 8 | x1/x1 | Carne |
+| Polilla de lana | moth | 2 | 4:00 | 15 | 4 | 6 | x1/x0,9 | Lana |
+| Perro pastor (nuevo) | dog | 3 | 2:45 | 8 | 5 | 3 (1,3 -> 4) | 24/125 | Lana |
+| Micelio | sower | 3 | 4:30 | 9 | 5 | 3 (1,7) | x1/x1 | Vegetal |
+| Zampoñero | warlock | 3 | 6:45 | 8 | 8 | 2 (2) | x1/x1 | Carne |
+
+| Cripta (Karceron) | Rol | Tier | Entra | w | Coste | Tope (capGrow) | HP/Vel | Mat. |
+|---|---|---|---|---|---|---|---|---|
+| Esqueleto | worm | 0 | 0:00 | 55 | 1 | 40 | x1,15/x0,95 | Hueso |
+| Arquero de huesos | archer | 1 | 0:45 | 30 | 3 | 14 | x1/x1 | Hueso |
+| Calavera explosiva | bomb | 1 | 1:30 | 14 | 2 | 6 | x1/x1 | Hueso |
+| Calavera rodante | boar | 2 | 2:00 | 10 | 5 | 6 | x0,8/x1 | Hueso |
+| Carcelero menor | shield | 2 | 2:45 | 10 | 5 | 6 | x1,1/x1 | Metal |
+| Salamandra de lava (nueva) | salamander | 2 | 4:00 | 9 | 5 | 4 | 30/60 | Magma |
+| Guardián de cadenas (nuevo) | chainer | 3 | 4:30 | 8 | 6 | 3 (1,5 -> 4) | 60/42 | Metal |
+| Alma prisionera | blinker | 3 | 5:15 | 9 | 6 | 4 | x1/x1 | Espectro |
+| Ascua | scorcher | 3 | 6:00 | 8 | 6 | 3 | x1/x1 | Magma |
+
+Sumas de `w` por tier 55 / 44 / 29 / 25. El Bosque ya no tiene Escudero, Bomba, Espectro ni Ascua (los guardianes Coloso y Madre Colmena siguen; el Coloso lleva sus 2 Escuderos legados). Consecuencia de economía a vigilar: Placa, Mecha y Estática solo caen en la Cripta (o en el Asfodelo).
+
+### Mecánicas nuevas (`enemies.js`; constantes `DG`, `SK`, `SL`, `CH`)
+- **M1 Perro pastor**: órbita a 170-200 px (1,1 rad/s) -> ladrido 450 ms (anillo rojo r 28 + carril y línea fina al punto de arreo, rumbo fijo en los últimos 150 ms, 2 ladridos) -> arreo a 320 px/s (250-700 ms según distancia; desviación del doc: llega hasta donde estaba el jugador) -> 8 de daño y empuje de 55 px hacia el centro de la arena -> descansa 600 ms.
+- **M2 Calavera rodante**: aviso 600 ms, rueda 300 px/s hasta 280 px; contra pared o pilar (`G.Boss.obs`) rebota una vez: aturdida 400 ms (x1,3) con flecha roja 400 ms hacia el 2.º tramo (200 px); sin choque, aturdida 900 ms.
+- **M3 Salamandra**: un charco cada 70 px (r 22, aviso naranja punteado 600 ms, 5 s, 5 de daño/400 ms), máx. 6 por salamandra (se apaga el más viejo), al morir charco r 30 de 2 s.
+- **M4 Guardián de cadenas**: cada 5 s aviso 700 ms (línea fina naranja, fija 300 ms), cadena a 420 px/s, alcance 300, 6 de daño y ralentiza 45 % 1,8 s; no interceptable.
+- Variantes: Zarzal (flecha/espina con apunte fijado, `proj_thorn_small` / `proj_bone_arrow`), Polilla de lana (orbe de lana, ralentiza 30 %), Zampoñero invoca Corderos, Carcelero, Alma prisionera, Calavera explosiva y Ascua con su sprite/SFX. Los SFX `tele` suenan una vez al empezar el aviso.
+
+### Telegrafías auditadas (`G.B.tele`, `G.B.teleAudit()`, `node tools/card-swarm-balance-bot/p1_tests.js tele`)
+Regla `tele >= 250 + 1000 x salida/190` y >= 400 ms. Medido en el juego (paso fijo): Zarzal/Arquero 400 (regla 334), Zarzal mayor 500 (408), Polilla 450 (355), Perro 450 (408), Micelio 900 (524), Calavera explosiva 700 (618), rodante 600 (513) y 2.º tramo 400 (387), Carcelero 500 (461), Salamandra 600 (434), Guardián 700 (408), Alma prisionera 500 + 350 tajo (566), Ascua 600 (408), Jabalí 600 (513). 0 incumplimientos.
+
+### Debilidades por material (A.8) y Portal
+`G.B.mat.on` lo fija `G.B.mat.sync()` al empezar la run: activo solo en biomas con familia activa (`?mat=0` lo apaga, `?mat=1` lo fuerza, `?fam=0` lo anula). Bosque: mejor Fuego (lana/vegetal), peor Hielo, Veneno, Sangre. Cripta: mejor Hielo (magma), Acero (hueso), Rayo (metal/espectro); peor Fuego, Veneno, Sangre. Número de daño: x1,25 verde claro, grande y con "!"; x0,75 gris, pequeño y entre paréntesis (críticos dorados). El Portal muestra los chips MEJOR/PEOR del destino (`G.B.matLens`) y avisa "No avanza en este destino" si el rol del encargo no existe en la familia.
+
+### Jefes y director
+Llamada del rebaño del Pastor: Zarzal mayor, Perro pastor, Polilla de lana. Karceron invoca Ascuas + Alma prisionera (ya de su familia). Los `allow` de fase se intersectan con la familia (nunca vacío). Packs: Bosque Cruce, Campo, Pastoreo, Fila del Zampoñero; Cripta Fila de presos, Hornos, Boliche, Cadena de presos.
+
+### Medición P1 (Chromium sin GPU, bot de balance, 16 runs por celda, minutos 1-7)
+| | Vivos medios fam=0 -> P1 | Tiers (pts máx.) | Tipos nuevos |
+|---|---|---|---|
+| Bosque | 17,3 -> 16,6 (-4,0 %) | <= 9,0 | Perro 1,7 vivos de media, pico 4 |
+| Cripta | 17,9 -> 18,0 (+1,0 %) | <= 7,9 | Salamandra 0,7, Guardián 2,1 (pico <= tope) |
+Todos los tipos aparecen en el 100 % de las runs; 0 errores de consola; intersección `allow` sin huecos. Minutos sueltos fuera de +-8 % (Bosque 4-5, Cripta 7) están dentro de 3 errores estándar. Victoria del bot esquivador en Peligro I (ponderado 25/50/25, 16 peleas por mano): Pastor fam=0 64 % -> P1 72 %; Karceron fam=0 66 % / 50 % (dos tandas) -> P1 50 % / 53 %; README histórico 69 % / 60 %: sin recalibrar `hpCal`. fps horda 7:15: fam=0 53,3 / P1 53,2. Flujo aldea -> portal -> expedición -> botín -> aldea con victoria en Bosque y Cripta; móvil 844x390 sin errores. Capturas: `studio/docs/capturas-p1-integracion/`. Pruebas: `p1_tests.js tele|mech`, `p0_tests.js unit|flow|fps` (adaptado a P1).
