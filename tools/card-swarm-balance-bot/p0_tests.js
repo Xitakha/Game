@@ -77,7 +77,7 @@ async function unit(b) {
     const e6 = E.spawn('boar', 600, 600, { nofam: true }); e6.spawnT = 0; e6.hp = 1e6; e6.mat = 'lana'; const h6 = e6.hp; G.Combat.dot(e6, 10, 'fire'); const dd = h6 - e6.hp;
     const e7 = E.spawn('boar', 600, 600, { nofam: true }); e7.spawnT = 0; e7.hp = 1e6; const h7 = e7.hp; G.Combat.dot(e7, 10, 'fire'); o.dot = dd / (h7 - e7.hp);
     // jefe y partes: sin material
-    o.bossNoMat = (() => { const bb = E.spawn('boss', 700, 400); return bb.mat === undefined; })();
+    o.bossNoMat = (() => { const bb = E.spawn('boss', 700, 400); G.enemies.pop(); return bb.mat === undefined; })();
     // censo en vivo
     const c = G.Waves.census(); o.census = typeof c.alive === 'number' && c.byTier.length === 4;
     return o;
@@ -101,11 +101,31 @@ async function unit(b) {
   const url = [await pm.evaluate(() => [G.B.mat.on, G.B.famMode]), await pf.evaluate(() => [G.B.mat.on, G.B.famMode]), await pd.evaluate(() => [G.B.mat.on, G.B.famMode])];
   ok(url[0][0] === true && url[0][1] === 1 && url[1][1] === 0 && url[1][0] === false && url[2][0] === false && url[2][1] === 'auto', 'parametros URL: ?mat=1 ?fam=1 ?fam=0, y por defecto mat apagado / fam auto');
   // A.7: interseccion allow de jefe x familia no vacia
-  const al = await pg.evaluate(() => { G.B.famMode = 1; return window.censusAllowCheck ? window.censusAllowCheck() : null; });
   const pc = await page(b, 'reset=1&dbg=1'); await pc.evaluate(fs_ => (0, eval)(fs_), fs.readFileSync(__dirname + '/census_page.js', 'utf8'));
   const al2 = await pc.evaluate(() => window.censusAllowCheck());
   ok(al2.length >= 6 && al2.every(x => x.ok), `A.7 interseccion allow(jefe) x familia no vacia en ${al2.length} fases de 3 biomas`);
   ok(!pg.errs.length && !pm.errs.length && !pf.errs.length && !pd.errs.length && !pc.errs.length, 'unit: 0 errores de consola ' + [pg, pm, pf, pd, pc].flatMap(p => p.errs).slice(0, 3).join(' | '));
+}
+
+// Determinismo del director: con Math.random sembrado, la secuencia de altas (rol, posición, minuto) debe ser IDÉNTICA con ?fam=0, auto y ?fam=1 (familias = identidad en P0).
+async function det(b) {
+  console.log('--- determinismo del director (misma semilla, 3 biomas x 3 modos' + (before ? ' + código anterior' : '') + ')');
+  const pg = await page(b, 'reset=1&dbg=1&god=1&hand=spark:1');
+  const pb = before ? await (async () => { const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), q = await ctx.newPage(); await q.goto(`${before}/index.html?reset=1&dbg=1&god=1&hand=spark:1`); await q.waitForTimeout(500); return q; })() : null;
+  const seqOf = (bio, mode, seed, pp) => (pp || pg).evaluate(([bio, mode, seed]) => {
+    G.startGame(); G.state = 'play'; G.curBiome = bio; G.B.famMode = mode; G.Waves.reset(); G.enemies = [];
+    let s = seed; Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    const out = [], oSp = G.Enemies.spawn; G.Enemies.spawn = function (type, x, y, o) { out.push(type + '@' + Math.round(x) + ',' + Math.round(y)); return oSp.apply(this, arguments); };
+    G.player.x = 720; G.player.y = 400;
+    for (let t = 0, i = 0; t < 440000; t += 1500, i++) { G.runT = G.time = t; G.Waves.update(1500); if (i % 5 === 4) G.enemies.forEach(e => { if (Math.random() < 0.8) e.dead = true; }); G.enemies = G.enemies.filter(e => !e.dead); }
+    G.Enemies.spawn = oSp; return out.join('|');
+  }, [bio, mode, seed]);
+  for (const bio of ['bosque', 'cripta', 'asfodelo']) {
+    const a = await seqOf(bio, 0, 12345), c = await seqOf(bio, 'auto', 12345), d = await seqOf(bio, 1, 12345), e2 = await seqOf(bio, 0, 777);
+    const n = a.split('|').length;
+    if (pb) ok(a === await seqOf(bio, 0, 12345, pb), `${bio}: secuencia idéntica al código anterior a P0 (HEAD)`);
+    ok(a === c && a === d && n > 300 && a !== e2, `${bio}: ${n} altas, secuencia idéntica entre ?fam=0, auto y ?fam=1 (y distinta con otra semilla)`);
+  }
 }
 
 async function flow(b, famq) {
@@ -166,6 +186,7 @@ async function fps(b) {
 (async () => {
   const b = await launch();
   if (what === 'unit' || what === 'all') await unit(b);
+  if (what === 'det' || what === 'all') await det(b);
   if (what === 'flow' || what === 'all') { await flow(b, ''); await flow(b, '&fam=1'); }
   if (what === 'bosses' || what === 'all') { await bosses(b, '&fam=1'); }
   if (what === 'bosses0') { await bosses(b, '&fam=0'); }

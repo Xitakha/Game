@@ -214,9 +214,10 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 - `?quests=bombs,boars,clean45` fuerza las 3 ofertas del Tablón (ids en `Quests.DEFS`; pruebas). `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
 - `?view=iso` activa la vista inclinada tipo Hades (`?view=flat` la plana); ver su sección.
 - `?len=7` fuerza la duración de la run en minutos (sin tocar el guardado).
+- **Familias (P0):** `?fam=0` fuerza el roster legado, `?fam=1` fuerza las familias donde existan, `?mat=1|0` enciende/apaga la tabla de materiales; ver 'Familias por bioma (P0)'.
 
 ## Estructura
-`src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
+`src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `families.js` (v5 P0: `G.B.fam`, materiales, packs) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
 `weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v4 con migración v1/v2/v3; Peligro, cacería y práctica) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo/loadouts, cocina `G.Cook`, logros, menú) · `tree.js` (7 árboles de forja) · `quests.js` (encargos y logros `G.Ach`) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `boss.js` (jefes v4: motor genérico de fases, ataques, partes, intro, barra, arena + Pastor) · `boss_karceron.js` / `boss_letea.js` (jefes J2) · `assets_boss.js` / `assets_boss2.js` (arte de los jefes, solo dibujo) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets_peligro.js` (J3: stingers de jefe por fase, por código) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
 
 ## Jefes v4 (fase J1): El Pastor Corrupto
@@ -426,3 +427,37 @@ Regla de esquiva: el enemigo normal más rápido es la Bomba (105 px/s base) = 1
 - `run.js` (bot de balance: kitea, recoge gemas, fusiona; `?dbg=1&god=1&speed=20`; `{"base","len","runs","par","hand","god","hpBoost","noLevel","label"}`) + `bot_page.js` (se inyecta; registra nivel, cartas Nv3, velocidad de enemigos, cura, partes y TTK de minijefes por minuto) + `summarize.js <label>` (tablas).
 - `campaign.js <url> <label>`: gasta el botín de las runs medidas como lo haría un jugador (campaña de 5 runs con arrastre, lo más barato primero) con las funciones de coste de la página indicada (`before` vs `after`).
 - `minis.js`: fuerza cada ataque de los minijefes, mide la duración de cada telegrafía y hace capturas; `e2e.js`: aldea -> Tab -> portal -> expedición -> jefe -> botín -> R / B -> forja / compras -> nueva salida; `dump.js`: recetas y nodos con coste.
+
+## Familias por bioma (P0)
+Infraestructura de `DESIGN-v5-biomas.md` parte A (fase P0). **No cambia nada visible ni de balance**: ningún bioma tiene su familia `ready`, así que por defecto se usa el roster de siempre; las familias existen como datos y se pueden forzar con `?fam=1` para probarlas. Código: `src/families.js` (datos y resolución), `enemies.js` (`E.spawn`), `waves.js` (director) y `combat.js` (`deal`/`dot`).
+
+### Esquema de `G.B.fam`
+`G.B.fam[bioma]` con `bosque cripta asfodelo` (y esqueletos vacíos `tundra panal`, `use:{}`, nunca activos):
+`{ name, ready, boss, use, packs, light, amb, ponds, star }`
+- `ready`: `false` mientras el bioma no tenga su familia terminada. `use`: `rol -> ajustes` (una clave que no aparece no existe en ese bioma; en P0 están las 11 claves en los 3 biomas).
+- Entrada de `use`: `name` (nombre visible), `spr` (sprite propio; `null` o inexistente = **fallback al sprite actual del rol**), `skin` (`{ tint, a }`, tinte opcional sobre el sprite), `tier` (0-3; sustituye a `G.B.tier[rol]`), `from` `w` `cost` `maxAlive` (ausentes = los de `G.B.enemy[rol]`), `capGrow` (tier 3: crecimiento máximo del tope, `tope = round(maxAlive x min(capGrow, max(1, tierMul)))`), `hp` `spd` `dmg` (multiplicadores, 1 = igual), `mat` (material) y `mx` (excepciones `{ etiqueta: mult }` al material), `mods` (parámetros de la mecánica nueva), `host:true` (rol huésped que P1 retirará del bioma, p. ej. los 4 del Bosque).
+- `packs`: lista de `{ id, layout: 'line'|'cross'|'pincer'|'field', parts: [[rol, n], ...] }` (hoy los 4 packs de siempre, `G.B.packsLegacy`; coste = suma x 0,6). `light`: tipos permitidos con el jefe vivo (dato por bioma, sin consumidor aún). `amb`: ambiente (multiplicadores de luciérnagas/niebla/viñeta/tinte; 1 = aspecto actual, sin consumidor en P0). `ponds`, `star` (candidatos a protagonista; `null` = todos menos el gusano).
+- Resolución (`G.curBiome`): `G.B.famOf()` devuelve la familia a aplicar o `null` (roster legado): `?fam=0` -> `null`; `?fam=1` -> toda familia con `use` no vacío; sin parámetro -> solo si `ready`. Ayudantes: `G.B.entry(rol)`, `G.B.has(rol)`, `G.B.val(rol, campo)` (override de la familia o `G.B.enemy`), `G.B.tierOf(rol)` (lo usan `tierMul` y `capOf`), `G.B.packsOf()`.
+- `E.spawn(tipo, x, y, o)` mantiene la firma: aplica `hp/spd/dmg`, guarda `e.spdBase`, `e.spr` (con fallback) y `e.skin`, y el material (`e.mat`, `e.mx`); `o.nofam` lo salta. El director (`waves.js`) solo lista roles que existan en la familia (`B.has`), lee `from/w/cost/maxAlive/capGrow` con `B.val`, conserva `tierCurve`, `tierFloor`, packs, élites y jefe. `G.Waves.census()` devuelve los vivos por rol/tier/familia; `G.Waves.capOf(rol, minuto)`.
+
+### Materiales y debilidades (A.8)
+`G.B.mat.table`: 13 materiales (`carne lana vegetal hueso metal magma espectro pantano pelaje escarcha insecto cera miel`) x 6 etiquetas (`fire ice lightning poison blood steel`), +-25 %. `G.B.matMul(e, etiqueta)` se aplica en `Combat.deal` (antes de resonancia y talentos) y `Combat.dot` (ticks), solo a enemigos con `e.mat`; los jefes, las partes y los guardianes no lo usan. **Apagado por defecto** (`G.B.mat.on = false`): los enemigos ni siquiera reciben `e.mat`. `?mat=1` lo enciende para pruebas (con `?fam=0` se anula); al marcar una familia como `ready` se decide poner `G.B.mat.on = true`.
+
+### `?fam` y `?mat`
+| URL | Efecto |
+|---|---|
+| (nada) | `fam` automático (ninguna `ready` en P0 = roster legado), materiales apagados |
+| `?fam=0` | roster legado (comportamiento v4 exacto, para A/B con el bot) |
+| `?fam=1` | familias en los 3 biomas (identidad en P0: mismos números y sprites) |
+| `?mat=1` / `?mat=0` | tabla de materiales encendida / apagada |
+
+### Cómo añadir una familia nueva
+1. En `families.js`, rellena `G.B.fam.<bioma>.use` con los roles del bioma (`U(nombre, material, { tier, from, w, cost, maxAlive, capGrow, hp, spd, dmg, spr, skin, mx })`): respeta la masa por tier de A.2 (suma de `w`: 55 / 44 / 29 / 25). Un monstruo nuevo sin rol equivalente: añade su clave a `G.B.enemy` (y su IA en `enemies.js`) y a la `use` de su bioma.
+2. Si hay sprites nuevos, ponlos en `spr` (si no existen, el rol usa el sprite actual); `skin` tiñe el sprite de reemplazo.
+3. Rellena `packs` (A.9), `light`, `star` y `mat`/`mx` por entrada.
+4. Compara con el censo (abajo) y, cuando pase, pon `ready: true` y decide `G.B.mat.on = true`.
+
+### Censo y pruebas (`tools/card-swarm-balance-bot/`)
+- `census.js '{"runs":8,"par":4,"fam":"0|1|","mat":"","biome":"","label":"x","stop":445,"base":"http://localhost:<puerto>"}'` (+ `census_page.js`): recorre la run con el bot y guarda los vivos medios por minuto, rol, tier y nombre de familia, el pico por rol y las altas por minuto (`$CENSUS_DIR/census_<label>.json`). `census_compare.js A.json B.json [--minutes=1-7]` compara (vivos +-8 % con margen de ruido de 3 errores estándar y proporción por tier +-10 puntos; también comprueba 0 errores y la intersección `allow` de cada fase de jefe con la familia, A.7). Para medir el "antes", sirve una copia del commit anterior (`git archive HEAD games/card-swarm`) con `python3 -m http.server` y pasa su `base`.
+- `p0_tests.js unit|flow|bosses|bosses0|fps|all [base] [baseAntes]`: pruebas unitarias (resolución de modos, identidad, override y fallback de sprite, `capGrow`, materiales en `deal`/`dot`, parámetros de URL), flujo aldea -> portal -> expedición -> botín -> aldea (con y sin `?fam=1`), los 3 jefes con adds y fps (horda de 7:15, 3 rondas alternadas, contra el código anterior).
+- Resultado P0 (Chromium sin GPU): **prueba exacta** (`p0_tests.js det`): con la misma semilla de `Math.random` la secuencia de altas del director (991 altas, tipo y posición, 440 s) es idéntica al commit anterior a P0 y entre `?fam=0`, auto y `?fam=1` en los 3 biomas. **Censo estadístico** (Bosque, 16 runs por celda, media de vivos de los minutos 1-7; dos runs del mismo código ya difieren ~5 %): anterior 18,1 -> auto 17,7 (-2,3 %) / `?fam=1` 17,3 (-4,7 %), tiers dentro de +-3,5 puntos, 0 errores (Cripta y Asfodelo, 8 runs: `?fam=1` vs `?fam=0` -5,7 % y -2,7 %). fps (horda 7:15, 3 rondas): 58,6 anterior / 58,7 `?fam=0` / 58,0 auto / 58,8 `?fam=1`. Flujo completo y los 3 jefes ganan con `?fam=0` y `?fam=1`.
