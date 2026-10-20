@@ -19,6 +19,7 @@ const FILES = /*FILES*/[
   "./src/fx.js",
   "./src/sfx.js",
   "./src/sfx_fam1.js",
+  "./src/sfx_fam2.js",
   "./src/assets_peligro.js",
   "./src/player.js",
   "./src/combat.js",

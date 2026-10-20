@@ -19,3 +19,4 @@ Candidatos a bajar cuando haya acceso (todos CC0, Kenney): Tiny Dungeon, Tiny To
 Sin dependencias ni descargas; API en games/survival-lamb/ASSETS_API.md; visor en tools/asset-preview/.
 | Marlo + enemigos v2 de Swarm Hand | Sprites | Generados por código (assets.js, assets_enemies2.js) | Estudio | Propia/libre | games/card-swarm |
 | SFX familias P1 Bosque y Cripta (22 efectos) | Audio | Generado por codigo (games/card-swarm/src/sfx_fam1.js) | audio-designer | Propia/libre | games/card-swarm |
+| SFX familia P2 Asfodelo (24 efectos) | Audio | Generado por codigo (games/card-swarm/src/sfx_fam2.js) | audio-designer | Propia/libre | games/card-swarm |

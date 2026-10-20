@@ -451,3 +451,37 @@ Reusados SIN arte nuevo (como pide el doc): Jabalí = `boar`; Micelio = `enemy_s
 
 Reusados sin arte nuevo: Ascua = `enemy_scorcher`; charco de lava = `fx_fire_cell` (44x44 final, centrado). Calavera explosiva usa la telegrafia circular existente.
 Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> seccion "Familias P1" (cada sprite con todas sus animaciones y prueba de 100 enemigos mezclados). Capturas: `studio/docs/capturas-p1/`.
+
+---
+# Audio familias P2 (Asfodelo del Olvido) (src/sfx_fam2.js, tras sfx_fam1.js; solo audio)
+Mismo patron y API que P1: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`; <= 4 voces por nombre y separacion minima (ms); `Assets.sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxFam2[nombre]` = `{kind, fam:'asfodelo', min}`. Tipos: **tele** (bajo, distintivo, solo al inicio del aviso, `vol` 0.6-1), **impact**, **move**. Los SFX existentes no cambian.
+Timbres: charco = burbujas ascendentes; hielo = cristalino agudo; olvido = campana/zumbido turquesa que BAJA de tono (tiempo lento); anguila = chasquido seco (sin crepitar largo).
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `pond_swim` | move | Sanguijuela/Alma en charco: nada, ondas (min 160) |
+| `pond_bubble` | tele | Sanguijuela: burbujas al inicio del aviso de emboscada de 500 ms (min 200) |
+| `leech_lunge` | move | Sanguijuela: lance de 330 ms (min 110) |
+| `frog_crouch` | tele | Rana: inicio de la agachada de 500 ms / circulo rojo (min 200) |
+| `frog_hop` | move | Rana: despegue del salto (min 120) |
+| `frog_land` | impact | Rana: aterrizaje (min 100) |
+| `frog_splash` | impact | Rana: chapoteo al crearse el charco acido (min 110) |
+| `head_emerge` | tele | Cabeza menor: brota del charco, 700 ms (min 220) |
+| `head_bite` | impact | Cabeza menor: mordisco (min 90) |
+| `head_regrow` | tele | Cabeza menor: inicio del rebrote de 8 s / su `regrow` (min 250) |
+| `head_burn` | impact | Cabeza menor muere quemada (cauterizacion; Fuego) (min 100) |
+| `medusa_charge` | tele | Medusa: carga de 450 ms del orbe (min 220) |
+| `medusa_throw` | move | Medusa: lanza el orbe (min 110) |
+| `orb_shatter` | impact | Orbe de hielo destruido por un golpe (min 80) |
+| `olvido_sow` | move | Lirio: siembra la zona (min 140) |
+| `olvido_chime` | tele | Zona del olvido: inicio del `arm` de 900 ms; tono que baja (min 260) |
+| `olvido_hum` | move | Zona activa / jugador dentro (ralentizado, baja de tono; a lo sumo cada 1-2 s; min 400) |
+| `eel_charge` | tele | Anguila: inicio del `wind` de 700 ms (min 200) |
+| `eel_zap` | impact | Anguila: rayo instantaneo de 150 ms (seco y corto, distinto a rayos de cartas; min 90) |
+| `eel_dash` | move | Anguila: arranque de la carga (min 130) |
+| `priestess_chant` | tele | Sacerdotisa: inicio del `cast` de 500 ms (min 350) |
+| `priestess_summon` | impact | Sacerdotisa: aparecen las 2 Almas (min 150) |
+| `drown_whisper` | tele | Alma errante: susurro esporadico/aparicion (bajar `vol` en enjambre; min 260) |
+| `drown_wail` | move | Alma errante: lamento al morir/disiparse (min 300) |
+
+Consejo: con muchos enemigos usar `vol` 0.5-0.7 en `drown_*`, `pond_swim` y `head_*`. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` con borde dorado).
