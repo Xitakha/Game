@@ -383,3 +383,35 @@ Todo dibuja en `ctx` con coordenadas de juego (960x540), sin `shadowBlur`. Color
 - `Assets.drawTreeBurst(ctx, x, y, p, color)`: destello al comprar (p 0..1, ~600 ms): anillo + rayos aditivos.
 - `Assets.drawWeakIcon(ctx, tag, x, y, {resist:bool, mult:'1.25', size:24})`: icono de etiqueta con flecha verde arriba (debilidad) o gris abajo (resistencia, icono apagado) y multiplicador opcional a la derecha; (x,y) = esquina sup. izq.
 - Sprites: `tree_tag_<tag>` (48x48; frame 0 color, 1 apagado) para fire ice lightning poison blood steel neutral; `tree_ico_<name>` (32x32, blanco, para tintar) para root card upgrade passive branch set mastery rank trunk.
+
+---
+# Audio familias P1 (Bosque y Cripta) (src/sfx_fam1.js, tras sfx.js; solo audio)
+Procedural WebAudio, se llama igual que el resto: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch +-10 % por defecto; devuelve false si aun no hay gesto, si esta silenciado o si se supera el limite). Limites por nombre: <= 4 voces simultaneas y una separacion minima (ms) para que muchos enemigos no saturen. `Assets.sfxNames()` y `Assets.renderSfx/exportSfxWav` los incluyen; `Assets.sfxFam1[nombre]` = `{kind, fam, min}`. Los SFX existentes no cambian.
+Tipos: **tele** = telegrafia (bajo, tono distintivo; usar `vol` ~0.6-1 al inicio del aviso, NUNCA en el impacto), **impact** = golpe/disparo/explosion, **move** = movimiento/ambiente.
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `lamb_bleat` | move | Cordero corrupto: aparicion/muerte esporadica (min 140 ms) |
+| `thorn_shot` | impact | Zarzal dispara espina(s) (min 60) |
+| `moth_flutter` | move | Polilla de lana volando/cargando (min 120) |
+| `wool_puff` | impact | Orbe de lana lanzado / impacto del orbe (min 80) |
+| `spore_puff` | tele | Micelio: inicio del `arm` de 900 ms (min 150) |
+| `zampona_pipe` | tele | Zamponero: inicio del `cast` de 500 ms (min 300) |
+| `dog_bark` | tele | Perro pastor: inicio del ladrido de 450 ms (dos ladridos; min 300) |
+| `dog_dash` | move | Perro pastor: arranque del arreo (min 150) |
+| `bone_rattle` | move | Esqueleto: traqueteo al andar/aparecer (min 130) |
+| `bone_arrow` | impact | Arquero de huesos lanza el hueso (min 70) |
+| `skull_explode` | impact | Calavera explosiva detona (min 90) |
+| `skull_roll` | tele | Calavera rodante: inicio del `wind` de 600 ms y del aviso del segundo tramo (min 200) |
+| `skull_bounce` | impact | Calavera rodante rebota en pared (min 80) |
+| `chain_rattle` | tele | Guardian de cadenas: grillete/cadena durante el `wind` de 700 ms (min 160) |
+| `chain_throw` | move | Guardian lanza la cadena (min 120) |
+| `chain_hit` | impact | La cadena alcanza al jugador (ralentiza; min 120) |
+| `shield_bash` | impact | Carcelero: golpe/empellon de escudo (min 120) |
+| `ember_crackle` | move | Ascua (magma): chisporroteo al moverse (min 100) |
+| `lava_trail_hiss` | move | Salamandra/Ascua dejando rastro (min 150) |
+| `lava_pool` | tele | Charco de lava: al empezar el `arm` de 600 ms (burbujeo; min 160) |
+| `soul_whisper` | tele | Alma prisionera: inicio del `fade` de 500 ms (min 250) |
+| `soul_blink` | move | Alma prisionera: teletransporte (min 150) |
+
+Consejos: llamar a los `tele` una vez al empezar el aviso (no por frame); los `move` a lo sumo cada 0.3-1 s por enemigo; para un enjambre usar `vol` 0.5-0.7 si hay > 5 en pantalla. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` tienen borde dorado).
