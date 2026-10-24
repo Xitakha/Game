@@ -1,6 +1,6 @@
 /* quests.js - Encargos de Vesper (Fase 2b) y logros de Lanudo.
    Hay un pool de 20 encargos de 8 tipos: cazar enemigos (hunt), matar minijefes (mini), bajas totales (kills), romper partes de jefes (part, hook Q.onBossPart),
-   ganar con una etiqueta (wintag), sobrevivir sin recibir daño N s (clean) y ganar con la duración de 7 min (win7). El Tablón muestra 3 ofertas que ROTAN con el día y con
+   ganar con una etiqueta (wintag), sobrevivir sin recibir daño N s (clean) y ganar con la duración de 7 min o de 10 min (win7 / win10: la duración Rápida / Larga del Portal). El Tablón muestra 3 ofertas que ROTAN con el día y con
    cada expedición (una fácil, una media y una de condición; Q.offers) y, aparte, el encargo activo. Solo hay uno activo; el progreso persiste entre expediciones.
    El director (waves.js) lee Q.target(): el tipo objetivo de un encargo hunt/mini pesa x2,5 y entra como mucho a los 2:30 virtuales (Q.WEIGHT / Q.EARLY).
    Recompensas escalonadas por tier (1 fácil, 2 medio, 3 difícil): partes + Brasas + PF (+ 1 Esencia rara la primera vez en los de condición difíciles).
@@ -17,8 +17,9 @@
 
   // tier 1/2/3; cat A = caza fácil, B = caza media / minijefes, C = condición.
   var DEFS = [
-    { id: 'bombs', cat: 'A', tier: 1, kind: 'hunt', name: 'Huele a chamusquina', tutorial: true, target: 'bomb', goal: 20, label: 'Bombas',
-      desc: 'Revienta 20 Bombas antes de que lleguen a ti.', rewardParts: { wick: 6 }, brasas: 40, pf: 1, pfRepeat: 1 },
+    // v5 P2: el tutorial pedía Bombas, que ya no existen en el Bosque (primer bioma). Se queda el id 'bombs' (guardados y ?quests=) pero apunta al Zarzal mayor (rol `fanner`: Bosque 1:30).
+    { id: 'bombs', cat: 'A', tier: 1, kind: 'hunt', name: 'Huele a chamusquina', tutorial: true, target: 'fanner', goal: 20, label: 'Zarzales mayores',
+      desc: 'Derriba 20 Zarzales mayores antes de que abran su abanico de espinas. Huelen a chamusquina: el Fuego les sienta fatal.', rewardParts: { wick: 6 }, brasas: 40, pf: 1, pfRepeat: 1 },
     { id: 'moths', cat: 'A', tier: 1, kind: 'hunt', name: 'Caza 40 Polillas gélidas', target: 'moth', goal: 40, label: 'Polillas',
       desc: 'Abate 40 Polillas gélidas. Cuidado con sus orbes.', rewardParts: { frost: 12 }, brasas: 60, pf: 1, pfRepeat: 1 },
     { id: 'worms', cat: 'A', tier: 1, kind: 'hunt', name: 'Plaga de gusanos', target: 'worm', goal: 150, label: 'Gusanos',
@@ -33,12 +34,16 @@
       desc: 'Derriba 20 Escuderos. Su escudo frontal frena casi todo: flanquea.', rewardParts: { plate: 6 }, brasas: 90, pf: 1, pfRepeat: 1 },
     { id: 'specters', cat: 'B', tier: 2, kind: 'hunt', name: 'Cacería de espectros', target: 'blinker', goal: 15, label: 'Espectros',
       desc: 'Abate 15 Espectros: se desvanecen y reaparecen a tu espalda.', rewardParts: { static: 7 }, brasas: 100, pf: 1, pfRepeat: 1 },
+    { id: 'dogs', cat: 'B', tier: 2, kind: 'hunt', name: 'Apaga a los Perros pastores', target: 'dog', goal: 40, label: 'Perros pastores',
+      desc: 'Abate 40 Perros pastores (Bosque). Ladran antes de arrear: esquiva el arreo y remata.', rewardParts: { fang: 7 }, brasas: 100, pf: 1, pfRepeat: 1 },
     { id: 'scorchers', cat: 'B', tier: 3, kind: 'hunt', name: 'Apaga las Ascuas', target: 'scorcher', goal: 12, label: 'Ascuas',
       desc: 'Apaga 12 Ascuas. Cargan con rastro de fuego: no te quedes en su línea.', rewardParts: { wick: 9 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Mata al Coloso Escudero', target: 'mini_bulwark', goal: 1, label: 'Coloso', elite: true,
       desc: 'Derriba al Coloso Escudero: flanquéalo o usa área.', rewardParts: { plate: 8 }, brasas: 100, pf: 2, pfRepeat: 1 },
     { id: 'hive', cat: 'B', tier: 3, kind: 'mini', name: 'Quema la Colmena', target: 'mini_hive', goal: 1, label: 'Colmena', elite: true,
       desc: 'Acaba con la Madre Colmena: rompe su saco de larvas y no te quedes quieto.', rewardParts: { spine: 8 }, brasas: 150, pf: 2, pfRepeat: 1 },
+    { id: 'cauterize', cat: 'C', tier: 3, kind: 'hunt', needBurn: true, name: 'Cauteriza las Cabezas menores', target: 'headlet', goal: 12, label: 'Cabezas cauterizadas', rare: 1,
+      desc: 'Cauteriza 12 Cabezas menores en el Asfódelo: mátalas con Fuego (o ardiendo) para que no rebroten a los 8 s. Solo cuentan las cauterizadas.', rewardParts: { spine: 8 }, brasas: 160, pf: 2, pfRepeat: 1 },
     { id: 'parts3', cat: 'C', tier: 3, kind: 'part', name: 'Rompe-partes', goal: 3, label: 'Partes de jefe', rare: 1,
       desc: 'Rompe 3 partes de jefe (suman entre expediciones, aunque pierdas). Mira los medidores de la barra.', rewardParts: { thread: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'horn', cat: 'C', tier: 2, kind: 'partkey', key: 'cuernos', name: 'Rompe el cuerno', goal: 1, label: 'Cuernos del Pastor',
@@ -50,7 +55,9 @@
     { id: 'clean90', cat: 'C', tier: 3, kind: 'clean', name: 'Fantasma de Rescoldo', goal: 90, label: 'Sin daño', unit: ' s', rare: 1,
       desc: 'Aguanta 90 segundos seguidos sin recibir daño en una expedición.', rewardParts: { feather: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'win7', cat: 'C', tier: 2, kind: 'win7', name: 'Corto y dulce', goal: 1, label: 'Victoria en 7 min',
-      desc: 'Vence al jefe en una expedición de 7 minutos (selector del Portal).', rewardParts: { thread: 12, feather: 4 }, brasas: 110, pf: 1, pfRepeat: 1 }
+      desc: 'Vence al jefe en una expedición de 7 minutos (selector del Portal).', rewardParts: { thread: 12, feather: 4 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'win10', cat: 'C', tier: 3, kind: 'win7', len: 10, name: 'Maratón', goal: 1, label: 'Victoria en 10 min', rare: 1,
+      desc: 'Vence al jefe en una expedición Larga de 10 minutos: el jefe y los guardianes aguantan más.', rewardParts: { thread: 10, plate: 6 }, brasas: 160, pf: 2, pfRepeat: 1 }
   ];
   // Una variante "gana con una etiqueta" por etiqueta: victoria con 3 o más cartas de esa etiqueta en la mano final
   Object.keys(TAGN).forEach(function (tg) {
@@ -61,6 +68,21 @@
   Q.DEFS = DEFS;
   var BY = {}; DEFS.forEach(function (d) { BY[d.id] = d; });
   Q.def = function (id) { return BY[id]; };
+
+  // ------------------------------------------------------------- Cumplibilidad por bioma (v5 P2: las familias quitan roles de algunos biomas)
+  // Un encargo de caza solo avanza en los biomas cuya familia tiene el rol objetivo (los minijefes, bajas, partes, etiquetas y duraciones valen en todos). El Tablón solo ofrece
+  // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
+  Q.BIOMES = ['bosque', 'cripta', 'asfodelo'];
+  Q.biomesOf = function (d) {
+    if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];   // Cuernos y Salto aplastante son del Pastor
+    if (d.kind !== 'hunt') return Q.BIOMES.slice();
+    return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });
+  };
+  Q.unlockedBiomes = function (kills) {
+    kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0); });
+  };
+  Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
 
   function S() { return G.Save.data.quest; }
@@ -87,14 +109,14 @@
   Q.boardKey = function () { return Q.dayIndex() + ':' + G.Save.data.runs; };
   var cache = { key: null, list: null };
   Q.offers = function () {
-    var key = Q.boardKey() + ':' + Q.times('bombs');
+    var key = Q.boardKey() + ':' + Q.times('bombs') + ':' + Q.unlockedBiomes().length;
     if (cache.key === key) return cache.list;
     var forced = (/[?&]quests=([\w,]+)/.exec(location.search) || [])[1], out = [];
     if (forced) forced.split(',').forEach(function (id) { if (BY[id]) out.push(BY[id]); });
     else {
       var r = rng(hash(Q.boardKey()));
       ['A', 'B', 'C'].forEach(function (cat) {
-        var pool = DEFS.filter(function (d) { return d.cat === cat; });
+        var pool = DEFS.filter(function (d) { return d.cat === cat && Q.feasible(d); });
         if (cat === 'A' && !Q.times('bombs')) { out.push(BY.bombs); return; }   // el tutorial siempre se ofrece mientras no lo hayas hecho
         if (pool.length) out.push(pool[Math.floor(r() * pool.length)]);
       });
@@ -119,10 +141,10 @@
     S().prog[d.id] = Math.min(d.goal, p + (n || 1));
     if (S().prog[d.id] >= d.goal) done(d);
   }
-  Q.onKill = function (type) {
+  Q.onKill = function (type, e) {
     if (G.mode === 'practice') return;
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
-    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === type) inc(d);
+    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === type) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
     else if (d.kind === 'kills') inc(d);
     else if (d.kind === 'clean') Q.tick();
   };
@@ -141,7 +163,7 @@
     else if (d.kind === 'clean') { var s = Math.floor(info.clean || 0); if (s > Q.progress(d.id)) { S().prog[d.id] = Math.min(d.goal, s); } }
     else if (d.kind === 'partkey') { if ((info.parts || []).indexOf(d.key) >= 0) S().prog[d.id] = 1; }
     else if (d.kind === 'nojump') { if (info.won && info.bossId === 'pastor' && !((info.hitBy || {}).boss_salto > 0)) S().prog[d.id] = 1; }
-    else if (d.kind === 'win7') { if (info.won && info.lenMin === 7) S().prog[d.id] = 1; }
+    else if (d.kind === 'win7') { if (info.won && info.lenMin === (d.len || 7)) S().prog[d.id] = 1; }
     else if (d.kind === 'wintag') {
       var n = (info.hand || []).filter(function (id) { var c = G.Cards.def(id); return c && c.tag === d.tag; }).length;
       if (info.won && n >= 3) S().prog[d.id] = 1;
@@ -169,7 +191,7 @@
     var d = Q.active(); if (!d) return null;
     if (d.kind === 'clean') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.cleanSecs()))) + '/' + d.goal + ' s';
     if (d.kind === 'wintag') return d.label + ' ' + Math.min(3, (G.Cards.mods.tagN || {})[d.tag] || 0) + '/3';
-    if (d.kind === 'win7') return d.label + (G.RUN_LEN === 7 * 60000 ? '' : ' (elige 7 min)');
+    if (d.kind === 'win7') return d.label + (G.RUN_LEN === (d.len || 7) * 60000 ? '' : ' (elige ' + (d.len || 7) + ' min)');
     if (d.kind === 'nojump') return d.label + (G.Boss.active ? ' - ¡cuidado!' : '');
     return d.label + ' ' + Math.min(d.goal, Q.progress(d.id)) + '/' + d.goal;
   };

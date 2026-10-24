@@ -6,8 +6,8 @@
   P.create = function () {
     return {
       x: G.AW / 2, y: G.AH / 2 + 70, r: B.player.r, hp: B.player.hp, maxHp: B.player.hp,
-      kx: 0, ky: 0, dirx: 1, moving: false, animT: 0, hurtT: 0, dead: false, squash: 0,
-      level: 1, xp: 0, ash: 15 + G.Tree.startAsh(), revived: false, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0, slowT: 0, slowPct: 0
+      kx: 0, ky: 0, vx: 0, vy: 0, sf: 0, dirx: 1, moving: false, animT: 0, hurtT: 0, dead: false, squash: 0,
+      level: 1, xp: 0, ash: 15 + G.Tree.startAsh(), revived: false, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0, slowT: 0, slowPct: 0, cdSlowT: 0, cdSlowPct: 0
     };
   };
 
@@ -20,6 +20,13 @@
   P.slow = function (p, pct, ms) {
     if (p.dead) return;
     p.slowPct = Math.max(p.slowT > 0 ? p.slowPct : 0, pct); p.slowT = Math.max(p.slowT, ms);
+  };
+
+  // M9 (A.5, Lirio del olvido): las cartas de la mano recargan más lento. NO apila: se queda con el mayor % (tope 40 %) y refresca la duración (tope 2 s); solo afecta al jugador
+  // (weapons.js lo aplica como factor al avance del cooldown; los jefes no lo usan).
+  P.cdSlow = function (p, pct, ms) {
+    if (p.dead) return;
+    p.cdSlowPct = Math.min(0.4, Math.max(p.cdSlowT > 0 ? p.cdSlowPct : 0, pct)); p.cdSlowT = Math.min(2000, Math.max(p.cdSlowT, ms));
   };
 
   // Devuelve true si el daño se aplicó. o: { kb (multiplicador de empuje), slow:[pct,ms], soft (daño de zona: sin empuje y casi sin hitstop), src (tipo, para depurar) }
@@ -37,7 +44,7 @@
     try { G.Loot.noteHit(o.src); } catch (e) { /* racha sin daño */ }
     if (p.shield > 0) { var ab = Math.min(p.shield, dmg); p.shield -= ab; dmg -= ab; if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'escudo', '#ff9aa8', true); G.sfx('hit', { pitch: 1.6, vol: 0.5 }); return false; } }
     p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln;
-    if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; G.fx.shake(7, 200); G.fx.hit(40); }
+    if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; if (G.Tundra.on) G.Tundra.hurtKb(p); G.fx.shake(7, 200); G.fx.hit(40); }   // Tundra: retroceso x1,6 en hielo con tope (B.1.2)
     else G.fx.shake(2, 80);
     G.fx.num(p.x, p.y - 18, Math.round(dmg), '#ff5a5a', true);
     G.fx.spark(p.x, p.y, o.soft ? 2 : 6, a);
@@ -55,8 +62,8 @@
   // Familia de enemigo de una fuente de daño (platos de resistencia): ranged (proyectiles), blast (explosivos y fuego), big (élites y jefes), melee (el resto)
   P.family = function (src) {
     src = src || '';
-    if (/^(archer|fanner|moth|sower|proj|thorn|arrow)/.test(src)) return 'ranged';
-    if (/^(bomb|scorcher)/.test(src)) return 'blast';
+    if (/^(archer|fanner|moth|sower|proj|thorn|arrow|chainer)/.test(src)) return 'ranged';
+    if (/^(bomb|scorcher|salamander)/.test(src)) return 'blast';
     if (/^(boss|bulwark|hive)/.test(src)) return 'big';
     return 'melee';
   };
@@ -78,6 +85,7 @@
     var rg = G.runBuff && G.runBuff.fx && G.runBuff.fx.regen;   // Sopa de hebra (Castaña): cura pasiva leve, sin cifras flotantes
     if (rg && !p.dead && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + rg * dt / 1000);
     if (p.slowT > 0) { p.slowT -= dt; if (p.slowT <= 0) p.slowPct = 0; }
+    if (p.cdSlowT > 0) { p.cdSlowT -= dt; if (p.cdSlowT <= 0) p.cdSlowPct = 0; }
     if (p.kx || p.ky) {
       p.x += p.kx * s; p.y += p.ky * s;
       var k = Math.exp(-12 * s); p.kx *= k; p.ky *= k;
@@ -92,9 +100,12 @@
     p.moving = il > 0;
     if (ix !== 0) p.dirx = ix > 0 ? 1 : -1;
     var spd = B.player.speed * G.Cards.mods.speed * (p.slowT > 0 ? 1 - p.slowPct : 1);
-    p.x += ix * spd * s; p.y += iy * spd * s;
+    if (G.Tundra.on) G.Tundra.movePlayer(p, ix, iy, spd, s, dt);   // P3: hielo (aceleración tau 220 ms, fricción 2,2 s^-1, nieve firme = movimiento de siempre) y Frío
+    else { p.x += ix * spd * s; p.y += iy * spd * s; }
     G.Boss.collide(p, p.r);   // troncos de la arena del jefe
+    if (G.Tundra.on) G.Tundra.collide(p, p.r);   // estalagmitas
     wallClamp(p);
+    if (G.Tundra.on) G.Tundra.afterWall(p);
     if (p.moving && Math.random() < 0.06) G.fx.dust(p.x, p.y + 12, 1);
   };
 

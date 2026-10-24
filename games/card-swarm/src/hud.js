@@ -56,6 +56,23 @@
     G.Cards.drawComboLines(c, false);
   }
 
+  // M9 (A.5): icono de RELOJ ROTO a la izquierda de la mano mientras las cartas recargan más lento (zona del Lirio del olvido); el aro se vacía con los 2 s de gracia
+  H.drawCdSlow = function (c, p) {
+    if (!(p.cdSlowT > 0) || p.dead) return;
+    var x = 250, y = 476, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
+    c.save(); c.globalAlpha = pulse;
+    c.fillStyle = 'rgba(8,4,14,0.8)'; c.beginPath(); c.arc(x, y, r + 4, 0, 6.283); c.fill();
+    if (G.hasSpr('icon_olvido')) { var ic = Assets.sprite('icon_olvido', Math.floor(G.time / 500) % 2); c.drawImage(ic, Math.round(x - ic.width / 2), Math.round(y - ic.height / 2)); }   // arte P2: reloj roto turquesa (32x32)
+    else {
+      c.fillStyle = '#0f3f3a'; c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill(); c.stroke();
+      c.strokeStyle = '#d8fff4'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 1, y - 10); c.moveTo(x, y); c.lineTo(x + 8, y + 3); c.stroke();
+      c.strokeStyle = '#ff4a4a'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(x - 4, y - r - 1); c.lineTo(x + 1, y - 5); c.lineTo(x - 3, y + 1); c.lineTo(x + 3, y + 7); c.lineTo(x + 1, y + r + 1); c.stroke();
+    }
+    c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r + 7, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke();
+    c.restore();
+    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, 11, '#7fffe0', 'center');
+  };
+
   function drawCombosList(c) {
     var y = 64, any = false, t = G.time / 1000;
     G.Cards.combos.forEach(function (cb) {
@@ -76,6 +93,7 @@
     // vida
     bar(c, 16, 14, 220, 18, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
     G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, 126, 24, 13, '#fff', 'center');
+    G.Tundra.drawHud(c);   // P3: medidor de Frío bajo la barra de vida (solo en la Tundra)
     // tiempo y jefe
     var boss = G.Enemies.boss();
     if (G.mode !== 'run') {   // cacería / práctica: sin reloj de run
@@ -83,7 +101,10 @@
       if (G.mode === 'practice') G.txt(c, G.Sys.isTouch() ? 'sin recompensas  -  pausa y REINICIAR' : 'sin recompensas  -  P y luego R: reiniciar', 16, 47, 10, '#9a8fb0', 'left');
     } else {
     G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo
-    if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    if (G.Tundra.noBoss()) G.txt(c, 'Tundra: prueba sin jefe  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#9fd8ff', 'center');
+    else if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
+    G.txt(c, DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : ''), G.W / 2, 58, 10, '#8a7f96', 'center');
     }
     // kills, ceniza
     G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
@@ -102,6 +123,7 @@
     }
     // mano y XP
     drawHand(c);
+    H.drawCdSlow(c, p);
     var need = B.xpNeed(p.level);
     c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - 7, G.W, 7);
     c.fillStyle = '#4dd870'; c.fillRect(0, G.H - 6, G.W * G.clamp(p.xp / need, 0, 1), 4);

@@ -2,14 +2,14 @@
 // opts: hand ("fang:3,spark:3"), noLevel, god(1), maxWall (s), t (segundo inicial)
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
-const cfg = Object.assign({ base: 'http://localhost:8771', len: 7, runs: 4, speed: 20, par: 4, hand: '', noLevel: false, god: 1, hpBoost: 0, maxWall: 420, t: 0, label: '' }, JSON.parse(process.argv[2] || '{}'));
+const cfg = Object.assign({ base: 'http://localhost:8771', len: 7, runs: 4, speed: 20, par: 4, hand: '', noLevel: false, god: 1, hpBoost: 0, maxWall: 420, t: 0, label: '', biome: '', fam: '', mat: '' }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/bot_page.js', 'utf8');
 async function one(b, i) {
   const ctx = await b.newContext({ viewport: { width: 640, height: 360 } });
   const pg = await ctx.newPage(); const errs = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
-  await pg.goto(`${cfg.base}/index.html?reset=1&dbg=1&god=${cfg.god}&len=${cfg.len}&speed=${cfg.speed}&t=${cfg.t}${cfg.hand ? '&hand=' + cfg.hand : ''}`);
+  await pg.goto(`${cfg.base}/index.html?reset=1&dbg=1&god=${cfg.god}&len=${cfg.len}&speed=${cfg.speed}&t=${cfg.t}${cfg.hand ? '&hand=' + cfg.hand : ''}${cfg.biome ? '&biome=' + cfg.biome : ''}${cfg.fam !== '' ? '&fam=' + cfg.fam : ''}${cfg.mat !== '' ? '&mat=' + cfg.mat : ''}`);
   await pg.waitForTimeout(300);
   await pg.evaluate(botSrc);
   await pg.evaluate(() => { G.startGame(); });
@@ -24,7 +24,7 @@ async function one(b, i) {
     const M = window.__m, L = G.Loot, R = L.run, sm = L.summary;
     const sp = {}; for (const k in M.sp) sp[k] = M.sp[k].n ? { r: +(M.sp[k].r / M.sp[k].n).toFixed(3), a: +(M.sp[k].a / M.sp[k].n).toFixed(1) } : null;
     return { state: G.state, won: G.won, runT: Math.round((G.time - G.t0) / 1000), lvl: G.player.level, kills: G.kills, hand: G.finalHand ? G.finalHand.hand.map(h => h && h.id + h.lvl).join(',') : G.player.hand.map(h => h && h.id + h.lvl).join(','),
-      min: M.min, buildT: M.buildT, full5T: M.full5T, bossT: M.bossSeenT, mini: M.mini, sp, heal: G.dbg.heal || {}, parts: R.parts, total: R.total, rare: R.rare, pf: R.pf, brasas: sm && sm.brasas, err: M.err,
+      min: M.min, buildT: M.buildT, full5T: M.full5T, bossT: M.bossSeenT, mini: M.mini, sp, heal: G.dbg.heal || {}, parts: R.parts, kills_by: R.kills, biome: G.curBiome, total: R.total, rare: R.rare, pf: R.pf, brasas: sm && sm.brasas, err: M.err,
       craft: sm ? window.craftSim() : null, dmg: G.dbg.dmg, atk: G.dbg.atk || {} };
   });
   await ctx.close();

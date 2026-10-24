@@ -22,7 +22,7 @@
   C.nearest = function (x, y, range, exclude) {
     var best = null, bd = range || 1e9, L = G.enemies;
     for (var i = 0; i < L.length; i++) {
-      var e = L[i]; if (e.dead || e.spawnT > 0 || (exclude && exclude.indexOf(e) >= 0)) continue;
+      var e = L[i]; if (e.dead || e.spawnT > 0 || e.untarget || (exclude && exclude.indexOf(e) >= 0)) continue;
       var d = Math.hypot(e.x - x, e.y - y) - e.r;
       if (d < bd) { bd = d; best = e; }
     }
@@ -30,7 +30,7 @@
   };
   C.inRange = function (x, y, r) {
     var out = [], L = G.enemies;
-    for (var i = 0; i < L.length; i++) { var e = L[i]; if (!e.dead && e.spawnT <= 0 && Math.hypot(e.x - x, e.y - y) <= r + e.r) out.push(e); }
+    for (var i = 0; i < L.length; i++) { var e = L[i]; if (!e.dead && e.spawnT <= 0 && !e.untarget && Math.hypot(e.x - x, e.y - y) <= r + e.r) out.push(e); }
     return out;
   };
 
@@ -54,11 +54,15 @@
   C.stun = function (e, ms) { if (e.type === 'boss' || e.big) return; e.stunT = Math.max(e.stunT, ms); };
 
   // ------------------------------------------------------------- Números y partículas
+  // Indicador de debilidad / resistencia por material (A.8): x1,25 = número verde claro, más grande y con "!"; x0,75 = gris, pequeño y entre paréntesis (los críticos siguen dorados)
+  C.MAT_WEAK = '#b6ff7a'; C.MAT_RES = '#9a9aa8';
   C.num = function (e, amt, tag, crit) {
     e.numAcc += amt;
     if (crit || e.numT <= 0) {
-      var c = (tag === 'steel' || tag === 'neutral') ? '#ffffff' : col(tag);
-      fx.num(e.x, e.y - e.r - 8, Math.round(e.numAcc), crit ? '#ffe14a' : c, crit || e.numAcc >= 30);
+      var c = (tag === 'steel' || tag === 'neutral') ? '#ffffff' : col(tag), n = Math.round(e.numAcc), mm = e.mm || 1;
+      if (mm > 1.02 && !crit) fx.num(e.x, e.y - e.r - 8, n + '!', C.MAT_WEAK, false, { size: 18 });
+      else if (mm < 0.98 && !crit) fx.num(e.x, e.y - e.r - 8, '(' + n + ')', C.MAT_RES, false, { size: 11 });
+      else fx.num(e.x, e.y - e.r - 8, n, crit ? '#ffe14a' : c, crit || e.numAcc >= 30);
       e.numAcc = 0; e.numT = 150;
     }
   };
@@ -82,10 +86,11 @@
     o = o || {};
     if (e.dead || e.spawnT > 0) return 0;
     if (e.partOf) return G.Boss.dealPart(e, base, o);   // parte rompible del jefe: reparte al jefe y llena su medidor
-    if (e.immune) return 0;   // el Espectro es inmune mientras se desvanece; el jefe en la puerta de fase
+    if (e.immune || e.untarget) return 0;   // el Espectro es inmune mientras se desvanece; el jefe en la puerta de fase; P2: Sanguijuela oculta y muñón de la Cabeza menor
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     var tf = G.Tree.fx;
+    if (e.mat) { e.mm = B.matMul(e, tag); dmg *= e.mm; }   // debilidad / resistencia por material (A.8), antes de resonancia y talentos; e.mat solo existe con G.B.mat.on. e.mm = último multiplicador (lo lee C.num)
     if (tag === 'fire') {
       dmg *= m.fireDmg;
       if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
@@ -121,6 +126,7 @@
     }
     if (e.type === 'boar' && e.st === 'stun') dmg *= 1.5;
     // escudo frontal: solo cuenta si el golpe trae posición de origen (o.sx/o.sy); auras, orbitales y pulsos cuentan como por la espalda
+    if (e.plateHp > 0 && tag === 'fire') G.Enemies.plateHit(e, dmg);   // P3: la placa de hielo del Yeti se derrite con 30 de daño de Fuego (antes del bloqueo: el golpe que la rompe ya pasa)
     var blocked = false, pre = dmg;
     if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
       if (!e.shieldDown) { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
@@ -129,6 +135,7 @@
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
     if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
+    else if (tag === 'fire' && e.variant === 'yeti') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // P3: la placa del Yeti Centinela se derrite con Fuego desde cualquier ángulo
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
       if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
@@ -149,7 +156,7 @@
     if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
-    var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && e.st === 'charge');   // e.big = super armor de los élites
+    var armor = e.type === 'boss' || e.big || e.fixed || blocked || (e.type === 'boar' && (e.st === 'charge' || e.st === 'roll' || e.st === 'roll2'));   // e.big = super armor de los élites
     if (o.kb && !armor) { var k = 12; e.kx = Math.cos(o.ang || 0) * o.kb * k; e.ky = Math.sin(o.ang || 0) * o.kb * k; }
     if (e.type === 'archer' && e.st === 'aim' && o.kb) { e.st = 'move'; e.shootT = 1200; }
     if (e.type === 'fanner' && e.st === 'aim' && o.kb && !blocked) { e.st = 'move'; e.shootT = 1200; }   // un empujón interrumpe la ráfaga
@@ -171,13 +178,19 @@
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
+    if (e.mat) { e.mm = B.matMul(e, tag); n *= e.mm; }   // también los ticks de estados (A.8)
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     if (e.expT > 0) n *= e.expMul;
     e.hp -= n; e.lastTag = tag;
     if (e.type === 'mini_hive') G.Enemies.sacHit(e, n);
+    if (tag === 'fire') { if (e.plateHp > 0) G.Enemies.plateHit(e, n); else if (e.variant === 'yeti') G.Enemies.shieldHit(e, n); }   // P3: el quemado también derrite la placa de hielo
     if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
-    if (e.dotT <= 0 && e.dotAcc >= 3) { fx.num(e.x, e.y - e.r - 8, Math.round(e.dotAcc), col(tag)); e.dotAcc = 0; e.dotT = 600; }
+    if (e.dotT <= 0 && e.dotAcc >= 3) {
+      var dm = e.mm || 1, dn = Math.round(e.dotAcc);
+      if (e.mat && dm > 1.02) fx.num(e.x, e.y - e.r - 8, dn + '!', C.MAT_WEAK, false, { size: 16 }); else if (e.mat && dm < 0.98) fx.num(e.x, e.y - e.r - 8, '(' + dn + ')', C.MAT_RES, false, { size: 11 }); else fx.num(e.x, e.y - e.r - 8, dn, col(tag));
+      e.dotAcc = 0; e.dotT = 600;
+    }
     if (e.hp <= 0) { G.Enemies.kill(e, false, tag); return true; }
     return false;
   };
@@ -231,7 +244,7 @@
       px = cur.x; py = cur.y; d *= fall;
       var next = null, bd = range, L = G.enemies;
       for (var j = 0; j < L.length; j++) {
-        var e = L[j]; if (e.dead || e.spawnT > 0 || hits.indexOf(e) >= 0) continue;
+        var e = L[j]; if (e.dead || e.spawnT > 0 || e.untarget || hits.indexOf(e) >= 0) continue;
         var dd = Math.hypot(e.x - px, e.y - py); if (dd < bd) { bd = dd; next = e; }
       }
       cur = next;
@@ -298,6 +311,7 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
+    if (tag === 'fire' && G.Tundra.on) G.Tundra.fireKill();   // P3: cada baja con Fuego baja el Frío (máx. -4 %/s)
     var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
     for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
     if (elite) { for (var q = 0; q < 4; q++) C.dropGem(e.x, e.y, 'ash', d.ash / 4); C.dropGem(e.x, e.y, 'heart', B.player.heal * 2); }

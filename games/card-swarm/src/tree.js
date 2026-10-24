@@ -207,14 +207,14 @@
   // v5: además, cada kill de un minijefe da 1 fragmento de PF (2 fragmentos = 1 PF)
   T.onElite = function (type, e) {
     var S = SV(), got = 0;
-    S.pf.frag = (S.pf.frag || 0) + 1;
+    S.pf.frag = Math.round(((S.pf.frag || 0) + (G.mode === 'practice' ? 1 : L.dur().pf)) * 100) / 100;   // fragmento x pf de la duración (Rápida 1,4)
     if (S.pf.frag >= L.PF_SOURCES.miniFrag) { S.pf.frag -= L.PF_SOURCES.miniFrag; got += T.addPF(1); }
     if (!S.elites[type]) { S.elites[type] = 1; got += T.addPF(L.PF_SOURCES.firstElite); }
     G.Save.save();
     if (got) L.run.pf = (L.run.pf || 0) + got;
     try {
-      G.fx.num(e.x, e.y - 40, got ? '+' + got + ' PF' : 'Fragmento de PF ' + (S.pf.frag || 0) + '/' + L.PF_SOURCES.miniFrag, '#ffd24a', true);
-      G.Hud.banner(got ? '+' + got + ' PUNTO' + (got > 1 ? 'S' : '') + ' DE FORJA' : 'FRAGMENTO DE PUNTO DE FORJA ' + (S.pf.frag || 0) + '/' + L.PF_SOURCES.miniFrag, 1800, '#ffd24a');
+      G.fx.num(e.x, e.y - 40, got ? '+' + got + ' PF' : 'Fragmento de PF ' + (+(S.pf.frag || 0).toFixed(1)) + '/' + L.PF_SOURCES.miniFrag, '#ffd24a', true);
+      G.Hud.banner(got ? '+' + got + ' PUNTO' + (got > 1 ? 'S' : '') + ' DE FORJA' : 'FRAGMENTO DE PUNTO DE FORJA ' + (+(S.pf.frag || 0).toFixed(1)) + '/' + L.PF_SOURCES.miniFrag, 1800, '#ffd24a');
     } catch (x) { /* fx */ }
   };
 

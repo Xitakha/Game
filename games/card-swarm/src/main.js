@@ -1,6 +1,7 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
    Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
-   ?pf=<n> (Puntos de Forja), ?give=, ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
+   familias v5 (src/families.js): ?fam=0 (roster legado) | ?fam=1 (fuerza familias) ?mat=1|0 (tabla de debilidades por material),
+   ?pf=<n> (Puntos de Forja), ?give=, Tundra (P3): ?biome=tundra [&nobos=1 sin jefe, &ice=0 sin hielo, &cold=0 sin Frío, &softice=1 &lightstorm=1 accesibilidad] (src/tundra.js), ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
   'use strict';
   var G = window.G = {};
@@ -42,6 +43,15 @@
       blinker: { hp: 18,  spd: 65, dmg: 16, r: 11, cost: 6, from: 315000, w: 7,  spr: 'enemy_blinker', xp: 6, ash: 3, maxAlive: 4 },
       scorcher:{ hp: 30,  spd: 60, dmg: 12, r: 12, cost: 6, from: 360000, w: 6,  spr: 'enemy_scorcher',xp: 6, ash: 3, maxAlive: 3 },
       warlock: { hp: 30,  spd: 50, dmg: 0,  r: 13, cost: 8, from: 405000, w: 5,  spr: 'warlock', xp: 6, ash: 5, maxAlive: 2 },
+      // Monstruos NUEVOS de las familias v5 (famOnly: solo existen en la `use` de su bioma; sin familia activa el director nunca los elige). Ver families.js / enemies.js
+      dog:        { hp: 24,  spd: 125, dmg: 8, r: 12, cost: 5, from: 165000, w: 8, spr: 'enemy_bos_perro',      xp: 4, ash: 3, maxAlive: 3, famOnly: true },
+      salamander: { hp: 30,  spd: 60,  dmg: 8, r: 12, cost: 5, from: 240000, w: 9, spr: 'enemy_cri_salamandra', xp: 5, ash: 3, maxAlive: 4, famOnly: true },
+      chainer:    { hp: 60,  spd: 42,  dmg: 6, r: 14, cost: 6, from: 270000, w: 8, spr: 'enemy_cri_guardian_cadenas', xp: 6, ash: 3, maxAlive: 3, famOnly: true },
+      // P2 (Asfódelo, A.5): Sanguijuela (emboscada oculta en un charco) y Cabeza menor (brota de un charco, rebrota si no se cauteriza). spd 0 = fija. Ver families.js / enemies.js
+      leech:      { hp: 9,   spd: 55,  dmg: 9, r: 9,  cost: 3, from: 45000,  w: 26, spr: 'enemy_asf_sanguijuela',  xp: 2, ash: 1, maxAlive: 10, famOnly: true },
+      headlet:    { hp: 30,  spd: 0,   dmg: 12, r: 14, cost: 5, from: 120000, w: 14, spr: 'enemy_asf_cabeza_menor', xp: 4, ash: 3, maxAlive: 5, famOnly: true },
+      // P3 (Tundra, B.3): Lobo de escarcha (IA de manada: rodea a 200 px y ataca por turnos; ver enemies_tundra.js)
+      frostwolf:  { hp: 20,  spd: 90,  dmg: 8, r: 11, cost: 3, from: 90000,  w: 22, spr: 'enemy_tun_lobo',        xp: 3, ash: 1, maxAlive: 9, famOnly: true },
       mini_bulwark: { hp: 2200, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
       mini_hive:    { hp: 2800, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
       // jefe: solo se usan spr/xp/ash; HP, tamaño y IA reales viven en boss.js (G.Boss, DESIGN-v4-jefes.md)
@@ -75,7 +85,7 @@
     ],
     tierFloor: 0.12,
     tierMul: function (type, m) {
-      var t = G.B.tier[type]; if (t == null) return 1;
+      var t = G.B.tierOf(type); if (t == null) return 1;   // tierOf: tier de la familia del bioma activo (families.js) o G.B.tier
       var c = G.B.tierCurve, i = 1;
       if (m <= c[0][0]) return c[0][t + 1];
       while (i < c.length - 1 && m > c[i][0]) i++;
@@ -267,9 +277,13 @@
     else if (!G.biomeUrl) {
       if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
+      if (biome === 'tundra') biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P3: la Tundra sigue bloqueada (sin jefe hasta la P4): solo ?biome=tundra
     }
-    G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
-    if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
+    G.curBiome = biome; try { Assets.setBiome(biome === 'tundra' ? 'bosque' : biome); } catch (e2) { /* sin bioma */ }   // la Tundra no es un bioma de assets.js: usa el de 'bosque' para lo genérico y dibuja su propio suelo (tundra.js)
+    G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
+    G.B.mat.sync();   // debilidades por material (A.8): solo en biomas con familia activa (ready) salvo ?mat=
+    G.Enemies.initPonds();   // P2 (A.5, M5): charcos fijos del Asfódelo (G.ponds), vacío en los demás biomas
+    if (G.groundBiome !== biome || biome === 'tundra') { G.ground = buildGround(biome); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
     if (rq) G.bossId = rq.boss;
     else if (G.bossUrl) G.bossId = G.bossUrl;
@@ -299,7 +313,7 @@
     else if (armed) G.state = 'play';
     else { G.state = 'cards'; G.Cards.open('start'); }
     inp.lock = 250;
-    try { Assets.music.setTrack('normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
+    try { Assets.music.setTrack(biome === 'tundra' && Assets.music.tracks().indexOf('tundra') >= 0 ? 'tundra' : 'normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
   };
 
   G.finish = function (won) {
@@ -310,6 +324,7 @@
     G.sfx(won ? 'boss_die' : 'game_over');
     if (won) { try { G.Snd.play('win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
+    G.Tundra.end();   // apaga el viento de la ventisca
   };
 
   // ---------------------------------------------------------------- Actualización
@@ -320,6 +335,7 @@
     G.Weapons.update(dt);
     G.Enemies.update(dt);
     G.Combat.update(dt);
+    G.Tundra.update(dt);   // Frío, ventisca y hogueras (solo en la Tundra)
     G.Waves.update(dt);
     G.Hud.update(dt);
     G.fx.update(dt);
@@ -364,7 +380,8 @@
   }
 
   // ---------------------------------------------------------------- Render
-  function buildGround() {
+  function buildGround(biome) {
+    if (biome === 'tundra') { G.torches = []; G.ritual = null; return G.Tundra.buildGround(); }   // P3: suelo de hielo propio (parches de nieve firme, grietas)
     var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL });
     G.torches = A.torches; G.ritual = A.ritual;
     return A.canvas;
@@ -385,16 +402,18 @@
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
-    var zm = G.cam.zoom || 1, P = G.Proj, i;
+    var zm = G.cam.zoom || 1, P = G.Proj, i, TN = G.Tundra.on;
     if (zm !== 1) { ctx.translate(G.W / 2, G.H / 2); ctx.scale(zm, zm); ctx.translate(-G.W / 2, -G.H / 2); }
     P.begin(ctx, G.ground, G.cam.x, G.cam.y, off.x, off.y);   // vista inclinada: suelo prerrenderizado aplastado y mundo con scale(1, isoK); plana: como siempre
     G.Combat.drawZones(ctx);
     G.Weapons.drawGround(ctx);
-    G.Enemies.drawGround(ctx);
-    G.Boss.drawGround(ctx);
+    if (TN) G.Tundra.drawGround(ctx);   // P3: hoguera (calor y luz), nieve firme animada, aviso de grietas
+    G.Enemies.drawGround(ctx, TN ? 1 : 0);   // Tundra: capa base (la bruma va encima; las telegrafías se dibujan después, por encima de ella)
+    if (!TN) G.Boss.drawGround(ctx);
     G.fx.drawCorpses(ctx);
     G.Combat.drawGems(ctx);
     var items = G.enemies.filter(function (q) { return q.type !== 'bosspart'; }); items.push(G.player); G.Boss.items(items);
+    if (TN) G.Tundra.items(items);   // estalagmitas y hogueras (ordenadas por y con el resto)
     items.sort(function (a, b) { return (a.sortY != null ? a.sortY : a.y) - (b.sortY != null ? b.sortY : b.y); });
     for (i = 0; i < items.length; i++) {
       var it = items[i];
@@ -403,7 +422,7 @@
       P.down(ctx);
     }
     G.Weapons.drawAir(ctx);
-    G.Enemies.drawProjectiles(ctx);
+    G.Enemies.drawProjectiles(ctx, TN ? 1 : 0);
     G.fx.draw(ctx);
     var tt = performance.now();
     if (G.ritual) Assets.drawRitualGlow(ctx, G.ritual.x, G.ritual.y, tt, G.ritual.r);
@@ -415,10 +434,20 @@
       P.down(ctx);
     }
     var Q = G.Q;
-    if (Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
-    if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
+    if (!TN && Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
+    if (!TN && Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
     ctx.restore();
-    if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
+    if (TN) {   // P3: bruma de la ventisca (pantalla) y, por encima de ella, telegrafías, proyectiles enemigos y jefe (B.1.3: nunca se tapan)
+      G.Tundra.drawHaze(ctx);
+      ctx.save();
+      if (zm !== 1) { ctx.translate(G.W / 2, G.H / 2); ctx.scale(zm, zm); ctx.translate(-G.W / 2, -G.H / 2); }
+      P.beginTf(ctx, G.cam.x, G.cam.y, off.x, off.y);
+      G.Enemies.drawGround(ctx, 2);
+      G.Boss.drawGround(ctx);
+      G.Enemies.drawProjectiles(ctx, 2);
+      ctx.restore();
+      G.Tundra.drawVignette(ctx);
+    } else if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     G.Hud.draw(ctx);
     drawJoy(ctx);
     if (G.state === 'play') G.Sys.drawBar(ctx);
@@ -446,9 +475,9 @@
     G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();
-    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }
+    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
-    G.ground = buildGround(); G.groundBiome = Assets.getBiome();
+    G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : Assets.getBiome();
     G.reset();
     G.Aldea.open(false);
     if (G.bossUrl || G.huntUrl) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
