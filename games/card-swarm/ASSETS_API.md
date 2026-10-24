@@ -511,3 +511,47 @@ Script clasico que extiende `window.Assets` (mismo estilo y reglas que P1: miran
 - `icon_olvido` 16x16 -> 32x32, 2 fr (`loop` 2 fps): reloj roto turquesa para el estado 'olvido' (dibujar a 16x16 = escala 0,5 si hace falta).
 - `fx_ambush_bubbles` 24x24 -> 48x48, 4 fr (`rise` 8 fps, 3 = estallido): burbujas del aviso de emboscada/brote.
 Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias P1 y P2", familia Asfodelo, casilla "mezclar las 3 familias" (prueba de 100). Capturas: `studio/docs/capturas-p2/`. Nota: `sw.js` aun no precachea `assets_fam2.js`.
+
+# Audio Tundra P3 (src/sfx_fam3.js, tras sfx_fam2.js; solo audio)
+Mismo patron y API que P1/P2: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`; <= 4 voces por nombre y separacion minima (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxFam3[nombre]` = `{kind, fam:'tundra', min}`. Tipos: **tele** (glissando sostenido/ascendente o crujido en cadena, solo al inicio del aviso, `vol` 0.6-1), **impact** (golpe grave + ruido corto), **move** (bajo y sutil). Los SFX existentes no cambian. Con muchos enemigos: `vol` 0.4-0.6 en `ice_slide`, `ice_brake`, `snow_step`, `ice_step`, `wolf_run`, `bat_flap`.
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `ice_slide` | move | Derrape en hielo (jugador/enemigos); subtil, `pitch` segun velocidad (0.9-1.2), `vol` 0.5 en enjambre (min 260) |
+| `ice_brake` | move | Frenada/cambio de sentido en hielo (min 220) |
+| `snow_step` | move | Paso en nieve firme: crunch apagado (min 140; `vol` 0.5 enemigos) |
+| `ice_step` | move | Paso en hielo: tic agudo y duro, distinto de la nieve (min 140) |
+| `ice_crack` | tele | Hielo que se fisura antes de romperse (min 220) |
+| `ice_break` | impact | Rotura de hielo (min 90) |
+| `wind_gust` | tele | Aviso de rafaga de ventisca (min 600) |
+| `cold_warn` | tele | Frio al 70 %: tiritona (min 700) |
+| `cold_freeze` | impact | Frio al 100 %: Escarcha (min 800) |
+| `cold_slow` | move | Jugador ralentizado por el Frio (tono que baja; min 500) |
+| `heart_beat` | move | Latido, cuando el Frio > 85 % (cada ~1 s; min 380) |
+| `campfire_crackle` | move | Hoguera cercana (<= 250 px): llamar cada ~1 s, `vol` por distancia (min 500) |
+| `wolf_howl` | tele | Lobo de escarcha: howl/agacha de 700 ms (min 350) |
+| `wolf_lunge` | move | Lobo: lance de 300 px/s (min 110) |
+| `wolf_run` | move | Lobo/Lobezno: carrera (pasos; min 160) |
+| `yeti_wind` | tele | Yeti: wind del empellon de 800 ms (min 300) |
+| `yeti_bash` | impact | Yeti: empellon/golpe (min 110) |
+| `yeti_step` | move | Yeti: pisada pesada (min 240) |
+| `bat_flap` | move | Murcielago de hielo: aleteo errático (min 120) |
+| `bat_screech` | tele | Murcielago: inicio de la linea de pica de 700 ms (min 250) |
+| `bat_dive` | impact | Murcielago: impacto de la pica (min 110) |
+| `stalag_crack` | tele | Estalagmita viva: fisuras/anillo de 800 ms (min 250) |
+| `stalag_erupt` | impact | Estalagmita viva: erupcion de puas (min 110) |
+| `snow_whisper` | tele | Espiritu de nieve: fade/remolino de 600 ms (min 260) |
+| `snow_slash` | impact | Espiritu de nieve: tajo que empuja (min 100) |
+| `hunter_aim` | tele | Cazador: aim de 700 ms (min 250) |
+| `hunter_shot` | move | Cazador: disparo de la flecha helada (min 120) |
+| `bear_roar` | tele | Oso polar: wind de 900 ms (rugido grave, un solo rugido a la vez; min 400) |
+| `bear_charge` | move | Oso polar: arranque de la embestida (min 140) |
+| `bear_slide` | move | Oso polar: patina 180 px al acabar (min 200) |
+| `icicle_fall` | tele | Carambano que cae: silbido descendente (min 200) |
+| `icicle_hit` | impact | Carambano impacta (min 80) |
+
+## Ventisca ambiental: `Assets.wind(intensity)`
+Bucle suave de viento (ruido filtrado con rachas y silbido). `intensity` 0..1 regula el volumen (se puede llamar cada frame o al cambiar ciclo: calma ~0.25, rafaga ~0.8); `Assets.wind(0)` lo apaga con fundido y libera los nodos. Sigue mute/volumen SFX/suspend. Devuelve false si apagado o sin gesto. `Assets.windLevel()` = ultimo valor.
+
+## Musica `tundra`: `Assets.music.setTrack('tundra')`
+Sin tocar `assets.js` ni la logica: `sfx_fam3.js` intercepta `Assets.music` (start/stop/setIntensity/setTrack/getTrack/tracks/isPlaying) y toca la pista en su propio contexto (62 BPM, Re menor/pentatonica, bajo grave + pad helado siempre; campanas con eco desde intensidad ~0.15, cristales desde ~0.4, pulso de corazon desde ~0.6). `setTrack('normal'|'boss')` vuelve a las originales y reanuda si estaba sonando. `tracks()` incluye 'tundra'; `renderMusic({track:'tundra',bars,intensity})` y `exportMusicWav` funcionan. No incluye aun `boss_yarlak` ni stingers (pendiente: piden hooks de Boss).

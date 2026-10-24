@@ -146,7 +146,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -436,11 +436,13 @@
     var b = document.createElement('button'); b.textContent = n;
     if (A.sfxFam1 && A.sfxFam1[n]) { var fm = A.sfxFam1[n]; b.title = fm.fam + ' / ' + fm.kind; if (fm.kind === 'tele') b.style.borderColor = '#ffd25a'; }
     if (A.sfxFam2 && A.sfxFam2[n]) { var f2 = A.sfxFam2[n]; b.title = f2.fam + ' / ' + f2.kind; if (f2.kind === 'tele') b.style.borderColor = '#ffd25a'; }
+    if (A.sfxFam3 && A.sfxFam3[n]) { var f3 = A.sfxFam3[n]; b.title = f3.fam + ' / ' + f3.kind; if (f3.kind === 'tele') b.style.borderColor = '#ffd25a'; }
     b.onclick = function () { A.unlock().then(function () { A.sfx(n, opts()); }); };
     var w = document.createElement('button'); w.textContent = 'WAV'; w.className = 'sm'; w.style.marginTop = '0'; w.title = 'Exportar ' + n + '.wav (pitch/volumen actuales, sin variacion)';
     w.onclick = function () { var o = opts(); o.vary = 0; A.exportSfxWav(n, o).then(function (bl) { download(bl, n + '.wav'); }); };
     wrap.appendChild(b); wrap.appendChild(w); $('sfx').appendChild(wrap);
   });
+  if (A.wind) { var wb = document.createElement('button'); wb.textContent = 'wind (on/off)'; wb.title = 'Assets.wind(vol)'; wb.onclick = function () { A.unlock().then(function () { A.wind(A.windLevel() > 0 ? 0 : +$('vol').value || 0.6); }); }; $('sfx').appendChild(wb); }
   A.music.tracks().forEach(function (t) { var o = document.createElement('option'); o.textContent = t; $('track').appendChild(o); });
   function showLayers() { $('layers').textContent = ' capas: ' + A.music.layers().join(' / '); }
   showLayers();
