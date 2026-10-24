@@ -143,8 +143,29 @@
         warlock:  U('Sacerdotisa ahogada', 'espectro', { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 3, capGrow: 1.2, spr: 'enemy_asf_sacerdotisa', fbSpr: 'warlock', fbSkin: { tint: '#33c8b8', a: 0.4 }, sfx: { tele: 'priestess_chant', summon: 'priestess_summon' } })
       }
     },
-    // Esqueletos de los biomas nuevos (P3 / P5): use vacío = nunca activos, ni siquiera con ?fam=1 (cae al roster legado).
-    tundra: { name: 'La manada de Yarlak', ready: false, boss: 'yarlak', ponds: 0, star: null, light: {}, amb: {}, packs: [], use: {} },
+    // ---- TUNDRA (P3, B.3): la manada de Yarlak. 9 tipos; suma de w por tier = 55 / 44 / 29 / 25. `ready:false` (sin jefe hasta la P4): solo se activa con ?biome=tundra (o ?fam=1); el Portal la muestra bloqueada.
+    //      tun:true = el rol usa la IA de enemies_tundra.js (hielo: tau 300 ms, derrape). `fbSpr`/`fbSkin` = sprite existente teñido mientras no haya arte propio.
+    tundra: {
+      name: 'La manada de Yarlak', ready: false, urlOk: true, boss: 'yarlak', ponds: 0, star: null, light: { worm: 1, archer: 1, frostwolf: 1, moth: 1 }, amb: amb(), packs: [
+        { id: 'manada',  layout: 'fan',    parts: [['frostwolf', 3]] },                    // Manada: 3 Lobos en abanico
+        { id: 'cordada', layout: 'line',   parts: [['shield', 2], ['boar', 1]] },          // Cordada: Oso + 2 Yetis en línea (el Oso detrás)
+        { id: 'pinza',   layout: 'pincer', parts: [['frostwolf', 2], ['warlock', 1]] },    // Pinza del aullido: 2 Lobos opuestos + Chamán detrás
+        { id: 'trampal', layout: 'field',  parts: [['sower', 2], ['worm', 4]] }            // Trampal: 2 Estalagmitas vivas + 4 Lobeznos
+      ],
+      lens: { best: ['blood', 'fire', 'steel'], worst: ['ice'] },
+      use: {
+        worm:      U('Lobezno de nieve',        'pelaje',   { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, hp: 0.85, spd: 1.15, dmg: 0.85, tun: true, spr: 'enemy_tun_lobezno', fbSpr: 'worm', fbSkin: { tint: '#dcefff', a: 0.55 }, sfx: { spawn: 'wolf_run' } }),
+        archer:    U('Cazador de la ventisca',  'pelaje',   { tier: 1, from: 45000,  w: 22, cost: 3, maxAlive: 8,  hp: 1.2, spd: 0.9, dmg: 1, tun: true, teleKey: 'hunter', pspd: 240, cold: 6, proj: 'proj_ice_arrow', fb: 'arrow', spr: 'enemy_tun_cazador', fbSpr: 'archer', fbSkin: { tint: '#9fd8ff', a: 0.45 }, sfx: { tele: 'hunter_aim', shoot: 'hunter_shot' } }),
+        frostwolf: U('Lobo de escarcha',        'pelaje',   { tier: 1, from: 90000,  w: 22, cost: 3, maxAlive: 9,  tun: true, drop: ['fang', 0.13], spr: 'enemy_tun_lobo', fbSpr: 'enemy_bos_perro', fbSkin: { tint: '#cfe8ff', a: 0.6 }, sfx: { tele: 'wolf_howl', lunge: 'wolf_lunge', run: 'wolf_run' } }),
+        boar:      U('Oso polar',               'pelaje',   { tier: 2, from: 120000, w: 11, cost: 5, maxAlive: 5,  hp: 1.55, spd: 0.9, dmg: 16 / 14, sc: 1.3, tun: true, bear: true, spr: 'enemy_tun_oso', fbSpr: 'boar', fbSkin: { tint: '#e8f4ff', a: 0.6 }, sfx: { tele: 'bear_roar', charge: 'bear_charge', slide: 'bear_slide' } }),
+        shield:    U('Yeti',                    'pelaje',   { tier: 2, from: 165000, w: 9,  cost: 5, maxAlive: 5,  hp: 1.4, spd: 0.95, dmg: 1, tun: true, yeti: true, plate: 30, spr: 'enemy_tun_yeti', fbSpr: 'enemy_shield', fbSkin: { tint: '#cfe8ff', a: 0.5 }, sfx: { tele: 'yeti_wind', bash: 'yeti_bash', step: 'yeti_step' } }),
+        moth:      U('Murciélago de hielo',     'escarcha', { tier: 2, from: 210000, w: 9,  cost: 4, maxAlive: 6,  hp: 0.85, spd: 1.1, dmg: 1.2, cold: 8, tun: true, bat: true, spr: 'enemy_tun_murcielago', fbSpr: 'enemy_moth', fbSkin: { tint: '#7fd0ff', a: 0.5 }, sfx: { tele: 'bat_screech', dive: 'bat_dive', flap: 'bat_flap' } }),
+        sower:     U('Estalagmita viva',        'escarcha', { tier: 3, from: 270000, w: 9,  cost: 5, maxAlive: 3, capGrow: 1.7, hp: 40 / 22, spd: 0, dmg: 14 / 6, tun: true, stalag: true, spr: 'enemy_tun_estalagmita', fbSpr: 'enemy_sower', fbSkin: { tint: '#9fd8ff', a: 0.6 }, drop: ['frost', 0.14], sfx: { tele: 'stalag_crack', erupt: 'stalag_erupt' } }),
+        blinker:   U('Espíritu de nieve',       'escarcha', { tier: 3, from: 315000, w: 8,  cost: 6, maxAlive: 4,  spd: 0.95, mx: { steel: 0.75, lightning: 1.25 }, tun: true, spirit: true, spr: 'enemy_tun_espiritu', fbSpr: 'enemy_blinker', fbSkin: { tint: '#e8f4ff', a: 0.55 }, sfx: { tele: 'snow_whisper', slash: 'snow_slash' } }),
+        warlock:   U('Chamán del aullido',      'pelaje',   { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 2, capGrow: 2, hp: 1.05, spd: 0.95, tun: true, shaman: true, castMs: 600, spr: 'enemy_tun_chaman', fbSpr: 'warlock', fbSkin: { tint: '#9fd8ff', a: 0.45 }, sfx: { tele: 'wolf_howl', summon: 'wolf_howl' } })
+      }
+    },
+    // Esqueleto del Panal (P5): use vacío = nunca activo, ni siquiera con ?fam=1 (cae al roster legado).
     panal:  { name: 'La colmena de Melaria', ready: false, boss: 'melaria', ponds: 0, star: null, light: {}, amb: {}, packs: [], use: {} }
   };
 
@@ -155,7 +176,7 @@
     var f = B.fam[biome || G.curBiome]; if (!f) return null;
     if (f.nUse == null) f.nUse = Object.keys(f.use).length;
     if (!f.nUse) return null;
-    return (mode === 1 || f.ready) ? f : null;
+    return (mode === 1 || f.ready || (f.urlOk && G.biomeUrl === (biome || G.curBiome))) ? f : null;   // P3: la Tundra (ready:false) se activa con ?biome=tundra (o ?fam=1)
   };
   B.entry = function (type, biome) { var f = B.famOf(biome); return f ? f.use[type] || null : null; };
   // ¿Existe el rol en el bioma activo? (sin familia: todos los roles). Élites y jefe no pasan por aquí.
@@ -198,10 +219,19 @@
     emerge:   { name: 'Cabeza menor (brota del charco, anillo r 32)',  ms: 700, exit: 42, strong: true },
     headlet:  { name: 'Cabeza menor (mordisco, anillo r 70)',    ms: 500, exit: 40, strong: true },
     eel:      { name: 'Anguila eléctrica (carril 18 x 300)',     ms: 700, exit: 20, strong: true },
-    priest:   { name: 'Sacerdotisa ahogada (invocación)',        ms: 500, exit: 0,  strong: false }
+    priest:   { name: 'Sacerdotisa ahogada (invocación)',        ms: 500, exit: 0,  strong: false },
+    // ---- P3 (Tundra, B.3): regla del HIELO tele >= 250 + 220 + 1000 x salida / 190 (ice:true suma los 220 ms de arrancar = tau) y >= 400 ms los fuertes
+    hunter:   { name: 'Cazador de la ventisca (aim, línea siempre visible)', ms: 700, exit: 25, strong: true, ice: true },
+    wolf:     { name: 'Lobo de escarcha (agacha + línea de lance)', ms: 700, exit: 35, strong: true, ice: true },
+    bear:     { name: 'Oso polar (viento + carril de embestida)',  ms: 900, exit: 55, strong: true, ice: true },
+    yeti:     { name: 'Yeti (empellón, abanico 90 grados)',        ms: 800, exit: 60, strong: true, ice: true },
+    bat:      { name: 'Murciélago de hielo (picado, línea fina)',  ms: 700, exit: 30, strong: true, ice: true },
+    stalag:   { name: 'Estalagmita viva (fisuras + anillo r 40)',  ms: 800, exit: 50, strong: true, ice: true },
+    spirit:   { name: 'Espíritu de nieve (desvanece + tajo)',      ms: 950, exit: 60, strong: true, ice: true },
+    shaman:   { name: 'Chamán del aullido (invocación)',           ms: 600, exit: 0,  strong: false, ice: true }
   };
   B.teleOf = function (id) { return B.tele[id].ms; };
-  B.teleRule = function (t) { return 250 + 1000 * t.exit / 190; };
+  B.teleRule = function (t) { return 250 + (t.ice ? 220 : 0) + 1000 * t.exit / 190; };   // P3: en la Tundra (t.ice) se suman los 220 ms de arrancar (tau del hielo)
   B.teleAudit = function () { return Object.keys(B.tele).map(function (k) { var t = B.tele[k], need = Math.round(B.teleRule(t)); return { id: k, name: t.name, ms: t.ms, exit: t.exit, need: need, ok: t.exit === 0 || (t.ms >= need && (!t.strong || t.ms >= 400)) }; }); };
 
   // Lectura de debilidades de un bioma para el Portal (A.8): { best:[etiquetas], worst:[etiquetas] } (solo si el bioma tiene familia lista y los materiales no están apagados por ?mat=0)

@@ -25,13 +25,14 @@
   function spawnBoss() {
     W.bossSpawned = true;
     for (var i = 0; i < G.enemies.length; i++) if (B.enemy[G.enemies[i].type].elite) G.Enemies.kill(G.enemies[i], true);   // los élites desaparecen
+    G.Tundra.onBoss();   // P3: el Frío pasa a 20 % al aparecer el jefe (solo en la Tundra)
     G.Boss.spawn(G.bossId || 'pastor');   // intro de 3,5 s, música de jefe y todo lo demás: boss.js
   }
 
   function spawnElite(type) {
     W.elitesDone[type] = true;
     var pos = spawnPos(), E = G.Enemies;
-    var el = E.spawn(type, pos[0], pos[1]), vr = G.curBiome === 'cripta' && type === 'mini_bulwark' ? 'warden' : G.curBiome === 'asfodelo' && type === 'mini_hive' ? 'wraith' : null;
+    var el = E.spawn(type, pos[0], pos[1]), vr = G.curBiome === 'cripta' && type === 'mini_bulwark' ? 'warden' : G.curBiome === 'asfodelo' && type === 'mini_hive' ? 'wraith' : G.curBiome === 'tundra' ? (type === 'mini_bulwark' ? 'yeti' : 'ventisquero') : null;
     if (vr) E.variant(el, vr);   // guardián propio del bioma (J3)
     if (type === 'mini_bulwark') { var esc = B.famOf() && G.curBiome === 'asfodelo' ? 'worm' : 'shield'; E.spawn(esc, pos[0] + 45, pos[1] + 20); E.spawn(esc, pos[0] - 45, pos[1] + 20); }   // el Asfódelo no tiene Escudero: el Coloso trae 2 Almas errantes
     G.Hud.banner('¡GUARDIÁN: ' + (vr ? G.Enemies.VARIANTS[vr].name : B.enemy[type].name) + '!', 2000, '#ffb347');
@@ -49,6 +50,9 @@
       var ang = Math.atan2(p.y - pos[1], p.x - pos[0]), px = -Math.sin(ang), py = Math.cos(ang), h = (A[1] - 1) / 2;
       for (j = 0; j < A[1]; j++) E.spawn(A[0], pos[0] + px * 44 * (j - h), pos[1] + py * 44 * (j - h));
       if (Z) E.spawn(Z[0], pos[0] - Math.cos(ang) * 60, pos[1] - Math.sin(ang) * 60);
+    } else if (pk.layout === 'fan') {   // P3 (Manada de la Tundra): n del primer rol en abanico de 70 grados mirando al jugador
+      var fa = Math.atan2(p.y - pos[1], p.x - pos[0]), fn = A[1], fpx = -Math.sin(fa), fpy = Math.cos(fa);
+      for (j = 0; j < fn; j++) { var fo = (j - (fn - 1) / 2) * 46, fb = Math.abs(fo) * 0.5; E.spawn(A[0], pos[0] + fpx * fo - Math.cos(fa) * fb, pos[1] + fpy * fo - Math.sin(fa) * fb); }   // el del centro adelantado
     } else if (pk.layout === 'cross') {   // pareja en lados opuestos (+ nube del segundo rol, p. ej. Pastoreo y Boliche de las familias P1)
       var m = mirror(pos); E.spawn(A[0], pos[0], pos[1]); E.spawn(A[0], m[0], m[1]);
       if (Z) for (j = 0; j < Z[1]; j++) E.spawn(Z[0], pos[0] + G.rnd(-50, 50), pos[1] + G.rnd(-50, 50));
@@ -115,7 +119,7 @@
     if (G.frozen) return;   // intro del jefe
     if (G.mode !== 'run') { huntUpdate(dt); return; }
     var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
-    if (!W.bossSpawned && G.runT >= G.BOSS_T) spawnBoss();
+    if (!W.bossSpawned && G.runT >= G.BOSS_T && !G.Tundra.noBoss()) spawnBoss();   // P3: la Tundra no tiene jefe hasta la P4 (o con ?nobos=1)
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
     // v5: los dos minijefes nunca coexisten (la Madre Colmena espera a que el Coloso caiga) y ninguno entra en el último minuto previo al jefe final

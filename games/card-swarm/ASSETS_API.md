@@ -555,3 +555,64 @@ Bucle suave de viento (ruido filtrado con rachas y silbido). `intensity` 0..1 re
 
 ## Musica `tundra`: `Assets.music.setTrack('tundra')`
 Sin tocar `assets.js` ni la logica: `sfx_fam3.js` intercepta `Assets.music` (start/stop/setIntensity/setTrack/getTrack/tracks/isPlaying) y toca la pista en su propio contexto (62 BPM, Re menor/pentatonica, bajo grave + pad helado siempre; campanas con eco desde intensidad ~0.15, cristales desde ~0.4, pulso de corazon desde ~0.6). `setTrack('normal'|'boss')` vuelve a las originales y reanuda si estaba sonando. `tracks()` incluye 'tundra'; `renderMusic({track:'tundra',bars,intensity})` y `exportMusicWav` funcionan. No incluye aun `boss_yarlak` ni stingers (pendiente: piden hooks de Boss).
+
+
+---
+# Tundra P3 (src/assets_fam3.js, cargado tras assets_fam2.js; solo arte, sin logica; NO incluye a Yarlak = P4)
+Script clasico que extiende `window.Assets`. Mismo estilo que P1/P2 (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo). `Assets.FAM3.tundra` lista todos los sprites. Diseno: `DESIGN-v5-biomas.md` B.1, B.3, C.4-B. `t` en ms. Ancla de enemigos = (final_w/2, final_h-4). Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias" -> Tundra (hoja, anims, arena con parches, ventisca regulable, prueba de 100). Capturas: `studio/docs/capturas-p3/`.
+Paleta: pelaje #e8eef5/#8fa4bf, hielo #9fd8ff/#5aa8e8/#2a4f8a/#1b2f66, marfil #f1ead2, ojos cian #5ff0ff. Acentos: lobezno orejas rosa palido; cazador bufanda ambar; lobo puas de hielo en el lomo; oso cristales azules + cicatriz; yeti cara azul + placa; murcielago alas de cristal + cuerpo indigo; estalagmita ojos ROJIZOS tenues; espiritu lila; chaman craneo de lobo + runas VIOLETA.
+
+## Familia (9)
+| sprite | base -> final | frames | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_tun_lobezno` (worm) | 20x16 -> 40x32 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 9; die | cachorro esponjoso |
+| `enemy_tun_cazador` (archer) | 24x28 -> 48x56 | 14: 0-1 idle, 2-5 walk, 6 aim, 7 shoot (suelta), 8 recupera, 9-13 die | idle 3; walk 7; aim [6]; shoot [7,8] 8; die | `aim` = arco tensado con flecha helada (proyectil `proj_ice_arrow`); sale por la derecha |
+| `enemy_tun_lobo` (frostwolf) | 28x20 -> 56x40 | 15: 0-1 idle, 2-5 walk, 6 howl, 7 crouch, 8-9 lunge, 10-14 die | idle 3; walk 10; howl [6]; crouch [7]; lunge [8,9] 8; die | howl = hocico al cielo con ondas; crouch = agachada con orejas atras; lunge 8 en el aire, 9 aterrizando |
+| `enemy_tun_oso` (boar) | 40x32 -> 80x64 | 15: 0-1 idle, 2-5 walk, 6 wind, 7-8 charge, 9 slide, 10-14 die | idle 3; walk 8; wind [6]; charge [7,8] 12; slide [9]; die | wind = cabeza baja y zarpa que escarba; slide = patina con las patas por delante y nieve |
+| `enemy_tun_yeti` (shield) | 34x36 -> 68x72 | 24: 0-1 idle, 2-5 walk, 6 wind, 7 bash, 8 rec, 9 melt (placa agrietada y goteando), 10-14 die, y SIN PLACA: 15-16 idle_np, 17-20 walk_np, 21 wind_np, 22 bash_np, 23 rec_np | idle 3; walk 6; wind [6]; bash [6,7,8] 10; rec [8]; melt [9]; die; `idle_np walk_np wind_np bash_np rec_np` | Al perder la placa (30 de dano de Fuego) cambia a las anims `*_np`. `fx_ice_slab` = la placa suelta |
+| `enemy_tun_murcielago` (moth) | 24x16 -> 48x32 | 11: 0-3 flap, 4-5 dive, 6-10 die | flap/idle/fly/walk [0..3] 14; dive [4,5] 10; die | |
+| `enemy_tun_estalagmita` (sower) | 20x30 -> 40x60 | 12: 0 dormant, 1-2 wake, 3-4 erupt, 5-6 crawl, 7-11 die | dormant/idle [0]; wake [1,2] 8 sin ciclo; erupt [3,4] 10 sin ciclo; crawl/walk [5,6] 4; die | ojos rojizos TENUES (la del jefe es azul liso y sin ojos) |
+| `enemy_tun_espiritu` (blinker) | 22x28 -> 44x56 | 11: 0-1 float, 2-3 fade, 4-5 slash, 6-10 die | idle/float/walk [0,1] 5; fade [2,3] 10; slash [4,5,0] 12; die | `fade` ya lleva alpha 0,42/0,16 y aro punteado en el suelo; el remolino es `fx_snow_whirl` |
+| `enemy_tun_chaman` (warlock) | 26x30 -> 52x60 | 11: 0-1 idle, 2-3 walk, 4-5 howl, 6-10 die | idle 3; walk [2,3] 5; howl [4,5] 5; die | el aura r 200 la dibuja el juego (el sprite solo da las ondas del aullido) |
+
+## Guardianes (variantes; MISMOS indices y anims que el Coloso/Madre Colmena)
+| sprite | base -> final | frames | anims |
+|---|---|---|---|
+| `enemy_mini_yeti` (Yeti Centinela) | 32x32 -> 64x64 | 16: 0-1 idle, 2-5 walk, 6 bash-wind, 7 bash, 8 stomp-wind, 9 stomp, 10 rec, 11-15 die | idle [0,1] 3; walk [0,2,1,3,4,5] 6; bash [6,7] 8; stomp [8,9] 8; rec [10]; die. Hombreras y escudo de hielo (se derrite con Fuego) |
+| `enemy_mini_ventisquero` | 32x32 -> 64x64 | 15: 0-1 idle, 2-5 float, 6 spit (carambano), 7 acid = ventisca local, 8 swell, 9 burst, 10-14 die | idle 3; float/walk 7; spit [6]; acid/blizzard [7]; swell [8,9] 8; die. Flota (sin patas) |
+
+## Proyectiles y VFX (base -> final, frames, anims, ancla)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `proj_ice_arrow` | 32x12 | 2 (`loop` 10) | flecha, apunta a la derecha, centrada |
+| `proj_icicle` | 28x56 | 2 (`loop` 8) | carambano con la PUNTA ABAJO (cae), centrado |
+| `fx_ice_slab` | 48x56 | 2 (0 entera, 1 agrietada; `melt` sin ciclo 3) | placa del Yeti, centrada |
+| `fx_snow_whirl` | 72x72 | 4 (`loop` 8) | disco r ~33 final, centrado: remolino del Espiritu (ralentiza) |
+| `fx_ice_crack` | 192x48 | 3 (`grow` 3 fps sin ciclo; `closed` [0], `open` [2]) | grieta horizontal centrada: 0 cerrada, 1 abriendose, 2 abierta (agua helada); rotar/escalar a lo largo |
+| `obs_ice_pillar` | 52x104 | 3 (0 entero, 1 agrietado, 2 escombro) | pilar r 22; ancla de la colision = (26,82) final (base elipse en y 94): dibujar en (x-26, y-82). Azul liso sin ojos |
+| `fx_campfire` | 40x48 | 4 (`burn` 8) | ancla (20,38) = centro del suelo de la hoguera |
+| `fx_blizzard_tile` | 256x256 | 3 (`loop` 10) | loseta SIN costuras de rayas diagonales (20 grados), alfa propio |
+| `fx_ice_block` | 44x44 | 3 (0 entero, 1 agrietado, 2 derritiendose; `melt` sin ciclo 3) | bloque del Alud, centrado |
+| `fx_ice_burst` | 96x96 | 5 (`burst` 14 sin ciclo) | estallido de esquirlas (pilar roto, bloque), centrado |
+| `fx_skid_trail` | 96x32 | 3 (`fade` 6 sin ciclo) | estela de derrape: dos rayones, apunta a la derecha (extremo derecho = el que patina); rotar |
+| `fx_ice_breath` | 128x128 | 4 (`puff` 10 sin ciclo; `loop`) | nube de aliento helado, centrada (tick del Aliento polar) |
+| `fx_snow_puff` | 64x64 | 4 (`puff` 12 sin ciclo) | polvareda de nieve (lance, patinazo, impacto), centrada ligeramente baja |
+| `fx_ice_debris` | 96x64 | 3 (`glint` 3) | hielo roto en el suelo |
+| `fx_snow_pool` | 96x64 | 3 (`idle` 2) | charco de nieve/aguanieve (ralentiza) |
+| `decor_tundra` | 56x56 | 6: 0 cristales, 1 estalagmitas, 2 monton de nieve, 3 monton con hierba seca, 4 roca con nieve, 5 rama seca | ancla base-centro (28,52) |
+| `tile_ice` | 64x64 | 6 | losetas de hielo SIN costuras (diagonales brillantes) |
+| `tile_snow_patch` | 64x64 | 3 | losetas de nieve firme SIN costuras (PUNTOS) |
+| `icon_frio` | 24x24 | 2 (0 normal, 1 helado; `loop` 2) | copo, icono del medidor |
+
+## Bioma `tundra` (`Assets.setBiome('tundra')`)
+- `Assets.biomes()` incluye `'tundra'`; `getBiome()` devuelve `'tundra'`; `biomeInfo('tundra')`. Se implementa por envoltorio sobre las funciones existentes (assets.js NO se toca): con tundra activa, `sprite('ground0..9')` = hielo (32x32 final), `rock/grass/mushroom/bush/bones/stump/grave/column/edge/torch/fog0/fog1/rune` = versiones de tundra (`runeN` vacias); `vignette()` por defecto azul; `drawFireflies()` dibuja nieve (`drawSnowfall`); `drawRitualGlow()` no hace nada; `decorate()` esparce `decor_tundra`; `addToPhaser` registra tambien `name@tundra:i`.
+- `Assets.arena(w,h,{seed,wall,snowR})` en tundra -> `{canvas, torches:[], ritual:null, snow:[{x,y,r}], fires:[{x,y,r:64}], cracks:[{x,y,len,a}], pillars:[{x,y,r:22}]}`. Posiciones del doc B.1.1 escaladas por `w/1440` (`Assets.TUNDRA_SPOTS` = coordenadas base 1440x810). `snowR` 110 por defecto (90/70 en F3/F4: regenerar la arena o dibujar encima). El canvas lleva horneados: hielo con diagonales/brillos, 5 parches de NIEVE (disco crema con borde festoneado y PUNTOS + transicion de 24 px punteada), 5 grietas largas (visuales, seguras), estalagmitas decorativas del borde, viñeta azul. Las hogueras y los pilares NO estan horneados (dinamicos): usar `fires`/`pillars` con las funciones de abajo. Coste de generacion ~10 ms.
+
+## Funciones de dibujo
+- `Assets.drawBlizzard(ctx, t, intensity, o)`: capa de ventisca de PANTALLA. `intensity` = alfa del doc (0,15 calma / 0,45 rafaga / 0,6 desesperado; <=0 no dibuja). `o`: `w,h` (defecto el canvas), `px,py` centro despejado en pantalla (el jugador; defecto el centro), `clear` 330, `outer` 520 (bruma blanca sube a ~intensity*1,22 en `outer`), `quality` `'alta'|'media'|'baja'` (o 2|1|0; defecto alta), `wind` rad (0,35). Alta = bruma + 2 capas de rayas; Media = 1 capa; Baja = solo degradado estatico en bordes (sin particulas). **Orden de dibujo: mundo -> drawBlizzard -> telegrafias, proyectiles enemigos y barras del jefe -> HUD** (la funcion nunca dibuja encima de lo que pintes despues). Coste medido (Chromium headless SIN GPU, 960x540, mediana): ~0,8 ms por encima de un blit a pantalla completa en Alta/Media y ~0,1 ms en Baja; con GPU es menor. Un canvas de trabajo interno de media resolucion se reutiliza (sin asignaciones por frame).
+- `Assets.drawSnowfall(ctx, w, h, t, {count 70, view})`: copos y destellos en coordenadas de mundo (= lo que hace `drawFireflies` en tundra).
+- `Assets.drawCampfire(ctx, x, y, t, {r 64, scale 1, ring true, light true, alpha})`: hoguera con luz calida aditiva y aro punteado del radio de calor (`r`; en el desesperado pasar `r:120`, `scale` 1,4).
+- `Assets.drawIcePillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawPillar` (entero hp>0,5, agrietado >0, escombro 0; con hp 0 y `rebuild`>0 aro de aviso + fantasma). (x,y) = centro de la colision; ordenar por y+12.
+- `Assets.drawColdBar(ctx, x, y, value, t, {w 140, h 10, text true, frozen, alpha})`: icono de copo + barra 140x10 + "NN%"; `value` 0-100; marcas en 40 y 70; azul claro <40, mas blanco con pulso desde 70, borde destellante a 100 / `frozen`. (x,y) esquina sup. izq.; devuelve el ancho total (w+58). Pensada bajo la barra de vida.
+- `Assets.drawColdVignette(ctx, W, H, value, t, {alpha})`: escarcha azul en bordes y esquinas (canvas cacheado + alfa): nada <20, suave 20-40, clara >=40, intensa >=70, blanqueada a 100.
+- `Assets.drawFlake(ctx, x, y, r, {color, rot, alpha})`: copo vectorial suelto.

@@ -34,6 +34,7 @@
     };
     e.spawnMax = e.spawnT; if (fe && fe.nosep) e.nosep = true;
     if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
+    if (G.Tundra.on) E.tunInit(e, d, fe);   // P3: hielo (derrape, tau 300 ms) y estado propio de los 9 monstruos de la Tundra (enemies_tundra.js)
     switch (type) {
       case 'boss': e.spawnT = e.spawnMax = 900; e.sumT = 12000; e.atkT = 1500; e.callT = 14000; e.sporeT = 8000; e.age = 0; break;
       case 'worm': e.sndT = G.rnd(3000, 12000); break;
@@ -92,7 +93,7 @@
   // Fases: arm (telegrafía, sin daño, ms) y activa (life ms). kind: 'spore' / 'acid' (verde ácido) o 'fire' (rastro del Ascua).
   E.zone = function (o) {
     var z = { team: 'e', kind: o.kind, x: o.x, y: o.y, r: o.r, arm: o.arm || 0, armMax: o.arm || 0, life: o.life, max: o.life,
-      dmg: o.dmg, tick: o.tick || 500, tk: 0, slow: o.slow || 0, cd: !!o.cd, owner: o.owner || null, src: o.src || o.kind, t: 0 };
+      dmg: o.dmg, tick: o.tick || 500, tk: 0, slow: o.slow || 0, slowMs: o.slowMs || 0, cold: o.cold || 0, cd: !!o.cd, owner: o.owner || null, src: o.src || o.kind, t: 0 };
     G.zones.push(z);
     return z;
   };
@@ -111,10 +112,11 @@
       if (z.kind === 'fire' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-8, 8), z.y, 0, -40, 400, '#ff9a3c', 3, { add: true });
       if (p.dead) continue;
       if (G.dist(z.x, z.y, p.x, p.y) <= z.r) {
-        if (z.slow) G.Player.slow(p, z.slow, 400);
+        if (z.slow) G.Player.slow(p, z.slow, z.slowMs || 400);
+        if (z.cold) G.Tundra.coldAdd(z.cold * dt / 1000);   // P3: la Ventisca local del Ventisquero sube el Frío mientras estés dentro
         if (z.cd) { G.Player.cdSlow(p, CDSLOW[0], CDSLOW[1]); var hn = performance.now(); if (hn - (E._hum || 0) > 1600) { E._hum = hn; G.sfx('olvido_hum', { vol: 0.5 }); } }   // M9: las cartas recargan más lento mientras estés dentro (+2 s al salir)
         z.tk -= dt;
-        if (z.tk <= 0) { z.tk = z.tick; G.Player.hurt(p, z.dmg, z.x, z.y, { soft: true, src: z.src }); }
+        if (z.tk <= 0) { z.tk = z.tick; if (z.dmg > 0) G.Player.hurt(p, z.dmg, z.x, z.y, { soft: true, src: z.src }); }   // dmg 0 = solo ralentiza (remolino del Espíritu de nieve)
       } else z.tk = Math.min(z.tk, 0);
     }
   }
@@ -157,7 +159,10 @@
       for (i = 0; i < G.enemies.length; i++) { var w = G.enemies[i]; if (!w.dead && w.owner === e) { w.dead = true; fx.puff(w.x, w.y, 1); fx.burst(w.x, w.y, 6, '#a060ff', 120, 400, 3, { add: true }); } }
     }
     if (e.type === 'salamander') E.zone({ kind: 'fire', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg * 5 / 8, tick: 400, owner: null, src: 'salamander_pool' });   // al morir deja un charco r 30 de 2 s
-    if (e.type === 'sower') E.zone(e.fe && e.fe.olvido ? { kind: 'olvido', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg, tick: 500, cd: true, owner: null, src: 'olvido' } : { kind: 'spore', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg, tick: 500, slow: 0.15, owner: null, src: 'sower' });
+    if (e.type === 'sower' && e.fe && e.fe.stalag) {   // P3: Estalagmita viva: 3 esquirlas de 3 de daño
+      for (i = 0; i < 3; i++) E.shoot('e', e.x, e.y, i * 2.094 + G.rnd(0, 1), 170, 3, 'proj_ice_arrow', { r: 5, life: 700, fb: 'arrow', src: 'stalag_shard' });
+      fsfx(e, 'erupt', { vol: 0.5 });
+    } else if (e.type === 'sower') E.zone(e.fe && e.fe.olvido ? { kind: 'olvido', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg, tick: 500, cd: true, owner: null, src: 'olvido' } : { kind: 'spore', x: e.x, y: e.y, r: 30, arm: 400, life: 2000, dmg: e.dmg, tick: 500, slow: 0.15, owner: null, src: 'sower' });
     if (e.type === 'mini_hive') {   // se divide en 3 gusanos grandes
       for (i = 0; i < 3; i++) { var an = i * 2.094 + 0.5; E.spawn('worm', e.x + Math.cos(an) * 30, e.y + Math.sin(an) * 30, { summoned: true, hp: 40, scale: 1.3, spawnT: 500 }); }
       fx.ring(e.x, e.y, 10, 80, 400, '#ffb73a', 5);
@@ -181,7 +186,7 @@
     if (!G.hasSpr(spr)) spr = o.fb || null;
     if (G.projectiles.length > G.Q.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
-      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null, sfxBrk: o.sfxBrk || null });
+      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null, sfxBrk: o.sfxBrk || null, cold: o.cold || 0 });
   };
 
   function updateProjectiles(dt, onlyPlayer) {
@@ -193,6 +198,7 @@
       q.x += q.vx * s; q.y += q.vy * s; q.life -= dt; q.t += dt;
       var dead = q.life <= 0 || q.x < G.WALL || q.y < G.WALL || q.x > G.AW - G.WALL || q.y > G.AH - G.WALL;
       if (!dead && G.Boss.obs.length && G.Boss.blocks(q.x, q.y, q.r)) { fx.burst(q.x, q.y, 4, '#c89060', 100, 250, 3); dead = true; }   // los troncos de la arena frenan proyectiles
+      if (!dead && G.Tundra.on && G.Tundra.blocks(q.x, q.y, q.r)) { fx.burst(q.x, q.y, 5, '#bfeaff', 120, 280, 3, { add: true }); dead = true; }   // P3: las estalagmitas de la Tundra bloquean los proyectiles enemigos
       if (!dead && q.hp) {   // el orbe de hielo se destruye con cualquier golpe de carta (proyectil u orbital)
         var j, o2;
         for (j = 0; j < G.projectiles.length && !dead; j++) {
@@ -206,14 +212,15 @@
         if (dead) { fx.burst(q.x, q.y, 8, '#bfeaff', 140, 350, 3, { add: true }); fx.ring(q.x, q.y, 3, 18, 200, '#7fd4ff', 2); if (q.sfxBrk) G.sfx(q.sfxBrk, { vol: 0.6 }); else G.sfx('hit', { pitch: 1.8, vol: 0.4 }); G.projectiles.splice(i, 1); continue; }
       }
       if (!dead && !p.dead && G.dist(q.x, q.y, p.x, p.y) < q.r + p.r - 2) {
-        if (G.Player.hurt(p, q.dmg, q.x - q.vx, q.y - q.vy, { slow: q.slow, src: q.src }) || G.god) { dead = true; if (q.sfxHit) { G.sfx(q.sfxHit, { vol: 0.8 }); if (q.kind === 'chain') fx.ring(p.x, p.y, 4, 26, 260, '#7fd4ff', 3); } }
+        if (G.Player.hurt(p, q.dmg, q.x - q.vx, q.y - q.vy, { slow: q.slow, src: q.src }) || G.god) { dead = true; if (q.cold) G.Tundra.coldAdd(q.cold); if (q.sfxHit) { G.sfx(q.sfxHit, { vol: 0.8 }); if (q.kind === 'chain') fx.ring(p.x, p.y, 4, 26, 260, '#7fd4ff', 3); } }
       }
       if (dead) G.projectiles.splice(i, 1);
     }
   }
 
   // ------------------------------------------------------------- Comportamientos
-  function moveTo(e, ang, spd, s) { e.x += Math.cos(ang) * spd * s; e.y += Math.sin(ang) * spd * s; }
+  // P3 (Tundra): los terrestres NO se desplazan directamente: acumulan la velocidad deseada (e.mvx/e.mvy) y E.update la integra con tau 300 ms (derrape, B.1.2). Fuera de la Tundra: igual que siempre.
+  function moveTo(e, ang, spd, s) { if (e.slide) { e.mvx += Math.cos(ang) * spd; e.mvy += Math.sin(ang) * spd; return; } e.x += Math.cos(ang) * spd * s; e.y += Math.sin(ang) * spd * s; }
 
   function ai_worm(e, dt, s, p, d, a) {
     moveTo(e, a, e.spd, s);
@@ -230,14 +237,14 @@
       // si está contra una pared, cambia el sentido del giro
       if (e.x < G.WALL + 20 || e.x > G.AW - G.WALL - 20 || e.y < G.WALL + 20 || e.y > G.AH - G.WALL - 20) e.strafe *= -1;
       e.shootT -= dt;
-      if (e.shootT <= 0) { e.st = 'aim'; e.t = 0; e.ang = a; }
+      if (e.shootT <= 0) { e.st = 'aim'; e.t = 0; e.ang = a; if (e.fe && e.fe.sfx && e.fe.sfx.tele && e.fe.tun) fsfx(e, 'tele', { vol: 0.6 }); }
       if (e.flT > 0) e.flT -= dt;
     } else if (e.st === 'aim') {
       e.t += dt;
-      var fe = e.fe;
-      if (fe && e.t < 250) e.ang = a;   // familia: el apunte se fija en los últimos 150 ms (la línea fina del aviso es la trayectoria real)
-      if (e.t >= B.tele.archer.ms) {
-        if (fe) { E.shoot('e', e.x, e.y, e.ang, 220, e.dmg, fe.proj, { r: 6, src: 'archer', fb: fe.fb }); fsfx(e, 'shoot', { vol: 0.6 }); e.flT = 220; }
+      var fe = e.fe, tk = fe && fe.teleKey ? B.tele[fe.teleKey] : B.tele.archer;   // P3: el Cazador de la ventisca avisa 700 ms (regla del hielo)
+      if (fe && e.t < tk.ms - 150) e.ang = a;   // familia: el apunte se fija en los últimos 150 ms (la línea fina del aviso es la trayectoria real)
+      if (e.t >= tk.ms) {
+        if (fe) { E.shoot('e', e.x, e.y, e.ang, fe.pspd || 220, e.dmg, fe.proj, { r: 6, src: 'archer', fb: fe.fb, cold: fe.cold }); fsfx(e, 'shoot', { vol: 0.6 }); e.flT = 220; }
         else { E.shoot('e', e.x, e.y, Math.atan2(p.y - e.y, p.x - e.x), 220, e.dmg, 'arrow', { r: 6, src: 'archer' }); G.sfx('shoot', { vol: 0.6 }); }
         e.st = 'move'; e.shootT = 2400;
       }
@@ -291,7 +298,7 @@
       if (e.sumT <= 0) { e.st = 'cast'; e.t = 0; fsfx(e, 'tele', { vol: 0.8 }); }
     } else if (e.st === 'cast') {
       e.t += dt;
-      if (e.t >= 500) {
+      if (e.t >= (e.fe && e.fe.castMs || 500)) {
         var alive = 0; G.enemies.forEach(function (o) { if (!o.dead && o.owner && o.owner.type === 'warlock') alive++; });
         for (var i = 0; i < 2 && alive < 6; i++, alive++) {
           var w = E.spawn('worm', e.x + G.rnd(-30, 30), e.y + G.rnd(-30, 30), { summoned: true }); w.owner = e;
@@ -753,7 +760,8 @@
   E.expose = function (e, ms, mul) { e.expT = Math.max(e.expT || 0, ms); e.expMul = mul; fx.ring(e.x, e.y, 10, e.r + 26, 350, '#ffe27a', 3); G.sfx('card_select', { pitch: 1.6, vol: 0.5 }); };
   function miniHeart(e) { G.Combat.dropGem(e.x + 20, e.y + 14, 'heart', B.player.heal); }
 
-  var MB = B.mini.bulwark, BASH_R = 100;
+  var MB = B.mini.bulwark, BASH_R = 100, YETI_SLIDE = 180, YETI_TELE2 = 720;   // Yeti Centinela: la Embestida patina 180 px más (frena de 340 px/s a ~0); 2.ª telegrafía >= regla del hielo (250 + 220 + 1000 x 45 / 190)
+  function chTele(e) { return e.cn ? (e.variant === 'yeti' ? YETI_TELE2 : MB.chargeTele2) : MB.chargeTele; }
   function setRec(e, ms, expose) {
     e.st = 'rec'; e.t = 0; e.recDur = ms * (e.enraged ? MB.recMul : 1);
     if (expose) { e.shieldDown = true; E.expose(e, e.recDur, MB.expMul); }
@@ -766,16 +774,18 @@
   function bulwarkOk(n, d) { return n === 'bash' ? d < BASH_R : n === 'stomp' ? d < 190 : n === 'charge' ? (d >= 130 && d <= 430) : d < 340; }
   // Guardianes de bioma (J3, ligeros): mismo motor y misma parte rompible, pero solo 2 ataques y otro nombre/color. Cripta: Centinela de Brasa (Embestida con onda + Escudos giratorios);
   // Asfodelo: Plañidera Anegada (Lluvia de larvas + Marea ácida). Se reconocen por e.variant ('warden' | 'wraith'); el tipo sigue siendo mini_bulwark / mini_hive (botín, encargos y PF iguales).
-  E.VARIANTS = { warden: { name: 'CENTINELA DE BRASA', part: 'PETO', tint: '#c4501a' }, wraith: { name: 'PLAÑIDERA ANEGADA', part: 'BOLSA', tint: '#2f9a9a' } };
+  E.VARIANTS = { warden: { name: 'CENTINELA DE BRASA', part: 'PETO', tint: '#c4501a' }, wraith: { name: 'PLAÑIDERA ANEGADA', part: 'BOLSA', tint: '#2f9a9a' },
+    // P3 (Tundra, B.3): Yeti Centinela (Coloso: Embestida con onda que patina 180 px más; su placa de hielo se derrite con Fuego) y Ventisquero (Madre Colmena: carámbanos y Ventisca local que sube el Frío)
+    yeti: { name: 'YETI CENTINELA', part: 'PLACA', tint: '#9fd8ff' }, ventisquero: { name: 'VENTISQUERO', part: 'BOLSA', tint: '#bfe4ff' } };
   E.variant = function (e, v) { var d = E.VARIANTS[v]; if (!d || !e) return; e.variant = v; e.partName = d.part; e.vname = d.name; };
   function bulwarkNext(e, d) {
     if (e.force) { var f = e.force; e.force = null; return atkLog('bulwark', f); }
-    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'warden' ? ['charge', 'shields'] : ['bash', 'stomp', 'charge', 'shields']);
+    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'warden' ? ['charge', 'shields'] : ['bash', 'stomp', 'charge', 'shields']);   // 'yeti' usa la bolsa completa
     for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || !bulwarkOk(n, d)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('bulwark', n); }
     return null;
   }
   function chargeEnd(e) {   // punto de parada de la embestida (recortado por las paredes)
-    var mg = G.WALL + e.r + 2, dx = Math.cos(e.ang), dy = Math.sin(e.ang), tm = MB.chargeLen;
+    var mg = G.WALL + e.r + 2, dx = Math.cos(e.ang), dy = Math.sin(e.ang), tm = MB.chargeLen + (e.variant === 'yeti' ? YETI_SLIDE : 0);
     if (dx > 1e-3) tm = Math.min(tm, (G.AW - mg - e.x) / dx); else if (dx < -1e-3) tm = Math.min(tm, (mg - e.x) / dx);
     if (dy > 1e-3) tm = Math.min(tm, (G.AH - mg - e.y) / dy); else if (dy < -1e-3) tm = Math.min(tm, (mg - e.y) / dy);
     e.clen = Math.max(0, tm); e.tx = e.x + dx * e.clen; e.ty = e.y + dy * e.clen;
@@ -846,12 +856,12 @@
       if (e.t >= 450 + 250 * (e.waves.length - 1) + 20) afterAttack(e);
     // ---- Embestida con onda de choque: carril rojo + círculo de impacto; al llegar estalla un anillo; al final queda expuesta
     } else if (e.st === 'cwind') {
-      var tele = e.cn ? M.chargeTele2 : M.chargeTele, fix = e.cn ? M.chargeFix2 : M.chargeFix;
+      var tele = chTele(e), fix = e.cn ? M.chargeFix2 : M.chargeFix;
       e.t += dt;
       if (e.t < fix) { e.ang = a; e.fa = a; chargeEnd(e); }
       if (e.t >= tele) { e.st = 'charge'; e.t = 0; e.trav = 0; e.hitDone = false; G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 }); }
     } else if (e.st === 'charge') {
-      e.t += dt; var stp = Math.min(M.chargeSpd * s, e.clen - e.trav);
+      e.t += dt; var stp = Math.min(M.chargeSpd * s * (e.variant === 'yeti' ? Math.max(0.12, Math.min(1, (e.clen - e.trav) / YETI_SLIDE)) : 1), e.clen - e.trav);   // Yeti: los últimos 180 px frenan (derrape)
       e.x += Math.cos(e.ang) * stp; e.y += Math.sin(e.ang) * stp; e.trav += stp;
       if (Math.random() < 0.5) fx.dust(e.x - Math.cos(e.ang) * 20, e.y + 16, 1);
       if (!e.hitDone && !p.dead && d < e.r + p.r + 4) { e.hitDone = true; G.Player.hurt(p, e.dmg * M.chargeDmg, e.x, e.y, { src: 'bulwark_charge', kb: 1.6 }); }
@@ -893,7 +903,7 @@
   function hiveKids(e) { var n = 0; for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.src === e) n++; } return n; }
   function hiveNext(e) {
     if (e.force) { var f = e.force; e.force = null; return atkLog('hive', f); }
-    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'wraith' ? (e.sacBroken ? ['spit', 'tide'] : ['rain', 'tide']) : e.sacBroken ? ['spit', 'acid', 'tide'] : ['spit', 'acid', 'rain', 'tide']);
+    if (!e.bag.length) e.bag = shuffleBag(e.variant === 'wraith' || e.variant === 'ventisquero' ? (e.sacBroken ? ['spit', 'tide'] : ['rain', 'tide']) : e.sacBroken ? ['spit', 'acid', 'tide'] : ['spit', 'acid', 'rain', 'tide']);
     for (var i = 0; i < e.bag.length; i++) { var n = e.bag[i]; if (n === e.lastAtk || (n === 'rain' && e.sacBroken)) continue; e.bag.splice(i, 1); e.lastAtk = n; return atkLog('hive', n); }
     e.bag = []; return atkLog('hive', 'spit');
   }
@@ -929,7 +939,7 @@
           for (var k = -1; k <= 1; k++) { var an = a + k * 0.5; e.land.push({ x: G.clamp(e.x + Math.cos(an) * 90, G.WALL + 12, G.AW - G.WALL - 12), y: G.clamp(e.y + Math.sin(an) * 90, G.WALL + 12, G.AH - G.WALL - 12) }); }
         } else if (n === 'acid') {
           e.st = 'acid'; e.t = 0;
-          E.zone({ kind: 'acid', x: p.x, y: p.y, r: 55, arm: 900, life: 4000, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });
+          E.zone({ kind: e.variant === 'ventisquero' ? 'blizz' : 'acid', cold: e.variant === 'ventisquero' ? 14 : 0, x: p.x, y: p.y, r: 55, arm: 900, life: 4000, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });
           G.sfx('wave_start', { pitch: 0.8, vol: 0.4 });
         } else if (n === 'rain') {   // Lluvia de larvas: 5 (7 enrage) círculos rojos fijos; al caer dañan y dejan una larva
           e.st = 'rwind'; e.t = 0; e.rain = [{ x: p.x, y: p.y }];
@@ -939,13 +949,13 @@
             for (var q = 0; q < e.rain.length; q++) if (G.dist(cx, cy, e.rain[q].x, e.rain[q].y) < M.rainR * 2 + 14) ok = false;
             if (ok) e.rain.push({ x: cx, y: cy });
           }
-          G.sfx('wave_start', { pitch: 1.1, vol: 0.5 });
+          G.sfx(e.variant === 'ventisquero' ? 'icicle_fall' : 'wave_start', { pitch: 1.1, vol: 0.5 });
         } else if (n === 'tide') {   // Marea ácida: 4 (5 enrage) charcos de ácido en anillo alrededor del jugador (se arman en 1 s)
           e.st = 'twind'; e.t = 0;
           var tn = e.enraged ? M.tideN2 : M.tideN, a0 = Math.random() * 6.283;
           for (var z = 0; z < tn; z++) {
             var za = a0 + z * 6.283 / tn, zx = G.clamp(p.x + Math.cos(za) * 115, G.WALL + 55, G.AW - G.WALL - 55), zy = G.clamp(p.y + Math.sin(za) * 115, G.WALL + 55, G.AH - G.WALL - 55);
-            E.zone({ kind: 'acid', x: zx, y: zy, r: M.tideR, arm: M.tideTele, life: 5500, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });
+            E.zone({ kind: e.variant === 'ventisquero' ? 'blizz' : 'acid', cold: e.variant === 'ventisquero' ? 14 : 0, x: zx, y: zy, r: M.tideR, arm: M.tideTele, life: 5500, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });   // Ventisquero: Ventisca local (+14 % de Frío/s dentro)
           }
           G.sfx('wave_start', { pitch: 0.6, vol: 0.6 });
         }
@@ -972,7 +982,7 @@
           if (!p.dead && G.dist(r.x, r.y, p.x, p.y) <= M.rainR + p.r * 0.6) G.Player.hurt(p, e.dmg * M.rainDmg, r.x, r.y, { src: 'hive_rain', kb: 0.8 });
           if (kids < M.kidsMax) { E.spawn('worm', r.x, r.y, { summoned: true, spawnT: 300, src: e }); kids++; }
         }
-        G.sfx('hit_heavy', { pitch: 1.4, vol: 0.5 }); fx.shake(4, 120);
+        G.sfx(e.variant === 'ventisquero' ? 'icicle_hit' : 'hit_heavy', { pitch: 1.4, vol: 0.5 }); fx.shake(4, 120);
         e.st = 'move'; e.rain = null; e.atkT = e.enraged ? M.enrageGap : M.atkGap;
       }
     } else if (e.st === 'burst') {
@@ -1031,8 +1041,10 @@
       e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
-      if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash' || e.st === 'roll' || e.st === 'roll2' || e.st === 'bounce')) && !((e.type === 'dog' || e.type === 'chainer') && e.st !== 'move' && e.st !== 'rec')) e.face = dx >= 0 ? 1 : -1;
-      if (!p.dead) AI[e.type](e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
+      if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash' || e.st === 'roll' || e.st === 'roll2' || e.st === 'bounce' || e.st === 'slide')) && !((e.type === 'dog' || e.type === 'chainer') && e.st !== 'move' && e.st !== 'rec') && !(e.type === 'frostwolf' && e.st !== 'surround' && e.st !== 'rec')) e.face = dx >= 0 ? 1 : -1;
+      if (e.slide) { e.mvx = e.mvy = 0; }
+      if (!p.dead) (e.tai ? E.TAI[e.type] : AI[e.type])(e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
+      if (e.slide) G.Tundra.slideEnemy(e, dt, s);   // P3: integra la velocidad con inercia (tau 300 ms) y choca con las estalagmitas
       var m = G.WALL + e.r;
       e.x = G.clamp(e.x, m, G.AW - m); e.y = G.clamp(e.y, m, G.AH - m);
     }
@@ -1093,6 +1105,15 @@
       c.strokeStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',0.9)'; c.lineWidth = 2; c.setLineDash([6, 6]); c.lineDashOffset = -t * 20;
       c.beginPath(); c.arc(z.x, z.y, z.r, 0, 6.283); c.stroke(); c.setLineDash([]);
       c.globalAlpha = 0.7; c.beginPath(); c.arc(z.x, z.y, z.r * u, 0, 6.283); c.stroke();
+    } else if (z.kind === 'whirl' || z.kind === 'blizz') {   // P3: remolino de nieve del Espíritu (ralentiza) y ventisca local del Ventisquero (sube el Frío): blanco azulado con remolinos
+      var wa = Math.min(1, z.life / 400), wb = z.kind === 'blizz';
+      c.globalAlpha = wa; disc(c, z.x, z.y, z.r, wb ? 'rgba(200,232,255,0.20)' : 'rgba(225,240,255,0.22)', wb ? '#bfe4ff' : '#e8f4ff', 2);
+      if (G.hasSpr('fx_snow_whirl')) { var sw = Assets.sprite('fx_snow_whirl', Math.floor(z.t / 120 + i) % 2); c.globalAlpha = wa * 0.9; c.drawImage(sw, Math.round(z.x - z.r), Math.round(z.y - z.r), z.r * 2, z.r * 2); }
+      else {
+        c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.globalAlpha = wa * 0.8; c.setLineDash([5, 7]); c.lineDashOffset = -t * 40;
+        for (var wk = 1; wk <= 2; wk++) { c.beginPath(); c.arc(z.x, z.y, z.r * (0.35 * wk + 0.06 * Math.sin(t * 3 + wk)), t * 2 * (wk % 2 ? 1 : -1), t * 2 * (wk % 2 ? 1 : -1) + 4.2); c.stroke(); }
+        c.setLineDash([]);
+      }
     } else if (z.kind === 'olvido') {   // M9 (A.5): zona turquesa del olvido: relojes que giran al revés y un anillo punteado; dentro, las cartas recargan más lento
       var oa = Math.min(1, z.life / 500);
       c.globalAlpha = oa;
@@ -1153,8 +1174,9 @@
       for (i = 0; i < e.waves.length; i++) { var wv = e.waves[i]; if (wv.t < 0 || wv.t > 450) continue; c.globalAlpha = 1 - wv.t / 450 * 0.6; c.beginPath(); c.arc(e.x, e.y, wv.r, 0, 6.283); c.stroke(); }
       c.restore();
     } else if (st === 'cwind' || st === 'charge') {   // carril de la embestida (64 px) + círculo de la onda de choque en el punto de parada
-      var tele = e.cn ? M.chargeTele2 : M.chargeTele, fix = e.cn ? M.chargeFix2 : M.chargeFix, f = st === 'charge' ? 1 : e.t / tele;
+      var tele = chTele(e), fix = e.cn ? M.chargeFix2 : M.chargeFix, f = st === 'charge' ? 1 : e.t / tele;
       lane(c, e.x, e.y, e.ang, st === 'charge' ? e.clen - e.trav : e.clen, 64, f, st === 'charge' || e.t >= fix);
+      if (e.variant === 'yeti') { var dl = Math.min(YETI_SLIDE, (st === 'charge' ? e.clen - e.trav : e.clen)); c.save(); c.translate(e.x, e.y); c.rotate(e.ang); c.strokeStyle = 'rgba(190,230,255,0.9)'; c.lineWidth = 3; c.setLineDash([5, 7]); c.beginPath(); c.moveTo((st === 'charge' ? e.clen - e.trav : e.clen) - dl, 0); c.lineTo(st === 'charge' ? e.clen - e.trav : e.clen, 0); c.stroke(); c.restore(); }   // tramo de derrape punteado
       c.save(); c.fillStyle = RED(0.08 + 0.14 * f); c.strokeStyle = 'rgba(255,90,90,0.8)'; c.lineWidth = 2; c.setLineDash([7, 6]); c.lineDashOffset = -G.time / 30;
       tdisc(c, e.tx, e.ty, M.ringR, c.fillStyle, c.strokeStyle, 2); c.restore();
     } else if (st === 'cring') {
@@ -1213,6 +1235,7 @@
     var sp = Assets.sprite('fx_ambush_bubbles', u > 0.9 ? 3 : Math.floor(t / 125) % 3); c.drawImage(sp, Math.round(x - sp.width / 2), Math.round(y - sp.height * 0.75));
   }
   function drawFamTele(c, e, p) {
+    if (e.fe && e.fe.tun) { E.tunTele(c, e, p); return; }   // P3: telegrafías de la Tundra (enemies_tundra.js)
     var u, ty = e.type, st = e.st, hw = e.r + p.r;
     if (ty === 'archer' && st === 'aim') {   // línea fina de la flecha (parpadeo amarillo en el cuerpo)
       u = e.t / B.tele.archer.ms; thinLine(c, e.x, e.y, e.ang, 260, 'rgba(255,226,122,' + (0.35 + 0.5 * u) + ')', 1.5, e.t >= 250 ? null : [5, 5]);
@@ -1300,23 +1323,27 @@
     c.save(); c.strokeStyle = 'rgba(205,245,236,0.85)'; c.lineWidth = 1.5; ripple(c, e.x, e.y, 20, 10, t, (e.anim % 1000) / 1000, 0.9); c.restore();
   }
 
-  E.drawGround = function (c) {
-    var i, e, p = PL(), u;
-    if (G.ponds.length) E.drawPonds(c);
-    for (i = 0; i < G.zones.length; i++) if (G.zones[i].team === 'e') drawZone(c, G.zones[i], i);
+  // mode: 0 = todo (como siempre) | 1 = capa base de la Tundra (suelo, zonas ya armadas, marcas de aparición; SIN telegrafías) | 2 = solo telegrafías (se dibuja por encima de la bruma de la ventisca)
+  E.drawGround = function (c, mode) {
+    var i, e, p = PL(), u; mode = mode || 0;
+    if (mode !== 2 && G.ponds.length) E.drawPonds(c);
+    for (i = 0; i < G.zones.length; i++) if (G.zones[i].team === 'e' && (mode === 0 || (mode === 2) === (G.zones[i].arm > 0))) drawZone(c, G.zones[i], i);
     for (i = 0; i < G.enemies.length; i++) {
       e = G.enemies[i];
       if (e.dead || e.partOf) continue;
-      if (e.hidden && e.spawnT <= 0) { drawHiddenRipple(c, e); if (e.fe) drawFamTele(c, e, p); continue; }
+      if (e.hidden && e.spawnT <= 0) { if (mode !== 2) drawHiddenRipple(c, e); if (e.fe && mode !== 1) drawFamTele(c, e, p); continue; }
       if (e.spawnT > 0) { // telegrafía de aparición (morado si es una invocación)
-        if (e.type === 'boss') continue;   // Letea hundida usa spawnT para no ser objetivo: sin marca de aparición
+        if (e.type === 'boss' || mode === 2) continue;   // Letea hundida usa spawnT para no ser objetivo: sin marca de aparición
         u = 1 - e.spawnT / (e.spawnMax || B.spawnTelegraph);
         var big = e.type === 'boss' || e.big, sm = e.summoned, ca = sm ? '176,96,255' : '255,60,60';
         c.save(); c.strokeStyle = sm ? '#b060ff' : '#ff4040'; c.fillStyle = 'rgba(' + ca + ',' + (0.15 + 0.2 * u) + ')'; c.lineWidth = 2;
         c.beginPath(); c.arc(e.x, e.y, (big ? 40 : 18) * (0.5 + 0.5 * u), 0, 6.283); c.fill(); c.stroke(); c.restore();
         continue;
       }
+      if (mode === 1) { if (e.fe && e.fe.shaman) E.tunAura(c, e); continue; }   // capa base de la Tundra: sin telegrafías (el aura del Chamán es suelo, no aviso)
+      var tun = e.fe && e.fe.tun;
       if (e.fe) drawFamTele(c, e, p);   // telegrafías de las familias (Zarzal / Arquero, Perro, Calavera rodante, Guardián de cadenas)
+      if (tun) { if (e.fe.shaman && mode === 0) E.tunAura(c, e); if (e.type !== 'mini_bulwark' && e.type !== 'mini_hive') continue; }   // P3: los 9 monstruos de la Tundra dibujan sus avisos en tunTele (enemies_tundra.js)
       if (e.type === 'boar' && e.st === 'wind' && !(e.fe && e.fe.roll)) {
         var len = 171 + e.r, w = e.r * 2, f = e.t / 600;
         c.save(); c.translate(e.x, e.y); c.rotate(e.ang);
@@ -1441,7 +1468,7 @@
     }
     return 0;
   }
-  var FAMSPR = /^enemy_(bos|cri)_/, ASFSPR = /^enemy_asf_/;
+  var FAMSPR = /^enemy_(bos|cri)_/, ASFSPR = /^enemy_asf_/, TUNSPR = /^enemy_tun_/;
   // animación de los sprites del Asfódelo (assets_fam2.js; nombres de anim en ASSETS_API.md 'Familias P2'). Si el sprite no tuviera esa anim se usa un frame suelto.
   function asfAnim(e) {
     var w = Math.floor(e.anim / 110), st = e.st;
@@ -1464,6 +1491,7 @@
     var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
     if (!fb && FAMSPR.test(name)) return { cv: Assets.sprite(name, famAnim(e)), sc: 1, fb: null };
     if (!fb && ASFSPR.test(name)) return { cv: safeSpr(name, asfAnim(e)), sc: 1, fb: null };
+    if (!fb && TUNSPR.test(name)) return { cv: safeSpr(name, E.tunAnim(e)), sc: 1, fb: null };   // P3: sprites de la Tundra (assets_fam3.js)
     if (!fb) return { cv: Assets.sprite(name, oldAnim(name, e)), sc: 1, fb: null };
     if (G.hasSpr(name)) { try { return { cv: Assets.sprite(name, newAnim(e)), sc: 1, fb: null }; } catch (x) { /* anim desconocida: usa el reemplazo */ } }
     return { cv: Assets.sprite(fb.spr, oldAnim(fb.spr, e)), sc: fb.sc || 1, fb: fb };
@@ -1486,6 +1514,7 @@
     if (e.type === 'boss') { G.Boss.draw(c, e); return; }
     if (e.partOf) return;
     if (e.hidden) return;   // Sanguijuela oculta en su charco: solo se ven las ondas (drawGround)
+    if (e.fe && e.fe.stalag && !G.hasSpr(e.fe.spr)) { E.tunStalag(c, e); return; }   // P3: sin arte propio, la Estalagmita viva se dibuja como las de la arena pero con ojos tenues
     var v = visual(e), cv = v.cv, sc = v.sc * (e.sc || 1);
     var jump = e.jump || 0, hh = cv.height * sc;
     G.fx.spr(c, Assets.sprite('shadow', 0), e.x, e.y + hh / 2 - 6, { alpha: 0.6, sx: SHADOW[e.type] || (e.sc || 1) });
@@ -1509,6 +1538,8 @@
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
+    if (e.fe && e.fe.tun && o.tint == null) E.tunTint(e, o);   // P3: avisos en el cuerpo (Oso, Lobo, Yeti...), alpha de la Estalagmita dormida
+    else if ((e.variant === 'yeti' || e.variant === 'ventisquero') && o.tint == null) { o.tint = E.VARIANTS[e.variant].tint; o.tintA = 0.38; }   // guardianes de la Tundra: tinte azul hielo
     if (e.skin && o.tint == null) { o.tint = e.skin.tint; o.tintA = e.skin.a != null ? e.skin.a : 0.35; }   // tinte de la piel de familia (si no hay ya un tinte de estado)
     if (v.fb && v.fb.alpha && o.alpha == null) o.alpha = v.fb.alpha;
     if (e.fe && e.fe.alpha && e.spr === e.fe.fbSpr && o.alpha == null) o.alpha = e.fe.alpha;   // Alma errante: semitransparente (el sprite propio ya trae el alpha 0,8 horneado: solo se aplica al sprite de reemplazo)
@@ -1516,7 +1547,9 @@
     else if (e.type === 'headlet' && e.st === 'stump') o.alpha = 0.6;
     else if (e.type === 'headlet' && (e.st === 'emerge' || e.st === 'regrow')) { o.alpha = 0.45 + 0.4 * Math.min(1, e.t / 500); }
     if (e.type === 'boss' && e.st === 'tele' && e.kind !== 'slam') { o.sx = 1 + 0.05 * Math.sin(e.t / 40); }
-    G.fx.spr(c, cv, e.x, e.y - jump, o);
+    if (G.Tundra.on) { var fa0 = G.Tundra.farAlpha(e); if (fa0 < 1) o.alpha = (o.alpha != null ? o.alpha : 1) * fa0; }   // P3: los lejanos se pierden en la bruma (hasta -35 %)
+    G.fx.spr(c, cv, e.x, e.y - jump + (e.fe && e.fe.tun && e.fly ? E.tunBob(e) : 0), o);
+    if (e.fe && e.fe.tun) E.tunDraw(c, e, o);   // placa de hielo del Yeti, ojos de la Estalagmita...
     if (e.spawnT <= 0 && e.type !== 'boss') {
       var elite = B.enemy[e.type].elite;
       if (elite) {
@@ -1541,9 +1574,11 @@
     }
   };
 
-  E.drawProjectiles = function (c) {
+  // layer (Tundra): 0 = todos | 1 = solo los del jugador | 2 = solo los enemigos (por encima de la bruma)
+  E.drawProjectiles = function (c, layer) {
     for (var i = 0; i < G.projectiles.length; i++) {
       var q = G.projectiles[i];
+      if (layer && (layer === 1) === (q.team !== 'p')) continue;
       G.Proj.up(c, q.x, q.y);   // vista inclinada: proyectil de pie, con la dirección visual proyectada (Proj.ang)
       drawOneProj(c, q);
       G.Proj.down(c);
@@ -1570,4 +1605,8 @@
       G.fx.spr(c, cv, q.x, q.y, { rot: q.orb ? 0 : G.Proj.ang(q.ang) });
     }
   }
+
+  // Para enemies_tundra.js (P3): IA y utilidades compartidas
+  E.AI = AI; E.TAI = {};
+  E.H = { moveTo: moveTo, contact: contact, kite: kite, inFan: inFan, fsfx: fsfx, thinLine: thinLine, tdisc: tdisc, lane: lane, fan: fan, disc: disc, RED: RED, bubbles: bubbles, explode: explode };
 })();

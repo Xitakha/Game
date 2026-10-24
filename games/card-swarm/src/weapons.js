@@ -332,7 +332,7 @@
   W.update = function (dt) {
     var p = G.player; if (p.dead) return;
     updateExtras(dt, p);
-    var m = G.Cards.mods, base = (1 / m.cdMul) * (p.frenzyT > 0 ? 1.3 : 1) * (p.cdSlowT > 0 ? 1 - Math.min(0.4, p.cdSlowPct) : 1);   // M9 (Lirio del olvido): recarga más lenta, tope 40 %
+    var m = G.Cards.mods, base = (1 / m.cdMul) * (p.frenzyT > 0 ? 1.3 : 1) * (p.cdSlowT > 0 ? 1 - Math.min(0.4, p.cdSlowPct) : 1) * (G.cold && G.cold.frozenT > 0 ? 0.75 : 1);   // M9 (Lirio del olvido): recarga más lenta, tope 40 %
     for (var i = 0; i < p.hand.length; i++) {
       var s = p.hand[i]; if (!s) continue;
       var d = G.Cards.def(s.id); if (d.type !== 'attack') continue;

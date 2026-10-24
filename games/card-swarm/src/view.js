@@ -46,6 +46,12 @@
     c.drawImage(P.flatten(ground), 0, 0);
     c.scale(1, P.K);
   };
+  // Solo la transformación de cámara (sin dibujar el suelo): segunda pasada de la Tundra (telegrafías por encima de la bruma)
+  P.beginTf = function (c, cx, cy, ox, oy) {
+    if (!P.iso) { c.translate(-Math.round(cx + ox), -Math.round(cy + oy)); return; }
+    c.translate(-Math.round(cx + ox), -Math.round(cy * P.K + oy));
+    c.scale(1, P.K);
+  };
   // Suelo prerrenderizado UNA vez (cacheado por canvas de origen): el canvas de la arena aplastado a K en vertical.
   P.flatten = function (src) {
     if (P._gsrc === src && P._gdst) return P._gdst;

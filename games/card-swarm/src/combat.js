@@ -126,6 +126,7 @@
     }
     if (e.type === 'boar' && e.st === 'stun') dmg *= 1.5;
     // escudo frontal: solo cuenta si el golpe trae posición de origen (o.sx/o.sy); auras, orbitales y pulsos cuentan como por la espalda
+    if (e.plateHp > 0 && tag === 'fire') G.Enemies.plateHit(e, dmg);   // P3: la placa de hielo del Yeti se derrite con 30 de daño de Fuego (antes del bloqueo: el golpe que la rompe ya pasa)
     var blocked = false, pre = dmg;
     if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
       if (!e.shieldDown) { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
@@ -134,6 +135,7 @@
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
     if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
+    else if (tag === 'fire' && e.variant === 'yeti') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // P3: la placa del Yeti Centinela se derrite con Fuego desde cualquier ángulo
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
       if (G.hasSpr('fx_shield_spark')) fx.part('fx_shield_spark', bx, by, Math.cos(ba) * 60, Math.sin(ba) * 60, 220, { add: true, sc: 1.3 });
@@ -181,6 +183,7 @@
     if (e.expT > 0) n *= e.expMul;
     e.hp -= n; e.lastTag = tag;
     if (e.type === 'mini_hive') G.Enemies.sacHit(e, n);
+    if (tag === 'fire') { if (e.plateHp > 0) G.Enemies.plateHit(e, n); else if (e.variant === 'yeti') G.Enemies.shieldHit(e, n); }   // P3: el quemado también derrite la placa de hielo
     if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
     if (e.dotT <= 0 && e.dotAcc >= 3) {
@@ -308,6 +311,7 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
+    if (tag === 'fire' && G.Tundra.on) G.Tundra.fireKill();   // P3: cada baja con Fuego baja el Frío (máx. -4 %/s)
     var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
     for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
     if (elite) { for (var q = 0; q < 4; q++) C.dropGem(e.x, e.y, 'ash', d.ash / 4); C.dropGem(e.x, e.y, 'heart', B.player.heal * 2); }
