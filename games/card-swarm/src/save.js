@@ -84,6 +84,7 @@
     if (typeof d.pending.dish === 'undefined') d.pending.dish = null;
     if (typeof d.shop.dish !== 'number') d.shop.dish = 0;
     if (typeof d.lossStreak !== 'number') d.lossStreak = 0;
+    if (d.len !== 7 && d.len !== 9 && d.len !== 10) d.len = 9;   // última duración elegida (L.DUR): valor desconocido o ausente -> Normal
     ['prog', 'done'].forEach(function (key) { if (!d.quest[key] || typeof d.quest[key] !== 'object') d.quest[key] = {}; });
     if (typeof d.pf.earned !== 'number') d.pf.earned = 1;
     if (!Array.isArray(d.anchors)) d.anchors = f.anchors;

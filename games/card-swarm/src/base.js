@@ -88,6 +88,7 @@
       G.Cards.drawCard(c, { id: id, lvl: 0 }, 516 + k * 68, 348, 56, 74, { nocd: true, glow: '#9dffb4' });
     });
     if (bi && bi.unlocked) G.txt(c, '¡PELIGRO ' + G.Boss.ROMAN[bi.unlocked] + ' DESBLOQUEADO!', 730, 310, 13, '#9dffb4', 'left');
+    if (sm.dur) G.txt(c, 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : ''), 720, 426, 10, '#9a8fb0', 'center');
     drawEndButtons(c, S);
   };
   function drawEndButtons(c, S) {

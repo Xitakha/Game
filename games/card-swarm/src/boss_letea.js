@@ -24,8 +24,8 @@
   S.DEFS.letea = {
     id: 'letea', name: 'Letea, la Hidra del Olvido', title: 'Tres Memorias', furia: 'DE LETEA', hp: 6600, r: 80, gy: (window.Assets && Assets.BOSS && Assets.BOSS.letea) ? Assets.BOSS.letea.gy : 56,
     phases: [
-      { n: 'Tres memorias', thr: 0.65, cad: 3200, spd: 30, music: 0.55, spawn: { mul: 0.25, allow: { worm: 1, archer: 1, bomb: 1 }, cap: 15 } },
-      { n: 'Marea',         thr: 0.30, cad: 2600, spd: 30, music: 0.78, spawn: { mul: 0.25, allow: { worm: 1, archer: 1, fanner: 1 }, cap: 15 } },
+      { n: 'Tres memorias', thr: 0.65, cad: 3200, spd: 30, music: 0.55, spawn: { mul: 0.25, allow: { worm: 1, archer: 1, bomb: 1, leech: 1, boar: 1 }, cap: 15 } },   // v5 A.7: + Sanguijuela y Rana ácida (la familia del Asfódelo no tiene archer/bomb/fanner)
+      { n: 'Marea',         thr: 0.30, cad: 2600, spd: 30, music: 0.78, spawn: { mul: 0.25, allow: { worm: 1, archer: 1, fanner: 1, leech: 1, boar: 1 }, cap: 15 } },
       { n: 'Antídoto',      thr: 0,    cad: 2200, spd: 30, music: 1.0,  spawn: { mul: 0, allow: {}, cap: 0 } }
     ],
     despairAt: 0.08, despair: 'Coro del Olvido',
@@ -38,6 +38,7 @@
     weak: [{ tag: 'blood', mul: 1.25, phases: [1, 2] }, { tag: 'poison', mul: 1.25, phases: [3] }, { tag: 'lightning', mul: 1.1, phases: [1, 2, 3] }],
     resist: [{ tag: 'ice', mul: 0.8 }],
     hpCal: 3.6, // J3: 3,5 -> 3,6 con Mordisco cd 2500 (ver README). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 6600 x 3,5 = 23100 a 9 min; p50 aislado ~122 s, partida completa (con horda) ~140 s
+    hpCalFam: 4.7, // v5 P2: con la familia del Asfódelo activa (sin Arqueros / Bombas / Espinosos: menos daño de los adds) el bot ganaba 74 % (73 / 75 %) en Peligro I vs 46 % (44 / 48 %) con ?fam=0; con 4,1 -> 69 %, 4,5 -> 55 %, 4,7 -> 55 / 48 % (README, Familias P2). ?fam=0 conserva hpCal 3,6
     brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { spine: 2, frost: 2, fang: 1 },
     h: { camW: 0.55 }

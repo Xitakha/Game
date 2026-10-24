@@ -1,0 +1,4 @@
+// detalle por minuto (vivos visibles por rol y ocultos) de uno o varios censos: node census_detail.js a.json [b.json ...]
+const fs = require('fs');
+function agg(f) { const d = JSON.parse(fs.readFileSync(f)), M = {}; d.results.forEach(r => Object.keys(r.census.min).forEach(m => { const s = r.census.min[m]; if (s.boss > 0 || s.n < 20) return; const a = M[m] || (M[m] = { r: 0, al: 0, t: {}, h: 0 }); a.r++; a.al += s.alive / s.n; a.h += (s.hid || 0) / s.n; for (const k in s.byType) a.t[k] = (a.t[k] || 0) + s.byType[k] / s.n; })); return M; }
+process.argv.slice(2).forEach(f => { const M = agg(f); console.log(f.split('/').pop()); for (let m = 1; m <= 7; m++) { const a = M[m]; if (!a) continue; console.log(' m' + m, 'vivos', (a.al / a.r).toFixed(1), 'ocultos', (a.h / a.r).toFixed(1), '|', Object.entries(a.t).sort((x, y) => y[1] - x[1]).map(([k, v]) => k + ':' + (v / a.r).toFixed(1)).join(' ')); } });

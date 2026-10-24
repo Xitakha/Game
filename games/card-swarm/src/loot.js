@@ -6,6 +6,28 @@
   var G = window.G, B = G.B, L = G.Loot = {};
 
   // ================================================================= BALANCE
+  // ---------------------------------------------------------------- DURACIONES DE EXPEDICIÓN (TABLA ÚNICA: ajusta aquí el riesgo/recompensa de Rápida / Normal / Larga)
+  // Clave = minutos del selector del Portal (?len=7|9|10 la fuerza; otros valores usan la fila más cercana: <=7 Rápida, >=10 Larga, el resto Normal).
+  // Lo que NO está aquí y también depende de la duración: ritmo del director (G.tk = 9 / min), XP por gema (G.B.xp.lenMul) y HP base del jefe (G.Boss.durMul: 0,75 / 1 / 1,10).
+  //   parts    x probabilidad de partes comunes, x partes garantizadas de élites/jefe y x bonus por romper parte de minijefe (redondeo estocástico: el promedio es exacto)
+  //   brasas   x Brasas de la run y del jefe (no toca los trofeos ni la recompensa fija de encargos)
+  //   pf       x PF del jefe (redondeado: 2 -> 3 en Rápida) y x fragmentos de PF por minijefe (1,4 por kill; 2 fragmentos = 1 PF). No toca el primer élite ni los encargos
+  //   rare     x probabilidad de Esencia rara (por muerte, de minijefes y extra del Peligro; la del pity también). El trofeo / Esencia segura del jefe no cambia
+  //   bossHp   x HP del jefe encima de G.Boss.durMul() (que ya da x0,75 / x1 / x1,10)      bossDmg  x daño del jefe encima del Peligro
+  //            Medido (bot, Pastor Peligro I, 24 peleas x 3 builds): Larga con 1,00/1,00 = 59 % de victorias vs 67 % Normal; con 1,04 = 51 %; con 1,18 / 1,04 = 48 %. Sube bossHp/bossDmg para endurecerla.
+  //   cold     x ganancia base del medidor de FRÍO de la Tundra (B.7: 0,90 / 1,00 / 1,10): la exposición por minuto virtual queda comparable entre duraciones (dato; lo lee tundra.js)
+  //   guardHp  x HP de los guardianes (minijefes: Coloso Escudero / Madre Colmena / sus variantes)
+  //   Cacería: no hay hordas ni botín de run, así que la duración solo cambia el HP del jefe (bossHp x durMul) y el PF (pf); partes y Brasas de la cacería no se escalan.
+  L.DUR = {
+    7:  { id: 'rapida', name: 'Rápida', min: 7,  parts: 0.80, brasas: 0.80, pf: 1.4, rare: 1.0, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.00, cold: 0.90, tag: 'Menos botín, más PF',        gives: '+40 % PF', costs: 'Botín x0,8' },
+    9:  { id: 'normal', name: 'Normal', min: 9,  parts: 1.00, brasas: 1.00, pf: 1.0, rare: 1.0, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.00, cold: 1.00, tag: 'Equilibrada',                gives: 'Referencia', costs: '' },
+    10: { id: 'larga',  name: 'Larga',  min: 10, parts: 1.15, brasas: 1.15, pf: 1.0, rare: 1.5, bossHp: 1.00, bossDmg: 1.00, guardHp: 1.25, cold: 1.10, tag: 'Más botín, jefe más duro', gives: 'Botín x1,15, Esencia x1,5', costs: 'Jefe +15 % HP' }
+  };
+  L.durKey = function (min) { return min <= 7 ? 7 : min >= 10 ? 10 : 9; };
+  L.dur = function (min) { return L.DUR[L.durKey(min == null ? G.RUN_LEN / 60000 : min)]; };
+  // Número entero aleatorio con media n * mul (p. ej. 3 x 0,8 = 2,4 -> 2 o 3)
+  L.scaleN = function (n, mul) { var v = n * mul, f = Math.floor(v); return f + (Math.random() < v - f ? 1 : 0); };
+
   L.PARTS = [
     { id: 'thread',  name: 'Hebra de larva',      short: 'Hebra',   color: '#e8dcb0', tag: 'neutral' },
     { id: 'feather', name: 'Pluma emplumada',     short: 'Pluma',   color: '#f2efe6', tag: 'neutral' },
@@ -27,7 +49,10 @@
   L.DROP_MUL = 0.70;
   L.DROPS = {
     worm: ['thread', 0.12], warlock: ['thread', 0.14], archer: ['feather', 0.13], fanner: ['spine', 0.14], sower: ['spine', 0.14],
-    boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15]
+    boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15],
+    dog: ['fang', 0.13], salamander: ['wick', 0.14], chainer: ['plate', 0.14],   // monstruos nuevos de las familias v5 (A.10)
+    leech: ['frost', 0.13], headlet: ['spine', 0.14],                             // P2: Sanguijuela (Escarcha) y Cabeza menor (Púa; solo la primera muerte)
+    frostwolf: ['fang', 0.13]                                                     // P3 (Tundra): Lobo de escarcha (Colmillo). Estalagmita viva: Escarcha 0,14 (override `drop` de la familia); el resto, el rol base
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)
   // v5: los minijefes son ahora un reto real (más HP, partes rompibles, ataques nuevos) y su botín garantizado sube (antes plate 2 + feather 1 / spine 2 + thread 2, rare 20 %).
@@ -154,27 +179,32 @@
   L.onKill = function (e) {
     if (e.summoned || G.mode === 'practice') return;   // la práctica no suelta ni cuenta nada
     var t = e.type, R = L.run; R.kills[t] = (R.kills[t] || 0) + 1;
-    try { G.Quests.onKill(t); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
-    var pityP = L.RARE_P + (G.Save.data.pity || 0);
+    try { if (!e.noQuest) G.Quests.onKill(t, e); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
+    var pityP = (L.RARE_P + (G.Save.data.pity || 0)) * L.dur().rare;   // Larga: x1,5 sobre la base y el pity
     var gt = L.GUARANTEED[t];
     if (t === 'boss' && G.Boss.e && G.Boss.e.def.guaranteed) gt = { parts: G.Boss.e.def.guaranteed, rare: gt.rare };   // J2: cada jefe tiene su botín garantizado (Karceron / Letea)
     if (gt) {
       // Peligro (J3): las partes garantizadas del jefe escalan con el nivel y hay probabilidad extra de Esencia; la cacería no da Esencia segura (DESIGN 4.2)
       var PD = t === 'boss' ? G.Boss.PELIGRO[G.clamp(Math.round(G.peligro || 1), 1, 5)] : null, gm = PD ? PD.gmul : 1;
-      for (var k in gt.parts) drop(e, k, Math.ceil(gt.parts[k] * gm));
-      if (t === 'boss' && G.mode === 'hunt') return;
-      if (Math.random() < gt.rare) drop(e, 'rare', 1);
-      if (PD && PD.rare > 0 && Math.random() < PD.rare) drop(e, 'rare', 1);
+      var DU = L.dur(), hunt0 = G.mode === 'hunt';
+      for (var k in gt.parts) drop(e, k, hunt0 ? Math.ceil(gt.parts[k] * gm) : Math.max(t === 'boss' ? 1 : 0, L.scaleN(Math.ceil(gt.parts[k] * gm), DU.parts)));
+      if (t === 'boss' && hunt0) return;
+      if (Math.random() < Math.min(1, gt.rare * (t === 'boss' ? 1 : DU.rare))) drop(e, 'rare', 1);
+      if (PD && PD.rare > 0 && Math.random() < Math.min(1, PD.rare * DU.rare)) drop(e, 'rare', 1);
       return;
     }
-    var d = L.DROPS[t]; if (!d) return;
-    if (Math.random() < d[1] * L.DROP_MUL) drop(e, d[0], 1);
+    var d = (e.fe && e.fe.drop) || L.DROPS[t]; if (!d) return;   // v5 P2: una familia puede cambiar la parte que suelta un rol (entrada `drop: [parte, prob]`; p. ej. Perro pastor -> Mecha)
+    if (Math.random() < d[1] * L.DROP_MUL * L.dur().parts) drop(e, d[0], 1);
+    // v5 P2: partes "huésped" (economía inicial): el Bosque perdió Escudero / Bomba / Espectro / Ascua, así que Placa, Mecha y Estática ya no caían; la familia puede declarar
+    // `host: [[parte, prob], ...]` = tiradas extra por cada baja de enemigo normal que no sea el gusano (x DROP_MUL x duración). Medido en README "Economía v5 en los biomas con familia".
+    var hf = B.famOf(), hs = hf && hf.host;
+    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (Math.random() < hs[hi][1] * L.DROP_MUL * L.dur().parts) drop(e, hs[hi][0], 1);
     if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
   };
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
   L.onMiniPart = function (e) {
     var b = L.MINI_PART_BONUS[e.type]; if (!b) return;
-    for (var k in b) drop(e, k, b[k]);
+    for (var k in b) drop(e, k, L.scaleN(b[k], L.dur().parts));
   };
   L.collect = function (part, trophy) {
     var R = L.run; R.parts[part] = (R.parts[part] || 0) + 1; R.total++;
@@ -188,19 +218,19 @@
     for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } }
     var hunt = G.mode === 'hunt';
     var mins = hunt ? 0 : Math.max(0, (G.runT - G.t0) / 60000);   // la cacería no tiene reloj de run: solo pagan el jefe y sus partes
-    var brasas = hunt ? 0 : Math.round(p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0));
+    var DU = L.dur(), brasas = hunt ? 0 : Math.round((p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0)) * DU.brasas);
     for (var k in R.parts) G.Save.add(k, R.parts[k]);
     // jefe (v4): Brasas por parte rota siempre; las del jefe, los PF y el récord solo si cae
     var bs = R.boss, binfo = null;
     if (bs && G.Boss.DEFS[bs.id]) {
       var BD = G.Boss.DEFS[bs.id], P = G.clamp(Math.round(G.peligro || 1), 1, 5), PD = G.Boss.PELIGRO[P], bm = PD.brasas, be = G.Boss.e;
-      var bb = Math.round(((bs.won ? BD.brasas : 0) + BD.brasasPart * bs.parts.length) * bm), bpf = 0, unlocked = 0, firstP = false;
+      var bb = Math.round(((bs.won ? BD.brasas : 0) + BD.brasasPart * bs.parts.length) * bm * (hunt ? 1 : DU.brasas)), bpf = 0, unlocked = 0, firstP = false;
       if (bs.won) {
         var kn = S.bossKills[bs.id] || 0; S.bossKills[bs.id] = kn + 1;
         var pw = S.pelWins[bs.id] = S.pelWins[bs.id] || {}; firstP = !(pw[P] > 0); pw[P] = (pw[P] || 0) + 1;
         // PF: run normal = 2 (3 la 1.a vez que vences al jefe) + extra la 1.a vez en Peligro III y V; cacería = solo la 1.a victoria de ese jefe en ese Peligro (sin farmeo)
         var basePF = hunt ? (firstP ? BD.pf : 0) : (kn === 0 ? BD.pfFirst : BD.pf);
-        bpf = G.Tree.addPF(basePF + (firstP ? PD.pfx : 0)); R.pf = (R.pf || 0) + bpf;
+        bpf = G.Tree.addPF(Math.round((basePF + (firstP ? PD.pfx : 0)) * DU.pf)); R.pf = (R.pf || 0) + bpf;   // duración: Rápida x1,4 (2 -> 3, 3 -> 4)
         if (P < 5 && G.Save.pelMax(bs.id) <= P) { S.peligro[bs.id] = P + 1; unlocked = P + 1; }   // vencer el Peligro N abre el N+1
         if (hunt) { var hr = G.Save.hunt(bs.id, P); hr.wins++; var tm = Math.round((bs.time || G.Boss.combatT) / 1000); if (!hr.best || tm < hr.best) hr.best = tm; }
       }
@@ -219,7 +249,7 @@
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
-    L.summary = { parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
+    L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
   };
   // Fin de una PRÁCTICA: ni botín ni progreso; solo el resumen de la pelea y el contador de victorias de práctica
   L.endPractice = function (won) {

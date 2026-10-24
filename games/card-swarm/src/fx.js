@@ -117,7 +117,7 @@
   };
   // Tajo en arco (usa el sprite de tajo del juego teñido)
   fx.slash = function (x, y, ang, sc, color) { fx.slashes.push({ x: x, y: y, ang: ang, sc: sc, color: color, t: 0, max: 220, flip: Math.random() < 0.5 }); };
-  fx.num = function (x, y, text, color, big) {
+  fx.num = function (x, y, text, color, big, o) {   // o.size = tamaño propio (indicador de debilidad / resistencia por material)
     var Q = G.Q;
     if (fx.nums.length > Q.nums && !big) return;
     if (Q.agg && !big && /^\d+$/.test(String(text))) {   // calidad baja: los números de daño cercanos se suman en uno solo
@@ -128,7 +128,7 @@
       fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), val: +text, color: color || '#fff', size: 14 });
       return;
     }
-    fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), color: color || '#fff', size: big ? 20 : 14 });
+    fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), color: color || '#fff', size: o && o.size || (big ? 20 : 14) });
   };
 
   fx.update = function (dt) {

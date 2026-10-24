@@ -75,7 +75,7 @@
     if (out) { if (q.explode) explodeProj(q); return true; }
     for (i = 0; i < L.length; i++) {
       e = L[i];
-      if (e.dead || e.spawnT > 0 || q.hit.has(e)) continue;
+      if (e.dead || e.spawnT > 0 || e.untarget || q.hit.has(e)) continue;
       if (Math.hypot(q.x - e.x, q.y - e.y) < q.r + e.r) {
         q.hit.add(e);
         if (q.explode) { explodeProj(q); return true; }
@@ -185,7 +185,7 @@
       return true;
     },
     strike: function (s, d, L, p) {
-      var list = G.enemies.filter(function (e) { return !e.dead && e.spawnT <= 0 && e.x > G.cam.x && e.x < G.cam.x + G.W && e.y > G.cam.y && e.y < G.cam.y + G.VH; });
+      var list = G.enemies.filter(function (e) { return !e.dead && e.spawnT <= 0 && !e.untarget && e.x > G.cam.x && e.x < G.cam.x + G.W && e.y > G.cam.y && e.y < G.cam.y + G.VH; });
       if (!list.length) return false;
       var tf = G.Tree.fx, ia = Math.floor(Math.random() * list.length), e = list[ia];
       function bolt(e2, mul) {
@@ -332,7 +332,7 @@
   W.update = function (dt) {
     var p = G.player; if (p.dead) return;
     updateExtras(dt, p);
-    var m = G.Cards.mods, base = (1 / m.cdMul) * (p.frenzyT > 0 ? 1.3 : 1);
+    var m = G.Cards.mods, base = (1 / m.cdMul) * (p.frenzyT > 0 ? 1.3 : 1) * (p.cdSlowT > 0 ? 1 - Math.min(0.4, p.cdSlowPct) : 1) * (G.cold && G.cold.frozenT > 0 ? 0.75 : 1);   // M9 (Lirio del olvido): recarga más lenta, tope 40 %
     for (var i = 0; i < p.hand.length; i++) {
       var s = p.hand[i]; if (!s) continue;
       var d = G.Cards.def(s.id); if (d.type !== 'attack') continue;

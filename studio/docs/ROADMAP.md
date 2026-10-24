@@ -19,3 +19,5 @@
 3. [x] Vista inclinada tipo Hades (Nivel 1) detrás de ?view=iso: suelo aplastado ~0.6, telegrafías elípticas, sprites en pie ordenados por y, sombras; lógica sin cambios
 4. [x] Jefes J2, J3 (Peligro I-V, cacería, guardianes) + Fase 2b (Karceron, Letea), J3 (Peligro, cacería) y Fase 2b de la aldea (resto de árboles, Archivista, cocinera)
 5. [x] Versión móvil (web móvil + PWA + workflow de Pages) — falta probar en teléfono real
+6. [x] Familias por bioma P0-P2 (Bosque, Cripta, Asfódelo)
+7. [ ] P3-P8: Tundra + Yarlak, Panal + Reina Abeja, integración, balance (ver DESIGN-v5-biomas.md)

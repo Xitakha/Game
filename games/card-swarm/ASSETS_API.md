@@ -383,3 +383,236 @@ Todo dibuja en `ctx` con coordenadas de juego (960x540), sin `shadowBlur`. Color
 - `Assets.drawTreeBurst(ctx, x, y, p, color)`: destello al comprar (p 0..1, ~600 ms): anillo + rayos aditivos.
 - `Assets.drawWeakIcon(ctx, tag, x, y, {resist:bool, mult:'1.25', size:24})`: icono de etiqueta con flecha verde arriba (debilidad) o gris abajo (resistencia, icono apagado) y multiplicador opcional a la derecha; (x,y) = esquina sup. izq.
 - Sprites: `tree_tag_<tag>` (48x48; frame 0 color, 1 apagado) para fire ice lightning poison blood steel neutral; `tree_ico_<name>` (32x32, blanco, para tintar) para root card upgrade passive branch set mastery rank trunk.
+
+---
+# Audio familias P1 (Bosque y Cripta) (src/sfx_fam1.js, tras sfx.js; solo audio)
+Procedural WebAudio, se llama igual que el resto: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch +-10 % por defecto; devuelve false si aun no hay gesto, si esta silenciado o si se supera el limite). Limites por nombre: <= 4 voces simultaneas y una separacion minima (ms) para que muchos enemigos no saturen. `Assets.sfxNames()` y `Assets.renderSfx/exportSfxWav` los incluyen; `Assets.sfxFam1[nombre]` = `{kind, fam, min}`. Los SFX existentes no cambian.
+Tipos: **tele** = telegrafia (bajo, tono distintivo; usar `vol` ~0.6-1 al inicio del aviso, NUNCA en el impacto), **impact** = golpe/disparo/explosion, **move** = movimiento/ambiente.
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `lamb_bleat` | move | Cordero corrupto: aparicion/muerte esporadica (min 140 ms) |
+| `thorn_shot` | impact | Zarzal dispara espina(s) (min 60) |
+| `moth_flutter` | move | Polilla de lana volando/cargando (min 120) |
+| `wool_puff` | impact | Orbe de lana lanzado / impacto del orbe (min 80) |
+| `spore_puff` | tele | Micelio: inicio del `arm` de 900 ms (min 150) |
+| `zampona_pipe` | tele | Zamponero: inicio del `cast` de 500 ms (min 300) |
+| `dog_bark` | tele | Perro pastor: inicio del ladrido de 450 ms (dos ladridos; min 300) |
+| `dog_dash` | move | Perro pastor: arranque del arreo (min 150) |
+| `bone_rattle` | move | Esqueleto: traqueteo al andar/aparecer (min 130) |
+| `bone_arrow` | impact | Arquero de huesos lanza el hueso (min 70) |
+| `skull_explode` | impact | Calavera explosiva detona (min 90) |
+| `skull_roll` | tele | Calavera rodante: inicio del `wind` de 600 ms y del aviso del segundo tramo (min 200) |
+| `skull_bounce` | impact | Calavera rodante rebota en pared (min 80) |
+| `chain_rattle` | tele | Guardian de cadenas: grillete/cadena durante el `wind` de 700 ms (min 160) |
+| `chain_throw` | move | Guardian lanza la cadena (min 120) |
+| `chain_hit` | impact | La cadena alcanza al jugador (ralentiza; min 120) |
+| `shield_bash` | impact | Carcelero: golpe/empellon de escudo (min 120) |
+| `ember_crackle` | move | Ascua (magma): chisporroteo al moverse (min 100) |
+| `lava_trail_hiss` | move | Salamandra/Ascua dejando rastro (min 150) |
+| `lava_pool` | tele | Charco de lava: al empezar el `arm` de 600 ms (burbujeo; min 160) |
+| `soul_whisper` | tele | Alma prisionera: inicio del `fade` de 500 ms (min 250) |
+| `soul_blink` | move | Alma prisionera: teletransporte (min 150) |
+
+Consejos: llamar a los `tele` una vez al empezar el aviso (no por frame); los `move` a lo sumo cada 0.3-1 s por enemigo; para un enjambre usar `vol` 0.5-0.7 si hay > 5 en pantalla. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` tienen borde dorado).
+
+
+---
+# Familias P1 (Bosque y Cripta) (src/assets_fam1.js, cargado tras assets_enemies2.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Mismo estilo que `assets_enemies2.js`. Diseno: `DESIGN-v5-biomas.md` A.3, A.4, C.4-A. Todos miran a la DERECHA (voltear con scale -1). Tamano "base" x2 = final (px reales del canvas devuelto por `Assets.sprite`). `die` = 5 frames, 9 fps, no cicla, indices justo despues de los normales (`Assets.animFrame(n,'die',msDesdeMuerte)`). Los frames se precomponen al cargar: en juego es un `drawImage`. `Assets.FAM1 = {bosque:[nombres], cripta:[nombres]}` lista todo. Ancla sugerida de enemigos: pies = (final_w/2, final_h-4).
+Paleta (para que 100 enemigos se lean): Bosque = lana crema/negra, puas moradas, ojos naranja, granate, corteza marron. Cripta = hueso, hierro gris, magma naranja, cuero/rojo oscuro. Ninguna usa el verde/azul/rojo planos de los sprites antiguos.
+
+## Bosque
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_bos_cordero` | 20x20 -> 40x40 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle [0,1] 4; walk [0,2,1,3,4,5] 9; die | oveja crema con cara negra y puas moradas en el lomo (`worm`) |
+| `enemy_bos_zarzal` | 24x24 -> 48x48 | 13: 0-1 idle, 2-5 walk, 6 aim, 7 fire, 8-12 die | idle 3; walk 7; aim [6]; fire [7]; shoot [7,1] 8; die | arbusto de corteza con espinas moradas (`archer`; Zarzal mayor = mismo sprite a escala 1,15 + tinte). `aim` = espinas amarillas y cuerpo inflado; `fire` = una espina saliendo a la derecha |
+| `enemy_bos_perro` | 26x18 -> 52x36 | 14: 0-1 idle, 2-5 walk, 6 bark, 7-8 dash, 9-13 die | idle 4; walk 11; bark [6]; dash [7,8] 14; die | border collie negro/crema con collar granate; `bark` = hocico arriba y boca abierta con rayitas de sonido (anillo rojo lo pone el juego) |
+| `enemy_bos_polilla` | 20x20 -> 40x40 | 11: 0-3 fly, 4 charge, 5 throw, 6-10 die | fly [0,1,2,3] 14 (`idle` = igual); charge [4]; throw [5,0] 8; die | polilla de lana crema/marron con antenas naranja. `charge` lleva el orbe de lana con anillo azul claro entre las patas |
+| `enemy_bos_zamponero` | 20x24 -> 40x48 | 9: 0-1 idle, 2-3 cast, 4-8 die | idle [0,1] 4 (`walk` = igual, 6 fps); cast [2,3] 6; cast_hold [3]; die | fauno de cuernos de cabra, tunica granate, zampona. `cast` 3 = anillo morado y notas |
+| `proj_wool_orb` | 12x12 -> 24x24 | 2 | `loop` [0,1] 8 | orbe de lana crema con anillo azul claro punteado (azul = ralentiza), centrado |
+
+Reusados SIN arte nuevo (como pide el doc): Jabalí = `boar`; Micelio = `enemy_sower`; espina del Zarzal = `proj_thorn_small` (16x8 final, apunta a la derecha); Zarzal mayor = `enemy_bos_zarzal` x1,15 con tinte oscuro. No hay pieles de Jabalí (el doc no las pide).
+
+## Cripta
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_cri_esqueleto` | 20x22 -> 40x44 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 8; die | esqueleto con garrote, grillete y paño violeta (`worm`) |
+| `enemy_cri_arquero` | 22x22 -> 44x44 | 13: 0-1 idle, 2-5 walk, 6 aim, 7 fire, 8-12 die | idle 4; walk 8; aim [6]; fire [7]; shoot [6,7,1] 8; die | calavera con capucha violeta y arco de hueso; `aim` = cuerda tensa + flecha encajada |
+| `proj_bone_arrow` | 16x6 -> 32x12 | 2 | `loop` [0,1] 10 | flecha de hueso con plumas naranja, apunta a la derecha (rotar al angulo), centrada |
+| `enemy_cri_calavera_exp` | 18x18 -> 36x36 | 12: 0-3 walk, 4-5 lit, 6 prime, 7-11 die | walk [0,1,2,3] 9 (`idle` = igual); lit [4,5] 10; prime [6]; die | calavera flotante con mecha y grietas de magma; `prime` = hinchada, aro rojo, grietas blancas |
+| `enemy_cri_calavera_rod` | 24x24 -> 48x48 | 15: 0-1 idle, 2-3 walk, 4 wind, 5-8 roll, 9 stun, 10-14 die | idle 3; walk [2,3] 5; wind [4]; roll [5,6,7,8] 16; stun [9]; die | calavera grande con aro de hierro y puas; `roll` gira 90 grados por frame con rayas de velocidad (el juego puede ademas rotar el sprite) |
+| `enemy_cri_carcelero` | 26x26 -> 52x52 | 14: 0-1 idle, 2-5 walk, 6 wind, 7 bash, 8 rec, 9-13 die | idle 4; walk 7; wind [6]; bash [6,7,8] 10; rec [8]; die | casco de hierro con ranura naranja y puerta de celda como escudo (`shield`). `wind` = escudo atras con marco naranja, `bash` = impacto, `rec` = jadeando y bajo |
+| `enemy_cri_salamandra` | 30x16 -> 60x32 | 11: 0-1 idle, 2-5 slither, 6-10 die | idle 3; slither [0,2,1,3,4,5] 8 (`walk` = igual); die | lagarto negro con grietas de magma y vientre naranja. El charco es `fx_fire_cell` (existente) |
+| `enemy_cri_guardian_cadenas` | 28x30 -> 56x60 | 14: 0-1 idle, 2-5 walk, 6 wind, 7-8 throw, 9-13 die | idle 3; walk 6; wind [6]; throw [7,8] 8; die | encapuchado rojo oscuro con cadenas cruzadas y candado dorado. `wind` = cadena girando sobre la cabeza; `throw` = brazo extendido (frame 8 con chispas) |
+| `proj_chain` | 24x8 -> 48x16 | 3 | `loop` [0,1,2] 12 | cadena con gancho a la DERECHA (cabeza); rotar al angulo; centrada; para alargarla dibujar varios o estirar en x |
+| `fx_chain_link` | 16x16 -> 32x32 | 1 | - | eslabon grande con halo azul claro: marca de impacto/ralentizado de la cadena (azul = ralentizado). Centrado |
+| `enemy_cri_alma` | 22x26 -> 44x52 | 11: 0-1 float, 2-3 fade, 4-5 slash, 6-10 die | float [0,1] 5 (`idle` = igual); fade [2,3] 10; slash [4,5,0] 12; die | espiritu palido con uniforme de preso y grillete con cadena rota. Los frames `fade` ya llevan alpha y el anillo naranja en el suelo (sin `fx_blink_ring`); el resto alpha 0,9 |
+
+Reusados sin arte nuevo: Ascua = `enemy_scorcher`; charco de lava = `fx_fire_cell` (44x44 final, centrado). Calavera explosiva usa la telegrafia circular existente.
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> seccion "Familias P1" (cada sprite con todas sus animaciones y prueba de 100 enemigos mezclados). Capturas: `studio/docs/capturas-p1/`.
+
+---
+# Audio familias P2 (Asfodelo del Olvido) (src/sfx_fam2.js, tras sfx_fam1.js; solo audio)
+Mismo patron y API que P1: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`; <= 4 voces por nombre y separacion minima (ms); `Assets.sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxFam2[nombre]` = `{kind, fam:'asfodelo', min}`. Tipos: **tele** (bajo, distintivo, solo al inicio del aviso, `vol` 0.6-1), **impact**, **move**. Los SFX existentes no cambian.
+Timbres: charco = burbujas ascendentes; hielo = cristalino agudo; olvido = campana/zumbido turquesa que BAJA de tono (tiempo lento); anguila = chasquido seco (sin crepitar largo).
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `pond_swim` | move | Sanguijuela/Alma en charco: nada, ondas (min 160) |
+| `pond_bubble` | tele | Sanguijuela: burbujas al inicio del aviso de emboscada de 500 ms (min 200) |
+| `leech_lunge` | move | Sanguijuela: lance de 330 ms (min 110) |
+| `frog_crouch` | tele | Rana: inicio de la agachada de 500 ms / circulo rojo (min 200) |
+| `frog_hop` | move | Rana: despegue del salto (min 120) |
+| `frog_land` | impact | Rana: aterrizaje (min 100) |
+| `frog_splash` | impact | Rana: chapoteo al crearse el charco acido (min 110) |
+| `head_emerge` | tele | Cabeza menor: brota del charco, 700 ms (min 220) |
+| `head_bite` | impact | Cabeza menor: mordisco (min 90) |
+| `head_regrow` | tele | Cabeza menor: inicio del rebrote de 8 s / su `regrow` (min 250) |
+| `head_burn` | impact | Cabeza menor muere quemada (cauterizacion; Fuego) (min 100) |
+| `medusa_charge` | tele | Medusa: carga de 450 ms del orbe (min 220) |
+| `medusa_throw` | move | Medusa: lanza el orbe (min 110) |
+| `orb_shatter` | impact | Orbe de hielo destruido por un golpe (min 80) |
+| `olvido_sow` | move | Lirio: siembra la zona (min 140) |
+| `olvido_chime` | tele | Zona del olvido: inicio del `arm` de 900 ms; tono que baja (min 260) |
+| `olvido_hum` | move | Zona activa / jugador dentro (ralentizado, baja de tono; a lo sumo cada 1-2 s; min 400) |
+| `eel_charge` | tele | Anguila: inicio del `wind` de 700 ms (min 200) |
+| `eel_zap` | impact | Anguila: rayo instantaneo de 150 ms (seco y corto, distinto a rayos de cartas; min 90) |
+| `eel_dash` | move | Anguila: arranque de la carga (min 130) |
+| `priestess_chant` | tele | Sacerdotisa: inicio del `cast` de 500 ms (min 350) |
+| `priestess_summon` | impact | Sacerdotisa: aparecen las 2 Almas (min 150) |
+| `drown_whisper` | tele | Alma errante: susurro esporadico/aparicion (bajar `vol` en enjambre; min 260) |
+| `drown_wail` | move | Alma errante: lamento al morir/disiparse (min 300) |
+
+Consejo: con muchos enemigos usar `vol` 0.5-0.7 en `drown_*`, `pond_swim` y `head_*`. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (los `tele` con borde dorado).
+
+
+---
+# Familias P2 (Asfodelo) (src/assets_fam2.js, cargado tras assets_fam1.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets` (mismo estilo y reglas que P1: miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo al final de los frames, ancla de enemigos = (final_w/2, final_h-4)). Diseno: `DESIGN-v5-biomas.md` A.5, C.4-A. `Assets.FAM2.asfodelo` lista todo. Paleta: verde azulado #2f6f6a, crema #e8e4d4, acentos acido #7be34a / hielo #6ac8ff / rayo #ffe45a; olvido #7fffe0.
+
+| sprite | base -> final | frames (indices) | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_asf_alma_errante` | 20x22 -> 40x44 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 8; die | voluta teal clara con alpha 0,8 YA horneado (no volver a aplicar alpha) |
+| `enemy_asf_sanguijuela` | 18x10 -> 36x20 | 10: 0-1 swim, 2-3 lunge, 4 exposed, 5-9 die | swim [0,1] 7 (`idle` = igual); lunge [2,3] 14; exposed [4]; die | gusano oliva con franja roja y ventosa dentada; `exposed` = panza crema boca arriba |
+| `enemy_asf_rana` | 26x22 -> 52x44 | 11: 0-1 idle, 2 crouch, 3 air, 4 land, 5 rest, 6-10 die | idle 3; crouch [2]; air [3]; land [4] (salpicaduras); rest [5]; hop [2,3,4] 6; die | rana verde acido, ojos saltones; `rest` = ojos cerrados y lengua fuera |
+| `enemy_asf_medusa` | 24x28 -> 48x56 | 11: 0-3 float, 4 charge, 5 throw, 6-10 die | float/idle [0..3] 6; charge [4] (orbe azul entre tentaculos); throw [5,0] 8; die | proyectil: `proj_frost_orb` (existente, 12x12 base) |
+| `enemy_asf_cabeza_menor` | 28x36 -> 56x72 | 17: 0-3 emerge, 4-5 idle, 6-7 bite, 8 stump, 9-11 regrow, 12-16 die | emerge [0..3] 7 sin ciclo; idle [4,5] 3; bite [6,7] 8 (6 = aviso, cabeza atras; 7 = embestida a +x, alcance ~+20 px final); stump [8]; regrow [9,10,11] 4 sin ciclo; die | cuello+cabeza de serpiente con cresta acido/hielo/rayo, incluye su aro de agua en la base (pies = base del aro) |
+| `enemy_asf_lirio` | 22x24 -> 44x48 | 13: 0-1 idle, 2-5 walk, 6-7 sow, 8-12 die | idle 3; walk [0,2,1,3,4,5] 7; sow [6,7] 6; die | nenufar con flor crema y bulbo turquesa; `sow` = petalos abiertos con esporas |
+| `enemy_asf_anguila` | 40x14 -> 80x28 | 14: 0-1 idle, 2-5 slither, 6 wind, 7 dash, 8 rec, 9-13 die | idle 4; slither/walk [2..5] 10; wind [6] (chispas, rayas encendidas); dash [7] (recta, boca abierta, estela); rec [8] (apagada, ojos X); die | |
+| `enemy_asf_sacerdotisa` | 24x28 -> 48x56 | 12: 0-1 idle, 2-4 float, 5-6 cast, 7-11 die | idle 3; float/walk [2,3,4] 5; cast [5,6] 6; cast_hold [6]; die | el anillo morado del `cast` va dibujado a los pies |
+
+## VFX / props (nombre, base -> final, frames, anims)
+- `fx_pond_ripple` 48x24 -> 96x48, 3 fr (`ripple` 3 fps): SOLO anillos de ondas centrados (donde se oculta la Sanguijuela).
+- `fx_pond` 80x48 -> 160x96, 3 fr (`ripple` 3 fps): charco fijo; agua de ~r36-40 final centrada en (80,52) con juncos y piedras (sobresalen del radio). Dibujar en el suelo, ordenar por y.
+- `fx_olvido_zone` 48x48 -> 96x96, 3 fr: 0 = aviso (`arm`, aro punteado), 1-2 = activa (`active` 3 fps); disco turquesa #7fffe0 de r42 final centrado.
+- `fx_lightning_lane` 32x32 -> 64x64, 3 fr (`loop` 18 fps): tile de rayo horizontal repetible en x (empalma en y central). Para el carril de 300 px: repetir y rotar al angulo; el rayo ocupa ~+-22 px de alto final.
+- `fx_frog_acid` 30x30 -> 60x60, 3 fr (`bubble` 4 fps): charco acido de la rana (r28 final), centrado.
+- `icon_olvido` 16x16 -> 32x32, 2 fr (`loop` 2 fps): reloj roto turquesa para el estado 'olvido' (dibujar a 16x16 = escala 0,5 si hace falta).
+- `fx_ambush_bubbles` 24x24 -> 48x48, 4 fr (`rise` 8 fps, 3 = estallido): burbujas del aviso de emboscada/brote.
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias P1 y P2", familia Asfodelo, casilla "mezclar las 3 familias" (prueba de 100). Capturas: `studio/docs/capturas-p2/`. Nota: `sw.js` aun no precachea `assets_fam2.js`.
+
+# Audio Tundra P3 (src/sfx_fam3.js, tras sfx_fam2.js; solo audio)
+Mismo patron y API que P1/P2: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`; <= 4 voces por nombre y separacion minima (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxFam3[nombre]` = `{kind, fam:'tundra', min}`. Tipos: **tele** (glissando sostenido/ascendente o crujido en cadena, solo al inicio del aviso, `vol` 0.6-1), **impact** (golpe grave + ruido corto), **move** (bajo y sutil). Los SFX existentes no cambian. Con muchos enemigos: `vol` 0.4-0.6 en `ice_slide`, `ice_brake`, `snow_step`, `ice_step`, `wolf_run`, `bat_flap`.
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `ice_slide` | move | Derrape en hielo (jugador/enemigos); subtil, `pitch` segun velocidad (0.9-1.2), `vol` 0.5 en enjambre (min 260) |
+| `ice_brake` | move | Frenada/cambio de sentido en hielo (min 220) |
+| `snow_step` | move | Paso en nieve firme: crunch apagado (min 140; `vol` 0.5 enemigos) |
+| `ice_step` | move | Paso en hielo: tic agudo y duro, distinto de la nieve (min 140) |
+| `ice_crack` | tele | Hielo que se fisura antes de romperse (min 220) |
+| `ice_break` | impact | Rotura de hielo (min 90) |
+| `wind_gust` | tele | Aviso de rafaga de ventisca (min 600) |
+| `cold_warn` | tele | Frio al 70 %: tiritona (min 700) |
+| `cold_freeze` | impact | Frio al 100 %: Escarcha (min 800) |
+| `cold_slow` | move | Jugador ralentizado por el Frio (tono que baja; min 500) |
+| `heart_beat` | move | Latido, cuando el Frio > 85 % (cada ~1 s; min 380) |
+| `campfire_crackle` | move | Hoguera cercana (<= 250 px): llamar cada ~1 s, `vol` por distancia (min 500) |
+| `wolf_howl` | tele | Lobo de escarcha: howl/agacha de 700 ms (min 350) |
+| `wolf_lunge` | move | Lobo: lance de 300 px/s (min 110) |
+| `wolf_run` | move | Lobo/Lobezno: carrera (pasos; min 160) |
+| `yeti_wind` | tele | Yeti: wind del empellon de 800 ms (min 300) |
+| `yeti_bash` | impact | Yeti: empellon/golpe (min 110) |
+| `yeti_step` | move | Yeti: pisada pesada (min 240) |
+| `bat_flap` | move | Murcielago de hielo: aleteo errático (min 120) |
+| `bat_screech` | tele | Murcielago: inicio de la linea de pica de 700 ms (min 250) |
+| `bat_dive` | impact | Murcielago: impacto de la pica (min 110) |
+| `stalag_crack` | tele | Estalagmita viva: fisuras/anillo de 800 ms (min 250) |
+| `stalag_erupt` | impact | Estalagmita viva: erupcion de puas (min 110) |
+| `snow_whisper` | tele | Espiritu de nieve: fade/remolino de 600 ms (min 260) |
+| `snow_slash` | impact | Espiritu de nieve: tajo que empuja (min 100) |
+| `hunter_aim` | tele | Cazador: aim de 700 ms (min 250) |
+| `hunter_shot` | move | Cazador: disparo de la flecha helada (min 120) |
+| `bear_roar` | tele | Oso polar: wind de 900 ms (rugido grave, un solo rugido a la vez; min 400) |
+| `bear_charge` | move | Oso polar: arranque de la embestida (min 140) |
+| `bear_slide` | move | Oso polar: patina 180 px al acabar (min 200) |
+| `icicle_fall` | tele | Carambano que cae: silbido descendente (min 200) |
+| `icicle_hit` | impact | Carambano impacta (min 80) |
+
+## Ventisca ambiental: `Assets.wind(intensity)`
+Bucle suave de viento (ruido filtrado con rachas y silbido). `intensity` 0..1 regula el volumen (se puede llamar cada frame o al cambiar ciclo: calma ~0.25, rafaga ~0.8); `Assets.wind(0)` lo apaga con fundido y libera los nodos. Sigue mute/volumen SFX/suspend. Devuelve false si apagado o sin gesto. `Assets.windLevel()` = ultimo valor.
+
+## Musica `tundra`: `Assets.music.setTrack('tundra')`
+Sin tocar `assets.js` ni la logica: `sfx_fam3.js` intercepta `Assets.music` (start/stop/setIntensity/setTrack/getTrack/tracks/isPlaying) y toca la pista en su propio contexto (62 BPM, Re menor/pentatonica, bajo grave + pad helado siempre; campanas con eco desde intensidad ~0.15, cristales desde ~0.4, pulso de corazon desde ~0.6). `setTrack('normal'|'boss')` vuelve a las originales y reanuda si estaba sonando. `tracks()` incluye 'tundra'; `renderMusic({track:'tundra',bars,intensity})` y `exportMusicWav` funcionan. No incluye aun `boss_yarlak` ni stingers (pendiente: piden hooks de Boss).
+
+
+---
+# Tundra P3 (src/assets_fam3.js, cargado tras assets_fam2.js; solo arte, sin logica; NO incluye a Yarlak = P4)
+Script clasico que extiende `window.Assets`. Mismo estilo que P1/P2 (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo). `Assets.FAM3.tundra` lista todos los sprites. Diseno: `DESIGN-v5-biomas.md` B.1, B.3, C.4-B. `t` en ms. Ancla de enemigos = (final_w/2, final_h-4). Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias" -> Tundra (hoja, anims, arena con parches, ventisca regulable, prueba de 100). Capturas: `studio/docs/capturas-p3/`.
+Paleta: pelaje #e8eef5/#8fa4bf, hielo #9fd8ff/#5aa8e8/#2a4f8a/#1b2f66, marfil #f1ead2, ojos cian #5ff0ff. Acentos: lobezno orejas rosa palido; cazador bufanda ambar; lobo puas de hielo en el lomo; oso cristales azules + cicatriz; yeti cara azul + placa; murcielago alas de cristal + cuerpo indigo; estalagmita ojos ROJIZOS tenues; espiritu lila; chaman craneo de lobo + runas VIOLETA.
+
+## Familia (9)
+| sprite | base -> final | frames | anims (fps) | notas |
+|---|---|---|---|---|
+| `enemy_tun_lobezno` (worm) | 20x16 -> 40x32 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 9; die | cachorro esponjoso |
+| `enemy_tun_cazador` (archer) | 24x28 -> 48x56 | 14: 0-1 idle, 2-5 walk, 6 aim, 7 shoot (suelta), 8 recupera, 9-13 die | idle 3; walk 7; aim [6]; shoot [7,8] 8; die | `aim` = arco tensado con flecha helada (proyectil `proj_ice_arrow`); sale por la derecha |
+| `enemy_tun_lobo` (frostwolf) | 28x20 -> 56x40 | 15: 0-1 idle, 2-5 walk, 6 howl, 7 crouch, 8-9 lunge, 10-14 die | idle 3; walk 10; howl [6]; crouch [7]; lunge [8,9] 8; die | howl = hocico al cielo con ondas; crouch = agachada con orejas atras; lunge 8 en el aire, 9 aterrizando |
+| `enemy_tun_oso` (boar) | 40x32 -> 80x64 | 15: 0-1 idle, 2-5 walk, 6 wind, 7-8 charge, 9 slide, 10-14 die | idle 3; walk 8; wind [6]; charge [7,8] 12; slide [9]; die | wind = cabeza baja y zarpa que escarba; slide = patina con las patas por delante y nieve |
+| `enemy_tun_yeti` (shield) | 34x36 -> 68x72 | 24: 0-1 idle, 2-5 walk, 6 wind, 7 bash, 8 rec, 9 melt (placa agrietada y goteando), 10-14 die, y SIN PLACA: 15-16 idle_np, 17-20 walk_np, 21 wind_np, 22 bash_np, 23 rec_np | idle 3; walk 6; wind [6]; bash [6,7,8] 10; rec [8]; melt [9]; die; `idle_np walk_np wind_np bash_np rec_np` | Al perder la placa (30 de dano de Fuego) cambia a las anims `*_np`. `fx_ice_slab` = la placa suelta |
+| `enemy_tun_murcielago` (moth) | 24x16 -> 48x32 | 11: 0-3 flap, 4-5 dive, 6-10 die | flap/idle/fly/walk [0..3] 14; dive [4,5] 10; die | |
+| `enemy_tun_estalagmita` (sower) | 20x30 -> 40x60 | 12: 0 dormant, 1-2 wake, 3-4 erupt, 5-6 crawl, 7-11 die | dormant/idle [0]; wake [1,2] 8 sin ciclo; erupt [3,4] 10 sin ciclo; crawl/walk [5,6] 4; die | ojos rojizos TENUES (la del jefe es azul liso y sin ojos) |
+| `enemy_tun_espiritu` (blinker) | 22x28 -> 44x56 | 11: 0-1 float, 2-3 fade, 4-5 slash, 6-10 die | idle/float/walk [0,1] 5; fade [2,3] 10; slash [4,5,0] 12; die | `fade` ya lleva alpha 0,42/0,16 y aro punteado en el suelo; el remolino es `fx_snow_whirl` |
+| `enemy_tun_chaman` (warlock) | 26x30 -> 52x60 | 11: 0-1 idle, 2-3 walk, 4-5 howl, 6-10 die | idle 3; walk [2,3] 5; howl [4,5] 5; die | el aura r 200 la dibuja el juego (el sprite solo da las ondas del aullido) |
+
+## Guardianes (variantes; MISMOS indices y anims que el Coloso/Madre Colmena)
+| sprite | base -> final | frames | anims |
+|---|---|---|---|
+| `enemy_mini_yeti` (Yeti Centinela) | 32x32 -> 64x64 | 16: 0-1 idle, 2-5 walk, 6 bash-wind, 7 bash, 8 stomp-wind, 9 stomp, 10 rec, 11-15 die | idle [0,1] 3; walk [0,2,1,3,4,5] 6; bash [6,7] 8; stomp [8,9] 8; rec [10]; die. Hombreras y escudo de hielo (se derrite con Fuego) |
+| `enemy_mini_ventisquero` | 32x32 -> 64x64 | 15: 0-1 idle, 2-5 float, 6 spit (carambano), 7 acid = ventisca local, 8 swell, 9 burst, 10-14 die | idle 3; float/walk 7; spit [6]; acid/blizzard [7]; swell [8,9] 8; die. Flota (sin patas) |
+
+## Proyectiles y VFX (base -> final, frames, anims, ancla)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `proj_ice_arrow` | 32x12 | 2 (`loop` 10) | flecha, apunta a la derecha, centrada |
+| `proj_icicle` | 28x56 | 2 (`loop` 8) | carambano con la PUNTA ABAJO (cae), centrado |
+| `fx_ice_slab` | 48x56 | 2 (0 entera, 1 agrietada; `melt` sin ciclo 3) | placa del Yeti, centrada |
+| `fx_snow_whirl` | 72x72 | 4 (`loop` 8) | disco r ~33 final, centrado: remolino del Espiritu (ralentiza) |
+| `fx_ice_crack` | 192x48 | 3 (`grow` 3 fps sin ciclo; `closed` [0], `open` [2]) | grieta horizontal centrada: 0 cerrada, 1 abriendose, 2 abierta (agua helada); rotar/escalar a lo largo |
+| `obs_ice_pillar` | 52x104 | 3 (0 entero, 1 agrietado, 2 escombro) | pilar r 22; ancla de la colision = (26,82) final (base elipse en y 94): dibujar en (x-26, y-82). Azul liso sin ojos |
+| `fx_campfire` | 40x48 | 4 (`burn` 8) | ancla (20,38) = centro del suelo de la hoguera |
+| `fx_blizzard_tile` | 256x256 | 3 (`loop` 10) | loseta SIN costuras de rayas diagonales (20 grados), alfa propio |
+| `fx_ice_block` | 44x44 | 3 (0 entero, 1 agrietado, 2 derritiendose; `melt` sin ciclo 3) | bloque del Alud, centrado |
+| `fx_ice_burst` | 96x96 | 5 (`burst` 14 sin ciclo) | estallido de esquirlas (pilar roto, bloque), centrado |
+| `fx_skid_trail` | 96x32 | 3 (`fade` 6 sin ciclo) | estela de derrape: dos rayones, apunta a la derecha (extremo derecho = el que patina); rotar |
+| `fx_ice_breath` | 128x128 | 4 (`puff` 10 sin ciclo; `loop`) | nube de aliento helado, centrada (tick del Aliento polar) |
+| `fx_snow_puff` | 64x64 | 4 (`puff` 12 sin ciclo) | polvareda de nieve (lance, patinazo, impacto), centrada ligeramente baja |
+| `fx_ice_debris` | 96x64 | 3 (`glint` 3) | hielo roto en el suelo |
+| `fx_snow_pool` | 96x64 | 3 (`idle` 2) | charco de nieve/aguanieve (ralentiza) |
+| `decor_tundra` | 56x56 | 6: 0 cristales, 1 estalagmitas, 2 monton de nieve, 3 monton con hierba seca, 4 roca con nieve, 5 rama seca | ancla base-centro (28,52) |
+| `tile_ice` | 64x64 | 6 | losetas de hielo SIN costuras (diagonales brillantes) |
+| `tile_snow_patch` | 64x64 | 3 | losetas de nieve firme SIN costuras (PUNTOS) |
+| `icon_frio` | 24x24 | 2 (0 normal, 1 helado; `loop` 2) | copo, icono del medidor |
+
+## Bioma `tundra` (`Assets.setBiome('tundra')`)
+- `Assets.biomes()` incluye `'tundra'`; `getBiome()` devuelve `'tundra'`; `biomeInfo('tundra')`. Se implementa por envoltorio sobre las funciones existentes (assets.js NO se toca): con tundra activa, `sprite('ground0..9')` = hielo (32x32 final), `rock/grass/mushroom/bush/bones/stump/grave/column/edge/torch/fog0/fog1/rune` = versiones de tundra (`runeN` vacias); `vignette()` por defecto azul; `drawFireflies()` dibuja nieve (`drawSnowfall`); `drawRitualGlow()` no hace nada; `decorate()` esparce `decor_tundra`; `addToPhaser` registra tambien `name@tundra:i`.
+- `Assets.arena(w,h,{seed,wall,snowR})` en tundra -> `{canvas, torches:[], ritual:null, snow:[{x,y,r}], fires:[{x,y,r:64}], cracks:[{x,y,len,a}], pillars:[{x,y,r:22}]}`. Posiciones del doc B.1.1 escaladas por `w/1440` (`Assets.TUNDRA_SPOTS` = coordenadas base 1440x810). `snowR` 110 por defecto (90/70 en F3/F4: regenerar la arena o dibujar encima). El canvas lleva horneados: hielo con diagonales/brillos, 5 parches de NIEVE (disco crema con borde festoneado y PUNTOS + transicion de 24 px punteada), 5 grietas largas (visuales, seguras), estalagmitas decorativas del borde, viñeta azul. Las hogueras y los pilares NO estan horneados (dinamicos): usar `fires`/`pillars` con las funciones de abajo. Coste de generacion ~10 ms.
+
+## Funciones de dibujo
+- `Assets.drawBlizzard(ctx, t, intensity, o)`: capa de ventisca de PANTALLA. `intensity` = alfa del doc (0,15 calma / 0,45 rafaga / 0,6 desesperado; <=0 no dibuja). `o`: `w,h` (defecto el canvas), `px,py` centro despejado en pantalla (el jugador; defecto el centro), `clear` 330, `outer` 520 (bruma blanca sube a ~intensity*1,22 en `outer`), `quality` `'alta'|'media'|'baja'` (o 2|1|0; defecto alta), `wind` rad (0,35). Alta = bruma + 2 capas de rayas; Media = 1 capa; Baja = solo degradado estatico en bordes (sin particulas). **Orden de dibujo: mundo -> drawBlizzard -> telegrafias, proyectiles enemigos y barras del jefe -> HUD** (la funcion nunca dibuja encima de lo que pintes despues). Coste medido (Chromium headless SIN GPU, 960x540, mediana): ~0,8 ms por encima de un blit a pantalla completa en Alta/Media y ~0,1 ms en Baja; con GPU es menor. Un canvas de trabajo interno de media resolucion se reutiliza (sin asignaciones por frame).
+- `Assets.drawSnowfall(ctx, w, h, t, {count 70, view})`: copos y destellos en coordenadas de mundo (= lo que hace `drawFireflies` en tundra).
+- `Assets.drawCampfire(ctx, x, y, t, {r 64, scale 1, ring true, light true, alpha})`: hoguera con luz calida aditiva y aro punteado del radio de calor (`r`; en el desesperado pasar `r:120`, `scale` 1,4).
+- `Assets.drawIcePillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawPillar` (entero hp>0,5, agrietado >0, escombro 0; con hp 0 y `rebuild`>0 aro de aviso + fantasma). (x,y) = centro de la colision; ordenar por y+12.
+- `Assets.drawColdBar(ctx, x, y, value, t, {w 140, h 10, text true, frozen, alpha})`: icono de copo + barra 140x10 + "NN%"; `value` 0-100; marcas en 40 y 70; azul claro <40, mas blanco con pulso desde 70, borde destellante a 100 / `frozen`. (x,y) esquina sup. izq.; devuelve el ancho total (w+58). Pensada bajo la barra de vida.
+- `Assets.drawColdVignette(ctx, W, H, value, t, {alpha})`: escarcha azul en bordes y esquinas (canvas cacheado + alfa): nada <20, suave 20-40, clara >=40, intensa >=70, blanqueada a 100.
+- `Assets.drawFlake(ctx, x, y, r, {color, rot, alpha})`: copo vectorial suelto.

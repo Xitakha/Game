@@ -19,6 +19,8 @@ for (const len of lens) {
   console.log('crafts cartas/run (barato 1º):', f(avg(R.map(r => r.craft ? r.craft.cards : NaN))), ' talentos/run:', f(avg(R.map(r => r.craft ? r.craft.talents : NaN))), ' ej:', R.slice(0, 2).map(r => r.craft && r.craft.cardIds.join('+') + ' | ' + r.craft.nodeIds.join('+')).join(' || '));
   const mm = t => { const a = R.map(r => r.mini && r.mini[t]).filter(Boolean); return a.length ? `n=${a.length} aparece min ${f(avg(a.map(x => x.sp)), 2)} (build Σlvl ${f(avg(a.map(x => x.lvSum)))}) TTK ${f(avg(a.filter(x => x.ttk != null).map(x => x.ttk)), 0)} s [${a.map(x => x.ttk != null ? x.ttk : 'sin morir').join(',')}] parte rota ${a.filter(x => x.broke).length}/${a.length} enrage ${a.filter(x => x.enraged).length}/${a.length}` : '-'; };
   console.log('minijefes  Coloso:', mm('mini_bulwark'), '\n           Colmena:', mm('mini_hive'));
+  const KB = {}; R.forEach(r => { for (const k in (r.kills_by || {})) KB[k] = (KB[k] || 0) + r.kills_by[k] / R.length; });
+  console.log('bajas por rol/run:', JSON.stringify(Object.fromEntries(Object.entries(KB).map(([k, v]) => [k, +v.toFixed(1)]))));
   const H = {}; R.forEach(r => { for (const k in r.heal) H[k] = (H[k] || 0) + r.heal[k] / R.length; });
   console.log('cura cruda/run:', JSON.stringify(Object.fromEntries(Object.entries(H).map(([k, v]) => [k, +v.toFixed(1)]))), ' kills:', f(avg(R.map(r => r.kills)), 0));
 }

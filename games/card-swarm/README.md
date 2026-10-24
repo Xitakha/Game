@@ -32,10 +32,29 @@ si no existe, se dibuja un fallback de rectángulos. Luz: Día al abrir o tras g
   El enemigo objetivo de los encargos de caza pesa **x2,5** en el director (`waves.js`) y su entrada se adelanta a 2:30 virtuales. Son repetibles.
 - **Rufo (mercader):** **Trueque** (3 partes comunes por 1; Hebra 6 por 1; cupo de 4 por expedición, se reinicia al volver de una salida), **Vender** (3 Brasas por parte, Hebra 1; v5, antes 6 / 3) y
   **Comprar** (Tónico de ceniza 80: +40 Ceniza; Imán de bolsillo 120: radio x1,5; parte común 24, cupo 3). Las raras no se truecan ni se venden.
-- **Portal:** mano al salir (anclas), selector 7 / 9 / 10 min, encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
+- **Portal:** mano al salir (anclas), selector de duración Rápida 7 / Normal 9 / Larga 10 min (con resumen de lo que ofrece y cuesta), encargo activo, compras pendientes y SALIR. Tras el botín: R reintenta el mismo build, B vuelve a la aldea.
 - **Ulalume (archivista):** colección completa con filtros por etiqueta, anclas con vista previa de combos y 3 loadouts. **Tía Castaña:** platos con buff de expedición. **Abuelo Lanudo:** lore, consejos y logros (ver "Fase 2b").
 - **Anclas:** `G.B.anchorSlots` = 2 (3 con el nodo Tercera ancla). Se eligen en el Archivo de Ulalume o en el Portal. Los otros slots se llenan al subir de nivel con cartas desbloqueadas.
-- **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`.
+- **Duración:** 7 / 9 / 10 min (`?len=N` lo fuerza). `G.setLen()` escala jefe, élites, entrada de enemigos, curva del director, HP/daño y Furia mediante `G.vt()`. Es una elección de riesgo/recompensa: ver "Duraciones de expedición" abajo.
+
+## Duraciones de expedición (Rápida / Normal / Larga)
+Todos los multiplicadores viven en **una tabla: `G.Loot.DUR`** (`src/loot.js`, con comentarios; `G.Loot.dur()` devuelve la fila de la duración activa). Se guarda la última elegida en `Save.data.len` (guardado v4; un valor ausente o desconocido migra a 9 min). `?len=7|9|10` la fuerza sin tocar el guardado.
+
+| | Rápida (7 min) | Normal (9 min) | Larga (10 min) |
+|---|---|---|---|
+| Lema en el Portal | Menos botín, más PF | Equilibrada | Más botín, jefe más duro |
+| Partes / Brasas (x por minuto jugado, sobre el ritmo base) | x0,80 | x1 | x1,15 |
+| Puntos de Forja (jefe, y fragmentos por minijefe) | x1,4 (jefe 2 -> 3, 3 -> 4; fragmento 1,4) | x1 | x1 |
+| Esencia rara (por muerte, minijefes, extra de Peligro; con pity) | x1 | x1 | x1,5 |
+| HP del jefe (`durMul` x `bossHp`) | x0,75 | x1 | x1,10 x 1,00 = x1,10 |
+| Daño del jefe | x1 | x1 | x1 |
+| HP de guardianes | x1 | x1 | x1,25 |
+
+- Las partes garantizadas (élites y jefe) usan redondeo estocástico (media exacta). Los trofeos del jefe y los encargos no se escalan; el primer élite sigue dando +1 PF.
+- **Cacería:** sin hordas ni botín de run; la duración solo cambia el HP del jefe y el PF de la primera victoria (x1,4 en Rápida). Partes y Brasas de la cacería no se escalan. La práctica no da nada.
+- **Encargos:** recompensas fijas (no se escalan); "Corto y dulce" exige ganar en 7 min y "Maratón" (nuevo) ganar en 10 min; los de caza/kills cuentan lo que se mate en la duración elegida.
+- **UI:** el Portal muestra nombre, minutos, lema y los multiplicadores de la elegida (botones de 52 px); el HUD de la run muestra `RÁPIDA 7 min - botín x0,8 ...`; la pantalla de botín muestra la duración y sus multiplicadores.
+
 
 ## Fase 2b: árboles completos, Archivista, cocina, Lanudo, encargos y vida en la aldea
 Diseño: `DESIGN-v3-aldea.md` secciones B.4 y D. Arte del árbol en `assets_tree.js` (contrato en `ASSETS_API.md`; `tree.js` usa `Assets.drawTreeNode/Link/Tab/Burst/Icon` si existen y, si no, un dibujo propio).
@@ -72,9 +91,9 @@ Un plato por expedición (el cupo se reinicia al volver de una salida; el plato 
 Cada visita cuenta una historia (rota) y ofrece **Consejo** (contextual: debilidades del Pastor / Karceron / Letea según el siguiente jefe sin vencer, combos aún no vistos con su receta, PF sin gastar, Brasas acumuladas, encargo sin aceptar, racha de derrotas, plato, loadouts) y **Logros** (11 recuerdos con texto propio: primera salida, mano ganadora, los 3 jefes, 5 y 12 combos, 8 nodos forjados, árbol completo, 10 encargos, 3 platos). Al vencer a cada jefe cuenta una escena nueva; el resto de NPC añade líneas por jefe vencido (Grum, Vesper, Rufo, Ulalume, Castaña). Sin recompensas materiales: la economía no cambia.
 
 ### Encargos de Vesper (`quests.js`)
-Pool de 21 encargos, 8 tipos: **cazar** un enemigo (Bombas, Polillas, Gusanos, Arqueros, Jabalíes, Escuderos, Espectros, Ascuas), **minijefes** (Coloso, Colmena), **bajas totales** (400), **romper 3 partes de jefe** (hook `Quests.onBossPart(bossId, key)`; `Loot.endRun` lo llama por cada parte rota, ganes o pierdas),
+Pool de 26 encargos, 8 tipos (v5 P2: el tutorial pasó de Bombas a Zarzales mayores, más 'Apaga a los Perros pastores' y 'Cauteriza las Cabezas menores'; ver 'Auditoría de encargos' en 'Familias por bioma (P2)'): **cazar** un enemigo (Zarzales mayores, Polillas, Gusanos, Arqueros, Jabalíes, Escuderos, Espectros, Ascuas, Perros pastores, Cabezas menores cauterizadas), **minijefes** (Coloso, Colmena), **bajas totales** (400), **romper 3 partes de jefe** (hook `Quests.onBossPart(bossId, key)`; `Loot.endRun` lo llama por cada parte rota, ganes o pierdas),
 **ganar con una etiqueta** (3+ cartas de esa etiqueta en la mano final; 6 variantes), **sobrevivir N s sin recibir daño** (45 / 90; `Loot.noteHit` desde `Player.hurt`, progreso en vivo en el HUD) y **ganar con duración de 7 min**. Tiers: fácil (1 PF, 40-60 Brasas, 6-20 partes), medio (1-2 PF, 90-110 Brasas), difícil (2 PF, 150-170 Brasas, +1 Esencia rara la primera vez en los de condición).
-**Rotación:** el Tablón muestra 3 ofertas (una fácil, una media, una de condición) sembradas con el día (UTC) y el nº de expediciones, así que cambia al volver de cada salida y cada día; el encargo activo se queda aparte. El tutorial de las Bombas se ofrece mientras no lo hayas hecho. Repetir: partes y Brasas x0,5, PF a `pfRepeat`.
+**Rotación:** el Tablón muestra 3 ofertas (una fácil, una media, una de condición) sembradas con el día (UTC) y el nº de expediciones, así que cambia al volver de cada salida y cada día; el encargo activo se queda aparte. El tutorial (id `bombs`, ahora 'Huele a chamusquina' = 20 Zarzales mayores, que existen en el Bosque) se ofrece mientras no lo hayas hecho. El Tablón solo ofrece encargos cumplibles en algún bioma ya desbloqueado (`Quests.feasible`). Repetir: partes y Brasas x0,5, PF a `pfRepeat`.
 
 ### Vida en la aldea
 NPC con **emotes** al volver (corazón / '!' / moneda / destello tras ganar, '...' / '?' / gota tras perder; algunos hacen la animación `happy`), **ladridos** contextuales al acercarte (Grum con mejoras listas, Vesper con encargo para cobrar o Tablón nuevo, Castaña con ingredientes, Ulalume sin loadouts, Lanudo con logro nuevo; máx. 1 cada 25 s por NPC),
@@ -166,7 +185,7 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 - **28 cartas** (18 de ataque + 10 pasivas): las 26 de siempre + **Bobina** (Rayo, torreta) y **Murciélago** (Sangre, persigue y rebota) de la Fase 2b (las 28 del GDD original), 6 etiquetas (Fuego, Hielo, Rayo, Veneno, Sangre, Acero) + Neutro.
 - 12 combos: VAPOR, GAS EXPLOSIVO, CONGELACIÓN, SOBRECARGA, SANGRE ENVENENADA, FRENESÍ, FILO ELÉCTRICO, FILO GÉLIDO, FORJA, PLAGA CONGELADA, PACTO ARDIENTE, DESCARGA TÓXICA.
 - Estados con tinte: quemado (naranja), ralentizado (azul), veneno (verde, apila), sangrado (rojo), aturdido (amarillo).
-- Enemigos (entrada): Gusano 0:00, Arquero 0:45, Espinoso 1:30 (abanico de 3 espinas), Jabalí 2:00, Escudero 2:45 (escudo frontal x0.2: flanquea o usa área/orbitales/estados),
+- Enemigos del roster legado (`?fam=0`; v5: cada bioma tiene su familia, ver 'Familias por bioma'), entrada: Gusano 0:00, Arquero 0:45, Espinoso 1:30 (abanico de 3 espinas), Jabalí 2:00, Escudero 2:45 (escudo frontal x0.2: flanquea o usa área/orbitales/estados),
   Bomba 3:30, Polilla gélida 4:00 (orbe de hielo que ralentiza 35 % 2 s; se destruye con un golpe de carta), Sembrador 4:30 (zonas de esporas), Espectro 5:15 (teletransporte + tajo),
   Ascua 6:00 (carga con rastro de fuego), Brujo 6:45 (invoca gusanos; matarlo los disipa).
 - Minijefes (v5, ver "Minijefes v5"): Coloso Escudero a 3:30 y Madre Colmena a 5:30 (escala de 9:00; nunca coexisten y desaparecen si siguen vivos al llegar el jefe). Jefe a 7:30: El Pastor Corrupto v4 (8 ataques, 3 fases + Éxtasis, 3 partes rompibles; sección "Jefes v4").
@@ -195,10 +214,11 @@ Solo cambia el DIBUJO de la expedición; posiciones, colisiones, daño, distanci
 - `?quests=bombs,boars,clean45` fuerza las 3 ofertas del Tablón (ids en `Quests.DEFS`; pruebas). `?reset=1` borra el guardado (ojo: se borra en cada recarga mientras esté en la URL). `?pf=<n>` añade Puntos de Forja (techo 24). `?give=wick:20,frost:5,brasas:100` (o `all:30`) añade partes/Brasas; partes: `thread feather spine fang plate wick frost static rare`.
 - `?view=iso` activa la vista inclinada tipo Hades (`?view=flat` la plana); ver su sección.
 - `?len=7` fuerza la duración de la run en minutos (sin tocar el guardado).
+- **Familias (P0):** `?fam=0` fuerza el roster legado, `?fam=1` fuerza las familias donde existan, `?mat=1|0` enciende/apaga la tabla de materiales; ver 'Familias por bioma (P0)'.
 
 ## Estructura
-`src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
-`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v4 con migración v1/v2/v3; Peligro, cacería y práctica) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo/loadouts, cocina `G.Cook`, logros, menú) · `tree.js` (7 árboles de forja) · `quests.js` (encargos y logros `G.Ach`) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `boss.js` (jefes v4: motor genérico de fases, ataques, partes, intro, barra, arena + Pastor) · `boss_karceron.js` / `boss_letea.js` (jefes J2) · `assets_boss.js` / `assets_boss2.js` (arte de los jefes, solo dibujo) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets_peligro.js` (J3: stingers de jefe por fase, por código) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
+`src/main.js` núcleo y balance (`G.B`: tabla de enemigos con coste, peso, entrada y `maxAlive`) · `families.js` (v5 P0: `G.B.fam`, materiales, packs) · `player.js` (ralentización `p.slowT`) · `enemies.js` (IA, zonas `G.zones` con `team:'e'`, telegrafías) · `waves.js` (director) · `combat.js` (daño, estados, combos, gemas) ·
+`weapons.js` (armas auto-fire) · `cards.js` (catálogo, mano, oferta filtrada por colección, anclas, dibujo de cartas) · `loot.js` (tabla de balance de botín/forja) · `save.js` (localStorage v4 con migración v1/v2/v3; Peligro, cacería y práctica) · `aldea.js` (aldea, NPCs, movimiento) · `dialog.js` (burbujas) · `panels.js` (Tablón, Rufo, Portal, Archivo/loadouts, cocina `G.Cook`, logros, menú) · `tree.js` (7 árboles de forja) · `quests.js` (encargos y logros `G.Ach`) · `base.js` (pantalla de botín y lanzador) · `assets_village.js` (arte de la aldea) · `assets_ui.js` (iconos de partes y botones por código) · `assets_fam1.js` / `assets_fam2.js` (arte de las familias Bosque+Cripta / Asfódelo) · `sfx_fam1.js` / `sfx_fam2.js` (audio de las familias) · `boss.js` (jefes v4: motor genérico de fases, ataques, partes, intro, barra, arena + Pastor) · `boss_karceron.js` / `boss_letea.js` (jefes J2) · `assets_boss.js` / `assets_boss2.js` (arte de los jefes, solo dibujo) · `hud.js` · `fx.js` · `sfx.js` (SFX por etiqueta y stinger) · `assets_peligro.js` (J3: stingers de jefe por fase, por código) · `assets.js` (arte y audio procedural; ver `ASSETS_API.md`).
 
 ## Jefes v4 (fase J1): El Pastor Corrupto
 Lógica en `src/boss.js` (arte en `assets_boss.js`, API en `ASSETS_API.md`). Diseño: `DESIGN-v4-jefes.md`. Cambios en otros módulos: `enemies.js` (el jefe vive en `G.enemies`, sus partes son entidades hijas `type:'bosspart'`; troncos bloquean proyectiles; `G.frozen` en la intro), `combat.js` (hooks `Boss.mulIn/afterHit/dealPart` en `deal` y `dot`), `waves.js` (director por fase), `hud.js`, `loot.js`/`save.js`/`base.js`/`panels.js` (trofeos, recompensas, destino del Portal), `player.js` (troncos, invulnerable en la intro), `main.js` (reloj `G.runT`, cámara con zoom).
@@ -407,3 +427,184 @@ Regla de esquiva: el enemigo normal más rápido es la Bomba (105 px/s base) = 1
 - `run.js` (bot de balance: kitea, recoge gemas, fusiona; `?dbg=1&god=1&speed=20`; `{"base","len","runs","par","hand","god","hpBoost","noLevel","label"}`) + `bot_page.js` (se inyecta; registra nivel, cartas Nv3, velocidad de enemigos, cura, partes y TTK de minijefes por minuto) + `summarize.js <label>` (tablas).
 - `campaign.js <url> <label>`: gasta el botín de las runs medidas como lo haría un jugador (campaña de 5 runs con arrastre, lo más barato primero) con las funciones de coste de la página indicada (`before` vs `after`).
 - `minis.js`: fuerza cada ataque de los minijefes, mide la duración de cada telegrafía y hace capturas; `e2e.js`: aldea -> Tab -> portal -> expedición -> jefe -> botín -> R / B -> forja / compras -> nueva salida; `dump.js`: recetas y nodos con coste.
+
+## Familias por bioma (P0)
+Infraestructura de `DESIGN-v5-biomas.md` parte A (fase P0). **No cambia nada visible ni de balance**: ningún bioma tiene su familia `ready`, así que por defecto se usa el roster de siempre; las familias existen como datos y se pueden forzar con `?fam=1` para probarlas. Código: `src/families.js` (datos y resolución), `enemies.js` (`E.spawn`), `waves.js` (director) y `combat.js` (`deal`/`dot`).
+
+### Esquema de `G.B.fam`
+`G.B.fam[bioma]` con `bosque cripta asfodelo` (y esqueletos vacíos `tundra panal`, `use:{}`, nunca activos):
+`{ name, ready, boss, use, packs, light, amb, ponds, star }`
+- `ready`: `false` mientras el bioma no tenga su familia terminada. `use`: `rol -> ajustes` (una clave que no aparece no existe en ese bioma; en P0 están las 11 claves en los 3 biomas).
+- Entrada de `use`: `name` (nombre visible), `spr` (sprite propio; `null` o inexistente = **fallback al sprite actual del rol**), `skin` (`{ tint, a }`, tinte opcional sobre el sprite), `tier` (0-3; sustituye a `G.B.tier[rol]`), `from` `w` `cost` `maxAlive` (ausentes = los de `G.B.enemy[rol]`), `capGrow` (tier 3: crecimiento máximo del tope, `tope = round(maxAlive x min(capGrow, max(1, tierMul)))`), `hp` `spd` `dmg` (multiplicadores, 1 = igual), `mat` (material) y `mx` (excepciones `{ etiqueta: mult }` al material), `mods` (parámetros de la mecánica nueva), `host:true` (rol huésped que P1 retirará del bioma, p. ej. los 4 del Bosque).
+- `packs`: lista de `{ id, layout: 'line'|'cross'|'pincer'|'field', parts: [[rol, n], ...] }` (hoy los 4 packs de siempre, `G.B.packsLegacy`; coste = suma x 0,6). `light`: tipos permitidos con el jefe vivo (dato por bioma, sin consumidor aún). `amb`: ambiente (multiplicadores de luciérnagas/niebla/viñeta/tinte; 1 = aspecto actual, sin consumidor en P0). `ponds`, `star` (candidatos a protagonista; `null` = todos menos el gusano).
+- Resolución (`G.curBiome`): `G.B.famOf()` devuelve la familia a aplicar o `null` (roster legado): `?fam=0` -> `null`; `?fam=1` -> toda familia con `use` no vacío; sin parámetro -> solo si `ready`. Ayudantes: `G.B.entry(rol)`, `G.B.has(rol)`, `G.B.val(rol, campo)` (override de la familia o `G.B.enemy`), `G.B.tierOf(rol)` (lo usan `tierMul` y `capOf`), `G.B.packsOf()`.
+- `E.spawn(tipo, x, y, o)` mantiene la firma: aplica `hp/spd/dmg`, guarda `e.spdBase`, `e.spr` (con fallback) y `e.skin`, y el material (`e.mat`, `e.mx`); `o.nofam` lo salta. El director (`waves.js`) solo lista roles que existan en la familia (`B.has`), lee `from/w/cost/maxAlive/capGrow` con `B.val`, conserva `tierCurve`, `tierFloor`, packs, élites y jefe. `G.Waves.census()` devuelve los vivos por rol/tier/familia; `G.Waves.capOf(rol, minuto)`.
+
+### Materiales y debilidades (A.8)
+`G.B.mat.table`: 13 materiales (`carne lana vegetal hueso metal magma espectro pantano pelaje escarcha insecto cera miel`) x 6 etiquetas (`fire ice lightning poison blood steel`), +-25 %. `G.B.matMul(e, etiqueta)` se aplica en `Combat.deal` (antes de resonancia y talentos) y `Combat.dot` (ticks), solo a enemigos con `e.mat`; los jefes, las partes y los guardianes no lo usan. **Apagado por defecto** (`G.B.mat.on = false`): los enemigos ni siquiera reciben `e.mat`. `?mat=1` lo enciende para pruebas (con `?fam=0` se anula); al marcar una familia como `ready` se decide poner `G.B.mat.on = true`.
+
+### `?fam` y `?mat`
+| URL | Efecto |
+|---|---|
+| (nada) | `fam` automático (ninguna `ready` en P0 = roster legado), materiales apagados |
+| `?fam=0` | roster legado (comportamiento v4 exacto, para A/B con el bot) |
+| `?fam=1` | familias en los 3 biomas (identidad en P0: mismos números y sprites) |
+| `?mat=1` / `?mat=0` | tabla de materiales encendida / apagada |
+
+### Cómo añadir una familia nueva
+1. En `families.js`, rellena `G.B.fam.<bioma>.use` con los roles del bioma (`U(nombre, material, { tier, from, w, cost, maxAlive, capGrow, hp, spd, dmg, spr, skin, mx })`): respeta la masa por tier de A.2 (suma de `w`: 55 / 44 / 29 / 25). Un monstruo nuevo sin rol equivalente: añade su clave a `G.B.enemy` (y su IA en `enemies.js`) y a la `use` de su bioma.
+2. Si hay sprites nuevos, ponlos en `spr` (si no existen, el rol usa el sprite actual); `skin` tiñe el sprite de reemplazo.
+3. Rellena `packs` (A.9), `light`, `star` y `mat`/`mx` por entrada.
+4. Compara con el censo (abajo) y, cuando pase, pon `ready: true` y decide `G.B.mat.on = true`.
+
+### Censo y pruebas (`tools/card-swarm-balance-bot/`)
+- `census.js '{"runs":8,"par":4,"fam":"0|1|","mat":"","biome":"","label":"x","stop":445,"base":"http://localhost:<puerto>"}'` (+ `census_page.js`): recorre la run con el bot y guarda los vivos medios por minuto, rol, tier y nombre de familia, el pico por rol y las altas por minuto (`$CENSUS_DIR/census_<label>.json`). `census_compare.js A.json B.json [--minutes=1-7]` compara (vivos +-8 % con margen de ruido de 3 errores estándar y proporción por tier +-10 puntos; también comprueba 0 errores y la intersección `allow` de cada fase de jefe con la familia, A.7). Para medir el "antes", sirve una copia del commit anterior (`git archive HEAD games/card-swarm`) con `python3 -m http.server` y pasa su `base`.
+- `p0_tests.js unit|flow|bosses|bosses0|fps|all [base] [baseAntes]`: pruebas unitarias (resolución de modos, identidad, override y fallback de sprite, `capGrow`, materiales en `deal`/`dot`, parámetros de URL), flujo aldea -> portal -> expedición -> botín -> aldea (con y sin `?fam=1`), los 3 jefes con adds y fps (horda de 7:15, 3 rondas alternadas, contra el código anterior).
+- Resultado P0 (Chromium sin GPU): **prueba exacta** (`p0_tests.js det`): con la misma semilla de `Math.random` la secuencia de altas del director (991 altas, tipo y posición, 440 s) es idéntica al commit anterior a P0 y entre `?fam=0`, auto y `?fam=1` en los 3 biomas. **Censo estadístico** (Bosque, 16 runs por celda, media de vivos de los minutos 1-7; dos runs del mismo código ya difieren ~5 %): anterior 18,1 -> auto 17,7 (-2,3 %) / `?fam=1` 17,3 (-4,7 %), tiers dentro de +-3,5 puntos, 0 errores (Cripta y Asfodelo, 8 runs: `?fam=1` vs `?fam=0` -5,7 % y -2,7 %). fps (horda 7:15, 3 rondas): 58,6 anterior / 58,7 `?fam=0` / 58,0 auto / 58,8 `?fam=1`. Flujo completo y los 3 jefes ganan con `?fam=0` y `?fam=1`.
+
+## Familias por bioma (P1: Bosque y Cripta, v5.1)
+`G.B.fam.bosque` y `G.B.fam.cripta` están `ready:true` (tablas A.3 / A.4 de `DESIGN-v5-biomas.md`); Asfodelo seguía con el roster legado hasta P2 (v5.2: ya tiene su familia, ver 'Familias por bioma (P2)'). `?fam=0` reproduce el juego anterior (misma semilla, mismas altas). Los roles nuevos `dog`, `salamander`, `chainer` (`famOnly:true` en `G.B.enemy`) solo existen dentro de una familia activa (`G.B.has`). Arte `assets_fam1.js`, audio `sfx_fam1.js`.
+
+| Bosque (Pastor) | Rol | Tier | Entra | w | Coste | Tope (capGrow) | HP/Vel | Mat. |
+|---|---|---|---|---|---|---|---|---|
+| Cordero corrupto | worm | 0 | 0:00 | 55 | 1 | 40 | x1/x1 | Lana |
+| Zarzal menor | archer | 1 | 0:45 | 26 | 3 | 12 | x1,2/x1 | Vegetal |
+| Zarzal mayor | fanner | 1 | 1:30 | 18 | 4 | 8 | x1/x1 (escala 1,15) | Vegetal |
+| Jabalí | boar | 2 | 2:00 | 14 | 5 | 8 | x1/x1 | Carne |
+| Polilla de lana | moth | 2 | 4:00 | 15 | 4 | 6 | x1/x0,9 | Lana |
+| Perro pastor (nuevo) | dog | 3 | 2:45 | 8 | 5 | 3 (1,3 -> 4) | 24/125 | Lana |
+| Micelio | sower | 3 | 4:30 | 9 | 5 | 3 (1,7) | x1/x1 | Vegetal |
+| Zampoñero | warlock | 3 | 6:45 | 8 | 8 | 2 (2) | x1/x1 | Carne |
+
+| Cripta (Karceron) | Rol | Tier | Entra | w | Coste | Tope (capGrow) | HP/Vel | Mat. |
+|---|---|---|---|---|---|---|---|---|
+| Esqueleto | worm | 0 | 0:00 | 55 | 1 | 40 | x1,15/x0,95 | Hueso |
+| Arquero de huesos | archer | 1 | 0:45 | 30 | 3 | 14 | x1/x1 | Hueso |
+| Calavera explosiva | bomb | 1 | 1:30 | 14 | 2 | 6 | x1/x1 | Hueso |
+| Calavera rodante | boar | 2 | 2:00 | 10 | 5 | 6 | x0,8/x1 | Hueso |
+| Carcelero menor | shield | 2 | 2:45 | 10 | 5 | 6 | x1,1/x1 | Metal |
+| Salamandra de lava (nueva) | salamander | 2 | 4:00 | 9 | 5 | 4 | 30/60 | Magma |
+| Guardián de cadenas (nuevo) | chainer | 3 | 4:30 | 8 | 6 | 3 (1,5 -> 4) | 60/42 | Metal |
+| Alma prisionera | blinker | 3 | 5:15 | 9 | 6 | 4 | x1/x1 | Espectro |
+| Ascua | scorcher | 3 | 6:00 | 8 | 6 | 3 | x1/x1 | Magma |
+
+Sumas de `w` por tier 55 / 44 / 29 / 25. El Bosque ya no tiene Escudero, Bomba, Espectro ni Ascua (los guardianes Coloso y Madre Colmena siguen; el Coloso lleva sus 2 Escuderos legados). Consecuencia de economía a vigilar: Placa, Mecha y Estática solo caen en la Cripta (o en el Asfodelo).
+
+### Mecánicas nuevas (`enemies.js`; constantes `DG`, `SK`, `SL`, `CH`)
+- **M1 Perro pastor**: órbita a 170-200 px (1,1 rad/s) -> ladrido 450 ms (anillo rojo r 28 + carril y línea fina al punto de arreo, rumbo fijo en los últimos 150 ms, 2 ladridos) -> arreo a 320 px/s (250-700 ms según distancia; desviación del doc: llega hasta donde estaba el jugador) -> 8 de daño y empuje de 55 px hacia el centro de la arena -> descansa 600 ms.
+- **M2 Calavera rodante**: aviso 600 ms, rueda 300 px/s hasta 280 px; contra pared o pilar (`G.Boss.obs`) rebota una vez: aturdida 400 ms (x1,3) con flecha roja 400 ms hacia el 2.º tramo (200 px); sin choque, aturdida 900 ms.
+- **M3 Salamandra**: un charco cada 70 px (r 22, aviso naranja punteado 600 ms, 5 s, 5 de daño/400 ms), máx. 6 por salamandra (se apaga el más viejo), al morir charco r 30 de 2 s.
+- **M4 Guardián de cadenas**: cada 5 s aviso 700 ms (línea fina naranja, fija 300 ms), cadena a 420 px/s, alcance 300, 6 de daño y ralentiza 45 % 1,8 s; no interceptable.
+- Variantes: Zarzal (flecha/espina con apunte fijado, `proj_thorn_small` / `proj_bone_arrow`), Polilla de lana (orbe de lana, ralentiza 30 %), Zampoñero invoca Corderos, Carcelero, Alma prisionera, Calavera explosiva y Ascua con su sprite/SFX. Los SFX `tele` suenan una vez al empezar el aviso.
+
+### Telegrafías auditadas (`G.B.tele`, `G.B.teleAudit()`, `node tools/card-swarm-balance-bot/p1_tests.js tele`)
+Regla `tele >= 250 + 1000 x salida/190` y >= 400 ms. Medido en el juego (paso fijo): Zarzal/Arquero 400 (regla 334), Zarzal mayor 500 (408), Polilla 450 (355), Perro 450 (408), Micelio 900 (524), Calavera explosiva 700 (618), rodante 600 (513) y 2.º tramo 400 (387), Carcelero 500 (461), Salamandra 600 (434), Guardián 700 (408), Alma prisionera 500 + 350 tajo (566), Ascua 600 (408), Jabalí 600 (513). 0 incumplimientos.
+
+### Debilidades por material (A.8) y Portal
+`G.B.mat.on` lo fija `G.B.mat.sync()` al empezar la run: activo solo en biomas con familia activa (`?mat=0` lo apaga, `?mat=1` lo fuerza, `?fam=0` lo anula). Bosque: mejor Fuego (lana/vegetal), peor Hielo, Veneno, Sangre. Cripta: mejor Hielo (magma), Acero (hueso), Rayo (metal/espectro); peor Fuego, Veneno, Sangre. Número de daño: x1,25 verde claro, grande y con "!"; x0,75 gris, pequeño y entre paréntesis (críticos dorados). El Portal muestra los chips MEJOR/PEOR del destino (`G.B.matLens`) y avisa "No avanza en este destino" si el rol del encargo no existe en la familia.
+
+### Jefes y director
+Llamada del rebaño del Pastor: Zarzal mayor, Perro pastor, Polilla de lana. Karceron invoca Ascuas + Alma prisionera (ya de su familia). Los `allow` de fase se intersectan con la familia (nunca vacío). Packs: Bosque Cruce, Campo, Pastoreo, Fila del Zampoñero; Cripta Fila de presos, Hornos, Boliche, Cadena de presos.
+
+### Medición P1 (Chromium sin GPU, bot de balance, 16 runs por celda, minutos 1-7)
+| | Vivos medios fam=0 -> P1 | Tiers (pts máx.) | Tipos nuevos |
+|---|---|---|---|
+| Bosque | 17,3 -> 16,6 (-4,0 %) | <= 9,0 | Perro 1,7 vivos de media, pico 4 |
+| Cripta | 17,9 -> 18,0 (+1,0 %) | <= 7,9 | Salamandra 0,7, Guardián 2,1 (pico <= tope) |
+Todos los tipos aparecen en el 100 % de las runs; 0 errores de consola; intersección `allow` sin huecos. Minutos sueltos fuera de +-8 % (Bosque 4-5, Cripta 7) están dentro de 3 errores estándar. Victoria del bot esquivador en Peligro I (ponderado 25/50/25, 16 peleas por mano): Pastor fam=0 64 % -> P1 72 %; Karceron fam=0 66 % / 50 % (dos tandas) -> P1 50 % / 53 %; README histórico 69 % / 60 %: sin recalibrar `hpCal`. fps horda 7:15: fam=0 53,3 / P1 53,2. Flujo aldea -> portal -> expedición -> botín -> aldea con victoria en Bosque y Cripta; móvil 844x390 sin errores. Capturas: `studio/docs/capturas-p1-integracion/`. Pruebas: `p1_tests.js tele|mech`, `p0_tests.js unit|flow|fps` (adaptado a P1).
+
+## Familias por bioma (P2: Asfódelo, v5.2) y arreglos de la P1
+`G.B.fam.asfodelo` está `ready:true` (tabla A.5 de `DESIGN-v5-biomas.md`): los tres biomas ya tienen su familia y las debilidades por material (A.8) se notan en los tres. `?fam=0` sigue reproduciendo el juego anterior (prueba de determinismo `p0_tests.js det`: misma semilla, mismas altas que el commit anterior en los 3 biomas). Arte `assets_fam2.js`, audio `sfx_fam2.js` (nombres de sprite, animaciones y SFX exactos de `ASSETS_API.md`; mientras un sprite propio no exista se usa uno existente teñido: `fbSpr` / `fbSkin`).
+
+| Asfódelo (Letea) | Rol | Tier | Entra | w | Coste | Tope (capGrow) | HP / Vel / Daño | Mat. |
+|---|---|---|---|---|---|---|---|---|
+| Alma errante | worm | 0 | 0:00 | 55 | 1 | 40 | x0,9 / x1,1 / 6 (sin separación) | Espectro |
+| Sanguijuela (nueva) | leech | 1 | 0:45 | 26 | 3 | 7 (A.5: 10) | 9 / 55 (nada 80) / 9 | Pantano |
+| Rana ácida | boar | 1 | 1:30 | 18 | 4 | 8 | x0,5 (22) / 55 + salto 220 / 10 | Pantano |
+| Cabeza menor (nueva) | headlet | 2 | 2:00 | 14 | 5 | 3 (A.5: 5) | 30 / 0 (fija) / 12 | Pantano, Fuego x1,25 |
+| Medusa helada | moth | 2 | 3:30 (A.5: 3:00) | 15 | 4 | 5 (A.5: 6) | x1,1 / x0,9 / 5 | Pantano, Fuego x1,25 |
+| Lirio del olvido | sower | 3 | 4:30 | 9 | 5 | 3 (1,7 -> 5) | 22 / 45 / 3 por tick | Vegetal |
+| Anguila eléctrica | scorcher | 3 | 5:15 (A.5: 6:00) | 8 | 6 | 3 (1,2 -> 4) | x0,9 / x1,1 / rayo 14, contacto 10 | Pantano, Rayo x0,75, Hielo x1 |
+| Sacerdotisa ahogada | warlock | 3 | 6:45 | 8 | 8 | 3 (1,2 -> 4) | 30 / 50 / invoca | Espectro |
+
+Suma de `w` por tier 55 / 44 / 29 / 25 (A.2). Ya no existen aquí `archer fanner bomb shield blinker` (ni `dog salamander chainer`). Las cinco desviaciones del doc (topes de Sanguijuela, Cabeza menor y Medusa, entrada de Medusa y Anguila) salen de la calibración con el censo y la cuota de 10 %: ver 'Medición P2'.
+
+### Mecánicas M5-M10 (`enemies.js`; constantes `LE FR HL EL CDSLOW`, `POND_*`)
+- **M5 charcos fijos `G.ponds`** (`E.initPonds()` al empezar la run): 6 charcos r 36 en (250,180) (1190,180) (180,430) (1260,430) (300,690) (1140,690); `fx_pond` en el suelo (con respaldo procedural). Enemigo **oculto** = `e.hidden` + `e.untarget`: no es objetivo de nada (`Combat.nearest/inRange/chain`, proyectiles, `deal` devuelve 0), no empuja ni se dibuja (solo `fx_pond_ripple`).
+  **Sanguijuela**: el director la hace llegar arrastrándose (visible y vulnerable, 80 px/s) al charco más cercano; el pack Pantano ya las pone ocultas. Oculta, nada entre charcos hacia el más cercano al jugador (80 px/s). Si el jugador pasa a < 150 px: aviso 500 ms (burbujas `fx_ambush_bubbles`, anillo rojo r 30 y línea fina con el carril; rumbo fijo en los últimos 200 ms), lance de 140-220 px en 330 ms (9 de daño), **expuesta 1,2 s (x1,3)** y huye al charco (3 s hasta la siguiente).
+  **Cabeza menor**: brota en un charco a 200-650 px del jugador (700 ms, anillo rojo r 32, hiere si estás encima), queda fija y muerde si estás a < 70 px (aviso 500 ms, anillo rojo r 70).
+- **M6 Rana ácida** (variante de `ai_boar`): agacha 500 ms (círculo rojo r 24 en el punto de aterrizaje, fijado al empezar y a <= 220 px), salta 400 ms en arco (`e.jump`), aterriza (10 de daño si estás dentro), **charco ácido** r 28 (aviso 600 ms, 3 s, 6 / 500 ms) y descansa 700 ms (x1,3). Ciclo ~2,6 s.
+- **M7 rebrote / cauterización**: `E.kill` guarda `e.lastTag`; si una Cabeza menor muere **sin** Fuego como último golpe y **sin quemadura**, deja un muñón (no objetivo) y **rebrota a los 8 s con el 60 % de HP máx. (anillo de brote de 600 ms), máx. 2 veces**; XP / Ceniza / botín / kills solo la primera vez; la 3.ª muerte es definitiva. Con Fuego o ardiendo muere del todo (`e.cauterized`). El encargo 'Cauteriza' solo cuenta esas muertes.
+- **M8 Anguila**: aviso 700 ms (carril rojo 18 x 300, fijo los últimos 300 ms), **rayo instantáneo de 150 ms** sobre todo el carril (14; `fx_lightning_lane`; sin zonas persistentes), carga de 500 ms a 300 px/s (contacto 10) y descansa 800 ms (x1,3).
+- **M9 `p.cdSlow`**: `Player.cdSlow(p, pct, ms)` guarda el mayor % (**tope 40 %**) y refresca la duración (**tope 2 s**), no se apila y solo existe en el jugador; `weapons.js` multiplica el avance del cooldown de las cartas por `1 - cdSlowPct` (orbitales y auras no usan cooldown). Fuente: **zona del olvido** del Lirio (turquesa `#7fffe0`, r 42, aviso 900 ms, 4 s, 3 de daño / 500 ms, máx. 5 por Lirio, `olvido_hum`). HUD: **reloj roto** (`icon_olvido`) con el aro de los 2 s de gracia a la izquierda de la mano mientras dura (`Hud.drawCdSlow`).
+- **M10** `nosep`: el Alma errante ni empuja ni es empujada (se apila: ventaja para las cartas de área). Alpha 0,8 horneado en su sprite.
+- **Sacerdotisa**: invoca 2 Almas errantes cada 6 s (máx. 6 por Sacerdotisa; matarla las disipa). **Lirio / Medusa / Sacerdotisa** reutilizan `ai_sower / ai_moth / ai_warlock` con sus datos de familia.
+
+### Telegrafías (`G.B.tele`, `p2_tests.js tele`; regla `tele >= 250 + 1000 x salida / 190` y >= 400 ms los fuertes)
+Medido en el juego (paso fijo): Sanguijuela 500 ms (regla 408), Rana 500 (408), brote de la Cabeza 700 (471), mordisco 500 (461), Anguila 700 (355), Medusa 450 (355), Sacerdotisa 500 (sin salida), Lirio 900 (524). SFX `tele` al empezar cada aviso: `pond_bubble frog_crouch head_emerge head_regrow medusa_charge olvido_chime eel_charge priestess_chant`; el resto (`leech_lunge frog_hop frog_land frog_splash head_bite head_burn medusa_throw orb_shatter olvido_sow olvido_hum eel_zap eel_dash priestess_summon drown_whisper drown_wail`) en lance / salto / impacto / invocación / muerte.
+
+### Debilidades, packs, jefe y guardianes
+- Debilidades (A.8): Asfódelo **MEJOR Rayo y Veneno / PEOR Hielo, Acero y Sangre** (chips del Portal, `lens` de la familia); excepciones Cabeza menor y Medusa Fuego x1,25, Anguila Rayo x0,75 y Hielo x1.
+- Packs (A.9): **Pantano** (3 Sanguijuelas en charcos + 3 Almas), **Pinza eléctrica** (2 Anguilas opuestas + Medusa), **Campo de lirios** (2 Lirios + 4 Almas), **Coro** (Sacerdotisa + 4 Almas); layout nuevo `group` en `waves.js`.
+- Letea llama a los suyos: sus Plañideras (`moth`) son Medusas heladas; el `allow` de sus fases 1-2 añade `leech` y `boar` (intersección con la familia nunca vacía: `censusAllowCheck`). Las cabezas elementales de `boss_letea.js` no cambian. `DEFS.letea.hpCalFam` (nuevo, `Boss.bossHp` lo usa solo con familia activa) = **4,7** (con `?fam=0` sigue 3,6): ver abajo.
+- Guardianes: la **Plañidera Anegada** (variante `wraith` de la Madre Colmena) suelta Almas errantes (su Lluvia de larvas, Saco y muerte invocan `worm`, que la familia viste); el Coloso Escudero del Asfódelo trae 2 Almas errantes en vez de Escuderos (el rol no existe en el bioma).
+- Drops (A.10, x `L.DROP_MUL`): Sanguijuela Escarcha 0,13, Cabeza menor Púa 0,14 (solo la primera muerte); el resto por rol. Encargo nuevo **'Cauteriza las Cabezas menores'** (12; solo cuentan las muertes por cauterización; `needBurn`).
+
+### P1 pendiente: encargos (auditoría automática)
+El tutorial 'Huele a chamusquina' pedía Bombas, que ya no existen en el Bosque: ahora (mismo id `bombs`, guardados intactos) pide **20 Zarzales mayores** (existen en el Bosque desde 1:30; sigue dando 6 Mecha). `Quests.biomesOf(def)` / `Quests.feasible(def)` dicen en qué biomas avanza cada encargo (un rol ausente de la familia no avanza) y **el Tablón solo ofrece encargos cumplibles en un bioma ya desbloqueado** (Bosque siempre, Cripta con el Pastor vencido, Asfódelo con Karceron). Nuevos: 'Apaga a los Perros pastores' (Bosque, 40) y 'Cauteriza las Cabezas menores' (Asfódelo): pool de 26. **`node tools/card-swarm-balance-bot/quests_audit.js [base] [--census=a.json,b.json]`** comprueba: todos avanzan en algún bioma; cat. A (fáciles, incluido el tutorial) en el Bosque; cat. B en Bosque o Cripta; 400 rotaciones del Tablón en los tres estados de desbloqueo sin ninguna oferta incumplible; con `--census` calcula las runs por encargo (todas 1 run salvo 'Cauteriza': 14 altas por run, 2-3 runs).
+
+### P1 pendiente: economía inicial (el Bosque ya no suelta Placa, Mecha ni Estática)
+Tal como salió la P1 un jugador nuevo no podía forjar Fuego (Mecha 0), Rayo (Jirón estático 0) y casi nada de Acero solo con el Bosque (el primer nodo de Fuego pide 8 Mecha, el de Rayo 6 Jirón). Ajustes (todo en `families.js`/`loot.js`, datos): el **Perro pastor suelta Mecha 0,17** (antes Colmillo 0,13), el **Jabalí del Bosque Colmillo 0,11** (antes 0,14) y el Bosque tiene **partes huésped** `host: [[plate 0,009], [static 0,014]]` (tirada extra por baja que no sea el Cordero; `Loot.onKill`). Medido con el bot (9 min, runs de 16 a 24, partes por run; tabla v5 = 123,3 partes, Mecha 11,0, 226 Brasas):
+
+| Bosque 9 min | Partes | Mecha | Placa | Jirón | Colmillo | Escarcha | Púa | Brasas |
+|---|---|---|---|---|---|---|---|---|
+| `?fam=0` (legado) | 129,2 | 10,4 | 8,8 | 6,5 | 9,2 | 4,3 | 13,6 | 226 |
+| P1 tal cual salió | 118,8 | **0** | 5,1 | **0** | 22,8 | 5,1 | 13,8 | 227 |
+| **P2 (ajustado)** | **129,1 (+4,7 %)** | **9,9** | 8,3 | 5,4 | 9,8 | 5,3 | 17,4 | 226 |
+
+Runs para el **primer nodo de cada árbol** solo con el Bosque (jugador humano = x0,7 de partes; 150 Brasas por nodo, ~158 Brasas por run humana): Fuego (8 Mecha) 1,2 runs, Hielo (4 Escarcha) 1,1, Rayo (6 Jirón) 1,6, Veneno (8 Púa) 1, Sangre (7 Colmillo) 1,0, Acero (5 Placa) 1; antes de la corrección Fuego y Rayo no eran alcanzables (solo por Trueque, 4 partes por salida, o por encargos). Cripta (sin cambios): 121,6 partes (-1,4 %), 227 Brasas; Asfódelo: **122,3 partes (-0,8 %)**, 226 Brasas, Mecha 7,2 (Anguila), Escarcha 12,6, Púa 12,5, Colmillo 11,5; 7 min: Bosque 88,1 / Asfódelo 79,6 contra 84,8 del legado. Huecos que quedan por diseño (el jugador alterna biomas y tiene el Trueque de Rufo): la Cripta no suelta Escarcha y casi nada de Púa, el Asfódelo no suelta Jirón y apenas Pluma / Placa.
+
+### P1 pendiente: Perro pastor <= 10 % de los enemigos en pantalla
+Medido en el Bosque (16 runs, minutos 3-7, bot): **11,9 % de media, 15,4 % máx.** con tope 3 (x1,3 -> 4). Ahora **tope 2 fijo (`maxAlive 2`, `capGrow 1`; el peso `w 8` se conserva)**: **6,8 % de media, 8,5 % máx.** (`node census_share.js census.json dog --from=3`). En el Asfódelo los tipos nuevos miden: Sanguijuela 7,2 % de media (máx. 13,4 % en el minuto 2, cuando solo hay ~12 vivos), Cabeza menor 9,2 % (13,7 % en el minuto 2), Medusa 8,5 %, Anguila 7,8 %, Sacerdotisa 3,7 %.
+
+### Medición P2 (Chromium sin GPU; bot de balance; `census_compare.js` contra `?fam=0`; 16 runs el legado y 24 el candidato)
+Se cuentan los enemigos **visibles** (`G.Waves.census()`: las Sanguijuelas ocultas y los muñones van aparte, `hidden`); la línea de `?fam=0` contra sí misma (24 vs 16 runs) queda a <= 2 % por minuto, así que las diferencias son reales.
+
+| Minuto | 1 | 2 | 3 | 4 | 5 | 6 | 7 | media 1-7 |
+|---|---|---|---|---|---|---|---|---|
+| Vivos `?fam=0` -> P2 | 9,3 -> 9,5 | 11,5 -> 11,7 | 20,7 -> 21,9 | 20,7 -> 21,0 | 21,2 -> 21,0 | 19,1 -> 20,1 | 19,6 -> 22,3 | 17,4 -> 18,2 (**+4,5 %**) |
+| Dif. | +1,7 % | +2,1 % | +5,8 % | +1,1 % | -0,8 % | +5,7 % | +13,9 % (dentro de 3 SE) | |
+| Tiers % legado (T0/T1/T2/T3) | 66/34/0/0 | 60/33/7/0 | 49/34/17/0 | 38/27/28/7 | 27/17/27/29 | 23/9/17/51 | 23/6/11/60 | |
+| Tiers % P2 | 82/18/0/0 | 60/26/14/0 | 59/23/18/0 | 47/19/24/10 | 31/12/21/35 | 30/8/16/46 | 26/6/13/55 | |
+| Dif. máx. (pts) | 16,1 | 6,9 | 11,5 | 9,0 | 6,3 | 7,0 | 4,5 | |
+
+Los vivos están a +-8 % (o dentro de 3 errores estándar) en los 7 minutos; la proporción por tier a +-10 pts salvo los minutos 1 y 3, donde la Sanguijuela oculta no cuenta como visible (minuto 1: 1,8 Sanguijuelas de media más ~5 ocultas). Cómo se llegó: con la tabla A.5 tal cual (topes 10 / 5 / 6, Anguila 6:00) el censo daba +21 % de vivos y hasta 20 pts de tier; lo que pesó: las Sanguijuelas ocultas y las Cabezas fijas viven más y no gastan presupuesto del director al reponerse (sobran Almas), así que se bajaron los topes de Sanguijuela (10 -> 7) y Cabeza menor (5 -> 3), Medusa (6 -> 5, entra a 3:30), Anguila entra a 5:15 (llena el hueco del Espectro) y se añadió el multiplicador de presupuesto `fam.bp` (hoy 1,0; queda como palanca). Las Sanguijuelas dejaron de nacer ocultas lejos: llegan arrastrándose desde fuera de pantalla (visibles y vulnerables). Todos los tipos aparecen en el 100 % de las runs.
+Potencial de daño recibido por run (bot en god, `G.dbg.dmg` sin jefe): Asfódelo 1649 (legado) -> 1502 (-9 %), Bosque 1455 -> 1293, Cripta 1527 -> 1544.
+
+**Victoria del bot contra Letea en Peligro I** (`table.sh letea 1 16`, ponderado 25 / 50 / 25, 48 peleas por tanda):
+
+| | Tanda 1 | Tanda 2 | Media |
+|---|---|---|---|
+| `?fam=0` (referencia, hpCal 3,6) | 44 % | 48 % | **46 %** (README J3: 52 %) |
+| P2 con hpCal 3,6 | 73 % | 75 % | 74 % (la familia no tiene Arqueros, Bombas ni Espinosos: los adds hacen ~un tercio menos de daño y las Sanguijuelas casi nunca atacan) |
+| P2 con hpCal 4,1 / 4,5 | 69 % / 55 % | - | |
+| **P2 final (`hpCalFam` 4,7)** | **45 %** | **52 %** | **48,5 %** (+2,5 puntos sobre la referencia medida) |
+
+(Peleas ganadas p50 de 156-181 s contra 118-158 s de la referencia: el jefe aguanta más porque ya no tiene tantos adds que lo distraigan.)
+
+Otros resultados: **fps** (Chromium sin GPU, 4 rondas alternadas, antes del jefe y en la pelea de Letea): código anterior 49,1 / 46,3, P2 49,0 / 45,1; con ~105 enemigos en pantalla 45,2 (anterior, 104 enemigos) / 44,0 (P2, 111 enemigos): paridad dentro del ruido. **Flujo aldea -> portal -> expedición -> botín -> aldea con victoria en los 3 biomas** (`p2_tests.js flow`) y **táctil real 844x390** (`mobile_flow.js`: toques `page.touchscreen.tap` en PORTAL, el arco, el destino, SALIR, las cartas y IR A LA ALDEA, y joystick flotante con eventos CDP; Asfódelo: victoria, 0 errores). Los 3 jefes se vencen (`p0_tests.js bosses`, con adds). 0 errores de consola en todas las pruebas. Legibilidad con 100 enemigos: captura `studio/docs/capturas-p2-integracion/p2_100_enemigos.jpg` (64 Almas translúcidas + 10 Sanguijuelas + 10 Ranas + 5 Cabezas + 7 Medusas + Lirios, Anguilas y Sacerdotisas).
+
+### Pruebas y herramientas nuevas (`tools/card-swarm-balance-bot/`; `python3 tools/serve.py card-swarm <puerto>`)
+`p2_tests.js data|tele|mech|flow|all [base]` (tabla A.5, suma de `w`, topes, materiales, packs, `allow` de Letea, telegrafías medidas, M5-M10 con cifras, HUD del reloj roto, flujo de los 3 biomas) · `quests_audit.js` (auditoría de encargos) · `mobile_flow.js [bioma] [base] [carpeta de capturas]` (flujo táctil real) · `census_share.js` (cuota de un rol sobre los vivos) · `census_detail.js` (vivos visibles / ocultos por minuto y rol) · `run.js` acepta `biome`, `fam`, `mat` y guarda las bajas por rol (`summarize.js` las imprime) · `p0_tests.js` adaptado (Asfódelo ya tiene familia: la prueba de identidad usa una familia de prueba inyectada en Tundra) · `census_page.js` cuenta aparte los ocultos. Capturas (4): `studio/docs/capturas-p2-integracion/` (`p2_100_enemigos`, `p2_telegrafias`, `m1_portal_asfodelo`, `m2_combate_asfodelo_844x390`).
+
+## Tundra (P3: mundo de hielo + familia de la manada de Yarlak, v5.3 en preparación)
+La Tundra (`DESIGN-v5-biomas.md` B.1, B.3, B.7; fase P3) está **implementada y BLOQUEADA**: `G.B.fam.tundra.ready:false` (el spawn normal no la usa), sin jefe (Yarlak es la P4) y el Portal la muestra como chip **'? TUNDRA' / bloqueado** (4 chips de 68 px; 5 con el Panal). Se prueba con **`?biome=tundra`** (activa la familia, el hielo, el Frío y la ventisca; también `?fam=1`; `?fam=0` deja el roster legado pero el hielo sigue). Sin jefe: `G.Tundra.noBoss()` (`&nobos=1`, implícito mientras no exista `G.Boss.DEFS.yarlak`): el reloj corre, el HUD dice "Tundra: prueba sin jefe - fin a 09:00" y a la duración de la run termina con victoria (`G.finish(true)`, botín normal). Con `?boss=pastor` sí sale ese jefe (depuración).
+- **Archivos nuevos:** `src/tundra.js` (`G.Tundra`, `G.cold`, datos `G.B.biomes.tundra`: hielo, nieve firme, hogueras, estalagmitas, Frío, ventisca; dibujo de bruma, viñeta y HUD con las funciones del arte) y `src/enemies_tundra.js` (IA de los monstruos nuevos `E.TAI`, telegrafías `E.tunTele`, animaciones `E.tunAnim`). **Ganchos mínimos** en `main.js` (`G.Tundra.begin/update/end`, 2.ª pasada de dibujo, suelo), `player.js` (`G.Tundra.movePlayer/collide/hurtKb`), `enemies.js` (`moveTo` acumula velocidad deseada en `e.slide`; `E.update` la integra; `drawGround(c, modo)` / `drawProjectiles(c, capa)`; variantes `yeti` y `ventisquero`; `E.H`/`E.AI` exportados), `combat.js` (placa del Yeti, bajas con Fuego), `weapons.js` (Escarcha: recarga x0,75), `waves.js` (layout `fan`, sin jefe, variantes de guardián), `hud.js`, `families.js` (familia, `G.B.tele` con `ice:true`), `loot.js` (`L.DUR.cold`, drop del Lobo), `quests.js` (encargo de los Lobos, dormido), `panels.js` (chip bloqueado, Ajustes) y `view.js` (`Proj.beginTf`). Fuera de la Tundra **nada de esto se ejecuta**: `G.Tundra.on` es false.
+- **Física del hielo (B.1.2; datos `G.B.biomes.tundra.ice`)**: velocidad deseada = entrada x 190; con entrada `v += (objetivo - v)(1 - e^(-dt/tau))`, sin entrada `v *= e^(-lambda dt)`; en la rampa de 24 px del borde de la nieve la superficie se interpola en 120 ms (tau lineal, tiempo de frenado 1/lambda lineal). Nieve firme = movimiento de siempre (arranque y parada instantáneos). Enemigos terrestres: tau 300 ms (voladores —Murciélago— y jefe sin inercia); Lobo y Oso tienen perfil propio (`e.noSlide`). Retroceso x1,6 con tope de 100 px contando el derrape. Helado (Frío >= 70 %): -15 % de velocidad y tau +60; Escarcha: tau 300, lambda 1,8, -35 %. Crampones (`Tree.fx.crampones`) y la opción **"Hielo suave"** (Ajustes; `?softice=1`): tau 140, lambda 3,2, kb x1,2. Medido (`p3_tests.js ice`): 95 % de la velocidad en 667 ms (660 +-60), derrape 83,8 px (86 +-8), cruce de cero 167 ms, retroceso 100 px (corriendo + golpe por detrás 58), Crampones 433 ms / 57 px, Helado 161 px/s, Escarcha 123 px/s, enemigos 95 % en 900 ms, Bosque sin cambios (arranque 3,167 px/paso, 0 px de derrape).
+- **Arena**: `Assets.arena` del arte (hielo, 5 parches de nieve firme r 110 con hoguera, grietas, estalagmitas del borde) + 8 **estalagmitas** r 22 (`obs_ice_pillar` vía `Assets.drawIcePillar`; colisionan con jugador y terrestres, bloquean proyectiles enemigos; 300 HP; `T.breakPillar/hitPillar` y reconstrucción a los 45 s listas para Yarlak) + **2 repisas de nieve firme** (720,70 r 60 y 720,740 r 60) que NO están en el doc: con solo 5 parches la distancia máxima a nieve firme era 280 px (> 260). `G.Tundra.iceCoverage()` = 206,5 / 226,5 / 246,5 px con parches de r 110 / 90 / 70. `T.setPatchR(r)` / `T.setHeatR(r)` para las fases de Yarlak (P4).
+- **Frío (B.1.4; `G.cold`)**: base +1,5 %/s en hielo (x`L.DUR.cold` 0,90 / 1,00 / 1,10; x1,5 en ráfaga; x2 a < 200 px de un Chamán; cacería x0,8), -3 %/s en nieve firme (el doc no lo fija), -10 %/s en hoguera (r 64), pasivo por cartas (Fuego -0,35, Sangre -0,20, Hielo -0,15, máx. 3 por etiqueta), -0,8 por baja con Fuego (máx. -4/s). Hits: Cazador +6, Murciélago +8, Ventisca local del Ventisquero +14/s. 100 % = Escarcha (medidor a 55 %, 5 s de -35 % de velocidad y recarga x0,75, 8 s sin relleno). Ganchos: `G.runBuff.fx.cold` (Caldo de brasa), `Tree.fx.abrigo`, `Tree.fx.brasaPecho`, `T.onBoss()` (20 %); platos y nodos de Ruta se añadirán en la P7. HUD: `Assets.drawColdBar` bajo la vida (los combos bajan 16 px) y `Assets.drawColdVignette` en las esquinas. Medido: mano sin Fuego/Sangre/Hielo llena en 66,6 s; 3 Fuego +0,45 %/s.
+- **Ventisca (B.1.3)**: ciclo calma 25 s (alpha 0,15) / ráfaga 8 s (0,45) x rampa por minuto 0,8 -> 1,0; `Assets.drawBlizzard` con claro de r 330 (+80 con **"Ventisca ligera"**, `?lightstorm=1`); se dibuja tras el mundo y ANTES de las telegrafías, proyectiles enemigos y barras (2.ª pasada en `main.js`, `E.drawGround(c, 2)`); en Alta/Media se vuelca desde una caché a 30 Hz (la bruma costaba 2,5 ms) y Baja = solo degradado. `Assets.wind()` sigue el ciclo y suena la pista `tundra`. Contraste del contorno de telegrafías sobre la bruma máxima: 5,2:1 (doc >= 3:1; medido en píxeles 5,8:1).
+- **Familia (B.3)**: Lobezno `worm` (derrape), Cazador `archer` (aviso 700 ms, flecha 240 px/s, +6 Frío), Lobo de escarcha `frostwolf` (nuevo; manada: rodean a 200 px y atacan por turnos cada 1,2 s, lance 300 px/s + derrape 140), Oso `boar` (acelera a 420 px/s en 600 ms, 300 px + patina 180, 16 de daño, sin contacto), Yeti `shield` (placa de 30 de Fuego, empuje 100 px, anims `*_np`), Murciélago `moth` (picado 350 px/s, +8 Frío), Estalagmita viva `sower` (dormida y no objetivo, despierta a < 120 px, 3 esquirlas al morir), Espíritu `blinker` (remolino r 36 que ralentiza 25 % 2 s + tajo con empuje 100), Chamán `warlock` (2 Lobeznos / 6 s, aura de Frío r 200). Sumas de `w` 55/44/29/25, topes 40/17/16/9; materiales Pelaje/Escarcha (A.8); drops (Lobo Colmillo, Estalagmita Escarcha); encargo "Caza Lobos de escarcha" (dormido hasta abrir la Tundra). Todas las telegrafías cumplen `tele >= 250 + 220 + 1000 x salida / 190` (`G.B.tele` con `ice:true`; `p3_tests.js tele`: 717/717/917/817/717/817/950 ms medidos). Packs: Manada, Cordada, Pinza del aullido, Trampal. Guardianes (3:30 y 5:30): **Yeti Centinela** (`enemy_mini_yeti`, Embestida con 180 px de derrape, placa que se derrite con Fuego) y **Ventisquero** (`enemy_mini_ventisquero`, Ventisca local +14 % de Frío/s). Peligro/duración: `L.DUR.cold`.
+- **Desviaciones del doc**: repisas de nieve (arriba), Frío en nieve firme, Oso sin contacto, Espíritu a pie (no vuela) con `capGrow 1` (T3 13 en vez de 12), Cazador +6 / Murciélago +8 Frío (el doc se contradice), bruma cacheada a 30 Hz.
+- **Pruebas** (`tools/card-swarm-balance-bot/`; servidor `python3 tools/serve.py card-swarm <puerto>`): `p3_tests.js ice|cold|tele|mech|data|flow|all` (79 comprobaciones OK), `p3_regress.js <ahora> <antes>` y `p3_regress_boss.js` (simulación determinista con Math.random sembrado: estado idéntico al commit anterior a P3 en Bosque/Cripta/Asfódelo con `?fam=0`/auto/`?fam=1` hasta los 400 s —con guardianes— y en las peleas de los 3 jefes 120 s), `p3_bot.js` + `bot_ice.js` (bot sin god, sin jefe), `p3_mobile.js` (táctil 844x390), `p3_visual.js shots|fps`. `p0/p1/p2_tests` en verde (`p0_tests` adaptado: `?fam=1` ya activa la Tundra).
+- **Mediciones P3** (Chromium sin GPU, máquina libre): **regresión 0** (estado idéntico bit a bit al commit anterior a P3, ver Pruebas). Boss-bot Peligro I, 36 peleas por jefe (ahora / commit P2, misma sesión): Pastor 75 / 75 %, Karceron 54-50 / 71-65 %, Letea 56 / 42 % (referencia README 69 / 60 / 52: todas dentro de +-10 sobre la referencia; la diferencia con el HEAD es ruido de RNG, la simulación es idéntica). **Bot sin god ni jefe, 16 runs, 9 min** (el bot de balance está pensado para god; sin él ningún bioma llega a 9 min): Tundra bot base 6 % sobreviven, muerte mediana 230 s; Tundra con `bot_ice.js` (esquiva de flechas/lances con inercia y búsqueda de hogueras) 19 %, mediana 252 s; Bosque 0 % / 222 s, Cripta 0 % / 220 s, Asfódelo 0 % / 233 s (la Tundra no es más dura que los demás). Frío del bot: pico medio 22-24 %, 0 Escarcha. Con god el bot completa los 7/9 min (`p3_tests.js flow`). Censo por minuto de la Tundra (bot base, vivos medios; T0/T1/T2/T3 %): min 0 8 (97/3/0/0), 1 10 (64/36/0/0), 2 14 (50/40/10/0), 3 20 (46/30/24/0), 5 22 (25/11/32/31), 8 25 (25/7/20/48): misma mezcla que la curva legada. **fps** (960x540, 3 rondas, horda t=7:15): Pastor 56,5 / Tundra Alta 54,2 (calma) y 58 (ráfaga, tras la caché de la bruma; antes 52,3) / Media 58,9 / Baja 60,2; la física del hielo no cuesta nada (`?ice=0` igual). **Táctil 844x390**: joystick CDP, deriva 71 px al soltar, 0 errores, 60 fps. Legibilidad con 100 enemigos y avisos: `studio/docs/capturas-p3-logica/` (4 capturas).
