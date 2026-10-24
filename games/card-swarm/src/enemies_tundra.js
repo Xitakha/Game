@@ -18,6 +18,7 @@
 
   // ---------------------------------------------------------------- Inicialización por enemigo (la llama E.spawn solo en la Tundra)
   E.tunInit = function (e, d, fe) {
+    if (e.type === 'boss') return;   // el jefe lleva su propio movimiento (boss.js); Yarlak llega en la P4
     e.sf = T.slipAt(e.x, e.y); e.vx = e.vy = 0; e.mvx = e.mvy = 0;
     if (fe && fe.bat) e.fly = true;           // voladores: sin inercia de hielo ni choque con estalagmitas
     else e.slide = true;
@@ -28,10 +29,14 @@
       case 'boar': e.atkT = G.rnd(1500, 3000); break;
       case 'shield': e.plateHp = fe.plate; e.bashT = G.rnd(2000, 4000); if (B.mat.on) e.mat = 'escarcha'; break;   // placa de hielo: cuenta como Escarcha hasta que se derrite con 30 de Fuego
       case 'moth': e.shootT = G.rnd(1500, 3000); break;
-      case 'sower': e.st = 'dormant'; e.untarget = true; e.fixed = true; e.noSlide = true; e.rearm = 0; e.t = 0; break;
+      case 'sower': e.st = 'dormant'; e.untarget = true; e.fixed = true; e.noSlide = true; e.rearm = 0; e.t = 0; T.dormant.push(e); break;
       case 'blinker': e.atkT = G.rnd(2500, 4200); break;
     }
   };
+
+  // VFX de nieve del arte P3 (fx_snow_puff = polvareda de nieve, fx_skid_trail = estela de derrape): solo si existen
+  function puff(x, y, sc) { if (G.hasSpr('fx_snow_puff')) fx.part('fx_snow_puff', x, y + 6, 0, -8, 420, { anim: true, sc: sc || 0.8 }); else fx.dust(x, y + 8, 3); }
+  function trail(x, y, ang, sc) { if (G.hasSpr('fx_skid_trail')) fx.part('fx_skid_trail', x + Math.cos(ang) * 46 * (sc || 1), y + Math.sin(ang) * 46 * (sc || 1) + 10, 0, 0, 520, { rot: ang, anim: true, sc: sc || 1 }); }
 
   // ---------------------------------------------------------------- Lobo de escarcha: IA de MANADA (rodea a 200 px y se turnan para atacar)
   var PK = { stamp: -1, t: 0, list: [], rot: 0 };
@@ -58,14 +63,14 @@
     } else if (st === 'howl') {
       e.t += dt; e.face = Math.cos(e.ang) >= 0 ? 1 : -1;
       if (e.t < B.tele.wolf.ms - 150) { e.ang = a; e.len = G.clamp(d + 20, WF.lenMin, WF.lenMax); }   // el rumbo se fija en los últimos 150 ms (contorno sólido)
-      if (e.t >= B.tele.wolf.ms) { e.st = 'lunge'; e.t = 0; e.noSlide = true; e.trav = 0; e.hitDone = false; e.lsp = WF.spd; fsfx(e, 'lunge', { vol: 0.85 }); }
+      if (e.t >= B.tele.wolf.ms) { e.st = 'lunge'; e.t = 0; e.noSlide = true; e.trav = 0; e.hitDone = false; e.lsp = WF.spd; fsfx(e, 'lunge', { vol: 0.85 }); puff(e.x, e.y, 0.7); }
     } else if (st === 'lunge' || st === 'skid') {
       e.t += dt; var step = e.lsp * s;
       e.x += Math.cos(e.ang) * step; e.y += Math.sin(e.ang) * step; e.trav += step;
       if (!e.hitDone && !p.dead && d < e.r + p.r + 2) { if (G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'frostwolf' }) || G.god) e.hitDone = true; }
       var hit = e.x <= m || e.x >= G.AW - m || e.y <= m || e.y >= G.AH - m, bx = e.x, by = e.y; T.collide(e, e.r); if (Math.hypot(e.x - bx, e.y - by) > 0.5) hit = true;
-      if (st === 'lunge' && (e.trav >= e.len || hit)) { e.st = 'skid'; e.t = 0; e.lsp = hit ? 0 : WF.spd; if (!hit) fx.dust(e.x, e.y + 6, 4); }   // derrape de 140 px: v0 / lambda con lambda = v0 / 140
-      else if (st === 'skid') { e.lsp *= Math.exp(-WF.spd / WF.slide * s); if (e.lsp < 25) { e.st = 'rec'; e.t = 0; e.expT = WF.rec; e.expMul = WF.expMul; } }
+      if (st === 'lunge' && (e.trav >= e.len || hit)) { e.st = 'skid'; e.t = 0; e.lsp = hit ? 0 : WF.spd; if (!hit) { puff(e.x, e.y, 0.6); trail(e.x, e.y, e.ang, 1.2); } }   // derrape de 140 px: v0 / lambda con lambda = v0 / 140
+      else if (st === 'skid') { e.lsp *= Math.exp(-WF.spd / WF.slide * s); if (e.lsp < 6) { e.st = 'rec'; e.t = 0; e.expT = WF.rec; e.expMul = WF.expMul; } }
     } else if (st === 'rec') {
       e.t += dt; if (e.expT > 0) e.expT -= dt;
       if (e.t >= WF.rec) wolfEnd(e);
@@ -77,13 +82,13 @@
   function ai_bear(e, dt, s, p, d, a) {
     var st = e.st;
     if (st === 'move') {
-      moveTo(e, a, e.spd, s); contact(e, dt, p, d, 900, 'boar');
+      moveTo(e, a, e.spd, s);   // (como el Jabalí: sin daño de contacto, el golpe es la embestida)
       e.atkT -= dt;
       if (e.atkT <= 0 && d < BR.range) { e.st = 'wind'; e.t = 0; e.ang = a; fsfx(e, 'tele', { vol: 0.9 }); }
     } else if (st === 'wind') {
       e.t += dt; var ms = B.tele.bear.ms;
       if (e.t < ms * 0.7) e.ang = a;   // el último 30 % de la telegrafía deja el contorno sólido y fijo (regla del hielo)
-      if (e.t >= ms) { e.st = 'charge'; e.t = 0; e.noSlide = true; e.trav = 0; e.cv = 0; e.hitDone = false; fsfx(e, 'charge', { vol: 0.9 }); }
+      if (e.t >= ms) { e.st = 'charge'; e.t = 0; e.noSlide = true; e.trav = 0; e.cv = 0; e.hitDone = false; fsfx(e, 'charge', { vol: 0.9 }); puff(e.x, e.y, 0.9); }
     } else if (st === 'charge' || st === 'slide') {
       e.t += dt;
       if (st === 'charge') e.cv = BR.spd * Math.min(1, e.t / BR.accel); else e.cv *= Math.exp(-BR.spd / BR.slide * s);
@@ -92,8 +97,8 @@
       if (!e.hitDone && !p.dead && e.cv > 80 && d < e.r + p.r) { e.hitDone = true; G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'boar', kb: 1.2 }); }
       var blk = bearBlocked(e);
       if (blk) { e.st = 'stun'; e.t = 0; fx.shake(4, 120); fx.dust(e.x, e.y, 6); fsfx(e, 'slide', { vol: 0.6 }); }
-      else if (st === 'charge' && e.trav >= BR.len) { e.st = 'slide'; e.t = 0; fsfx(e, 'slide', { vol: 0.7 }); }
-      else if (st === 'slide' && e.cv < 25) { e.st = 'stun'; e.t = 0; }
+      else if (st === 'charge' && e.trav >= BR.len) { e.st = 'slide'; e.t = 0; fsfx(e, 'slide', { vol: 0.7 }); trail(e.x, e.y, e.ang, 1.8); puff(e.x, e.y, 1); }
+      else if (st === 'slide' && e.cv < 6) { e.st = 'stun'; e.t = 0; }
     } else if (st === 'stun') {   // vulnerable (Combat.deal: x1,5 en stun)
       e.t += dt;
       if (e.t >= BR.stun) { e.st = 'move'; e.noSlide = false; e.vx = e.vy = 0; e.atkT = G.rnd(BR.gap[0], BR.gap[1]); }
@@ -105,13 +110,14 @@
     if (!(e.plateHp > 0)) return;
     e.plateHp -= dmg; e.plateFlash = 90;
     if (e.plateHp > 0) return;
-    e.plateHp = 0; e.shield = 0; e.shieldDown = false; if (e.mat && e.fe) e.mat = e.fe.mat;
+    e.plateHp = 0; e.shield = 0; e.shieldDown = false; e.meltT = 350; if (e.mat && e.fe) e.mat = e.fe.mat;
     fx.burst(e.x + Math.cos(e.fa || 0) * e.r, e.y + Math.sin(e.fa || 0) * e.r, 12, '#bfeaff', 200, 500, 3, { add: true }); fx.ring(e.x, e.y, 8, 40, 300, '#ffb347', 3);
     G.sfx('ice_break', { vol: 0.7 }); fx.num(e.x, e.y - e.r - 18, '¡PLACA DERRETIDA!', '#ffb347', true);
   };
   function ai_yeti(e, dt, s, p, d, a) {
     var st = e.st, reach = e.r + p.r + YT.reach;
     if (e.plateFlash > 0) e.plateFlash -= dt;
+    if (e.meltT > 0) e.meltT -= dt;
     if (st === 'move') {
       e.fa = a; moveTo(e, a, e.spd, s); contact(e, dt, p, d, 900, 'shield');
       if ((e.stepT = (e.stepT || 0) - dt) <= 0) { e.stepT = G.rnd(900, 1500); if (d < 380) fsfx(e, 'step', { vol: 0.4 }); }
@@ -278,12 +284,15 @@
     switch (e.type) {
       case 'worm': return 'walk:' + w;
       case 'archer': return st === 'aim' ? 'aim' : e.flT > 0 ? 'shoot:' + (e.flT > 110 ? 0 : 1) : 'walk:' + w;
-      case 'frostwolf': return st === 'howl' ? (e.t < 350 ? 'howl' : 'crouch') : (st === 'lunge' || st === 'skid') ? 'lunge:' + Math.floor(e.t / 90) % 2 : 'walk:' + Math.floor(e.anim / 90);
-      case 'boar': return st === 'wind' ? 'wind' : st === 'charge' ? 'charge:' + Math.floor(e.t / 90) % 2 : st === 'slide' ? 'slide' : st === 'stun' ? 'idle:0' : 'walk:' + Math.floor(e.anim / 200);
-      case 'shield': return st === 'wind' ? 'bash:0' : st === 'bash' ? 'bash:1' : st === 'rec' ? 'bash:2' : 'walk:' + w;
+      case 'frostwolf': return st === 'howl' ? (e.t < 350 ? 'howl' : 'crouch') : (st === 'lunge' || st === 'skid') ? 'lunge:' + (st === 'skid' ? 1 : 0) : 'walk:' + Math.floor(e.anim / 90);
+      case 'boar': return st === 'wind' ? 'wind' : st === 'charge' ? 'charge:' + Math.floor(e.t / 80) % 2 : st === 'slide' ? 'slide' : st === 'stun' ? 'idle:' + Math.floor(e.anim / 330) : 'walk:' + Math.floor(e.anim / 200);
+      case 'shield':   // sin placa (30 de Fuego) cambia a las anims *_np; al perderla se ve 'melt' un instante
+        if (e.plateHp > 0) return st === 'wind' ? 'wind' : st === 'bash' ? 'bash:1' : st === 'rec' ? 'rec' : 'walk:' + w;
+        if (e.meltT > 0) return 'melt';
+        return st === 'wind' ? 'wind_np' : st === 'bash' ? 'bash_np' : st === 'rec' ? 'rec_np' : e.spd > 5 ? 'walk_np:' + w : 'idle_np:' + w;
       case 'moth': return st === 'aim' ? 'dive:0' : st === 'dive' ? 'dive:1' : 'flap:' + Math.floor(e.anim / 70);
       case 'sower': return st === 'dormant' ? 'dormant' : st === 'tele' ? 'wake:' + (e.t < 400 ? 0 : 1) : st === 'erupt' ? 'erupt:' + (e.t < 150 ? 0 : 1) : 'crawl:' + Math.floor(e.anim / 250);
-      case 'blinker': return st === 'fade' ? 'fade:' + Math.min(3, Math.floor(e.t / 150)) : st === 'slash' ? 'slash:' + (e.t < 200 ? 0 : 1) : 'idle:' + Math.floor(e.anim / 200);
+      case 'blinker': return st === 'fade' ? 'fade:' + Math.min(1, Math.floor(e.t / 250)) : st === 'slash' ? 'slash:' + (e.t < 200 ? 0 : 1) : 'idle:' + Math.floor(e.anim / 200);
       case 'warlock': return st === 'cast' ? 'howl:' + Math.floor(e.t / 160) % 2 : e.spd > 5 ? 'walk:' + Math.floor(e.anim / 250) : 'idle:' + Math.floor(e.anim / 250);
     }
     return 0;
@@ -314,7 +323,7 @@
   };
   // Sobre el sprite: placa de hielo del Yeti (fx_ice_slab o procedural) delante del cuerpo
   E.tunDraw = function (c, e, o) {
-    if (e.type === 'shield' && e.plateHp > 0 && e.spawnT <= 0) {
+    if (e.type === 'shield' && e.plateHp > 0 && e.spawnT <= 0 && e.spr !== 'enemy_tun_yeti') {   // con el arte propio la placa ya va dentro del sprite
       var fa = e.fa || 0, px = e.x + Math.cos(fa) * (e.r + 3), py = e.y + Math.sin(fa) * (e.r + 3) * 0.6 - 4;
       c.save();
       if (G.hasSpr('fx_ice_slab')) { var sl = Assets.sprite('fx_ice_slab', 0); c.globalAlpha = e.plateFlash > 0 ? 1 : 0.95; c.translate(Math.round(px), Math.round(py)); if (Math.cos(fa) < 0) c.scale(-1, 1); c.drawImage(sl, -sl.width / 2, -sl.height / 2); }

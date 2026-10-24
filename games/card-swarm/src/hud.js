@@ -74,7 +74,7 @@
   };
 
   function drawCombosList(c) {
-    var y = 64, any = false, t = G.time / 1000;
+    var y = 64 + (G.Tundra.on ? 16 : 0), any = false, t = G.time / 1000;   // Tundra: el medidor de Frío y su etiqueta ocupan hasta y 68
     G.Cards.combos.forEach(function (cb) {
       if (!G.Cards.active[cb.k]) return;
       if (!any) { G.txt(c, 'COMBOS', 16, y, 12, '#9a8fb0', 'left'); y += 18; any = true; }

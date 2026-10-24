@@ -777,7 +777,10 @@
   E.VARIANTS = { warden: { name: 'CENTINELA DE BRASA', part: 'PETO', tint: '#c4501a' }, wraith: { name: 'PLAÑIDERA ANEGADA', part: 'BOLSA', tint: '#2f9a9a' },
     // P3 (Tundra, B.3): Yeti Centinela (Coloso: Embestida con onda que patina 180 px más; su placa de hielo se derrite con Fuego) y Ventisquero (Madre Colmena: carámbanos y Ventisca local que sube el Frío)
     yeti: { name: 'YETI CENTINELA', part: 'PLACA', tint: '#9fd8ff' }, ventisquero: { name: 'VENTISQUERO', part: 'BOLSA', tint: '#bfe4ff' } };
-  E.variant = function (e, v) { var d = E.VARIANTS[v]; if (!d || !e) return; e.variant = v; e.partName = d.part; e.vname = d.name; };
+  E.variant = function (e, v) {
+    var d = E.VARIANTS[v]; if (!d || !e) return; e.variant = v; e.partName = d.part; e.vname = d.name;
+    var vs = { yeti: 'enemy_mini_yeti', ventisquero: 'enemy_mini_ventisquero' }[v]; if (vs && G.hasSpr(vs)) e.spr = vs;   // P3: sprites propios de los guardianes de la Tundra (mismos índices y anims que el Coloso / la Madre Colmena)
+  };
   function bulwarkNext(e, d) {
     if (e.force) { var f = e.force; e.force = null; return atkLog('bulwark', f); }
     if (!e.bag.length) e.bag = shuffleBag(e.variant === 'warden' ? ['charge', 'shields'] : ['bash', 'stomp', 'charge', 'shields']);   // 'yeti' usa la bolsa completa
@@ -861,7 +864,7 @@
       if (e.t < fix) { e.ang = a; e.fa = a; chargeEnd(e); }
       if (e.t >= tele) { e.st = 'charge'; e.t = 0; e.trav = 0; e.hitDone = false; G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 }); }
     } else if (e.st === 'charge') {
-      e.t += dt; var stp = Math.min(M.chargeSpd * s * (e.variant === 'yeti' ? Math.max(0.12, Math.min(1, (e.clen - e.trav) / YETI_SLIDE)) : 1), e.clen - e.trav);   // Yeti: los últimos 180 px frenan (derrape)
+      e.t += dt; var stp = Math.min(M.chargeSpd * s * (e.variant === 'yeti' ? Math.max(0.3, Math.min(1, (e.clen - e.trav) / YETI_SLIDE)) : 1), e.clen - e.trav);   // Yeti: los últimos 180 px frenan (derrape)
       e.x += Math.cos(e.ang) * stp; e.y += Math.sin(e.ang) * stp; e.trav += stp;
       if (Math.random() < 0.5) fx.dust(e.x - Math.cos(e.ang) * 20, e.y + 16, 1);
       if (!e.hitDone && !p.dead && d < e.r + p.r + 4) { e.hitDone = true; G.Player.hurt(p, e.dmg * M.chargeDmg, e.x, e.y, { src: 'bulwark_charge', kb: 1.6 }); }
@@ -1491,6 +1494,7 @@
     var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
     if (!fb && FAMSPR.test(name)) return { cv: Assets.sprite(name, famAnim(e)), sc: 1, fb: null };
     if (!fb && ASFSPR.test(name)) return { cv: safeSpr(name, asfAnim(e)), sc: 1, fb: null };
+    if (name === 'enemy_mini_yeti' || name === 'enemy_mini_ventisquero') return { cv: safeSpr(name, newAnim(e)), sc: 1, fb: null };
     if (!fb && TUNSPR.test(name)) return { cv: safeSpr(name, E.tunAnim(e)), sc: 1, fb: null };   // P3: sprites de la Tundra (assets_fam3.js)
     if (!fb) return { cv: Assets.sprite(name, oldAnim(name, e)), sc: 1, fb: null };
     if (G.hasSpr(name)) { try { return { cv: Assets.sprite(name, newAnim(e)), sc: 1, fb: null }; } catch (x) { /* anim desconocida: usa el reemplazo */ } }
@@ -1539,7 +1543,7 @@
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
     if (e.fe && e.fe.tun && o.tint == null) E.tunTint(e, o);   // P3: avisos en el cuerpo (Oso, Lobo, Yeti...), alpha de la Estalagmita dormida
-    else if ((e.variant === 'yeti' || e.variant === 'ventisquero') && o.tint == null) { o.tint = E.VARIANTS[e.variant].tint; o.tintA = 0.38; }   // guardianes de la Tundra: tinte azul hielo
+    else if ((e.variant === 'yeti' || e.variant === 'ventisquero') && o.tint == null && e.spr === B.enemy[e.type].spr) { o.tint = E.VARIANTS[e.variant].tint; o.tintA = 0.38; }   // guardianes de la Tundra: tinte azul hielo
     if (e.skin && o.tint == null) { o.tint = e.skin.tint; o.tintA = e.skin.a != null ? e.skin.a : 0.35; }   // tinte de la piel de familia (si no hay ya un tinte de estado)
     if (v.fb && v.fb.alpha && o.alpha == null) o.alpha = v.fb.alpha;
     if (e.fe && e.fe.alpha && e.spr === e.fe.fbSpr && o.alpha == null) o.alpha = e.fe.alpha;   // Alma errante: semitransparente (el sprite propio ya trae el alpha 0,8 horneado: solo se aplica al sprite de reemplazo)

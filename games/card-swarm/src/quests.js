@@ -36,6 +36,9 @@
       desc: 'Abate 15 Espectros: se desvanecen y reaparecen a tu espalda.', rewardParts: { static: 7 }, brasas: 100, pf: 1, pfRepeat: 1 },
     { id: 'dogs', cat: 'B', tier: 2, kind: 'hunt', name: 'Apaga a los Perros pastores', target: 'dog', goal: 40, label: 'Perros pastores',
       desc: 'Abate 40 Perros pastores (Bosque). Ladran antes de arrear: esquiva el arreo y remata.', rewardParts: { fang: 7 }, brasas: 100, pf: 1, pfRepeat: 1 },
+    // P3 (Tundra, B.7): encargo de la familia. Solo avanza en la Tundra (rol `frostwolf`); la Tundra sigue cerrada hasta Yarlak (P4), así que el Tablón no lo ofrece todavía (?quests=wolves lo fuerza)
+    { id: 'wolves', cat: 'C', tier: 2, kind: 'hunt', name: 'Caza Lobos de escarcha', target: 'frostwolf', goal: 30, label: 'Lobos de escarcha',
+      desc: 'Abate 30 Lobos de escarcha (Tundra). Rodean y atacan por turnos: cuenta la secuencia y esquiva el lance.', rewardParts: { fang: 8 }, brasas: 110, pf: 1, pfRepeat: 1 },
     { id: 'scorchers', cat: 'B', tier: 3, kind: 'hunt', name: 'Apaga las Ascuas', target: 'scorcher', goal: 12, label: 'Ascuas',
       desc: 'Apaga 12 Ascuas. Cargan con rastro de fuego: no te quedes en su línea.', rewardParts: { wick: 9 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Mata al Coloso Escudero', target: 'mini_bulwark', goal: 1, label: 'Coloso', elite: true,
@@ -72,15 +75,15 @@
   // ------------------------------------------------------------- Cumplibilidad por bioma (v5 P2: las familias quitan roles de algunos biomas)
   // Un encargo de caza solo avanza en los biomas cuya familia tiene el rol objetivo (los minijefes, bajas, partes, etiquetas y duraciones valen en todos). El Tablón solo ofrece
   // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
-  Q.BIOMES = ['bosque', 'cripta', 'asfodelo'];
+  Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra'];
   Q.biomesOf = function (d) {
     if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];   // Cuernos y Salto aplastante son del Pastor
     if (d.kind !== 'hunt') return Q.BIOMES.slice();
-    return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });
+    return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b) || (b === 'tundra' ? G.B.fam.tundra : null); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });   // P3: la Tundra (ready:false) ya declara sus roles: el encargo de los Lobos existe, pero no se ofrece hasta abrirla (Yarlak, P4)
   };
   Q.unlockedBiomes = function (kills) {
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
-    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0); });
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.yarlak > 0); });   // la Tundra se abre con Yarlak (P4)
   };
   Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;

@@ -299,8 +299,10 @@
   var R_GO = { x: 650, y: 482, w: 290, h: 52 };
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' }];
-  function biomeRect(i) { return { x: 650 + i * 98, y: 336, w: 92, h: 42 }; }
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' },
+    // P3: la Tundra existe (hielo, Frío, ventisca y su familia) pero sigue BLOQUEADA hasta que llegue Yarlak (P4): '? TUNDRA'. Solo se prueba con ?biome=tundra
+    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'yarlak', needName: 'Yarlak', bid: 'yarlak', locked: true }];
+  function biomeRect(i) { return { x: 650 + i * 72, y: 336, w: 68, h: 42 }; }   // 4 destinos de 68 px (5 con el Panal)
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
   function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
@@ -310,7 +312,7 @@
     if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
     return BIOMES.filter(function (b) { return b.id === id; })[0];
   }
-  function biomeOpen(b) { return !b.need || (SV().bossKills[b.need] || 0) > 0; }
+  function biomeOpen(b) { return !b.locked && (!b.need || (SV().bossKills[b.need] || 0) > 0); }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
     var S = SV(), a = S.anchors, i = a.indexOf(id);
@@ -324,7 +326,7 @@
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
     for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
       if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-      else say('Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
+      else say(BIOMES[i].locked ? 'La Tundra sigue cerrada: Yarlak, su jefe, aún no ha llegado a Rescoldo.' : 'Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
     }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     var bid = effBiome().bid;
@@ -383,7 +385,7 @@
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
       var open = biomeOpen(b), on = cb.id === b.id;
-      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 13, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
+      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 11, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
     });
     // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
     var ln = G.B.matLens(cb.id);
@@ -699,11 +701,12 @@
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
   function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
   var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
-    shake: { x: 150, y: 236, w: 320, h: 48 }, iso: { x: 490, y: 236, w: 320, h: 48 },
-    qual: { x: 150, y: 292, w: 320, h: 48 }, fs: { x: 490, y: 292, w: 320, h: 48 },
-    mute: { x: 150, y: 348, w: 320, h: 48 }, inst: { x: 490, y: 348, w: 320, h: 48 },
-    exp: { x: 150, y: 404, w: 320, h: 48 }, imp: { x: 490, y: 404, w: 320, h: 48 },
-    back: { x: 330, y: 466, w: 300, h: 52 }
+    shake: { x: 150, y: 226, w: 320, h: 48 }, iso: { x: 490, y: 226, w: 320, h: 48 },
+    qual: { x: 150, y: 278, w: 320, h: 48 }, fs: { x: 490, y: 278, w: 320, h: 48 },
+    mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
+    exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
+    soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
+    back: { x: 330, y: 488, w: 300, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -720,6 +723,8 @@
     if (onR(SB.inst)) G.PWA.install();
     if (onR(SB.exp)) G.PWA.exportSave();
     if (onR(SB.imp)) G.PWA.importSave();
+    if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
   }
@@ -741,7 +746,9 @@
     U.button(c, SB.inst, Sy.standalone() ? 'App instalada' : 'Instalar app', { size: 14, off: Sy.standalone(), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     U.button(c, SB.exp, 'Exportar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
+    U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
-    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 10, G.Save.ok ? '#6f6480' : '#ff8a8a', 'center');
+    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 536, 9, G.Save.ok ? '#6f6480' : '#ff8a8a', 'center');
   }
 })();

@@ -62,10 +62,10 @@
     T.on = biome === 'tundra'; T.nobos = false; T.ended = false;
     if (!T.on) { G.cold.v = 0; G.cold.frozenT = 0; G.cold.immuneT = 0; return; }
     iceOn = qnum('ice', 1) > 0; coldOn = qnum('cold', 1) > 0;
-    patchR = qnum('patch', D.patchR); ledgeR = null;
+    patchR = qnum('patch', D.patchR); ledgeR = null; heatR = D.campfireR;
     T.opts.soft = qnum('softice', 0) > 0 || T.settingOn('softIce'); T.opts.light = qnum('lightstorm', 0) > 0 || T.settingOn('lightStorm');
     T.nobos = qnum('nobos', 0) > 0 || (!G.bossUrl && !(G.Boss.DEFS && G.Boss.DEFS.yarlak));   // sin jefe hasta la P4
-    pillars.length = 0; D.pillars.forEach(function (q, i) { pillars.push({ x: q[0], y: q[1], r: D.pillarR, hp: D.pillarHp, max: D.pillarHp, dead: false, t: 0, shake: 0, i: i }); });
+    T.dormant.length = 0; pillars.length = 0; D.pillars.forEach(function (q, i) { pillars.push({ x: q[0], y: q[1], r: D.pillarR, hp: D.pillarHp, max: D.pillarHp, dead: false, t: 0, shake: 0, i: i }); });
     fires.length = 0; D.patches.forEach(function (q, i) { fires.push({ x: q[0], y: q[1], i: i }); });
     var c = G.cold; c.v = 0; c.frozenT = 0; c.immuneT = 0; c.rate = 0; c.warned = false; c.kWin = 0; c.kT = 0; c.frozenN = 0; c.peak = 0; c.tIce = c.tFirm = c.tHeat = 0;
     BZS.t = 0; BZS.gust = false; BZS.a = BZS.force ? BZ.gustA : BZ.calmA; BZS.k = 0; BZS.windT = 0; BZS.boss = 0;
@@ -100,6 +100,9 @@
     for (x = m; x <= G.AW - m; x += step) for (y = m; y <= G.AH - m; y += step) { d = T.distToFirm(x, y); if (d > mx) { mx = d; mxp = [x, y]; } }
     patchR = old; return { max: Math.round(mx * 10) / 10, at: mxp };
   };
+  var heatR = D.campfireR;
+  T.heatR = function () { return heatR; };
+  T.setHeatR = function (r) { heatR = r; };   // desesperado de Yarlak (P4): las hogueras crecen a r 120
   T.setPatchR = function (r) { patchR = r; G.ground = T.buildGround(); };   // F3 90, F4 y desesperado 70 (P4); reconstruye el suelo
 
   // ================================================================= FÍSICA DEL JUGADOR
@@ -111,7 +114,7 @@
     else if (c.v >= CD.helado && coldOn) { o.spd = P.helado.spd; o.tau += P.helado.tauAdd; }
     return o;
   };
-  var sfxT = { step: 0, slide: 0, fire: 0 };
+  var sfxT = { step: 0, slide: 0, fire: 0, brake: 0, heart: 0 };
   T.movePlayer = function (p, ix, iy, spd, s, dt) {
     var il = Math.hypot(ix, iy), q = T.params(), tgt = iceOn ? T.slipAt(p.x, p.y) : 0, st = dt / ICE.blend;
     p.sf += G.clamp(tgt - p.sf, -st, st);
@@ -133,6 +136,7 @@
     // sonido: pasos distintos en hielo y nieve; siseo de derrape al soltar el mando a toda velocidad
     var now = G.time;
     if (sp > 60 && now - sfxT.step > 300) { sfxT.step = now; G.sfx(sf > 0.5 ? 'ice_step' : 'snow_step', { vol: 0.35 }); }
+    if (il > 0 && sf > 0.5 && sp > 100 && (p.vx * ix + p.vy * iy) < -0.4 * sp * il && now - sfxT.brake > 300) { sfxT.brake = now; G.sfx('ice_brake', { vol: 0.5 }); }   // frenada / cambio de sentido en hielo
     if (il === 0 && sf > 0.5 && sp > 110 && now - sfxT.slide > 380) { sfxT.slide = now; G.sfx('ice_slide', { vol: 0.5, pitch: 0.8 + sp / 190 * 0.4 }); }
   };
   T.afterWall = function (p) {
@@ -144,7 +148,7 @@
   T.hurtKb = function (p) {
     var q = T.params(), m = 1 + (q.kb - 1) * p.sf, drift = Math.hypot(p.vx, p.vy) / q.lambda * p.sf;
     p.kx *= m; p.ky *= m;
-    var cap = Math.max(25, ICE.kbCap - drift) * 12, mag = Math.hypot(p.kx, p.ky);   // distancia total del retroceso = velocidad / 12
+    var cap = Math.max(25, ICE.kbCap - drift) * 12 / 1.104, mag = Math.hypot(p.kx, p.ky);   // distancia total del retroceso = velocidad / 12 (x1,104 por la integración a 60 Hz: la 1.ª muestra no decae)
     if (mag > cap) { p.kx *= cap / mag; p.ky *= cap / mag; }
     p.vx *= 0.4; p.vy *= 0.4;
   };
@@ -157,8 +161,11 @@
       if (d < min) { if (d < 0.01) { dx = 1; dy = 0; d = 1; } who.x = o.x + dx / d * min; who.y = o.y + dy / d * min; }
     }
   };
+  T.dormant = [];   // Estalagmitas vivas dormidas: son obstáculos hostiles (bloquean proyectiles enemigos como las del suelo)
   T.blocks = function (x, y, r) {
-    for (var i = 0; i < pillars.length; i++) { var o = pillars[i]; if (!o.dead && Math.hypot(o.x - x, o.y - y) < o.r + r * 0.5) { o.shake = 120; return true; } }
+    var i, o;
+    for (i = 0; i < pillars.length; i++) { o = pillars[i]; if (!o.dead && Math.hypot(o.x - x, o.y - y) < o.r + r * 0.5) { o.shake = 120; return true; } }
+    for (i = T.dormant.length - 1; i >= 0; i--) { o = T.dormant[i]; if (o.dead || o.st !== 'dormant') { T.dormant.splice(i, 1); continue; } if (Math.hypot(o.x - x, o.y - y) < 20 + r * 0.5) return true; }
     return false;
   };
   // Para el jefe (P4): romper una estalagmita (la Embestida, la Cornada y el Alud); se reconstruye a los 45 s
@@ -194,6 +201,7 @@
     for (var i = 0; i < h.length; i++) { if (!h[i]) continue; var tg = G.Cards.def(h[i].id).tag; if (tg === 'fire' || tg === 'blood' || tg === 'ice') hand[tg]++; }
     return hand;
   }
+  T.resetHand = function () { hand.t = -1e9; };   // pruebas: fuerza a recontar las cartas de la mano
   T.passive = function () {   // %/s que restan las cartas de la mano
     var hc = handCount(), M = CD.maxCards, tf = G.Tree && G.Tree.fx || {};
     return Math.min(M, hc.fire) * (tf.brasaPecho ? CD.fire + 0.15 : CD.fire) + Math.min(M, hc.blood) * CD.blood + Math.min(M, hc.ice) * CD.ice;
@@ -215,14 +223,14 @@
   };
   function freeze() {
     var c = G.cold; c.v = CD.frozenTo; c.frozenT = CD.frozenMs; c.immuneT = CD.immuneMs; c.frozenN++; c.warned = false;
-    G.Hud.banner('¡ESCARCHA!', 1600, '#bfeaff'); G.sfx('cold_freeze', { vol: 0.9 }); G.fx.shake(4, 160);
+    G.Hud.banner('¡ESCARCHA!', 1600, '#bfeaff'); G.sfx('cold_freeze', { vol: 0.9 }); G.sfx('cold_slow', { vol: 0.6 }); G.fx.shake(4, 160);
     G.fx.burst(G.player.x, G.player.y, 16, '#e8f6ff', 200, 700, 4, { add: true });
   }
   T.onBoss = function () { if (T.on) G.cold.v = CD.bossStart; };   // al aparecer el jefe el medidor pasa a 20 %
   T.state = function () { var c = G.cold; return c.frozenT > 0 ? 'escarcha' : c.v >= CD.helado ? 'helado' : c.v >= CD.warn ? 'frio' : 'ok'; };
 
   function nearHeat(p) {
-    var tf = G.Tree && G.Tree.fx || {}, R = D.campfireR * (tf.brasaPecho ? 1.3 : 1);
+    var tf = G.Tree && G.Tree.fx || {}, R = T.heatR() * (tf.brasaPecho ? 1.3 : 1);
     for (var i = 0; i < fires.length; i++) if (Math.hypot(p.x - fires[i].x, p.y - fires[i].y) <= R + p.r * 0.3) return fires[i];
     return null;
   }
@@ -254,6 +262,7 @@
     if (c.v < 0) c.v = 0;
     if (c.v >= 100) freeze();
     if (c.v > c.peak) c.peak = c.v;
+    if (c.v > 85 && G.time - sfxT.heart > 1000) { sfxT.heart = G.time; G.sfx('heart_beat', { vol: 0.6 }); }   // latido con el Frío > 85 %
     if (c.v >= CD.helado && !c.warned) { c.warned = true; G.sfx('cold_warn', { vol: 0.8 }); }
     else if (c.v < CD.helado - 10) c.warned = false;
   };
@@ -267,13 +276,14 @@
     var p = G.player, i, o;
     // ciclo de la ventisca: calma 25 s -> ráfaga 8 s (P4: Yarlak fuerza ráfagas por fase con T.bz.boss)
     BZS.t += dt;
-    if (!BZS.force) {
+    if (BZS.off) { BZS.gust = false; BZS.t = 0; }   // pruebas: sin ciclo de ráfagas (calma permanente)
+    else if (!BZS.force) {
       if (!BZS.gust && BZS.t >= BZ.calmMs) { BZS.gust = true; BZS.t = 0; G.sfx('wind_gust', { vol: 0.7 }); }
       else if (BZS.gust && BZS.t >= BZ.gustMs) { BZS.gust = false; BZS.t = 0; }
     } else BZS.gust = true;
     var ta = (BZS.gust ? BZ.gustA : BZ.calmA) * T.blizzardK(); if (BZS.boss > ta) ta = BZS.boss;
     BZS.a += (ta - BZS.a) * Math.min(1, dt / 700);
-    BZS.k = G.clamp((BZS.a - BZ.calmA * 0.5) / (BZ.gustA - BZ.calmA * 0.5), 0, 1);   // 0 = calma, 1 = ráfaga completa
+    var bk = T.blizzardK(); BZS.k = G.clamp((BZS.a - BZ.calmA * bk) / ((BZ.gustA - BZ.calmA) * bk), 0, 1);   // 0 = calma, 1 = ráfaga completa
     if ((BZS.windT -= dt) <= 0) { BZS.windT = 400; try { Assets.wind(G.state === 'play' ? 0.12 + 0.55 * BZS.k : 0); } catch (e) { /* sin audio */ } }
     if (G.state === 'play') T.coldUpdate(dt);
     // estalagmitas: sacudida y reconstrucción a los 45 s (aviso con anillo)
@@ -289,7 +299,34 @@
   // ================================================================= DIBUJO: suelo prerrenderizado (hielo negro, nieve firme, grietas)
   function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function cv(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  // Suelo: el arte (Assets.arena en el bioma 'tundra': hielo, parches de nieve, grietas, estalagmitas decorativas del borde) + las 2 repisas de nieve firme de la física (B.1.1);
+  // si el arte no estuviera, el suelo propio de ownGround()
+  function snowDisc(g, r, cx, cy, R) {
+    var E = D.edge, gr = g.createRadialGradient(cx, cy, Math.max(1, R - 8), cx, cy, R + E), j;
+    gr.addColorStop(0, 'rgba(206,220,238,0.97)'); gr.addColorStop(1, 'rgba(206,220,238,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, R + E, 0, 6.2832); g.fill();
+    g.fillStyle = 'rgba(206,220,238,0.97)'; g.beginPath(); g.arc(cx, cy, R, 0, 6.2832); g.fill();
+    var nd = Math.round(R * R / 38);
+    for (j = 0; j < nd; j++) {   // puntos crema
+      var a = r() * 6.2832, d = Math.sqrt(r()) * (R + E * 0.6); g.fillStyle = r() < 0.5 ? 'rgba(232,238,245,0.95)' : 'rgba(255,255,255,0.8)';
+      g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 1 + r() * 1.6, 0, 6.2832); g.fill();
+      if (j % 5 === 0) { g.fillStyle = 'rgba(150,175,205,0.5)'; g.beginPath(); g.arc(cx + Math.cos(a + 1) * d * 0.9, cy + Math.sin(a + 1) * d * 0.9, 1.2, 0, 6.2832); g.fill(); }
+    }
+    g.strokeStyle = 'rgba(70,100,150,0.55)'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, R + 1, 0, 6.2832); g.stroke();
+  }
+  T.art = null;
   T.buildGround = function () {
+    var c = null;
+    try {
+      if (Assets.getBiome() === 'tundra' && Assets.arena) {
+        var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL, snowR: patchR });
+        if (A && A.canvas && A.snow) { c = A.canvas; T.art = A; }
+      }
+    } catch (e) { c = null; }
+    if (c) { var g0 = c.getContext('2d'), r0 = rng(4242); D.ledges.forEach(function (k) { snowDisc(g0, r0, k[0], k[1], k[2]); }); return c; }
+    return ownGround();
+  }
+  function ownGround() {
     var W = G.AW, H = G.AH, c = cv(W, H), g = c.getContext('2d'), r = rng(31337), i, j, q;
     // hielo negro
     var bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#2a4f8a'); bg.addColorStop(0.5, '#27497f'); bg.addColorStop(1, '#223f72');
@@ -315,22 +352,8 @@
       g.strokeStyle = 'rgba(190,230,255,0.45)'; g.lineWidth = 1.5; path(0, -2);
       g.strokeStyle = 'rgba(8,18,44,0.55)'; g.lineWidth = 2; g.beginPath(); bx2 = x0 + len * 0.4; g.moveTo(bx2, y0 + len * sl * 0.4); g.lineTo(bx2 + 18, y0 + len * sl * 0.4 + 22); g.moveTo(x0 + len * 0.7, y0 + len * sl * 0.7); g.lineTo(x0 + len * 0.7 - 14, y0 + len * sl * 0.7 - 20); g.stroke();
     });
-    // nieve firme: disco crema con puntos y borde de transición de 24 px
-    function snow(cx, cy, R) {
-      var E = D.edge, gr = g.createRadialGradient(cx, cy, Math.max(1, R - 8), cx, cy, R + E);
-      gr.addColorStop(0, 'rgba(206,220,238,0.97)'); gr.addColorStop(1, 'rgba(206,220,238,0)');
-      g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, R + E, 0, 6.2832); g.fill();
-      g.fillStyle = 'rgba(206,220,238,0.97)'; g.beginPath(); g.arc(cx, cy, R, 0, 6.2832); g.fill();
-      var nd = Math.round(R * R / 38);
-      for (j = 0; j < nd; j++) {   // puntos crema
-        var a = r() * 6.2832, d = Math.sqrt(r()) * (R + E * 0.6); g.fillStyle = r() < 0.5 ? 'rgba(232,238,245,0.95)' : 'rgba(255,255,255,0.8)';
-        g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 1 + r() * 1.6, 0, 6.2832); g.fill();
-        if (j % 5 === 0) { g.fillStyle = 'rgba(150,175,205,0.5)'; g.beginPath(); g.arc(cx + Math.cos(a + 1) * d * 0.9, cy + Math.sin(a + 1) * d * 0.9, 1.2, 0, 6.2832); g.fill(); }
-      }
-      g.strokeStyle = 'rgba(70,100,150,0.55)'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, R + 1, 0, 6.2832); g.stroke();
-    }
-    D.patches.forEach(function (k) { snow(k[0], k[1], patchR); });
-    D.ledges.forEach(function (k) { snow(k[0], k[1], k[2]); });
+    D.patches.forEach(function (k) { snowDisc(g, r, k[0], k[1], patchR); });
+    D.ledges.forEach(function (k) { snowDisc(g, r, k[0], k[1], k[2]); });
     // pared: roca helada oscura con capa de nieve
     var m = G.WALL;
     g.fillStyle = '#0f1d38'; g.fillRect(0, 0, W, m); g.fillRect(0, H - m, W, m); g.fillRect(0, 0, m, H); g.fillRect(W - m, 0, m, H);
@@ -345,7 +368,7 @@
 
   // ---- Dibujo dinámico del suelo (en el mundo, antes de los sprites): anillo de calor de las hogueras
   T.drawGround = function (c) {
-    var t = G.time / 1000, i, f, p = G.player, tf = G.Tree && G.Tree.fx || {}, R = D.campfireR * (tf.brasaPecho ? 1.3 : 1);
+    var t = G.time / 1000, i, f, p = G.player, tf = G.Tree && G.Tree.fx || {}, R = T.heatR() * (tf.brasaPecho ? 1.3 : 1);
     for (i = 0; i < fires.length; i++) {
       f = fires[i]; if (f.x < G.cam.x - 140 || f.x > G.cam.x + G.W + 140 || f.y < G.cam.y - 140 || f.y > G.cam.y + G.VH + 140) continue;
       var inn = Math.hypot(p.x - f.x, p.y - f.y) <= R + p.r * 0.3;
@@ -378,9 +401,14 @@
     c.restore();
   }
   T.drawPillar = drawPillar;
-  function drawPillarItem(c, it) { var o = it.o; drawPillar(c, o.x, o.y, { shake: o.shake, r: o.r }); }
+  function drawPillarItem(c, it) {
+    var o = it.o;
+    if (typeof Assets.drawIcePillar === 'function') { Assets.drawIcePillar(c, o.x, o.y, { hp: o.dead ? 0 : o.hp / o.max, rebuild: o.dead ? G.clamp(o.t / D.pillarRegrow, 0, 1) : 0, struck: o.shake > 0 }); return; }   // arte P3 (obs_ice_pillar; con hp 0 y rebuild > 0 dibuja el aviso de reconstrucción)
+    if (!o.dead) drawPillar(c, o.x, o.y, { shake: o.shake, r: o.r });
+  }
   function drawFireItem(c, it) {
-    var f = it.o, t = performance.now(), x = f.x, y = f.y + 6;
+    var f = it.o, t = performance.now(), x = f.x, y = f.y + 6, tf = G.Tree && G.Tree.fx || {};
+    if (typeof Assets.drawCampfire === 'function') { Assets.drawCampfire(c, f.x, f.y, t, { r: T.heatR() * (tf.brasaPecho ? 1.3 : 1), ring: false, light: true }); return; }   // arte P3 (fx_campfire + luz aditiva); el aro de calor lo dibuja drawGround
     c.save();
     c.fillStyle = 'rgba(8,4,14,0.4)'; c.beginPath(); c.ellipse(x, y + 4, 22, 8, 0, 0, 6.2832); c.fill();
     c.lineWidth = 3; c.strokeStyle = '#1b1124'; c.lineCap = 'round';
@@ -390,7 +418,7 @@
   }
   T.items = function (list) {
     var i, o, cx = G.cam.x, cy = G.cam.y, vw = G.W, vh = G.VH;
-    for (i = 0; i < pillars.length; i++) { o = pillars[i]; if (o.dead || o.x < cx - 60 || o.x > cx + vw + 60 || o.y < cy - 80 || o.y > cy + vh + 100) continue; list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: drawPillarItem, o: o }); }
+    for (i = 0; i < pillars.length; i++) { o = pillars[i]; if ((o.dead && !(typeof Assets.drawIcePillar === 'function')) || o.x < cx - 60 || o.x > cx + vw + 60 || o.y < cy - 80 || o.y > cy + vh + 100) continue; list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: drawPillarItem, o: o }); }
     for (i = 0; i < fires.length; i++) { o = fires[i]; if (o.x < cx - 100 || o.x > cx + vw + 100 || o.y < cy - 100 || o.y > cy + vh + 100) continue; list.push({ y: o.y + 6, ux: o.x, uy: o.y, draw: drawFireItem, o: o }); }
   };
 
@@ -411,23 +439,34 @@
     gr.addColorStop(0, 'rgba(225,238,255,0)'); gr.addColorStop(1, 'rgba(225,238,255,' + BZ.edgeA + ')'); g.fillStyle = gr; g.fillRect(0, 0, G.W, G.H);
     edgeCache = c; return c;
   }
+  var hzC = null, hzG = null, hzN = 0, hzQ = '';
   T.hazeAlpha = function () { return BZS.a; };
   T.drawHaze = function (c) {
-    var Q = G.Q, p = G.player, K = G.Proj.K, sx = p.x - G.cam.x, sy = (p.y - G.cam.y) * K, W = G.W, H = G.H, a = BZS.a, cr = BZ.clearR + (T.opts.light ? BZ.lightR : 0);
-    var t = G.time / 1000;
+    var Q = G.Q, p = G.player, K = G.Proj.K, sx = p.x - G.cam.x, sy = (p.y - G.cam.y) * K, a = BZS.a;
+    if (typeof Assets.drawBlizzard === 'function') {   // arte P3: bruma + rayas (Alta 2 capas, Media 1, Baja solo degradado en los bordes); clear 330 (+80 con "Ventisca ligera")
+      var cl = BZ.clearR + (T.opts.light ? BZ.lightR : 0), o = { w: G.W, h: G.H, px: sx, py: sy, clear: cl, outer: BZ.edgeR + (cl - BZ.clearR), quality: Q.level, wind: 0.12 + 0.23 * BZS.k };
+      if (Q.level === 'baja') { Assets.drawBlizzard(c, performance.now(), a, o); return; }   // Baja: solo degradado estático (0,4 ms)
+      // Alta / Media: la bruma cuesta ~2,5-3 ms por fotograma (la mayor parte del coste de la Tundra): se pinta en una caché de pantalla cada 2.º fotograma (30 Hz; las rayas se mueven a 90-350 px/s, no se nota) y se vuelca cada uno (0,25 ms)
+      if (!hzC) { hzC = cv(G.W, G.H); hzG = hzC.getContext('2d'); }
+      if ((hzN++ & 1) === 0 || hzQ !== Q.level) { hzQ = Q.level; hzG.clearRect(0, 0, G.W, G.H); Assets.drawBlizzard(hzG, performance.now(), a, o); }
+      c.drawImage(hzC, 0, 0);
+      return;
+    }
+    T.drawHazeOwn(c, sx, sy, a);
+  };
+  T.drawHazeOwn = function (c, sx, sy, a) {   // reserva si el arte no está
+    var Q = G.Q, W = G.W, H = G.H, cr = BZ.clearR + (T.opts.light ? BZ.lightR : 0), t = G.time / 1000;
     if (Q.level === 'baja') { c.save(); c.globalAlpha = Math.min(1, a / BZ.edgeA); c.drawImage(edgeCanvas(), 0, 0); c.restore(); return; }
     c.save();
-    // bruma: transparente dentro de cr, sube hasta edgeA a edgeR (+80 con "Ventisca ligera")
     var gr = c.createRadialGradient(sx, sy, cr, sx, sy, BZ.edgeR + (cr - BZ.clearR));
     gr.addColorStop(0, 'rgba(225,238,255,0)'); gr.addColorStop(1, 'rgba(225,238,255,' + a.toFixed(3) + ')');
     c.fillStyle = gr; c.fillRect(0, 0, W, H);
-    // rayas de nieve en diagonal (loseta desplazándose); inclinación del viento de 20 grados durante las ráfagas
     var n = Q.level === 'media' ? 6 : 15, tile = snowTile(n), pat = c.createPattern(tile, 'repeat');
     if (pat) {
       var tilt = BZ.tilt * Math.PI / 180 * BZS.k, sp = 90 + 260 * BZS.k, ox = (t * sp * 0.5) % 256, oy = (t * sp * 0.86) % 256;
       for (var ring = 0; ring < (Q.level === 'media' ? 1 : 2); ring++) {
         c.save(); c.beginPath(); c.rect(0, 0, W, H); c.arc(sx, sy, cr + ring * 95, 0, 6.2832, true); c.clip('evenodd');
-        c.translate(W / 2, H / 2); c.rotate(tilt); c.translate(ox - W / 2 - 256, oy - H / 2 - 256);   // la loseta baja y a la izquierda
+        c.translate(W / 2, H / 2); c.rotate(tilt); c.translate(ox - W / 2 - 256, oy - H / 2 - 256);
         c.globalAlpha = Math.min(1, a * (Q.level === 'media' ? 1.9 : 1.1)); c.fillStyle = pat; c.fillRect(-700, -700, W + 1400, H + 1400);
         c.restore();
       }
@@ -445,8 +484,7 @@
       var gr = g.createRadialGradient(q[0], q[1], 10, q[0], q[1], 330); gr.addColorStop(0, 'rgba(225,244,255,0.95)'); gr.addColorStop(0.5, 'rgba(160,210,250,0.4)'); gr.addColorStop(1, 'rgba(120,180,240,0)');
       g.fillStyle = gr; g.fillRect(0, 0, W, H);
     });
-    // cristales de escarcha en las esquinas
-    for (var i = 0; i < 130; i++) {
+    for (var i = 0; i < 130; i++) {   // cristales de escarcha en las esquinas
       var q2 = corners[i % 4], a = r() * 6.2832, d = r() * 260, x = q2[0] + Math.cos(a) * d * (q2[0] ? -1 : 1) * Math.abs(Math.cos(a)), y = q2[1] + Math.sin(a) * d * (q2[1] ? -1 : 1) * Math.abs(Math.sin(a)), l = 8 + r() * 22;
       g.strokeStyle = 'rgba(245,252,255,' + (0.35 + r() * 0.5) + ')'; g.lineWidth = 1 + r(); g.beginPath();
       for (var k = 0; k < 3; k++) { var aa = a + k * 1.0472; g.moveTo(x - Math.cos(aa) * l, y - Math.sin(aa) * l); g.lineTo(x + Math.cos(aa) * l, y + Math.sin(aa) * l); }
@@ -454,28 +492,30 @@
     }
     frostCache = c; return c;
   }
-  var vigCache = null;
+  // Escarcha del Frío en bordes y esquinas (se lee sin mirar la barra, también en móvil): arte Assets.drawColdVignette (nada < 20 %, suave 20-40, clara >= 40, intensa >= 70, blanqueada a 100)
   T.drawVignette = function (c) {
-    var Q = G.Q, v = G.cold.v, a;
-    if (Q.vig) { if (!vigCache) { vigCache = cv(G.W, G.H); var g = vigCache.getContext('2d'), gr = g.createRadialGradient(G.W / 2, G.H / 2, 220, G.W / 2, G.H / 2, 620); gr.addColorStop(0, 'rgba(6,14,36,0)'); gr.addColorStop(1, 'rgba(6,14,36,0.62)'); g.fillStyle = gr; g.fillRect(0, 0, G.W, G.H); } c.drawImage(vigCache, 0, 0); }
-    // escarcha en las esquinas: >= 40 % empieza, 100 % cubre (la Escarcha mantiene un mínimo visible)
-    a = G.cold.frozenT > 0 ? 0.85 : G.clamp((v - CD.warn) / (100 - CD.warn), 0, 1) * 0.75;
+    if (!coldOn) return;
+    var v = G.cold.frozenT > 0 ? 100 : G.cold.v;
+    if (typeof Assets.drawColdVignette === 'function') { if (v >= 15) Assets.drawColdVignette(c, G.W, G.H, v, performance.now()); return; }
+    var a = G.cold.frozenT > 0 ? 0.85 : G.clamp((v - CD.warn) / (100 - CD.warn), 0, 1) * 0.75;
     if (a > 0.02) { c.save(); c.globalAlpha = a; c.drawImage(frostCanvas(), 0, 0); c.restore(); }
   };
   T.drawHud = function (c) {
     if (!T.on || !coldOn) return;
-    var k = G.cold, x = 16, y = 42, w = 140, h = 10, f = G.clamp(k.v / 100, 0, 1), st = T.state();
+    var k = G.cold, x = 16, y = 40, st = T.state();
+    if (typeof Assets.drawColdBar === 'function') {   // arte P3: copo + barra 140x10 + "NN%" con marcas en 40 y 70
+      Assets.drawColdBar(c, x, y, k.v, performance.now(), { w: 140, h: 10, frozen: k.frozenT > 0 });
+      var lab0 = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : k.hearth ? 'CALOR' : '';
+      if (lab0) G.txt(c, lab0, x + 26, y + 22, 12, st === 'escarcha' ? '#bfeaff' : k.hearth ? '#ffb347' : '#9fd8ff', 'left');   // bajo la barra (la lista de combos baja 16 px en la Tundra)
+      return;
+    }
+    var w = 140, h = 10, f = G.clamp(k.v / 100, 0, 1);
     c.fillStyle = 'rgba(10,6,18,0.8)'; c.fillRect(x - 3 + 22, y - 3, w + 6, h + 6);
     c.fillStyle = '#12243f'; c.fillRect(x + 22, y, w, h);
-    var gr = c.createLinearGradient(x + 22, 0, x + 22 + w, 0); gr.addColorStop(0, '#6ac8ff'); gr.addColorStop(0.7, '#bfeaff'); gr.addColorStop(1, '#ffffff');
-    c.fillStyle = st === 'escarcha' ? '#e8f6ff' : st === 'helado' ? '#d8f0ff' : G.fg(gr, '#9fd8ff'); c.fillRect(x + 22, y, w * f, h);
-    c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(x + 22, y, w * f, 3);
-    c.fillStyle = 'rgba(10,6,18,0.9)'; c.fillRect(x + 22 + w * CD.warn / 100 - 1, y - 2, 2, h + 4); c.fillRect(x + 22 + w * CD.helado / 100 - 1, y - 2, 2, h + 4);   // marcas de 40 % y 70 %
-    // icono (arte: icon_frio) + número
-    if (G.hasSpr('icon_frio')) { var ic = Assets.sprite('icon_frio', 0), is = 20; c.drawImage(ic, x, y + h / 2 - is / 2, is, is); }
-    else { c.strokeStyle = '#bfeaff'; c.lineWidth = 2; c.beginPath(); for (var q = 0; q < 3; q++) { var a = q * 1.0472; c.moveTo(x + 10 + Math.cos(a) * 8, y + 5 + Math.sin(a) * 8); c.lineTo(x + 10 - Math.cos(a) * 8, y + 5 - Math.sin(a) * 8); } c.stroke(); }
-    var warm = k.hearth, lab = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : warm ? 'CALOR' : '';
-    G.txt(c, Math.round(k.v) + '%', x + 22 + w + 8, y + 6, 12, st === 'ok' ? '#d8f0ff' : '#ffffff', 'left');
-    if (lab) G.txt(c, lab, x + 22, y + 22, 10, st === 'escarcha' ? '#bfeaff' : warm ? '#ffb347' : '#9fd8ff', 'left');
+    c.fillStyle = st === 'escarcha' ? '#e8f6ff' : st === 'helado' ? '#d8f0ff' : '#9fd8ff'; c.fillRect(x + 22, y, w * f, h);
+    c.fillStyle = 'rgba(10,6,18,0.9)'; c.fillRect(x + 22 + w * CD.warn / 100 - 1, y - 2, 2, h + 4); c.fillRect(x + 22 + w * CD.helado / 100 - 1, y - 2, 2, h + 4);
+    G.txt(c, Math.round(k.v) + '%', x + 22 + w + 8, y + 6, 12, '#d8f0ff', 'left');
+    var lab = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : k.hearth ? 'CALOR' : '';
+    if (lab) G.txt(c, lab, x + 22, y + 22, 12, '#9fd8ff', 'left');
   };
 })();

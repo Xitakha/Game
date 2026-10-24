@@ -279,7 +279,7 @@
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
       if (biome === 'tundra') biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P3: la Tundra sigue bloqueada (sin jefe hasta la P4): solo ?biome=tundra
     }
-    G.curBiome = biome; try { Assets.setBiome(biome === 'tundra' ? 'bosque' : biome); } catch (e2) { /* sin bioma */ }   // la Tundra no es un bioma de assets.js: usa el de 'bosque' para lo genérico y dibuja su propio suelo (tundra.js)
+    G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome('bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
     G.B.mat.sync();   // debilidades por material (A.8): solo en biomas con familia activa (ready) salvo ?mat=
     G.Enemies.initPonds();   // P2 (A.5, M5): charcos fijos del Asfódelo (G.ponds), vacío en los demás biomas
@@ -434,8 +434,8 @@
       P.down(ctx);
     }
     var Q = G.Q;
-    if (!TN && Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
-    if (!TN && Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
+    if (Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
+    if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
     ctx.restore();
     if (TN) {   // P3: bruma de la ventisca (pantalla) y, por encima de ella, telegrafías, proyectiles enemigos y jefe (B.1.3: nunca se tapan)
       G.Tundra.drawHaze(ctx);
@@ -446,8 +446,9 @@
       G.Boss.drawGround(ctx);
       G.Enemies.drawProjectiles(ctx, 2);
       ctx.restore();
-      G.Tundra.drawVignette(ctx);
-    } else if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
+    }
+    if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
+    if (TN) G.Tundra.drawVignette(ctx);   // escarcha del Frío en bordes y esquinas
     G.Hud.draw(ctx);
     drawJoy(ctx);
     if (G.state === 'play') G.Sys.drawBar(ctx);
@@ -477,7 +478,7 @@
     G.Tree.sync();
     var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
-    G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : Assets.getBiome();
+    G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
     if (G.bossUrl || G.huntUrl) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
