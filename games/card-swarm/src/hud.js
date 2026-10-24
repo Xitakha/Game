@@ -56,6 +56,23 @@
     G.Cards.drawComboLines(c, false);
   }
 
+  // M9 (A.5): icono de RELOJ ROTO a la izquierda de la mano mientras las cartas recargan más lento (zona del Lirio del olvido); el aro se vacía con los 2 s de gracia
+  H.drawCdSlow = function (c, p) {
+    if (!(p.cdSlowT > 0) || p.dead) return;
+    var x = 250, y = 476, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
+    c.save(); c.globalAlpha = pulse;
+    c.fillStyle = 'rgba(8,4,14,0.8)'; c.beginPath(); c.arc(x, y, r + 4, 0, 6.283); c.fill();
+    if (G.hasSpr('icon_olvido')) { var ic = Assets.sprite('icon_olvido', Math.floor(G.time / 500) % 2); c.drawImage(ic, Math.round(x - ic.width / 2), Math.round(y - ic.height / 2)); }   // arte P2: reloj roto turquesa (32x32)
+    else {
+      c.fillStyle = '#0f3f3a'; c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill(); c.stroke();
+      c.strokeStyle = '#d8fff4'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 1, y - 10); c.moveTo(x, y); c.lineTo(x + 8, y + 3); c.stroke();
+      c.strokeStyle = '#ff4a4a'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(x - 4, y - r - 1); c.lineTo(x + 1, y - 5); c.lineTo(x - 3, y + 1); c.lineTo(x + 3, y + 7); c.lineTo(x + 1, y + r + 1); c.stroke();
+    }
+    c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r + 7, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke();
+    c.restore();
+    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, 11, '#7fffe0', 'center');
+  };
+
   function drawCombosList(c) {
     var y = 64, any = false, t = G.time / 1000;
     G.Cards.combos.forEach(function (cb) {
@@ -104,6 +121,7 @@
     }
     // mano y XP
     drawHand(c);
+    H.drawCdSlow(c, p);
     var need = B.xpNeed(p.level);
     c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - 7, G.W, 7);
     c.fillStyle = '#4dd870'; c.fillRect(0, G.H - 6, G.W * G.clamp(p.xp / need, 0, 1), 4);

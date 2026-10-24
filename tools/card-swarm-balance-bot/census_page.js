@@ -17,8 +17,8 @@ window.installCensus = function () {
     oU.call(G.Waves, dt);
     if (G.state !== 'play' || G.time - last < 1500) return;
     last = G.time;
-    var m = Math.floor((G.time - G.t0) / 60000), c = (G.Waves.census || legacyCensus)(), S = C.min[m] || (C.min[m] = { n: 0, alive: 0, byType: {}, byTier: [0, 0, 0, 0], byFam: {}, boss: 0 }), k;
-    S.n++; S.alive += c.alive; if (G.Enemies.boss()) S.boss++;
+    var m = Math.floor((G.time - G.t0) / 60000), c = (G.Waves.census || legacyCensus)(), S = C.min[m] || (C.min[m] = { n: 0, alive: 0, hid: 0, byType: {}, byTier: [0, 0, 0, 0], byFam: {}, boss: 0 }), k;
+    S.n++; S.alive += c.alive; S.hid = (S.hid || 0) + (c.hidden || 0); if (G.Enemies.boss()) S.boss++;
     for (k in c.byType) S.byType[k] = (S.byType[k] || 0) + c.byType[k];
     for (k in c.byFam) S.byFam[k] = (S.byFam[k] || 0) + c.byFam[k];
     for (var i = 0; i < 4; i++) S.byTier[i] += c.byTier[i];

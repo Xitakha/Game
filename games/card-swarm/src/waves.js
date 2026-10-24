@@ -33,7 +33,7 @@
     var pos = spawnPos(), E = G.Enemies;
     var el = E.spawn(type, pos[0], pos[1]), vr = G.curBiome === 'cripta' && type === 'mini_bulwark' ? 'warden' : G.curBiome === 'asfodelo' && type === 'mini_hive' ? 'wraith' : null;
     if (vr) E.variant(el, vr);   // guardián propio del bioma (J3)
-    if (type === 'mini_bulwark') { E.spawn('shield', pos[0] + 45, pos[1] + 20); E.spawn('shield', pos[0] - 45, pos[1] + 20); }
+    if (type === 'mini_bulwark') { var esc = B.famOf() && G.curBiome === 'asfodelo' ? 'worm' : 'shield'; E.spawn(esc, pos[0] + 45, pos[1] + 20); E.spawn(esc, pos[0] - 45, pos[1] + 20); }   // el Asfódelo no tiene Escudero: el Coloso trae 2 Almas errantes
     G.Hud.banner('¡GUARDIÁN: ' + (vr ? G.Enemies.VARIANTS[vr].name : B.enemy[type].name) + '!', 2000, '#ffb347');
     G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 });
     W.eliteBoost = 25000;
@@ -55,6 +55,9 @@
     } else if (pk.layout === 'pincer') {   // pareja opuesta + uno por un flanco
       var m2 = mirror(pos); E.spawn(A[0], pos[0], pos[1]); E.spawn(A[0], m2[0], m2[1]);
       var pa = G.rnd(0, 6.283); E.spawn(Z[0], p.x + Math.cos(pa) * 520, p.y + Math.sin(pa) * 420);
+    } else if (pk.layout === 'group') {   // P2 (Pantano / Coro): n del primer rol (las Sanguijuelas se reparten solas por los charcos) y una nube del segundo rol
+      for (j = 0; j < A[1]; j++) E.spawn(A[0], pos[0] + G.rnd(-40, 40), pos[1] + G.rnd(-40, 40), A[0] === 'leech' ? { inPond: true } : undefined);
+      if (Z) for (j = 0; j < Z[1]; j++) E.spawn(Z[0], pos[0] + G.rnd(-50, 50), pos[1] + G.rnd(-50, 50));
     } else {   // 'field': dos zonificadores juntos y una nube del segundo rol
       E.spawn(A[0], pos[0], pos[1]); E.spawn(A[0], pos[0] + 60, pos[1] + 30);
       for (j = 0; j < Z[1]; j++) E.spawn(Z[0], pos[0] + G.rnd(-50, 50), pos[1] + G.rnd(-50, 50));
@@ -71,11 +74,12 @@
   }
   W.capOf = capOf;
 
-  // CENSO (A.2, herramienta tools/card-swarm-balance-bot/census.js): enemigos normales vivos por rol, por tier y por nombre de familia en este instante.
+  // CENSO (A.2, herramienta tools/card-swarm-balance-bot/census.js): enemigos normales VISIBLES vivos por rol, por tier y por nombre de familia en este instante (`hidden` = ocultos / muñones, aparte).
   W.census = function () {
-    var out = { alive: 0, byType: {}, byTier: [0, 0, 0, 0], byFam: {}, fam: !!B.famOf() }, i, e, f = B.famOf();
+    var out = { alive: 0, hidden: 0, byType: {}, byTier: [0, 0, 0, 0], byFam: {}, fam: !!B.famOf() }, i, e, f = B.famOf();
     for (i = 0; i < G.enemies.length; i++) {
       e = G.enemies[i]; if (e.dead || e.partOf || e.type === 'boss' || B.enemy[e.type].elite) continue;
+      if (e.hidden || e.st === 'stump') { out.hidden++; continue; }   // P2: la Sanguijuela oculta en su charco y el muñón de la Cabeza menor no son visibles ni amenazan: se cuentan aparte
       var t = B.tierOf(e.type), nm = f && f.use[e.type] ? f.use[e.type].name : e.type;
       out.alive++; out.byType[e.type] = (out.byType[e.type] || 0) + 1; if (t != null) out.byTier[t]++; out.byFam[nm] = (out.byFam[nm] || 0) + 1;
     }
@@ -124,7 +128,7 @@
     if (W.t < 1500) return;
     W.t -= 1500;
     var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
-    var bp = B.bp(m) * (bm ? bm.mul : 1);
+    var fbp = B.famOf(), bp = B.bp(m) * (bm ? bm.mul : 1) * (fbp && fbp.bp && m >= (fbp.bpFrom || 0) ? fbp.bp : 1);   // fam.bp = multiplicador del presupuesto por pulso desde el minuto bpFrom (Asfódelo 0,95 desde el 2: sus emboscadores y cabezas fijas viven más y no gastan presupuesto al reponerse; censo A.2)
     W.budget = Math.min(W.budget + bp, bp * 2.5);
     var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.Q.enemyMul)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
     if (bm && bm.mul <= 0) return;

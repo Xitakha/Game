@@ -5,7 +5,7 @@
    - G.B.mat          = tabla de materiales x etiquetas (A.8) + G.B.matMul(e, tag), aplicada en Combat.deal / Combat.dot
    - G.B.packsLegacy  = los 4 packs actuales (estructura de datos que consume waves.js)
    P0 = infraestructura (entradas identidad). P1 (v5.1): Bosque y Cripta tienen su familia propia y `ready:true` (tablas A.3 / A.4 de DESIGN-v5-biomas.md);
-   Asfodelo sigue con el roster legado (ready:false) hasta P2. La tabla de materiales (A.8) se enciende sola solo en biomas con familia activa (G.B.mat.sync()).
+   P2 (v5.2): Asfódelo también tiene su familia propia (A.5) y `ready:true`. La tabla de materiales (A.8) se enciende sola solo en biomas con familia activa (G.B.mat.sync()).
    Parámetros de URL: ?fam=0 (fuerza el roster legado), ?fam=1 (fuerza las familias donde existan), ?mat=1|0 (tabla de materiales).
    Ver README, sección "Familias por bioma (P0)". */
 (function () {
@@ -80,7 +80,9 @@
     // ---- BOSQUE (P1, A.3): el rebaño del Pastor. 8 tipos propios; Escudero/Bomba/Espectro/Ascua ya no existen aquí (decisión del dueño) y los guardianes (Coloso, Madre Colmena) se quedan.
     //      Suma de w por tier = 55 / 44 / 29 / 25 (A.2). `proj`/`sfx` = proyectil y SFX propios de la telegrafía; `sc` = escala de cuerpo y sprite.
     bosque: {
-      name: 'El rebaño del Pastor', ready: true, boss: 'pastor', ponds: 0, star: null, light: { worm: 1, archer: 1, fanner: 1, moth: 1 }, amb: amb(), packs: [
+      name: 'El rebaño del Pastor', ready: true, boss: 'pastor', ponds: 0, star: null, light: { worm: 1, archer: 1, fanner: 1, moth: 1 }, amb: amb(),
+      host: [['plate', 0.009], ['static', 0.014]],   // P2 economía: Placa y Estática ya no caen en el Bosque (sin Escudero / Espectro): tiradas extra pequeñas por baja (la Mecha la da el Perro pastor)
+      packs: [
         { id: 'cruce',    layout: 'cross', parts: [['fanner', 2]] },                    // 2 Zarzales mayores en lados opuestos
         { id: 'campo',    layout: 'field', parts: [['sower', 2], ['worm', 4]] },       // 2 Micelios + 4 Corderos
         { id: 'pastoreo', layout: 'cross', parts: [['dog', 2], ['worm', 3]] },         // 2 Perros pastores opuestos + 3 Corderos
@@ -91,9 +93,9 @@
         worm:    U('Cordero corrupto', 'lana',    { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, spr: 'enemy_bos_cordero', sfx: { spawn: 'lamb_bleat' } }),
         archer:  U('Zarzal menor',     'vegetal', { tier: 1, from: 45000,  w: 26, cost: 3, maxAlive: 12, hp: 1.2, spr: 'enemy_bos_zarzal', proj: 'proj_thorn_small', fb: 'thorn', sfx: { shoot: 'thorn_shot' } }),
         fanner:  U('Zarzal mayor',     'vegetal', { tier: 1, from: 90000,  w: 18, cost: 4, maxAlive: 8,  spr: 'enemy_bos_zarzal', sc: 1.15, skin: { tint: '#2a1236', a: 0.38 }, sfx: { shoot: 'thorn_shot' } }),
-        boar:    U('Jabalí',           'carne',   { tier: 2, from: 120000, w: 14, cost: 5, maxAlive: 8 }),
+        boar:    U('Jabalí',           'carne',   { tier: 2, from: 120000, w: 14, cost: 5, maxAlive: 8, drop: ['fang', 0.11] }),   // P2 economía: Colmillo 0,14 -> 0,11 (el Perro ya no suelta Colmillo)
         moth:    U('Polilla de lana',  'lana',    { tier: 2, from: 240000, w: 15, cost: 4, maxAlive: 6, spd: 0.9, spr: 'enemy_bos_polilla', proj: 'proj_wool_orb', orbSlow: [0.30, 2000], sfx: { shoot: 'wool_puff', move: 'moth_flutter' } }),
-        dog:     U('Perro pastor',     'lana',    { tier: 3, from: 165000, w: 8,  cost: 5, maxAlive: 3, capGrow: 1.3, spr: 'enemy_bos_perro' }),
+        dog:     U('Perro pastor',     'lana',    { tier: 3, from: 165000, w: 8,  cost: 5, maxAlive: 2, capGrow: 1, drop: ['wick', 0.17], spr: 'enemy_bos_perro' }),   // P2: tope 2 (antes 3 -> 4) para que no pase del 10 % de los enemigos en pantalla (medido 11,9 % de media, 15 % máx.); drop = Mecha (economía inicial, ver loot.js)
         sower:   U('Micelio',          'vegetal', { tier: 3, from: 270000, w: 9,  cost: 5, maxAlive: 3, capGrow: 1.7, sfx: { tele: 'spore_puff' } }),
         warlock: U('Zampoñero',        'carne',   { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 2, capGrow: 2, spr: 'enemy_bos_zamponero', sfx: { tele: 'zampona_pipe' } })
       }
@@ -119,14 +121,27 @@
         scorcher:   U('Ascua',              'magma',    { tier: 3, from: 360000, w: 8,  cost: 6, maxAlive: 3 })
       }
     },
+    // ---- ASFODELO (P2, A.5): el río de Letea. 8 tipos; no usa archer/fanner/bomb/shield/blinker. 6 charcos fijos (G.ponds, r 36). Las invocaciones de Letea (Plañideras = 3 `moth`) son Medusas heladas.
+    //      Suma de w por tier = 55 / 44 / 29 / 25. `fbSpr`/`fbSkin` = sprite existente teñido que se usa mientras el sprite propio no exista (nunca placeholder si hay arte).
+    //      nosep = M10 (sin separación entre enemigos), hop = M6 (salto balístico), eel = M8 (línea instantánea), olvido = M9 (zona turquesa + p.cdSlow), regrow = M7 (rebrote / cauterización).
     asfodelo: {
-      name: 'El río de Letea', ready: false, boss: 'letea', ponds: 0, star: null, light: light(), amb: amb(), packs: B.packsLegacy,
-      use: fill({
-        worm: U('Alma errante', 'espectro'), archer: U('Sanguijuela', 'pantano'), fanner: U('Rana ácida', 'pantano'),
-        boar: U('Cabeza menor', 'pantano', { mx: { fire: 1.25 } }), moth: U('Medusa helada', 'pantano', { mx: { fire: 1.25 } }),
-        sower: U('Lirio del olvido', 'vegetal'), warlock: U('Sacerdotisa ahogada', 'espectro'), scorcher: U('Anguila eléctrica', 'pantano', { mx: { lightning: 0.75, ice: 1 } }),
-        shield: U('Guardia ahogado', 'pantano', { host: true }), bomb: U('Bomba', 'pantano', { host: true }), blinker: U('Espectro', 'espectro', { host: true })
-      })
+      name: 'El río de Letea', ready: true, boss: 'letea', ponds: 6, bp: 1.0, bpFrom: 2, star: null, light: { worm: 1, leech: 1, boar: 1 }, amb: amb(), packs: [
+        { id: 'pantano', layout: 'group',  parts: [['leech', 3], ['worm', 3]] },          // Pantano: 3 Sanguijuelas (cada una en su charco) + 3 Almas errantes
+        { id: 'pinza',   layout: 'pincer', parts: [['scorcher', 2], ['moth', 1]] },        // Pinza eléctrica: 2 Anguilas opuestas + 1 Medusa
+        { id: 'lirios',  layout: 'field',  parts: [['sower', 2], ['worm', 4]] },           // Campo de lirios: 2 Lirios + 4 Almas
+        { id: 'coro',    layout: 'group',  parts: [['warlock', 1], ['worm', 4]] }          // Coro: Sacerdotisa + 4 Almas
+      ],
+      lens: { best: ['lightning', 'poison'], worst: ['ice', 'steel', 'blood'] },
+      use: {
+        worm:     U('Alma errante',        'espectro', { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, hp: 0.9, spd: 1.1, nosep: true, alpha: 0.8, spr: 'enemy_asf_alma_errante', fbSpr: 'worm', fbSkin: { tint: '#8fe6d8', a: 0.4 }, sfx: { spawn: 'drown_whisper', die: 'drown_wail' } }),
+        leech:    U('Sanguijuela',         'pantano',  { tier: 1, from: 45000,  w: 26, cost: 3, maxAlive: 7, spr: 'enemy_asf_sanguijuela', fbSpr: 'worm', fbSkin: { tint: '#7a1830', a: 0.6 }, sfx: { tele: 'pond_bubble', lunge: 'leech_lunge', swim: 'pond_swim' } }),
+        boar:     U('Rana ácida',          'pantano',  { tier: 1, from: 90000,  w: 18, cost: 4, maxAlive: 8,  hp: 0.5, dmg: 10 / 14, hop: true, spr: 'enemy_asf_rana', fbSpr: 'boar', fbSkin: { tint: '#7be34a', a: 0.5 }, sfx: { tele: 'frog_crouch', hop: 'frog_hop', land: 'frog_land', splash: 'frog_splash' } }),
+        headlet:  U('Cabeza menor',        'pantano',  { tier: 2, from: 120000, w: 14, cost: 5, maxAlive: 3,  mx: { fire: 1.25 }, regrow: { ms: 8000, hp: 0.6, max: 2 }, spr: 'enemy_asf_cabeza_menor', fbSpr: 'warlock', fbSkin: { tint: '#2f9a8a', a: 0.55 }, sfx: { tele: 'head_emerge', bite: 'head_bite', regrow: 'head_regrow', burn: 'head_burn' } }),
+        moth:     U('Medusa helada',       'pantano',  { tier: 2, from: 210000, w: 15, cost: 4, maxAlive: 5,  hp: 1.1, spd: 0.9, mx: { fire: 1.25 }, proj: 'proj_frost_orb', orbSlow: [0.35, 2000], spr: 'enemy_asf_medusa', fbSpr: 'enemy_moth', fbSkin: { tint: '#7fe8e0', a: 0.3 }, sfx: { move: 'medusa_charge', shoot: 'medusa_throw', brk: 'orb_shatter' } }),
+        sower:    U('Lirio del olvido',    'vegetal',  { tier: 3, from: 270000, w: 9,  cost: 5, maxAlive: 3, capGrow: 1.7, dmg: 0.5, olvido: true, spr: 'enemy_asf_lirio', fbSpr: 'enemy_sower', fbSkin: { tint: '#7fffe0', a: 0.4 }, sfx: { tele: 'olvido_chime', sow: 'olvido_sow', hum: 'olvido_hum' } }),
+        scorcher: U('Anguila eléctrica',   'pantano',  { tier: 3, from: 315000, w: 8,  cost: 6, maxAlive: 3, capGrow: 1.2, hp: 0.9, spd: 1.1, dmg: 14 / 12, mx: { lightning: 0.75, ice: 1 }, eel: true, spr: 'enemy_asf_anguila', fbSpr: 'enemy_scorcher', fbSkin: { tint: '#ffe45a', a: 0.4 }, sfx: { tele: 'eel_charge', zap: 'eel_zap', dash: 'eel_dash' } }),
+        warlock:  U('Sacerdotisa ahogada', 'espectro', { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 3, capGrow: 1.2, spr: 'enemy_asf_sacerdotisa', fbSpr: 'warlock', fbSkin: { tint: '#33c8b8', a: 0.4 }, sfx: { tele: 'priestess_chant', summon: 'priestess_summon' } })
+      }
     },
     // Esqueletos de los biomas nuevos (P3 / P5): use vacío = nunca activos, ni siquiera con ?fam=1 (cae al roster legado).
     tundra: { name: 'La manada de Yarlak', ready: false, boss: 'yarlak', ponds: 0, star: null, light: {}, amb: {}, packs: [], use: {} },
@@ -176,7 +191,14 @@
     salamander: { name: 'Salamandra (charco de lava)',          ms: 600, exit: 35, strong: true },
     chainer:  { name: 'Guardián de cadenas (cadena)',           ms: 700, exit: 30, strong: true },
     blinker:  { name: 'Alma prisionera (desvanece + tajo)',     ms: 850, exit: 60, strong: true },
-    scorcher: { name: 'Ascua (carga)',                          ms: 600, exit: 30, strong: true }
+    scorcher: { name: 'Ascua (carga)',                          ms: 600, exit: 30, strong: true },
+    // ---- P2 (Asfódelo, A.5)
+    leech:    { name: 'Sanguijuela (emboscada: anillo + línea)', ms: 500, exit: 30, strong: true },
+    frog:     { name: 'Rana ácida (agacharse + círculo de aterrizaje)', ms: 500, exit: 30, strong: true },
+    emerge:   { name: 'Cabeza menor (brota del charco, anillo r 32)',  ms: 700, exit: 42, strong: true },
+    headlet:  { name: 'Cabeza menor (mordisco, anillo r 70)',    ms: 500, exit: 40, strong: true },
+    eel:      { name: 'Anguila eléctrica (carril 18 x 300)',     ms: 700, exit: 20, strong: true },
+    priest:   { name: 'Sacerdotisa ahogada (invocación)',        ms: 500, exit: 0,  strong: false }
   };
   B.teleOf = function (id) { return B.tele[id].ms; };
   B.teleRule = function (t) { return 250 + 1000 * t.exit / 190; };

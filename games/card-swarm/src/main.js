@@ -47,6 +47,9 @@
       dog:        { hp: 24,  spd: 125, dmg: 8, r: 12, cost: 5, from: 165000, w: 8, spr: 'enemy_bos_perro',      xp: 4, ash: 3, maxAlive: 3, famOnly: true },
       salamander: { hp: 30,  spd: 60,  dmg: 8, r: 12, cost: 5, from: 240000, w: 9, spr: 'enemy_cri_salamandra', xp: 5, ash: 3, maxAlive: 4, famOnly: true },
       chainer:    { hp: 60,  spd: 42,  dmg: 6, r: 14, cost: 6, from: 270000, w: 8, spr: 'enemy_cri_guardian_cadenas', xp: 6, ash: 3, maxAlive: 3, famOnly: true },
+      // P2 (Asfódelo, A.5): Sanguijuela (emboscada oculta en un charco) y Cabeza menor (brota de un charco, rebrota si no se cauteriza). spd 0 = fija. Ver families.js / enemies.js
+      leech:      { hp: 9,   spd: 55,  dmg: 9, r: 9,  cost: 3, from: 45000,  w: 26, spr: 'enemy_asf_sanguijuela',  xp: 2, ash: 1, maxAlive: 10, famOnly: true },
+      headlet:    { hp: 30,  spd: 0,   dmg: 12, r: 14, cost: 5, from: 120000, w: 14, spr: 'enemy_asf_cabeza_menor', xp: 4, ash: 3, maxAlive: 5, famOnly: true },
       mini_bulwark: { hp: 2200, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
       mini_hive:    { hp: 2800, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
       // jefe: solo se usan spr/xp/ash; HP, tamaño y IA reales viven en boss.js (G.Boss, DESIGN-v4-jefes.md)
@@ -275,6 +278,7 @@
     }
     G.curBiome = biome; try { Assets.setBiome(biome); } catch (e2) { /* sin bioma */ }
     G.B.mat.sync();   // debilidades por material (A.8): solo en biomas con familia activa (ready) salvo ?mat=
+    G.Enemies.initPonds();   // P2 (A.5, M5): charcos fijos del Asfódelo (G.ponds), vacío en los demás biomas
     if (G.groundBiome !== biome) { G.ground = buildGround(); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
     if (rq) G.bossId = rq.boss;

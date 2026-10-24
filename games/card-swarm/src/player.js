@@ -7,7 +7,7 @@
     return {
       x: G.AW / 2, y: G.AH / 2 + 70, r: B.player.r, hp: B.player.hp, maxHp: B.player.hp,
       kx: 0, ky: 0, dirx: 1, moving: false, animT: 0, hurtT: 0, dead: false, squash: 0,
-      level: 1, xp: 0, ash: 15 + G.Tree.startAsh(), revived: false, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0, slowT: 0, slowPct: 0
+      level: 1, xp: 0, ash: 15 + G.Tree.startAsh(), revived: false, kills: 0, frenzyT: 0, poisonKills: 0, lastKillT: 0, trailT: 0, slowT: 0, slowPct: 0, cdSlowT: 0, cdSlowPct: 0
     };
   };
 
@@ -20,6 +20,13 @@
   P.slow = function (p, pct, ms) {
     if (p.dead) return;
     p.slowPct = Math.max(p.slowT > 0 ? p.slowPct : 0, pct); p.slowT = Math.max(p.slowT, ms);
+  };
+
+  // M9 (A.5, Lirio del olvido): las cartas de la mano recargan más lento. NO apila: se queda con el mayor % (tope 40 %) y refresca la duración (tope 2 s); solo afecta al jugador
+  // (weapons.js lo aplica como factor al avance del cooldown; los jefes no lo usan).
+  P.cdSlow = function (p, pct, ms) {
+    if (p.dead) return;
+    p.cdSlowPct = Math.min(0.4, Math.max(p.cdSlowT > 0 ? p.cdSlowPct : 0, pct)); p.cdSlowT = Math.min(2000, Math.max(p.cdSlowT, ms));
   };
 
   // Devuelve true si el daño se aplicó. o: { kb (multiplicador de empuje), slow:[pct,ms], soft (daño de zona: sin empuje y casi sin hitstop), src (tipo, para depurar) }
@@ -78,6 +85,7 @@
     var rg = G.runBuff && G.runBuff.fx && G.runBuff.fx.regen;   // Sopa de hebra (Castaña): cura pasiva leve, sin cifras flotantes
     if (rg && !p.dead && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + rg * dt / 1000);
     if (p.slowT > 0) { p.slowT -= dt; if (p.slowT <= 0) p.slowPct = 0; }
+    if (p.cdSlowT > 0) { p.cdSlowT -= dt; if (p.cdSlowT <= 0) p.cdSlowPct = 0; }
     if (p.kx || p.ky) {
       p.x += p.kx * s; p.y += p.ky * s;
       var k = Math.exp(-12 * s); p.kx *= k; p.ky *= k;

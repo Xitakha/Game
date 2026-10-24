@@ -22,7 +22,7 @@
   C.nearest = function (x, y, range, exclude) {
     var best = null, bd = range || 1e9, L = G.enemies;
     for (var i = 0; i < L.length; i++) {
-      var e = L[i]; if (e.dead || e.spawnT > 0 || (exclude && exclude.indexOf(e) >= 0)) continue;
+      var e = L[i]; if (e.dead || e.spawnT > 0 || e.untarget || (exclude && exclude.indexOf(e) >= 0)) continue;
       var d = Math.hypot(e.x - x, e.y - y) - e.r;
       if (d < bd) { bd = d; best = e; }
     }
@@ -30,7 +30,7 @@
   };
   C.inRange = function (x, y, r) {
     var out = [], L = G.enemies;
-    for (var i = 0; i < L.length; i++) { var e = L[i]; if (!e.dead && e.spawnT <= 0 && Math.hypot(e.x - x, e.y - y) <= r + e.r) out.push(e); }
+    for (var i = 0; i < L.length; i++) { var e = L[i]; if (!e.dead && e.spawnT <= 0 && !e.untarget && Math.hypot(e.x - x, e.y - y) <= r + e.r) out.push(e); }
     return out;
   };
 
@@ -86,7 +86,7 @@
     o = o || {};
     if (e.dead || e.spawnT > 0) return 0;
     if (e.partOf) return G.Boss.dealPart(e, base, o);   // parte rompible del jefe: reparte al jefe y llena su medidor
-    if (e.immune) return 0;   // el Espectro es inmune mientras se desvanece; el jefe en la puerta de fase
+    if (e.immune || e.untarget) return 0;   // el Espectro es inmune mientras se desvanece; el jefe en la puerta de fase; P2: Sanguijuela oculta y muñón de la Cabeza menor
     var a = A(), m = M(), p = G.player, tag = o.tag || 'neutral', dmg = base, crit = false;
     var slowed = e.slowT > 0;
     var tf = G.Tree.fx;
@@ -154,7 +154,7 @@
     if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
-    var armor = e.type === 'boss' || e.big || blocked || (e.type === 'boar' && (e.st === 'charge' || e.st === 'roll' || e.st === 'roll2'));   // e.big = super armor de los élites
+    var armor = e.type === 'boss' || e.big || e.fixed || blocked || (e.type === 'boar' && (e.st === 'charge' || e.st === 'roll' || e.st === 'roll2'));   // e.big = super armor de los élites
     if (o.kb && !armor) { var k = 12; e.kx = Math.cos(o.ang || 0) * o.kb * k; e.ky = Math.sin(o.ang || 0) * o.kb * k; }
     if (e.type === 'archer' && e.st === 'aim' && o.kb) { e.st = 'move'; e.shootT = 1200; }
     if (e.type === 'fanner' && e.st === 'aim' && o.kb && !blocked) { e.st = 'move'; e.shootT = 1200; }   // un empujón interrumpe la ráfaga
@@ -241,7 +241,7 @@
       px = cur.x; py = cur.y; d *= fall;
       var next = null, bd = range, L = G.enemies;
       for (var j = 0; j < L.length; j++) {
-        var e = L[j]; if (e.dead || e.spawnT > 0 || hits.indexOf(e) >= 0) continue;
+        var e = L[j]; if (e.dead || e.spawnT > 0 || e.untarget || hits.indexOf(e) >= 0) continue;
         var dd = Math.hypot(e.x - px, e.y - py); if (dd < bd) { bd = dd; next = e; }
       }
       cur = next;

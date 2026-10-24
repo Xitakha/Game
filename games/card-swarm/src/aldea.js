@@ -191,7 +191,7 @@
         return;
       }
       if (act) lines = ['Aún te falta ' + (act.kind === 'clean' ? 'una racha de ' + act.goal + ' s' : act.goal - Q.progress(act.id) > 1 ? (act.goal - Q.progress(act.id)) + ' por cumplir' : 'poco') + '. No lo dejes escapar.'];
-      else lines = firstV ? ['Hay bichos que molestan. Elige uno.', 'Empieza por las Bombas: huelen a chamusquina.'] : Q.mark() === 'new' ? ['El Tablón ha cambiado desde tu última visita. Echa un vistazo.'] : ['Hay bichos que molestan. Elige uno.'];
+      else lines = firstV ? ['Hay bichos que molestan. Elige uno.', 'Empieza por los Zarzales mayores: abren un abanico de espinas y huelen a chamusquina.'] : Q.mark() === 'new' ? ['El Tablón ha cambiado desde tu última visita. Echa un vistazo.'] : ['Hay bichos que molestan. Elige uno.'];
       var vopts = [{ label: 'Encargos', fn: function () { G.Panels.vesperTab(0); openPanel('vesper'); } }];
       if (G.Panels.huntAvailable()) { lines = lines.concat(['Hay una bestia que merece la pena. ¿Vamos?']); vopts.push({ label: 'Cacería', fn: function () { G.Panels.vesperTab(1); openPanel('vesper'); } }); }
       D.say(w, lines, vopts.concat([ch, bye]));

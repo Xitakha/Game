@@ -79,7 +79,7 @@
     if (m <= 7) return 0.75; if (m >= 10) return 1.1;
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
-  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
+  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
   S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva

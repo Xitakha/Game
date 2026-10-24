@@ -49,7 +49,8 @@
   L.DROPS = {
     worm: ['thread', 0.12], warlock: ['thread', 0.14], archer: ['feather', 0.13], fanner: ['spine', 0.14], sower: ['spine', 0.14],
     boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15],
-    dog: ['fang', 0.13], salamander: ['wick', 0.14], chainer: ['plate', 0.14]   // monstruos nuevos de las familias v5 (A.10)
+    dog: ['fang', 0.13], salamander: ['wick', 0.14], chainer: ['plate', 0.14],   // monstruos nuevos de las familias v5 (A.10)
+    leech: ['frost', 0.13], headlet: ['spine', 0.14]                              // P2: Sanguijuela (Escarcha) y Cabeza menor (Púa; solo la primera muerte)
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)
   // v5: los minijefes son ahora un reto real (más HP, partes rompibles, ataques nuevos) y su botín garantizado sube (antes plate 2 + feather 1 / spine 2 + thread 2, rare 20 %).
@@ -176,7 +177,7 @@
   L.onKill = function (e) {
     if (e.summoned || G.mode === 'practice') return;   // la práctica no suelta ni cuenta nada
     var t = e.type, R = L.run; R.kills[t] = (R.kills[t] || 0) + 1;
-    try { G.Quests.onKill(t); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
+    try { if (!e.noQuest) G.Quests.onKill(t, e); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
     var pityP = (L.RARE_P + (G.Save.data.pity || 0)) * L.dur().rare;   // Larga: x1,5 sobre la base y el pity
     var gt = L.GUARANTEED[t];
     if (t === 'boss' && G.Boss.e && G.Boss.e.def.guaranteed) gt = { parts: G.Boss.e.def.guaranteed, rare: gt.rare };   // J2: cada jefe tiene su botín garantizado (Karceron / Letea)
@@ -190,8 +191,12 @@
       if (PD && PD.rare > 0 && Math.random() < Math.min(1, PD.rare * DU.rare)) drop(e, 'rare', 1);
       return;
     }
-    var d = L.DROPS[t]; if (!d) return;
+    var d = (e.fe && e.fe.drop) || L.DROPS[t]; if (!d) return;   // v5 P2: una familia puede cambiar la parte que suelta un rol (entrada `drop: [parte, prob]`; p. ej. Perro pastor -> Mecha)
     if (Math.random() < d[1] * L.DROP_MUL * L.dur().parts) drop(e, d[0], 1);
+    // v5 P2: partes "huésped" (economía inicial): el Bosque perdió Escudero / Bomba / Espectro / Ascua, así que Placa, Mecha y Estática ya no caían; la familia puede declarar
+    // `host: [[parte, prob], ...]` = tiradas extra por cada baja de enemigo normal que no sea el gusano (x DROP_MUL x duración). Medido en README "Economía v5 en los biomas con familia".
+    var hf = B.famOf(), hs = hf && hf.host;
+    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (Math.random() < hs[hi][1] * L.DROP_MUL * L.dur().parts) drop(e, hs[hi][0], 1);
     if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
   };
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado

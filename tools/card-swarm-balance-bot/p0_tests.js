@@ -19,12 +19,14 @@ async function unit(b) {
     const B = G.B, out = {}, roles = ['worm', 'archer', 'fanner', 'boar', 'shield', 'bomb', 'moth', 'sower', 'blinker', 'scorcher', 'warlock'];
     out.biomes = Object.keys(B.fam).join(',');
     // resolución por modo
-    B.famMode = 'auto'; out.autoNull = ['asfodelo', 'tundra', 'panal'].every(k => B.famOf(k) === null) && B.famOf('bosque') === B.fam.bosque && B.famOf('cripta') === B.fam.cripta;   // P1: Bosque y Cripta ready; Asfodelo sigue en legado
+    B.famMode = 'auto'; out.autoNull = ['tundra', 'panal'].every(k => B.famOf(k) === null) && ['bosque', 'cripta', 'asfodelo'].every(k => B.famOf(k) === B.fam[k]);   // P1/P2: Bosque, Cripta y Asfodelo ready; Tundra/Panal siguen en legado
     B.famMode = 1; out.f1 = ['bosque', 'cripta', 'asfodelo'].every(k => B.famOf(k) === B.fam[k]); out.f1Empty = B.famOf('tundra') === null && B.famOf('panal') === null;
     B.famMode = 0; out.f0 = B.famOf('bosque') === null;
+    // P2: ya no queda ningun bioma real con familia identidad: se inyecta una familia identidad (11 roles, valores legados) en 'tundra' (ready:false) para probar el mecanismo
+    (function () { const use = {}; roles.forEach(k => { use[k] = { name: k, tier: B.tier[k], mat: 'carne', hp: 1, spd: 1, dmg: 1, spr: null }; }); B.fam.tundra.use = use; B.fam.tundra.nUse = null; B.fam.tundra.packs = B.packsLegacy; })();
     // identidad: con fam forzada, tierOf/val == roster legado en los 3 biomas
     B.famMode = 1; let idn = true;
-    ['asfodelo'].forEach(bio => { G.curBiome = bio; roles.forEach(k => { if (B.tierOf(k) !== B.tier[k]) idn = false; ['from', 'w', 'cost', 'maxAlive'].forEach(f => { if (B.val(k, f) !== B.enemy[k][f]) idn = false; }); const u = B.entry(k); if (!u || u.hp !== 1 || u.spd !== 1 || u.dmg !== 1 || u.spr) idn = false; }); });
+    ['tundra'].forEach(bio => { G.curBiome = bio; roles.forEach(k => { if (B.tierOf(k) !== B.tier[k]) idn = false; ['from', 'w', 'cost', 'maxAlive'].forEach(f => { if (B.val(k, f) !== B.enemy[k][f]) idn = false; }); const u = B.entry(k); if (!u || u.hp !== 1 || u.spd !== 1 || u.dmg !== 1 || u.spr) idn = false; }); });
     out.identity = idn;
     out.packs = B.packsOf().length;
     // tabla de materiales: 13 x 6
@@ -32,10 +34,10 @@ async function unit(b) {
     return out;
   });
   ok(r.biomes === 'bosque,cripta,asfodelo,tundra,panal', 'G.B.fam tiene bosque, cripta, asfodelo y esqueletos tundra/panal');
-  ok(r.autoNull, 'modo auto: Bosque y Cripta (ready, P1) usan su familia; Asfodelo/Tundra/Panal -> roster legado (famOf = null)');
+  ok(r.autoNull, 'modo auto: Bosque, Cripta y Asfodelo (ready, P1/P2) usan su familia; Tundra/Panal -> roster legado (famOf = null)');
   ok(r.f1 && r.f1Empty, '?fam=1 fuerza familias en los 3 biomas; tundra/panal (use vacio) siguen en legado');
   ok(r.f0, '?fam=0 -> famOf = null');
-  ok(r.identity, 'identidad: Asfodelo (aun sin familia propia): tierOf/from/w/cost/maxAlive == roster actual y hp/spd/dmg = 1, sin sprite propio (11 roles)');
+  ok(r.identity, 'identidad (familia de prueba inyectada en Tundra): tierOf/from/w/cost/maxAlive == roster actual y hp/spd/dmg = 1, sin sprite propio (11 roles)');
   ok(r.packs === 4, 'packs por bioma: estructura con los 4 packs actuales');
   ok(r.mats === 13 && r.tbl, 'tabla de materiales: 13 materiales x 6 etiquetas dentro de [0,75; 1,25]');
 
@@ -44,8 +46,8 @@ async function unit(b) {
   await pg.waitForTimeout(300);
   const s = await pg.evaluate(() => {
     const B = G.B, E = G.Enemies, o = {}; G.state = 'play';
-    B.famMode = 1; G.curBiome = 'asfodelo';
-    const u = B.fam.asfodelo.use.boar, save = Object.assign({}, u);
+    B.famMode = 1; G.curBiome = 'tundra';
+    const u = B.fam.tundra.use.boar, save = Object.assign({}, u);
     const e0 = E.spawn('boar', 400, 400, { nofam: true }); const e1 = E.spawn('boar', 400, 400);
     o.sameHp = Math.abs(e0.hp - e1.hp) < 1e-9 && e0.spdBase === e1.spdBase && e0.spr === e1.spr && e1.spr === B.enemy.boar.spr;
     u.hp = 2; u.spd = 0.5; u.dmg = 3; u.spr = 'sprite_que_no_existe';
@@ -58,10 +60,11 @@ async function unit(b) {
     B.famMode = 'auto'; u.hp = 5; const e5 = E.spawn('boar', 400, 400); o.autoLegacy = Math.abs(e5.hp - e0.hp) < 1e-9; delete u.hp; u.hp = 1;
     B.famMode = 1;
     // capGrow
-    const W = G.Waves, cs = B.fam.asfodelo.use.sower; delete cs.capGrow;
+    const W = G.Waves, cs = B.fam.tundra.use.sower; delete cs.capGrow;
     const c0 = W.capOf('sower', 9); cs.capGrow = 1.5; const c1 = W.capOf('sower', 9); delete cs.capGrow;
     o.cap0 = c0; o.cap1 = c1; o.capExp0 = Math.round(B.enemy.sower.maxAlive * 2.4); o.capExp1 = Math.round(B.enemy.sower.maxAlive * 1.5);
     // materiales apagados -> sin e.mat; encendidos -> e.mat y multiplicadores
+    G.curBiome = 'tundra'; B.famMode = 1;
     B.mat.on = false; G.curBiome = 'bosque'; const m0 = E.spawn('worm', 500, 500); o.matOff = m0.mat === undefined && B.matMul({ mat: 'lana' }, 'fire') === 1;
     B.mat.on = true; const m1 = E.spawn('worm', 500, 500), m2 = E.spawn('worm', 500, 500, { nofam: true }); o.matOn = m1.mat === 'lana' && m2.mat === undefined;
     o.lanaFire = B.matMul(m1, 'fire'); o.lanaIce = B.matMul(m1, 'ice'); o.lanaNeutral = B.matMul(m1, 'neutral');
@@ -124,8 +127,7 @@ async function det(b) {
     const a = await seqOf(bio, 0, 12345), c = await seqOf(bio, 'auto', 12345), d = await seqOf(bio, 1, 12345), e2 = await seqOf(bio, 0, 777);
     const n = a.split('|').length;
     if (pb) ok(a === await seqOf(bio, 0, 12345, pb), `${bio}: secuencia idéntica al código anterior a P0 (HEAD)`);
-    if (bio === 'asfodelo') ok(a === c && a === d && n > 300 && a !== e2, `${bio}: ${n} altas, secuencia idéntica entre ?fam=0, auto y ?fam=1 (y distinta con otra semilla)`);
-    else ok(c === d && a !== c && n > 300 && c === await seqOf(bio, 'auto', 12345), `${bio} (P1): auto == ?fam=1, distinto de ?fam=0 (familia propia) y reproducible con la misma semilla`);
+    ok(c === d && a !== c && n > 300 && c === await seqOf(bio, 'auto', 12345), `${bio} (P1): auto == ?fam=1, distinto de ?fam=0 (familia propia) y reproducible con la misma semilla`);
   }
 }
 
