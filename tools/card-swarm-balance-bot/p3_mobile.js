@@ -17,8 +17,8 @@ let fails = 0; const ok = (c, m) => { if (!c) fails++; console.log((c ? 'OK     
   // 1) deriva: joystick a la derecha 1,5 s, soltar, medir velocidad residual y derrape
   async function wait() { for (let i = 0; i < 30; i++) { if ((await pg.evaluate(() => G.state)) === 'play') return; const r = await pg.evaluate(() => { const O = G.Cards.off, r = G.Cards.offerRect(0); return { x: r.x + r.w / 2, y: r.y + r.h / 2 }; }); const p = await scr(r.x, r.y); await pg.touchscreen.tap(p.x, p.y); await pg.waitForTimeout(400); } }
   await wait();
-  await pg.evaluate(() => { G.player.x = 400; G.player.y = 110; G.player.sf = 1; G.enemies.length = 0; G.Tundra.bz.off = true; G.speed = 1; });
-  const p0 = await scr(120, 330); await tp('touchStart', p0.x, p0.y); const p1 = await scr(120 + 50, 330); await tp('touchMove', p1.x, p1.y); await pg.waitForTimeout(1600);
+  await pg.evaluate(() => { G.player.x = 200; G.player.y = 110; G.player.sf = 1; G.enemies.length = 0; G.Tundra.bz.off = true; G.speed = 1; });
+  const p0 = await scr(120, 330); await tp('touchStart', p0.x, p0.y); const p1 = await scr(120 + 50, 330); await tp("touchMove", p1.x, p1.y); await pg.waitForTimeout(1000);
   const run = await pg.evaluate(() => ({ vx: Math.round(G.player.vx), j: G.input.joy.active, x: Math.round(G.player.x) }));
   await tp('touchEnd'); const x1 = await pg.evaluate(() => G.player.x); await pg.waitForTimeout(250);
   const mid = await pg.evaluate(() => Math.round(G.player.vx)); await pg.waitForTimeout(1500);
