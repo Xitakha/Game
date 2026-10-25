@@ -216,6 +216,7 @@
       c.strokeStyle = 'rgba(40,20,6,0.8)'; c.lineWidth = 6; c.stroke(); c.strokeStyle = '#e8a53a'; c.lineWidth = 3; c.setLineDash([6, 6]); c.lineDashOffset = -G.time / 40; c.stroke(); c.restore();
     } else if (ty === 'pollinator' && st === 'pulse') {
       u = e.t / B.tele.pollen.ms; var R = B.biomes.panal.heal.r;
+      if (typeof Assets.drawPollenPulse === 'function') { Assets.drawPollenPulse(c, e.x, e.y, R, u, {}); return; }
       c.save(); c.beginPath(); c.arc(e.x, e.y, R, 0, TAU); c.fillStyle = 'rgba(184,255,154,' + (0.05 + 0.12 * u) + ')'; c.fill();
       c.strokeStyle = 'rgba(8,24,8,0.6)'; c.lineWidth = 6; c.stroke(); c.strokeStyle = 'rgba(184,255,154,0.95)'; c.lineWidth = 2.5; c.setLineDash([8, 6]); c.lineDashOffset = -G.time / 30; c.stroke(); c.setLineDash([]);
       c.lineWidth = 4; c.beginPath(); c.moveTo(e.x - 12, e.y - 26); c.lineTo(e.x + 12, e.y - 26); c.moveTo(e.x, e.y - 38); c.lineTo(e.x, e.y - 14); c.stroke(); c.restore();
@@ -228,7 +229,8 @@
       u = e.t / B.tele.nurse.ms; c.save(); c.strokeStyle = 'rgba(8,4,14,0.6)'; c.lineWidth = 6; c.beginPath(); c.arc(e.x, e.y, 12 + 38 * u, 0, TAU); c.stroke();
       c.strokeStyle = 'rgba(200,140,255,0.95)'; c.lineWidth = 3; c.beginPath(); c.arc(e.x, e.y, 12 + 38 * u, 0, TAU); c.stroke(); c.restore();
     }
-    if (e.sed && e.spawnT <= 0) {   // sedado: aro gris de volutas
+    if (e.sed && e.spawnT <= 0 && G.hasSpr('icon_sedado')) { var ic = Assets.sprite('icon_sedado', Math.floor(G.time / 500) % 2); c.drawImage(ic, Math.round(e.x - ic.width / 2), Math.round(e.y - e.r - 30)); }
+    else if (e.sed && e.spawnT <= 0) {   // sedado: aro gris de volutas
       c.save(); c.strokeStyle = 'rgba(154,143,132,0.8)'; c.lineWidth = 2; c.setLineDash([3, 5]); c.lineDashOffset = G.time / 40; c.beginPath(); c.arc(e.x, e.y, e.r + 6, 0, TAU); c.stroke(); c.restore();
     }
   };

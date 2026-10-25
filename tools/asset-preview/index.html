@@ -460,7 +460,7 @@
     var ic = id === 'pastor' ? ['trophy_pastor_horn', 'trophy_pastor_staff', 'trophy_pastor_fleece'] : id === 'karceron' ? ['trophy_karceron_mace', 'trophy_karceron_shackle', 'trophy_karceron_core'] : id === 'yarlak' ? ['trophy_yarlak_tusk', 'trophy_yarlak_plate', 'trophy_yarlak_heart'] : id === 'melaria' ? ['trophy_reina_wing', 'trophy_reina_sting', 'trophy_reina_jelly'] : ['trophy_letea_acid', 'trophy_letea_ice', 'trophy_letea_bolt'];
     ic.forEach(function (n, k) { x.drawImage(A.sprite(n, 0), 8 + k * 40, 20); x.drawImage(A.sprite(n, 1), 8 + k * 40, 56); });
     var weak = id === 'pastor' ? [['fire', 0], ['steel', 0], ['poison', 1]] : id === 'karceron' ? [['ice', 0], ['lightning', 0], ['fire', 1], ['poison', 1]] : id === 'yarlak' ? [['fire', 0], ['lightning', 0], ['ice', 1], ['poison', 1]] : id === 'melaria' ? [['fire', 0], ['ice', 0], ['lightning', 1], ['poison', 1, 'immune']] : [['blood', 0], ['poison', 0], ['ice', 1]];
-    weak.forEach(function (w, k) { A.drawWeakIcon(x, w[0], 150 + k * 70, 24, { resist: w[1], mult: w[2] ? 'INM' : (w[1] ? '0.8' : '1.25'), immune: !!w[2] }); });
+    weak.forEach(function (w, k) { A.drawWeakIcon(x, w[0], 150 + k * 70, 24, { resist: w[1], mult: w[1] ? '0.8' : '1.25', immune: !!w[2] }); });
     var X0 = 8, Y0 = 100;
     if (id === 'karceron') {
       x.fillText('arena: pilar (4 estados), charco, isla (3), brasas, grietas, splash, meteoro, puas, brazo caido, maza', 8, 96);

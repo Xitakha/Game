@@ -80,7 +80,8 @@
     var q, r, x, y, c;
     for (q = -14; q <= 14; q++) for (r = -14; r <= 14; r++) {
       x = OX + CR * 1.5 * q; y = OY + CR * SQ3 * (r + q / 2);
-      if (!P.inside(x, y, 22) || P.wallDist(x, y) < WD + 22) continue;
+      if (x < 0 || x > G.AW || y < 0 || y > G.AH || P.wallDist(x, y) < 0) continue;
+      if (window.Assets && Assets.PANAL && Assets.PANAL.byId && !Assets.PANAL.byId[(q + 12) * 40 + (r + 20)]) continue;   // las mismas 166 celdas que hornea el arte (Assets.PANAL): centro dentro del hexágono
       c = { i: cells.length, q: q, r: r, x: x, y: y, st: 0, t: 0, nest: false, life: 0, nb: [], hatch: 0 };
       cells.push(c); byKey[key(q, r)] = c;
     }
@@ -394,6 +395,10 @@
   function artOK(n) { return typeof Assets !== 'undefined' && G.hasSpr(n); }
   // Suelo: celdas de cera (#f0d98a, bordes marrones #7a4a14) dentro del hexágono; fuera, panal oscuro. Se hornea una sola vez por run
   P.buildGround = function () {
+    try {   // arte P5: Assets.arena('panal') = hexágono con muros de cera, 166 celdas, nidos, luces y rayos ya horneados
+      if (Assets.getBiome() === 'panal' && Assets.arena) { var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL }); if (A && A.canvas) { P.art = A; return A.canvas; } }
+    } catch (e) { P.art = null; }
+    P.art = null;
     var W = G.AW, H = G.AH, c = cv(W, H), g = c.getContext('2d'), q, r, x, y, k, i;
     g.fillStyle = '#2b1706'; g.fillRect(0, 0, W, H);
     g.save(); polyPath(g); g.clip();
@@ -459,11 +464,29 @@
   }
   function inView(x, y, m) { return x > G.cam.x - m && x < G.cam.x + G.W + m && y > G.cam.y - m && y < G.cam.y + G.VH + m; }
 
-  P.drawGround = function (c) {
-    if (dirty) repaintHoney();
-    var t = G.time / 1000, i, k, q;
-    if (act.length) c.drawImage(honeyCv, 0, 0);
+  var cst = {};
+  function drawCellsArt(c) {   // Assets.drawCells(state): tele / honey / seal / caramel / nesttele (1 drawImage por celda activa)
+    var i, k, n = 0;
+    for (k in cst) delete cst[k];
     for (i = 0; i < act.length; i++) {
+      k = act[i]; var id = (k.q + 12) * 40 + (k.r + 20);
+      if (k.st === ST_TELE) cst[id] = { s: 'tele', p: 1 - k.t / D.honey.tele };
+      else if (k.st === ST_ARM) cst[id] = { s: 'tele', p: 1 };
+      else if (k.st === ST_HONEY) cst[id] = { s: 'honey' };
+      else if (k.st === ST_SEAL) cst[id] = { s: 'seal', p: G.clamp(k.t / D.honey.seal, 0, 1) };
+      else cst[id] = { s: 'caramel', p: G.clamp(k.t / D.honey.caramel, 0, 1) };
+      n++;
+    }
+    for (i = 0; i < nests.length; i++) if (nests[i].hatch > 0) { cst[(nests[i].q + 12) * 40 + (nests[i].r + 20)] = { s: 'nesttele' }; n++; }
+    if (n) Assets.drawCells(c, cst, G.time / 1000, { s: 1 });
+  }
+  P.drawGround = function (c) {
+    var useArt = typeof Assets.drawCells === 'function' && P.art;
+    if (!useArt && dirty) repaintHoney();
+    var t = G.time / 1000, i, k, q;
+    if (useArt) drawCellsArt(c);
+    else if (act.length) c.drawImage(honeyCv, 0, 0);
+    for (i = 0; i < act.length && !useArt; i++) {
       k = act[i]; if (!inView(k.x, k.y, 70)) continue;
       if (k.st === ST_TELE) {   // contorno marrón punteado que se llena de ámbar
         var u = 1 - k.t / D.honey.tele;
@@ -481,7 +504,7 @@
       }
     }
     // nidos eclosionando
-    for (i = 0; i < nests.length; i++) {
+    for (i = 0; i < nests.length && !useArt; i++) {
       k = nests[i]; if (!(k.hatch > 0) || !inView(k.x, k.y, 70)) continue;
       var hu = 1 - k.hatch / 900;
       c.save(); hexPath(c, k.x, k.y, CR - 4); c.strokeStyle = 'rgba(255,205,110,' + (0.4 + 0.5 * hu) + ')'; c.lineWidth = 4; c.stroke();
@@ -491,6 +514,7 @@
     for (i = 0; i < puddles.length; i++) {
       q = puddles[i]; if (!inView(q.x, q.y, q.r + 20)) continue;
       var a = Math.min(1, q.life / 500, q.t / 200 + 0.3);
+      if (typeof Assets.drawHoney === 'function') { Assets.drawHoney(c, q.x, q.y, { r: q.r, alpha: 1, t: t, fade: G.clamp(q.life / 500, 0, 1) }); continue; }
       c.save(); c.globalAlpha = a;
       if (artOK('fx_honey_puddle')) { var sp = Assets.sprite('fx_honey_puddle', Math.floor(q.t / 220 + i) % 3); c.drawImage(sp, Math.round(q.x - q.r), Math.round(q.y - q.r), q.r * 2, q.r * 2); }
       else {
@@ -505,6 +529,7 @@
     // círculos de aterrizaje de los glóbulos (ámbar punteado)
     for (i = 0; i < globs.length; i++) {
       q = globs[i]; var gu = G.clamp(1 - (q.dur - q.t) / q.tele, 0, 1);
+      if (typeof Assets.drawHoneyTele === 'function') { Assets.drawHoneyTele(c, q.tx, q.ty, q.r, gu, t); continue; }
       c.save(); c.beginPath(); c.arc(q.tx, q.ty, q.r, 0, TAU); c.fillStyle = 'rgba(201,122,20,' + (0.08 + 0.22 * gu) + ')'; c.fill();
       c.strokeStyle = 'rgba(40,20,6,0.8)'; c.lineWidth = 6; c.stroke(); c.strokeStyle = '#e8a53a'; c.lineWidth = 3; c.setLineDash([6, 6]); c.lineDashOffset = -t * 20; c.stroke(); c.setLineDash([]);
       c.strokeStyle = 'rgba(255,215,130,0.85)'; c.lineWidth = 2; c.beginPath(); c.arc(q.tx, q.ty, q.r * (1 - 0.8 * gu), 0, TAU); c.stroke(); c.restore();
@@ -512,6 +537,7 @@
     // nubes de humo: volutas grises (patrón de volutas, no de esporas)
     for (i = 0; i < clouds.length; i++) {
       q = clouds[i]; if (!inView(q.x, q.y, q.r + 20)) continue;
+      if (typeof Assets.drawSmokeCloud === 'function') { Assets.drawSmokeCloud(c, q.x, q.y, q.r, 1 - q.life / q.max, t); continue; }
       var su = G.clamp(q.life / 500, 0, 1), sp2 = artOK('fx_smoke_puff') ? Assets.sprite('fx_smoke_puff', Math.floor(t * 5 + i) % 4) : null;
       c.save(); c.globalAlpha = su * 0.8;
       if (sp2) c.drawImage(sp2, Math.round(q.x - q.r), Math.round(q.y - q.r), q.r * 2, q.r * 2);
@@ -572,6 +598,7 @@
     var Q = G.Q, lv = Q.level, n = lv === 'baja' ? 0 : lv === 'media' ? 12 : 24, t = tt / 1000, i, x0 = G.cam.x, y0 = G.cam.y, W = G.W, H = G.VH;
     c.save();
     c.fillStyle = 'rgba(255,170,40,0.06)'; c.fillRect(x0 - 2, y0 - 2, W + 4, H + 4);
+    if (typeof Assets.drawPollen === 'function' && P.art) { c.restore(); Assets.drawPollen(c, G.AW, G.AH, tt, { count: n, view: { x: x0, y: y0, w: W, h: H }, quality: lv }); return; }   // arte P5: motas de polen (rayos de luz ya horneados en el suelo)
     if (lv === 'alta') {
       for (i = 0; i < 3; i++) {
         var rx = x0 + ((i * 0.37 + 0.12 + 0.015 * Math.sin(t * 0.3 + i)) % 1) * W, g = c.createLinearGradient(rx, y0, rx + 120, y0 + H);

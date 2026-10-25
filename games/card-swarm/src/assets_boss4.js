@@ -234,13 +234,12 @@
       x.save(); x.beginPath(); Prr(2.4, 2.4, 43.2, 43.2, 5)(x); x.clip();
       var g = x.createRadialGradient(24, 24, 2, 24, 24, 32); g.addColorStop(0, hot ? 'rgba(255,230,150,0.75)' : 'rgba(255,190,60,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 48, 48);
       x.strokeStyle = 'rgba(255,200,90,0.28)'; x.lineWidth = 0.8; for (i = 0; i < 12; i++) { x.beginPath(); hexPath(x, 6 + (i % 4) * 13 + (Math.floor(i / 4) % 2) * 6.5, 6 + Math.floor(i / 4) * 12, 7.4, 0); x.stroke(); }
-      var hs = A.sprite('boss_reina_head', f === 2 ? 2 : (hot ? 1 : 0)), cr = A.sprite('boss_reina_crown', hot ? 1 : 0), es = A.sprite('boss_reina_eyes', hot ? 2 : 0), k = 1.12, hx = 6, hy = 11;
-      x.strokeStyle = OLC; x.lineWidth = 2.4; x.lineCap = 'round'; x.beginPath(); x.moveTo(hx + 20 * k, hy + 2); x.quadraticCurveTo(hx + 24 * k, hy - 8, hx + 30 * k, hy - 8); x.moveTo(hx + 12 * k, hy + 4); x.quadraticCurveTo(hx + 12 * k, hy - 6, hx + 18 * k, hy - 8); x.stroke();
-      x.strokeStyle = M.blk; x.lineWidth = 1.2; x.stroke();
-      v.dot(hx + 30 * k, hy - 8, 1.6, M.amber); v.dot(hx + 18 * k, hy - 8, 1.6, M.amber);
+      var hs = A.sprite('boss_reina_head', f === 2 ? 2 : (hot ? 1 : 0)), cr = A.sprite('boss_reina_crown', hot ? 1 : 0), es = A.sprite('boss_reina_eyes', hot ? 2 : 0), k = 0.94, hx = 7, hy = 16;
+      x.lineCap = 'round'; x.beginPath(); x.moveTo(hx + 26 * k, hy + 5); x.quadraticCurveTo(hx + 31 * k, hy - 3, hx + 38 * k, hy - 2); x.strokeStyle = OLC; x.lineWidth = 3.2; x.stroke(); x.strokeStyle = M.blk; x.lineWidth = 1.5; x.stroke();
+      v.dot(hx + 38 * k, hy - 2, 1.9, M.amber);
       x.drawImage(hs, hx, hy, hs.width / 2 * k, hs.height / 2 * k);
-      if (f !== 2) x.drawImage(es, hx + 15.5 * k, hy + 7.4 * k, es.width / 2 * k * 0.92, es.height / 2 * k * 0.92);
-      x.drawImage(cr, hx + 8.4 * k, hy - 10.4 * k, cr.width / 2 * k * 0.9, cr.height / 2 * k * 0.9);
+      if (f !== 2) x.drawImage(es, hx + 15 * k, hy + 7.4 * k, es.width / 2 * k, es.height / 2 * k);
+      x.drawImage(cr, hx + 6.6 * k, hy - 10.6 * k, cr.width / 2 * k, cr.height / 2 * k);
       x.restore();
       if (f === 2) { x.strokeStyle = '#ffffff'; x.lineWidth = 0.9; x.beginPath(); x.moveTo(33, 4); x.lineTo(30, 12); x.lineTo(34, 19); x.lineTo(31, 27); x.stroke(); }
       v.part(Prr(1.4, 1.4, 45.2, 45.2, 6), 'rgba(0,0,0,0)', { lw: 2, ol: OLC });
@@ -256,7 +255,7 @@
       var x = v.ctx;
       v.part(Prr(1, 1, 14, 14, 3), '#3a2208', { lw: 1.2, sh: '#1c1004', so: 0.5 });
       x.save(); if (broken) x.globalAlpha = 0.45;
-      if (kind === 'wing') { var ws = A.sprite('boss_reina_wing_front', 0); x.save(); x.translate(2.4, 11.6); x.rotate(-0.62); x.drawImage(ws, 0, -ws.height / 2 * 0.2, ws.width / 2 * 0.24, ws.height / 2 * 0.24 * 1.0); x.restore(); x.drawImage(ws, 3, 2.6, ws.width / 2 * 0.2, ws.height / 2 * 0.2); }
+      if (kind === 'wing') { var ws = A.sprite('boss_reina_wing_front', 0); x.save(); x.translate(2.6, 11.6); x.rotate(-0.78); x.drawImage(ws, 0, -ws.height / 2 * 0.2, ws.width / 2 * 0.2, ws.height / 2 * 0.2); x.restore(); x.save(); x.translate(3.4, 12.6); x.rotate(-0.28); x.globalAlpha *= 0.8; x.drawImage(ws, 0, -ws.height / 2 * 0.15, ws.width / 2 * 0.16, ws.height / 2 * 0.15); x.restore(); }
       else if (kind === 'sting') { var ss = A.sprite('boss_reina_sting', 0); x.save(); x.translate(8, 8); x.rotate(-0.7); x.scale(0.5, 0.5); x.drawImage(ss, -12, -6, ss.width / 2, ss.height / 2); x.restore(); }
       else { var cs = A.sprite('boss_reina_crown', 0); x.drawImage(cs, 2.4, 2, cs.width / 2 * 0.58, cs.height / 2 * 0.58); v.part(Pblob(8, 11.4, 3.2, 2.6, 881, 0.05, 7), '#fffbe8', { lw: 0.8, sh: '#e8dcb0', hi: '#fff', so: 0.3 }); }
       x.restore();
@@ -392,6 +391,12 @@
     if (la < -0.3) la = la < -1.9 ? 3.3 : -0.3; if (la > 3.3) la = 3.3;
     return la - PI;
   }
+  // apunta el aguijon a la direccion `la` (marco del jefe): el abdomen solo gira por el hemisferio ventral [-0.3, 3.3] rad, el resto lo compensa inclinando el cuerpo
+  function aimAb(la) {
+    la = ((la % TAU) + TAU + PI) % TAU - PI; var d = 0;
+    if (la < -0.3) { if (la > -1.9) d = la + 0.3; else { var l2 = la + TAU; d = l2 - 3.3; } }
+    var tl = clamp(d * 0.55, -0.7, 0.7); return { tilt: tl, delta: tipDelta(la - tl) };
+  }
   function T(P, px, py) { var c = cos(P.tilt), sn = sin(P.tilt); return { x: px * c - py * sn, y: px * sn + py * c + P.by }; }
   function hp(P, px, py) { var dx = px - NECK[0], dy = py - NECK[1], c = cos(P.hr), s = sin(P.hr); return [NECK[0] + dx * c - dy * s, NECK[1] + dx * s + dy * c]; }
 
@@ -416,9 +421,9 @@
     P.antA = 0.6 + 0.4 * sin(t / 900);
     P.wamp = 0.2; P.wsp = 1; P.wspread = 0;
     if ((m = A_('estocada'))) {
-      var dA = tipDelta(la);
-      if (m === 'W') { P.ab = lerp(REST, dA, u); P.tilt += -0.15 * u; P.by += -4 * u; P.wsp = 1.5; P.sF = br.aguijon ? 2 : (u > 0.35 ? 1 : 0); P.stingGlow = u; P.flare = 0.6 * u; P.shake = 0.7 * u; P.lf = 2; P.hr += -0.06 * u; }
-      else { P.ab = dA; P.abLen = 1 + 0.1 * (1 - q); P.tilt += lerp(-0.15, 0.2, q); P.sF = br.aguijon ? 2 : 1; P.stingGlow = 1; P.trail = 1 - sp * 0.4; P.wsp = 1.6; P.wspread = 0.1; P.lf = 2; P.flare = 1; P.shake = 1.4; P.hr += 0.08; }
+      var aA = aimAb(la), dA = aA.delta;
+      if (m === 'W') { P.ab = lerp(REST, dA, u); P.tilt += -0.15 * u + aA.tilt * u; P.by += -4 * u; P.wsp = 1.5; P.sF = br.aguijon ? 2 : (u > 0.35 ? 1 : 0); P.stingGlow = u; P.flare = 0.6 * u; P.shake = 0.7 * u; P.lf = 2; P.hr += -0.06 * u; }
+      else { P.ab = dA; P.abLen = 1 + 0.1 * (1 - q); P.tilt += lerp(-0.15, 0.2, q) + aA.tilt; P.sF = br.aguijon ? 2 : 1; P.stingGlow = 1; P.trail = 1 - sp * 0.4; P.wsp = 1.6; P.wspread = 0.1; P.lf = 2; P.flare = 1; P.shake = 1.4; P.hr += 0.08; }
     } else if ((m = A_('picado'))) {
       var short = !!br.alas;
       if (m === 'W') { P.tilt += -0.22 * u; P.wsp = short ? 1 : 1.9; P.wamp = short ? 0.1 : 0.34; P.wspread = -0.28 * u; P.ab = REST - 0.35 * u; P.lf = 2; P.flare = 0.7 * u; P.shake = 0.8 * u; P.by += -3 * u; if (short) { P.by += 8 * u; P.tilt += 0.12 * u; } }
@@ -428,9 +433,9 @@
         P.dive = sp < 0.34 ? 1 - sp / 0.34 : 0; P.impact = sp >= 0.3 ? 1 - im : 0; P.shake = sp >= 0.3 ? 6 * (1 - im) : 1; P.flare = 1; P.dust = sp >= 0.3 ? 1 - im : 0; P.by += sp >= 0.3 ? 6 * (1 - im) : 0; if (!short) P.wsp = 0.6;
       }
     } else if ((m = A_('lluvia'))) {
-      var dB = tipDelta(la);
-      if (m === 'W') { P.ab = lerp(REST, dB, u); P.tilt += -0.1 * u; P.wsp = 1.4; P.sF = br.aguijon ? 2 : (u > 0.3 ? 1 : 0); P.stingGlow = u; P.quills = u; P.flare = 0.7 * u; P.shake = 0.6 * u; P.lf = 2; }
-      else { P.ab = dB + 0.05 * sin(t / 24); P.tilt += -0.1; P.sF = br.aguijon ? 2 : 1; P.stingGlow = 1; P.quills = 1; P.burst = 1; P.flare = 1; P.shake = 1.6; P.hf = 1; P.wsp = 1.5; P.lf = 2; }
+      var aB = aimAb(la), dB = aB.delta;
+      if (m === 'W') { P.ab = lerp(REST, dB, u); P.tilt += -0.1 * u + aB.tilt * u; P.wsp = 1.4; P.sF = br.aguijon ? 2 : (u > 0.3 ? 1 : 0); P.stingGlow = u; P.quills = u; P.flare = 0.7 * u; P.shake = 0.6 * u; P.lf = 2; }
+      else { P.ab = dB + 0.05 * sin(t / 24); P.tilt += -0.1 + aB.tilt; P.sF = br.aguijon ? 2 : 1; P.stingGlow = 1; P.quills = 1; P.burst = 1; P.flare = 1; P.shake = 1.6; P.hf = 1; P.wsp = 1.5; P.lf = 2; }
     } else if ((m = A_('llamada'))) {
       if (m === 'W') { P.wsp = 2.4; P.wamp = 0.3; P.wspread = -0.3 * u; P.tilt += -0.12 * u; P.hr += -0.2 * u; P.hf = u > 0.3 ? 1 : 0; P.summon = u; P.buzz = u; P.flare = 0.6 * u; P.shake = 0.9 * u; P.lf = 2; P.antA = 1.6; P.by += -4 * u; P.ab = REST + 0.15 * u; }
       else { P.wsp = 2.6; P.wamp = 0.32; P.wspread = -0.3; P.tilt += lerp(-0.12, 0.05, q); P.hf = 1; P.summon = 1; P.buzz = 1; P.shake = sp < 0.5 ? 3 : 1; P.flare = 1; P.lf = 2; P.antA = 1.6; }
@@ -527,7 +532,9 @@
     var x = beginR(R), P = mPoseFor(s), L = mLayout(P, s), br = s.broken || {}, i;
     var shx = P.shake ? sin(t * 0.13) * P.shake : 0, shy = P.shake ? cos(t * 0.17) * P.shake * 0.6 : 0, ghostWings = dying && P.wf && !br.alas;
     x.translate(R.OX + shx, R.OY - P.hover + shy); if (f < 0) x.scale(-1, 1); if (P.sx !== 1) x.scale(P.sx, 1);
-    extR(R, -330, -330 - P.hover, 300, 190 - P.hover + 60);
+    var ex0 = Math.min(-96, L.tip.x - 34, -150 + P.wspread * -60), ex1 = Math.max(130, 150 + P.wspread * 60), ey0 = -214 - P.wfold * 0 + (P.wspread > 0.3 ? 40 : 0) - P.by * 0, ey1 = Math.max(128, L.tip.y + 40);
+    if (Math.abs(P.sx) !== 1) { ex0 = -250; ex1 = 250; }
+    extR(R, ex0 - 30, ey0 - 20 - P.hover, ex1 + 30, ey1 + 20 - P.hover);
     // grupo con balanceo
     x.save(); x.translate(0, P.by); x.rotate(P.tilt);
     // alas lejanas, patas lejanas
@@ -624,7 +631,7 @@
   }
   function mAura(ctx, px, py, s, P) {
     var t = s.t || 0, h = P.hover, a = 0.1 + 0.08 * P.glow + 0.03 * sin(t / 300) + (s.exposed ? 0.1 : 0) + (P.rings ? 0.1 : 0) + (s.phase >= 3 ? 0.08 : 0) + (s.dying ? -0.1 * clamp(s.dt / 3000, 0, 1) : 0);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = clamp(a, 0, 0.55); ctx.drawImage(glowSpr(s.exposed ? '190,230,255' : '255,184,60'), px - 190, py - h - 120, 380, 240); ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = clamp(a, 0, 0.55); ctx.drawImage(glowSpr(s.exposed ? '190,230,255' : '255,184,60'), px - 160, py - h - 100, 320, 200); ctx.restore();
     // miel en la que esta atrapada / charco al morir
     if (P.honey > 0 || (s.stuck && !s.dying)) { honeyPool(ctx, px, py + GY - 6, 120, 1, t); }
     if (s.dying && s.dt > 900) { var pu = clamp((s.dt - 900) / 2000, 0, 1), fade = 1 - clamp((s.dt - 3000) / 500, 0, 1); honeyPool(ctx, px, py + GY - 6, 40 + 170 * ease(pu), fade, t); }
@@ -673,7 +680,7 @@
     // picado: lineas de velocidad y polvo/ondas del aterrizaje
     if (P.dive > 0.02) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (i = 0; i < 9; i++) { var vx = px - 70 + i * 17 + pr(i) * 6, vy0 = py - hv - 150 - pr(i + 3) * 60; ctx.strokeStyle = 'rgba(255,240,200,' + (0.6 * P.dive).toFixed(3) + ')'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(vx, vy0); ctx.lineTo(vx + 4, vy0 + 70 + 40 * pr(i + 7)); ctx.stroke(); } ctx.restore(); }
     if (P.dust > 0.05) {
-      ctx.save(); for (i = 0; i < 8; i++) { var pd = ((t / 600) + i / 8) % 1, ang = i / 8 * TAU, rr = 40 + 120 * (1 - P.dust) + pd * 30; ctx.globalAlpha = 0.6 * P.dust * (1 - pd); ctx.fillStyle = i % 2 ? '#fff3d6' : '#d9bf8c'; ctx.strokeStyle = OLC; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(px + cos(ang) * rr, gy - 8 + sin(ang) * rr * 0.32, 8 + 6 * (1 - pd), 0, TAU); ctx.fill(); ctx.stroke(); } ctx.restore();
+      ctx.save(); for (i = 0; i < 8; i++) { var pd = ((t / 600) + i / 8) % 1, ang = i / 8 * TAU, rr = 40 + 120 * (1 - P.dust) + pd * 30; ctx.globalAlpha = 0.95 * Math.min(1, P.dust * 2) * (1 - pd); ctx.fillStyle = i % 2 ? '#fff3d6' : '#d9bf8c'; ctx.strokeStyle = OLC; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(px + cos(ang) * rr, gy - 8 + sin(ang) * rr * 0.32, 8 + 6 * (1 - pd), 0, TAU); ctx.fill(); ctx.stroke(); } ctx.restore();
     }
     // zumbido: ondas desde la boca
     if (P.buzz > 0.05) {
@@ -980,8 +987,12 @@
   A.bossPoseNames = function (id) { return (id === 'melaria' || id === 'reina') ? MNAMES.slice() : oldNames.apply(A, arguments); };
   // iconos de debilidad/resistencia: {immune:true} pinta el icono de "inmune" sobre la etiqueta (Veneno inmune a estados)
   A.drawWeakIcon = function (ctx, tag, x, y, o) {
-    oldWeak.apply(A, arguments);
-    if (o && o.immune) { var sz = o.size || 24, ic = A.sprite('icon_immune'); ctx.drawImage(ic, x + sz * 0.45, y - sz * 0.05, sz * 0.6, sz * 0.6); }
+    if (o && o.immune) { o = Object.assign({}, o); delete o.mult; }
+    oldWeak.call(A, ctx, tag, x, y, o);
+    if (o && o.immune) {
+      var sz = o.size || 24, ic = A.sprite('icon_immune'); ctx.drawImage(ic, x + sz * 0.45, y - sz * 0.05, sz * 0.6, sz * 0.6);
+      ctx.save(); ctx.font = 'bold 9px "Courier New", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = OLC; ctx.fillStyle = '#cfc8dc'; ctx.strokeText('INM', x + sz + 3, y + sz * 0.5); ctx.fillText('INM', x + sz + 3, y + sz * 0.5); ctx.restore();
+    }
   };
   A.melariaPortraitId = 'boss_reina_portrait';
   function rdp(p, r) { return { x: rd(p.x), y: rd(p.y), r: r || 0 }; }

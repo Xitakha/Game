@@ -766,6 +766,112 @@ Reusan (P3): `proj_icicle` (los 12 carambanos del desesperado), `fx_ice_block` (
 - Pisadas: `anchors.step.impact` > 0,5 es el instante de la pisada (2 por ciclo; `foot` rear/front en `Assets.yarlakGait`).
 
 ---
+# Jefes v4 (P6: Melaria, la Reina Abeja) (src/assets_boss4.js; solo arte, sin logica)
+Misma API que Pastor/Karceron/Letea/Yarlak: `Assets.drawBoss('melaria', ctx, x, y, state)`, `renderBoss`, `bossAnchors`, `drawBossShadow(ctx,x,y,{id:'melaria',...})`, `drawBossPortrait('melaria', ctx, x, y, {size, mood})`, `bossPoseNames('melaria')`, `Assets.BOSS.melaria`, `bossIds()` (= pastor, karceron, letea, yarlak, melaria). **Alias `'reina'`** (id logico del jefe del bioma, `Boss.BIOME_BOSS.panal`): `drawBoss/renderBoss/bossAnchors/bossPoseNames/bossInfo/BOSS` y `drawBossPortrait('reina')` funcionan igual (no sale en `bossIds()`). Diseno: `DESIGN-v5-biomas.md` B.5 y C.4-C. Vista previa: `tools/asset-preview/index.html?game=card-swarm&boss=melaria` (seccion "Jefe": 9 ataques + desesperado, telegrafia/golpe, fase 1-3, aterrizada, atrapada en miel, abdomen hinchado, partes rotas Alas/Aguijon/Corona, muerte por dt, anclajes, aguijon apuntable, tira de piezas/VFX/trofeos). Capturas: `studio/docs/capturas-p6/`.
+**Orden de carga**: `<script src="src/assets_boss4.js">` DESPUES de `assets_boss3.js` (envuelve sus funciones). Si falta `Assets.drawBoss` imprime un error y no registra nada.
+Coste medido (Chromium headless sin GPU, mezcla de estados): del orden de Yarlak (~1,0-1,3x); un canvas compartido 720x620 con rect sucio ajustado a la pose (~26 drawImage + 2-3 brillos), sin `shadowBlur`.
+
+| dato | valor |
+|---|---|
+| `Assets.BOSS.melaria` | `{id, name:'Melaria', title:'La Reina Abeja', r:70, gy:84, w:300, h:260, deathMs:3500, hover:40, windups, phases:['Corte real','Enjambre','Reina furiosa'], despair:'Zumbido Mortal', parts:{alas:{r:52}, aguijon:{r:24}, corona:{r:24}}, windowColor:'#e6f7ff', speeds:[60,70,80], eyes:['#c8f5a0','#ffc440','#ffe6f2'], weak:[['fire',1.25],['ice',1.25]], resist:[['poison',0.5],['lightning',0.8]], immuneStates:['poison']}` |
+| (x,y) | posicion logica = **centro del cuerpo posado** (circulo de colision `r` 70). Vuela: el cuerpo se pinta **`hover` px por encima** (40 por defecto), la sombra queda en el suelo en `y + 88`. Pies/suelo en `y + 84` (`gy`): ordenar por profundidad con `y + 84`. Las anclas ya incluyen la altura (cuerpo en `(0,-hover)`). |
+| tamano visual | ~300 x 260 con alas abiertas: x -190 (aguijon) .. +110 (cabeza), y -210 (alas arriba) .. +125 (patas/aguijon bajo el cuerpo), todo restando `hover`. Con alas plegadas ~240 x 230. Mira a la DERECHA; `facing:-1` lo refleja (anclas y efectos tambien). |
+| ojos | F1 verde palido, F2 ambar, F3 blanco-rosado (**nunca rojo**) |
+
+## state (todo opcional salvo `t`; mismos nombres que los otros jefes)
+`t` ms | `facing` 1/-1 | `phase` 1-3 (F2: celdas del abdomen mas vivas; F3: la Reina brilla: aura, abdomen y corona luminosos) | `hurt` 0..1 (flash blanco + retroceso + cabeza "dano") | `enraged` (furia: tinte ambar pulsante, aleteo x1,25; sin rojo) | `desperate` (= `windup:'zumbido'`) | `exposed` (ventana: aro hexagonal **blanco azulado** en el suelo `#e6f7ff` + tinte; el dorado no se usa porque la Reina es ambar) | `stun` (aturdida: aterriza, alas plegadas, patas abiertas, ojos en X, estrellas de miel) | `immune` (puerta de fase 3 s: cupula de celdas hexagonales blanco azulada + tinte) | `roar` 0..1 (zumbido de rugido: cabeza arriba, mandibulas abiertas, ondas desde la boca, alas a tope; para intro/cambio de fase) | `windup`+`wp` 0..1, `strike`+`sp` 0..1 (sin `wp`/`sp` hacen bucle: solo preview; `strike` manda sobre `windup`) | `aim` rad (angulo mundo hacia el objetivo: lo usan `estocada` y `lluvia` para apuntar el aguijon) | `dying`+`dt` (muerte) | `alpha` 0..1 | `noShadow`/`noFx`.
+**Especificos de Melaria**: `lift` px = altura EXTRA sobre el vuelo normal (el Picado: sube con `lift` creciente y cae a 0; negativo hasta -40 = posada) | `landed` 0..1 o bool = aterrizada (hover->0, patas abiertas): se activa sola con `broken.alas`, `stun` y `stuck` | `stuck` = atrapada en miel (Picado sobre miel, 2,4 s: aterrizada, charco de miel bajo ella, gotas pegadas, forcejea) | `swollen` 0..1 = abdomen hinchado (3 s tras la Eclosion masiva, x1,3 de dano: tinte calido y pulso; la propia `eclosion` lo sube sola) | `broken:{alas, aguijon, corona}` bool: **alas** = munones desgarrados + aterriza (sin aleteo); **aguijon** = munon del aguijon (la estocada/lluvia dejan de pintar su brillo; usar `alazo`); **corona** = munon de cera con gota de miel (sin brillo de jalea).
+`drawBoss` pinta: sombra (separada, se encoge y aclara con la altura) + aura calida + jefe + efectos propios (polen que cae de las alas, estela de la estocada, aguijones erizados + fogonazo, lineas del picado y polvo, ondas de zumbido, anillo morado y abejitas de la llamada, goteo/salpicadura de miel, remolinos del torbellino, aura y cruces de jalea, chorro de la eclosion, estela del alazo, estrellas, aro de ventana, cupula inmune, miel pegada, anillos hexagonales del desesperado).
+
+**Ataques** (`Assets.bossPoseNames('melaria')` = `estocada picado lluvia llamada panal torbellino jalea eclosion alazo zumbido`; el numero N del doc B.5 = la N-esima en ese orden salvo `alazo`, que es el golpe de ala corto de la Reina sin Aguijon, y `zumbido` = Zumbido Mortal):
+| ataque | windup (wp 0->1) | strike (sp 0->1) |
+|---|---|---|
+| `estocada` (1) | el abdomen se curva por debajo del cuerpo hasta apuntar a `aim` (el aguijon se enciende), el torax se echa atras, alas rapidas | estocada: abdomen estirado al maximo hacia `aim`, torax adelante, estela incandescente detras de la punta |
+| `picado` (2, firma) | sube: alas arriba y muy rapidas, torax atras, abdomen recogido (la altura la pone la logica con `lift`) | cae de cabeza (alas barridas atras, lineas de velocidad) y al impactar (sp>=0,3) aplasta: onda de polvo/cera; con `broken.alas` = **salto corto** (sin ascenso, alas rotas) |
+| `lluvia` (3) | abdomen apunta a `aim`, aguijones erizados en abanico, punta brillante | rafaga: abdomen vibra, fogonazo y 5 chispas en abanico en la punta (los proyectiles: `proj_boss_quill`, los lanza la logica) |
+| `llamada` (4) | alas vibrando muy alto, cabeza arriba con mandibulas abiertas, ondas de zumbido y anillo morado de enjambre en el suelo con abejitas orbitando | pisoton de zumbido, anillo y ondas al maximo |
+| `panal` (5) | el abdomen apunta al suelo y gotea miel (`fx_melaria_drip`) | bombea el abdomen, gotas y salpicadura de miel en el suelo (las celdas las pinta el mundo) |
+| `torbellino` (6) | alas cada vez mas rapidas y planas, torax atras, remolinos de viento | **gira** (el cuerpo se comprime/voltea en x como un trompo), alas desenfocadas, 9 remolinos de viento ambar; la rosquilla de dano la pone la telegrafia `whirl` |
+| `jalea` (7) | canal: se endereza, aleteo lento, corona con brillo, aura blanco-verdosa, cruces de jalea suben hacia la corona (`wp` = progreso del canal 0..1) | pulso de curacion (anillo) |
+| `eclosion` (8) | el abdomen se hincha y se agrieta con luz (`abF` 0->2->3), tiembla | revienta: chorro de miel y celdas; despues queda hinchado (`swollen:1`) |
+| `alazo` | ala/cuerpo hacia atras | manotazo corto hacia delante con estela de arco (alcance 110) |
+| `zumbido` (= `desperate`) | (pose fija) en el aire, alas planas y borrosas a tope, mandibulas abiertas, ojos blanco-rosados, brillo total, ondas y tres anillos hexagonales en el suelo | - |
+El aguijon solo gira por el hemisferio ventral (de -0,3 a 3,3 rad en el marco del jefe); si `aim` queda fuera, el cuerpo se inclina hasta 0,7 rad para compensar. **Usa siempre `anchors.stingTip.a` (angulo real del aguijon en el mundo) como direccion del carril/cono**, no el `aim` crudo.
+
+## Anclas (`Assets.bossAnchors('melaria'|'reina', state)`, `{x,y,r}` relativos a (x,y), con `facing`, `hover`/`lift` y giro aplicados; MISMO state que `drawBoss`)
+| clave | que es | r | reposo (facing 1, hover 40) |
+|---|---|---|---|
+| `body` / `thorax` | hurtbox de contacto (circulo logico, ya elevado) | 70 / 46 | (0,-40) |
+| `head` | cabeza | 30 | (66,-54) |
+| `corona` (= `crown`) | parte rompible Corona (la jalea de la frente) | 24 | (69,-88) |
+| `alas` | parte rompible Alas (centro entre las alas cercanas; con `broken.alas` cae sobre el torax) | 52 | (4,-115); rotas (facing -1) (-8,-4) |
+| `aguijon` | parte rompible Aguijon (la punta) | 24 | (-173,53) |
+| `stingTip` | **origen de la Estocada y la Lluvia**; extra `a` = angulo mundo (rad, 0..2pi) hacia donde apunta | 8 | (-173,53), a 2,62 |
+| `stingBase` / `abdomen` / `spawn` | raiz del aguijon / centro del abdomen (hurtbox hinchada si `swollen`) / **donde salen las Larvas de la Eclosion** | 10 / 44 / 0 | (-64,-10) / (-90,5) / (-90,5) |
+| `wingFront` / `wingBack` / `wingTip` / `wingTipBack` | centro de cada ala cercana / punta (el Torbellino golpea con las alas) | 30/30/14/14 | (43,-117) (-36,-112) (79,-170) (-70,-157) |
+| `mouth` / `eyes` | boca (ondas de zumbido) / ojos | 10 / 8 | (92,-43) / (76,-59) |
+| `jelly` | punto sobre la corona donde caen las gotas de la Jalea real | 0 | (69,-96) |
+| `feet` / `groundShadow` | suelo bajo el cuerpo (orden de profundidad) / sombra | 0 / 130 | (0,84) / (0,88) |
+| `hover` | `{x:0,y:-hover,r:0,h:hover}` altura actual del vuelo (px) | - | h 40 |
+Cambian con la pose (inclinacion, abdomen que apunta, alas): llamar cada frame.
+
+## Telegrafias nuevas: `Assets.drawBossTele(ctx, kind, x, y, o)` (mismas `o`: `p` 0..1, `a`, `color`, `fix` (por defecto p>=0,7), `sig`, `t`; alfa maximo ~0,4; con un filo oscuro bajo el contorno para leerse sobre la cera clara)
+| kind | parametros | uso en B.5 |
+|---|---|---|
+| `stinglane` | `w:70, len:420, a` (origen = `anchors.stingTip`; `a` = `stingTip.a`) | Estocada real: carril rojo en punta de flecha con chevrons y cruz en el extremo (fijo los ultimos 300 ms: `fix:true` con p>=0,67) |
+| `dive` | `r:100` | Zumbido en picado: circulo rojo r100 que se llena + sombra oscura creciente + 6 flechas hacia el centro + cruz (con `sig:true` doble contorno + `drawBossVignette`) |
+| `quills` | `r:420, arc:80 grados (rad), n:9/11/13, a` | Lluvia de aguijones: cono rojo con n lineas punteadas y puntas que avanzan |
+| `swarm` | `r:150` | Llamada del enjambre: anillo morado con abejitas en espiral |
+| `honeycells` | `cells:[{x,y,nest}], r:44` (radio del hexagono; coordenadas absolutas) | Panal abierto: hexagonos con contorno **marron punteado** que se llenan de **ambar** (miel, sin dano) y los `nest:true` pulsan en **rojo** con una larva dentro; escalonados |
+| `whirl` | `r:260, inner:100` | Torbellino: rosquilla roja con flechas girando y zona segura interior blanco-azulada punteada |
+| `jelly` | `r:130, hit:0..1` | Jalea real: circulo verde-blanco con barra de canal circular y cruz; `hit` = barra "dano acumulado para interrumpir" (pasa a amarillo > 0,8) |
+| `larvae` | `pts:[{x,y}], r:46` | Eclosion masiva: marca roja con larva en cada punto de aparicion (explosion), escalonadas |
+| `pollen` / `honey` | `r` | zonas sin dano (nube de polen del Polinizador / charco de miel): ambar punteado con motas/burbujas |
+Sirven los viejos: `circle`, `cone {r, arc}`, `arc {r, inner:0, arc:140 grados}` (alazo), `summon`, `donut`.
+
+## VFX en funciones (dibujan en `ctx`, coordenadas de juego)
+- `Assets.drawMelariaRing(ctx, x, y, R, {state:'idle'|'warn'|'hit', p, gaps:[rad,...], gapHalf:0.25, th:26, ry:1, alpha, t})`: **anillo hexagonal plano** (vertices a 0/60/...) de radio R al vertice, banda de grosor `th`; `warn` = rojo que se llena con `p`, `hit` = destello blanco-rojo, `idle` = marron punteado; los `gaps` (centros en rad) dejan huecos con dos puntos blancos de borde (zonas seguras). `ry` aplasta en y (vista oblicua, p. ej. 0,55). Para los 5 anillos del Zumbido Mortal (R = k*83 en la arena real).
+- `Assets.drawMelariaShards(ctx, x, y, p, {kind:'wing'|'sting'|'crown', n})`: esquirlas (retales de ala / astillas / gotas de jalea) + `fx_part_break` al romper una parte (~800 ms, en la ancla).
+- `Assets.drawMelariaBuzz(ctx, x, y, p, {r})` ondas de zumbido; `Assets.drawMelariaJelly(ctx, x, y, p, {t})` aura+cruces de Jalea real (el jefe ya los pinta solo); `Assets.drawMelariaPollen(ctx, x, y, t, {n, r, alpha})` motas de polen.
+- Iconos: `Assets.drawWeakIcon(ctx, 'poison', x, y, {resist:true, immune:true, size})` (envuelto: con `immune` pinta `icon_immune` y la etiqueta "INM" = **Veneno inmune a estados**, sin el "x0,5"; el dano directo x0,5 se indica aparte con `{resist:true, mult:'0.5'}`). Debilidades: `['fire','ice']` x1,25; resistencias `['lightning']` x0,8.
+
+## Sprites (nombre, final px, frames, notas)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `boss_reina_thorax` | 112x92 | 2 | respiracion; centro (56,46) |
+| `boss_reina_abdomen` | 140x92 | 4: 0 normal, 1 brillo, 2 hinchado, 3 hinchado con grietas luminosas | apunta a la IZQUIERDA; engancha por la derecha (128,46), punta (8,46) |
+| `boss_reina_sting` | 48x24 | 3: 0 entero, 1 cargado, 2 roto (munon) | apunta a la izquierda; base (44,12) |
+| `boss_reina_head` | 68x64 | 4: 0 neutra, 1 zumbido (mandibulas abiertas), 2 herida, 3 aturdida (X) | sin antenas (van en el compuesto) |
+| `boss_reina_eyes` | 32x18 | 3 (F1 verde palido, F2 ambar, F3 blanco-rosado) | sobre el ojo compuesto |
+| `boss_reina_crown` | 44x34 | 3: 0 entera, 1 brillo, 2 rota (munon + gota) | |
+| `boss_reina_wing_front` / `_back` | 132x72 / 116x64 | 5 c/u: 0-3 aleteo (escorzo), 4 rota | translucidas; raiz a la izquierda (6,36)/(6,32), apuntan a la derecha |
+| `boss_reina_legs` | 80x64 | 8: 0-1 colgando, 2 recogidas, 3 abiertas (posada); 4-7 lado lejano (oscuro) | tres patas por lado |
+| `boss_reina_portrait` (= `boss_melaria_portrait`) | 96x96 | 3: neutro, furia (ojos blanco-rosados), herido | `drawBossPortrait('melaria'|'reina', ctx, x, y, {size:96, mood})` |
+| `trophy_reina_wing` / `_sting` / `_jelly` | 32x32 | 2: 0 normal, 1 ROTO (gris, aspa roja) | **Ala de Reina, Aguijon Real, Jalea Real**; a 16x16 = escala 0,5 |
+| `icon_immune` | 24x24 | 1 | gota barrada (Veneno inmune) |
+| `fx_royal_jelly` | 48x48 | 4 (`loop` 8) | cruz de curacion verde-blanca con gota |
+| `fx_hex_ring` | 128x112 | 3: `idle` marron punteado, `warn` relleno rojo, `hit` destello | hexagono plano de radio ~58 (una celda/anillo escalable) |
+| `fx_melaria_window` | 128x128 | 4 (`loop` 8) | aro hexagonal blanco azulado de la ventana |
+| `fx_melaria_shield` | 128x128 | 1 | cupula de celdas (el jefe pinta una version grande propia) |
+| `fx_melaria_drip` | 16x32 | 3: `hang`, `stretch`, `fall` | gota de miel |
+| `fx_melaria_chip` | 32x32 | 6: cera, retal de ala, astilla de aguijon, gota de jalea, hexagono de miel, hexagono de cera | esquirlas |
+| `fx_melaria_buzz` | 64x64 | 4 (`loop` 10) | onda de zumbido |
+| `proj_boss_quill` | 28x12 | 2 (`loop` 12) | aguijon de la Lluvia (apunta a la derecha, rotar al angulo; ancla centro) |
+Reusa existentes: `fx_part_break`, `shockwave`, `drawBossWave`, `drawBossVignette`, `icon_weak`/`icon_resist`, y del mundo (`assets_fam4.js`): `fx_honey_cell`, `fx_cell_open`, `fx_nest_cell`, `fx_honey_puddle`, `fx_smoke_puff`, `obs_wax_pillar`.
+
+## Muerte (`dying:true, dt:ms`; `deathMs` 3500)
+0-150 ms flash blanco; 0-1000 tambalea (parpadeos blancos, temblor, cae del vuelo a tierra, aleteo que se apaga); **500 ms: la corona sale despedida, rebota y queda brillando en el suelo hasta 3100**; 600: las cuatro alas se desgarran y caen girando; 1000-1800 se desploma (patas abiertas, cabeza gacha, abdomen hinchado que rezuma miel por las grietas y gotea; abejitas huyen del cuerpo); 1800-3300 el cuerpo se **deshace en hexagonos de miel y cera** que caen y se amontonan en un charco de miel que crece bajo ella; 3000-3500 charco y restos se desvanecen; a 3500 no pinta nada (quitar la entidad). Recomendado: `fx.shake(12, 900)`, hit-stop 120 ms, "congelado" 400 ms si muere en el Zumbido Mortal (no avanzar `dt`).
+
+## Notas para la logica / HUD
+- No tapa a Marlo: telegrafias <= 0,4 de alfa; el jefe ordena por `y + 84`; el aro de ventana, el anillo de la Llamada, el charco de miel y los anillos hexagonales van en el suelo.
+- Entrada: techo que se abre (lo pone el mundo), `lift` 160 -> 0 en 700 ms mientras `roar` 0->1; `shake(6,180)` al llegar.
+- Partes: al romperse poner `broken.X = true` y llamar `drawMelariaShards(ctx, ancla.x, ancla.y, p, {kind})` (`wing` en `alas`, `sting` en `aguijon`, `crown` en `corona`). Alas rotas = aterriza sola; el Picado pasa a "Salto corto" con la misma pose `picado`. Aguijon roto: usar `alazo` en lugar de `estocada`/`lluvia`. Corona rota: sin brillo de jalea y la `jalea` ya no se debe lanzar.
+- Jalea real: `windup:'jalea'` con `wp` = progreso del canal (1600 ms); telegrafia `jelly` con `hit` = dano acumulado/umbral. Si se interrumpe: `stun` 1 s.
+- Eclosion masiva: windup 1200 ms; al `strike` suelta Larvas en `anchors.spawn`; luego `swollen:1` 3 s (x1,3). Atrapada en miel: `stuck:true` 2,4 s (ventana x1,35 en la logica; poner tambien `exposed` si se quiere el aro).
+- Colores: miel = ambar oscuro (celdas), ventana/inmune = blanco azulado (`windowColor`); el rojo solo para dano.
+
+---
+
 # Minijefes P4.5 (Cripta y Tundra) (src/assets_mini2.js, cargado tras assets_boss3.js; solo arte, sin logica)
 Script clasico que extiende `window.Assets`. Mismo estilo que fam1/fam3 (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo). Diseno: `DESIGN-v6-minijefes.md` 4.3, 4.4, 4.7, 4.8. Todo precompuesto al cargar (offscreen): en juego es un `drawImage` (`Assets.animFrame(n, anim, ms)` o `Assets.sprite(n, 'anim:i')`). Ancla de pies = (final_w/2, final_h-4). `Assets.MINI2 = {cripta:[...], tundra:[...]}` lista todo. Los indices de frame de `enemy_mini_yeti` y `enemy_mini_ventisquero` YA existentes NO cambian: se anaden frames y anims detras (al final, tras sus `die`). Los `*_np` = "no part" = parte rota (escudo / nucleo / placa / corazon).
 Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias" -> "Minijefes Cripta (P4.5)" / "Minijefes Tundra (P4.5)".
