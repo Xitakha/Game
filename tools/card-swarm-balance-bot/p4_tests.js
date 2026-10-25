@@ -48,7 +48,7 @@ async function data(b) {
   ok(r.cov.every(c => c <= 260), 'nieve firme a <= 260 px del borde con parches r 110 / 90 / 70 (' + r.cov + ')');
   ok(r.fire120 <= 215, 'hoguera a <= 215 px del borde desde cualquier punto con r 120 (5 hogueras + 2 repisas encendidas en el Invierno) (' + r.fire120 + ')');
   ok(r.cold.join() === '0.9,1,1.1', 'L.DUR.cold = 0,90 / 1,00 / 1,10 (' + r.cold + ')');
-  ok(r.bb === 'yarlak' && r.fam === true && r.save === 5 && r.bosses === 'pastor,karceron,letea,yarlak', 'Tundra -> yarlak, familia lista, guardado v5, 4 jefes (' + [r.bb, r.fam, r.save, r.bosses] + ')');
+  ok(r.bb === 'yarlak' && r.fam === true && r.save === 7 && r.bosses === 'pastor,karceron,letea,yarlak,melaria', 'Tundra -> yarlak, familia lista, guardado v7 (P6), 5 jefes (' + [r.bb, r.fam, r.save, r.bosses] + ')');
   // el Frío corre a ritmo distinto por duración (L.DUR.cold)
   const cr = await pg.evaluate(() => { var res = []; [7, 9, 10].forEach(m => { G.setLen(m); G.Tundra.begin('tundra'); G.cold.v = 0; G.Boss.e.mode === 'x'; var p = G.player; p.x = 380; p.y = 405; p.sf = 1; G.hand = null; p.hand = p.hand.map(() => null); G.Tundra.resetHand(); G.Tundra.coldUpdate(1000); res.push(Math.round(G.cold.v * 100) / 100); }); G.setLen(9); return res; });
   ok(cr[0] < cr[1] && cr[1] < cr[2] && Math.abs(cr[1] - 1.5) < 0.2, 'ganancia de Frío por segundo x 0,9 / 1,0 / 1,1 (' + cr + ')');
@@ -249,11 +249,11 @@ async function unlock(b) {
   await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(600);
   const m = await p2.evaluate(() => ({ v: G.Save.data.v, y: G.Save.data.peligro.yarlak, bk: JSON.stringify(G.Save.data.bossKills), br: G.Save.data.brasas, pf: G.Save.data.pf.earned, pel: JSON.stringify(G.Save.data.peligro), bak: !!localStorage.getItem('swarmhand.save.v4'), mig: G.Save.data.flags.migrated5, qb: G.Quests.unlockedBiomes().join(','), feas: G.Quests.feasible(G.Quests.def('wolves')) }));
   console.log(JSON.stringify(m));
-  ok(m.v === 5 && m.y === 1 && m.bak && m.mig === 1, 'migración v4 -> v5: versión 5, peligro.yarlak = 1, copia en swarmhand.save.v4');
+  ok(m.v === 7 && m.y === 1 && m.bak && m.mig === 1, 'migración v4 -> v5 (-> v7 actual): peligro.yarlak = 1, copia en swarmhand.save.v4');
   ok(m.br === 123 && m.pf === 7 && m.bk === '{"pastor":2,"karceron":1,"letea":1}' && /"pastor":3/.test(m.pel), 'sin pérdidas (Brasas, PF, victorias, Peligro)');
   ok(m.qb.indexOf('tundra') > 0 && m.feas, 'quien ya venció a Letea ve la Tundra abierta y el encargo de los Lobos de escarcha se activa (' + m.qb + ')');
   await p2.evaluate(() => { localStorage.setItem('swarmhand.save', '{"v":4,"parts":null'); }); await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(500);
-  ok(await p2.evaluate(() => G.Save.data.v === 5 && G.Save.data.peligro.yarlak === 1), 'guardado corrupto cae a valores por defecto v5');
+  ok(await p2.evaluate(() => G.Save.data.v === 7 && G.Save.data.peligro.yarlak === 1), 'guardado corrupto cae a valores por defecto (v7)');
   ok(!p2.errs.length, '0 errores: ' + p2.errs.slice(0, 2)); await c2.close();
 }
 

@@ -99,7 +99,8 @@
       lanudo: {}, castana: { pastor: 'Con esos cuernos del Pastor se hace un caldo... no, mejor no.', karceron: 'Un carcelero menos y más pan en la mesa, cielo.', letea: 'Dicen que Letea se comía los recuerdos. Yo guardo los míos en la olla.' }
     };
     X.vesper.yarlak = 'Yarlak cayó. Nadie apostaba por el mamut. Yo sí, pero no se lo digas a nadie.'; X.grum.yarlak = 'Ese marfil helado... pásame un colmillo y te hago algo que no se derrita.'; X.castana.yarlak = 'Con tanto frío, un caldo de brasa es lo mínimo, cielo.';
-    ['pastor', 'karceron', 'letea', 'yarlak'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
+    X.vesper.melaria = 'Melaria cayó. La Reina, de rodillas. Y yo con la apuesta ganada otra vez.'; X.grum.melaria = 'Esa ala translúcida... y ese aguijón. Con eso sí que puedo trabajar, chaval.'; X.castana.melaria = 'Jalea real, cielo. Con eso se cura hasta el mal de amores.';
+    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
     if (id === 'ulalume') {
       var seen = S.combosSeen || {};
       if (seen.vapor) out.push('Fuego y Hielo... qué vapor tan dramático.');
@@ -132,6 +133,7 @@
     else if (!k.karceron) out.push('Con el Pastor vencido se abre la Cripta. Karceron es un coloso casi inmóvil: Hielo y Rayo lo parten; el Fuego y el Veneno apenas le hacen cosquillas.');
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
     if (k.letea && !k.yarlak) out.push('Con Letea vencida se abre la Tundra: hielo que resbala, ventisca y un Frío que sube. Yarlak, el mamut, odia el Fuego y el Rayo. Quédate cerca de las hogueras.');
+    if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
     try { G.Minis.IDS.forEach(function (mid) {   // P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
       if ((S.insignias || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
@@ -151,14 +153,15 @@
   function talkLanudo(it) {
     var S = G.Save.data, w = who(it), A_ = G.Ach, bye = { label: 'Adiós', fn: function () {} };
     var pre = [];
-    ['pastor', 'karceron', 'letea', 'yarlak'].forEach(function (b) {
+    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].forEach(function (b) {
       if (S.bossKills[b] && !S.flags['told_' + b]) {
         S.flags['told_' + b] = 1;
         pre = pre.concat({
           pastor: ['¿Lo derribaste? Al Pastor... Era el mejor de nosotros. Gracias por darle descanso.', 'Ahora la Cripta se abre. Dicen que allí duerme un carcelero.'],
           karceron: ['Las cadenas de Karceron ya no suenan. La cripta respira por fin.', 'Queda el Asfodelo: allí vive Letea, la que se come los recuerdos.'],
           letea: ['Letea ha caído... y me acuerdo de mi propio nombre. Me llamo Lanudo, ¿lo sabías?', 'Ya no queda nadie que nos robe el pasado. Ve y cuéntalo.', 'Al norte se ha abierto la Tundra. Allí el invierno camina.'],
-          yarlak: ['Yarlak... guardaba la última hoguera del norte. Gracias por devolverle el descanso.', 'Ahora el hielo respira un poco más cálido.']
+          yarlak: ['Yarlak... guardaba la última hoguera del norte. Gracias por devolverle el descanso.', 'Ahora el hielo respira un poco más cálido.', 'Y al otro lado se oye un zumbido: se ha abierto el Panal.'],
+          melaria: ['Melaria... devoró la jalea de sus hermanas y el panal creció a su alrededor como una jaula.', 'Gracias por abrirla, chaval. El zumbido por fin se ha callado.']
         }[b]);
       }
     });

@@ -303,8 +303,8 @@
     { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' },
     // P4: la Tundra (Yarlak) se abre al vencer a Letea
     { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' },
-    // P5: el Panal existe (arena hexagonal, miel, humo y su familia) pero sigue BLOQUEADO hasta que llegue Melaria (P6): '? PANAL'. Solo se prueba con ?biome=panal
-    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'melaria', needName: 'Melaria', bid: 'melaria', locked: true }];
+    // P6: el Panal (Melaria) se abre al vencer a Yarlak
+    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', bid: 'melaria' }];
   function biomeRect(i) { return { x: 650 + i * 58, y: 336, w: 56, h: 42 }; }   // 5 destinos de 56 px (650 + 4 x 58 + 56 = 938 <= 940)
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
@@ -313,6 +313,7 @@
     var S = SV(), id = S.biome || 'bosque';
     if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'tundra' && !S.bossKills.letea) id = S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
+    if (id === 'panal' && !S.bossKills.yarlak) id = S.bossKills.letea ? 'tundra' : S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
     return BIOMES.filter(function (b) { return b.id === id; })[0];
   }
@@ -330,7 +331,7 @@
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
     for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
       if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-      else say(BIOMES[i].locked ? 'El Panal sigue cerrado: Melaria, su jefa, aún no ha llegado a Rescoldo.' : 'Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
+      else say('Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
     }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     var bid = effBiome().bid;

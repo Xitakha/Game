@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v7 (P6, Panal + Melaria): peligro.melaria; el Panal se abre al vencer a Yarlak (bossKills.yarlak). Migración v6 -> v7 con copia en swarmhand.save.v6; quien ya venció a Yarlak ve el Panal abierto.
    v6 (P4.5, minijefes): insignias { id: n } (trofeo menor de cada minijefe) y elites por SLOT (mini_slot1 / mini_slot2 en vez de mini_bulwark / mini_hive). Migración v5 -> v6 con copia en swarmhand.save.v5.
    v5 (P4, Tundra + Yarlak): peligro.yarlak; la Tundra se abre al vencer a Letea (bossKills.letea). Migración v4 -> v5 con copia en swarmhand.save.v4; quien ya venció a Letea ve la Tundra abierta.
    v4 (Jefes J3): Peligro por jefe (peligro[id] = máximo desbloqueado, peligroSel[id] = elegido en el Portal), victorias por Peligro (pelWins), cacería (hunts[id][P] = { wins, tries, best }),
@@ -12,7 +13,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 6;
+  var KEY = 'swarmhand.save', VERSION = 7;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -33,7 +34,7 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   var warned = false;
@@ -68,6 +69,10 @@
       Object.keys(el).forEach(function (k) { d.elites[k === 'mini_bulwark' ? 'mini_slot1' : k === 'mini_hive' ? 'mini_slot2' : k] = el[k]; });
       d.insignias = {}; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated6 = 1;
     }
+    if (d.v === 6) {   // P6: Melaria (Panal). Solo se añade su Peligro; el desbloqueo del Panal sale de bossKills.yarlak
+      d.v = 7; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.melaria) d.peligro.melaria = 1;
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated7 = 1;
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -94,6 +99,7 @@
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
     if (!d.peligro.yarlak) d.peligro.yarlak = 1;
+    if (!d.peligro.melaria) d.peligro.melaria = 1;
     if (typeof d.pending.dish === 'undefined') d.pending.dish = null;
     if (typeof d.shop.dish !== 'number') d.shop.dish = 0;
     if (typeof d.lossStreak !== 'number') d.lossStreak = 0;
@@ -133,7 +139,7 @@
   };
 
   // ---- Peligro (J3): máximo desbloqueado por jefe y nivel elegido en el Portal
-  S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak'];
+  S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'];
   S.pelMax = function (id) { return G.clamp(Math.round((S.data.peligro && S.data.peligro[id]) || 1), 1, 5); };
   S.pelSel = function (id) { return Math.min(S.pelMax(id), G.clamp(Math.round((S.data.peligroSel && S.data.peligroSel[id]) || 1), 1, 5)); };
   S.setPelSel = function (id, n) { S.data.peligroSel[id] = G.clamp(n, 1, S.pelMax(id)); S.save(); };

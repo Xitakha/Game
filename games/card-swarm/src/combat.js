@@ -43,6 +43,7 @@
   };
   C.burn = function (e, dps, ms) { e.burnDps = Math.max(e.burnT > 0 ? e.burnDps : 0, dps); e.burnT = Math.max(e.burnT, ms || 2000); };
   C.poison = function (e, n) {
+    if (e.type === 'boss' && e.def && e.def.noPoison) return;   // P6: Melaria es inmune a los estados de veneno (el daño directo va x0,5 en su tabla de resistencias)
     var a = A(), m = M();
     e.poisonN = Math.min(m.poisonMax, (e.poisonN || 0) + (n || 1));
     var dur = 4000 + (a.plague && e.slowT > 0 ? 3000 : 0), tf = G.Tree.fx;

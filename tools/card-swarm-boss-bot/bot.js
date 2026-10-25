@@ -29,6 +29,9 @@ window.installBot = function (opts) {
         if (!safe) d += 10;
       } else if (h.k === 'frame') {   // borde de lava (F2 de Karceron)
         if (x < h.m + 4 || x > G.AW - h.m - 4 || y < h.m + 4 || y > G.AH - h.m - 4) d += 4;
+      } else if (h.k === 'hexring') {   // P6: Zumbido Mortal de Melaria: anillo hexagonal (apotema h.apo, grosor h.th) con 2 huecos angulares (h.gaps, semiancho h.gh)
+        var hx = x - h.x, hy = y - h.y, hn = Math.max(Math.abs(hy), Math.abs(hx * 0.8660254 + hy * 0.5), Math.abs(hx * 0.8660254 - hy * 0.5));
+        if (Math.abs(hn - h.apo) < h.th / 2 + pr * 0.5 + 6) { var ha = Math.atan2(hy, hx), hg = false; for (var hi = 0; hi < h.gaps.length; hi++) if (Math.abs(G.angDiff(ha, h.gaps[hi])) < h.gh - 0.05) hg = true; if (!hg) d += 10; }
       } else if (h.k === 'wave') {
         var rr = h.r + h.v * Math.max(0, tau - h.t0) / 1000, dw = Math.hypot(x - h.x, y - h.y);
         if (Math.abs(dw - rr) < h.th / 2 + pr + 10) {
@@ -71,6 +74,7 @@ window.installBot = function (opts) {
         }
         var m = G.WALL + pr; if (x < m || x > G.AW - m || y < m || y > G.AH - m) { x = G.clamp(x, m, G.AW - m); y = G.clamp(y, m, G.AH - m); cost += 0.4; }
         cost += dangerAt(x, y, pr, hz, zs, pj, tau) * (tau < 400 ? 2 : 1);
+        if (G.Panal && G.Panal.on && G.Panal.honeyAt(x, y)) cost += 0.35;   // P6: la miel ralentiza 45 %: se evita salvo necesidad
         if (B.obs) for (var o = 0; o < B.obs.length; o++) if (!B.obs[o].dead && Math.hypot(x - B.obs[o].x, y - B.obs[o].y) < B.obs[o].r + pr) cost += 1.5;
         if (e) for (var kk = 0; kk < B.briers.length; kk++) if (Math.hypot(x - B.briers[kk].x, y - B.briers[kk].y) < B.briers[kk].r) cost += 0.6;
       }

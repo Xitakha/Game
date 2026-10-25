@@ -169,7 +169,7 @@
     //      solo se activa con ?biome=panal (urlOk) o ?fam=1. pan:true = el rol usa la IA de enemies_panal.js (vuelo, miel, humo); fly:true = vuela (ignora la miel y los pilares); insect:true = se seda con el humo.
     //      `fbSpr`/`fbSkin` = sprite existente teñido de ámbar mientras no exista el arte propio (assets_fam4.js). sfx.* = SFX propios (sfx_fam4.js; si no existen, silencio).
     panal: {
-      name: 'La colmena de Melaria', ready: false, urlOk: true, boss: 'melaria', ponds: 0, star: null, light: { worm: 1, archer: 1, bomb: 1, pollinator: 1 },   // con la jefa viva: Obreras, Aguijoneras, Larvas y el Polinizador (cura a la Reina 1 % por pulso, B.6)
+      name: 'La colmena de Melaria', ready: true, urlOk: true, boss: 'melaria', ponds: 0, star: null, light: { worm: 1, archer: 1, bomb: 1, pollinator: 1 },   // con la jefa viva: Obreras, Aguijoneras, Larvas y el Polinizador (cura a la Reina 1 % por pulso, B.6)
       amb: { flies: 0, fog: 0.5, vig: 1, tint: 'rgba(255,170,40,0.06)', pollen: [24, 12, 0] },   // B.4.1: tinte ámbar 0,06, 24 / 12 / 0 motas de polen (Alta / Media / Baja), sin luciérnagas
       packs: [
         { id: 'falange',   layout: 'line',   parts: [['shield', 3], ['warlock', 1]] },          // Falange: 3 Guardias de cera en línea + Nodriza detrás

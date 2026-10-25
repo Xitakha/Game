@@ -95,7 +95,7 @@
   };
   Q.unlockedBiomes = function (kills) {
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
-    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0) || (b === 'panal' && kills.yarlak > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
   };
   Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
@@ -267,6 +267,8 @@
       lore: 'Tres insignias de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
     { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue las 8 Insignias (+1 Esencia rara, una vez).', ok: function (s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.IDS.indexOf(k) >= 0; }).length >= 8; }, give: { rare: 1 },
       lore: 'Las ocho... Cada guardián tenía su historia y tú te las has quedado todas. Toma, una Esencia: me la guardaba para alguien así.' },
+    { id: 'melaria', name: 'La reina destronada', desc: 'Vence a Melaria, la Reina Abeja.', ok: function (s) { return (s.bossKills.melaria || 0) > 0; },
+      lore: 'Melaria se comió la jalea de todas sus hermanas. Tú te has comido su corona. Me parece justo.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Activa 5 combos distintos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Activa los 12 combos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

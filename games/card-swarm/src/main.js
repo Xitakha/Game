@@ -275,15 +275,14 @@
     G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
     G.mode = rq ? rq.mode : 'run'; G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
-    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra' })[rq.boss] || biome;
-    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra' })[G.bossUrl] || biome;
+    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal' })[rq.boss] || biome;
+    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal' })[G.bossUrl] || biome;
     else if (!G.biomeUrl) {
       if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
       if (biome === 'tundra' && !BK.letea) biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P4: la Tundra se abre al vencer a Letea
+      if (biome === 'panal' && !BK.yarlak) biome = BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P6: el Panal se abre al vencer a Yarlak
     }
-    if (biome === 'panal' && !G.biomeUrl) biome = BK.yarlak ? 'panal' : (BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque');   // P5: el Panal sigue BLOQUEADO (sin Melaria hasta la P6): solo se entra con ?biome=panal
-    if (biome === 'panal' && !G.biomeUrl && !(G.Boss.DEFS && G.Boss.DEFS.melaria)) biome = 'bosque';
     G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome('bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
     G.Panal.begin(biome);    // P5: arena hexagonal, celdas de miel, humo y pilares de cera solo en el Panal
@@ -328,7 +327,7 @@
     G.finalHand = G.Cards.snapshot();
     if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
     G.sfx(won ? 'boss_die' : 'game_over');
-    if (won) { try { G.Snd.play(G.bossId === 'yarlak' ? 'stg_yarlak_victory' : 'win'); } catch (e) { /* audio */ } }
+    if (won) { try { G.Snd.play(G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
     G.Tundra.end();   // apaga el viento de la ventisca
     G.Panal.end();    // apaga el zumbido ambiente del Panal

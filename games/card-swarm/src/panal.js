@@ -237,6 +237,10 @@
       e.hot = { left: H.ms, rate: Math.max(e.hot ? e.hot.rate : 0, amt / H.ms), acc: e.hot ? e.hot.acc : 0, shown: e.hot ? e.hot.shown : 0 };
       n++;
     }
+    var bq = G.Boss && G.Boss.e;   // B.6: si hay un Polinizador vivo durante la pelea con la Reina, su pulso la cura un 1 % de su HP máx. por pulso
+    if (bq && G.Boss.active && bq.id === 'melaria' && bq.mode === 'fight' && !bq.dying && bq.hp < bq.maxHp && src && src.type === 'pollinator' && Math.hypot(bq.x - x, bq.y - y) <= H.r + 140) {
+      var hh = bq.maxHp * 0.01; bq.hp = Math.min(bq.maxHp, bq.hp + hh); G.fx.num(bq.x, bq.y - 110, '+' + Math.round(hh), '#b8ff9a', false, { size: 14 }); n++;
+    }
     return n;
   };
   function tickHot(e, dt) {
