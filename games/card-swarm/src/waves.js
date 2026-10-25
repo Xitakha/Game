@@ -10,13 +10,13 @@
 
   // Posición en anillo fuera de cámara (cae dentro de la arena)
   function spawnPos() {
-    var p = G.player, m = G.WALL + 30, x, y, tries = 0;
+    var p = G.player, m = G.WALL + 30, x, y, tries = 0, PN = G.Panal.on;
     do {
       var a = G.rnd(0, 6.283), r = G.rnd(500, 580);
       x = p.x + Math.cos(a) * r; y = p.y + Math.sin(a) * r * 0.8; tries++;
-    } while ((x < m || x > G.AW - m || y < m || y > G.AH - m) && tries < 20);
+    } while ((x < m || x > G.AW - m || y < m || y > G.AH - m || (PN && !G.Panal.inside(x, y, 30))) && tries < 20);   // Panal: nunca en las esquinas cortadas por los muros diagonales
     if (tries >= 20) {  // jugador cerca de una pared: cualquier punto lejano
-      do { x = G.rnd(m, G.AW - m); y = G.rnd(m, G.AH - m); tries++; } while (G.dist(x, y, p.x, p.y) < 320 && tries < 60);
+      do { x = G.rnd(m, G.AW - m); y = G.rnd(m, G.AH - m); tries++; } while ((G.dist(x, y, p.x, p.y) < 320 || (PN && !G.Panal.inside(x, y, 30))) && tries < 60);
     }
     return [x, y];
   }
@@ -120,7 +120,7 @@
     if (G.frozen) return;   // intro del jefe
     if (G.mode !== 'run') { huntUpdate(dt); return; }
     var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
-    if (!W.bossSpawned && G.runT >= G.BOSS_T && !G.Tundra.noBoss()) spawnBoss();   // P3: la Tundra no tiene jefe hasta la P4 (o con ?nobos=1)
+    if (!W.bossSpawned && G.runT >= G.BOSS_T && !G.Tundra.noBoss() && !G.Panal.noBoss()) spawnBoss();   // P3: la Tundra no tiene jefe hasta la P4 (o con ?nobos=1)
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
     // v5: los dos minijefes nunca coexisten (la Madre Colmena espera a que el Coloso caiga) y ninguno entra en el último minuto previo al jefe final
@@ -180,7 +180,7 @@
       var r = Math.random() * tot, pk2 = opts[0];
       for (var i = 0; i < opts.length; i++) { r -= wOf(opts[i]); if (r <= 0) { pk2 = opts[i]; break; } }
       var pos = spawnPos();
-      E.spawn(pk2, pos[0], pos[1]);
+      if (G.Panal.on && pk2 === 'bomb') G.Panal.spawnLarva(pos); else E.spawn(pk2, pos[0], pos[1]);   // Panal: las Larvas explosivas salen de los nidos
       W.budget -= B.val(pk2, 'cost'); alive++; counts[pk2] = (counts[pk2] || 0) + 1;
     }
   };

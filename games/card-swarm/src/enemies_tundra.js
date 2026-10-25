@@ -112,7 +112,7 @@
     if (e.plateHp > 0) return;
     e.plateHp = 0; e.shield = 0; e.shieldDown = false; e.meltT = 350; if (e.mat && e.fe) e.mat = e.fe.mat;
     fx.burst(e.x + Math.cos(e.fa || 0) * e.r, e.y + Math.sin(e.fa || 0) * e.r, 12, '#bfeaff', 200, 500, 3, { add: true }); fx.ring(e.x, e.y, 8, 40, 300, '#ffb347', 3);
-    G.sfx('ice_break', { vol: 0.7 }); fx.num(e.x, e.y - e.r - 18, '¡PLACA DERRETIDA!', '#ffb347', true);
+    if (e.fe && e.fe.wax) { fsfx(e, 'brk', { vol: 0.8 }); fx.num(e.x, e.y - e.r - 18, '¡CERA FUNDIDA!', '#ffb347', true); } else { G.sfx('ice_break', { vol: 0.7 }); fx.num(e.x, e.y - e.r - 18, '¡PLACA DERRETIDA!', '#ffb347', true); }
   };
   function ai_yeti(e, dt, s, p, d, a) {
     var st = e.st, reach = e.r + p.r + YT.reach;

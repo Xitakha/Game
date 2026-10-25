@@ -2,7 +2,7 @@
    La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp.py (la VERSION es un hash del contenido: cualquier cambio en el juego
    cambia este archivo, el navegador instala el worker nuevo y el juego avisa "hay una versión nueva" sin recargar por su cuenta).
    Todas las rutas son relativas al propio sw.js, así que sirve igual en / que en una subruta (https://usuario.github.io/Game/card-swarm/). */
-const VERSION = '48fe3c63e3';
+const VERSION = '1f3a92bfe3';
 const CACHE = 'swarmhand-' + VERSION;
 const FILES = /*FILES*/[
   "./",
@@ -25,12 +25,16 @@ const FILES = /*FILES*/[
   "./src/sfx_fam3.js",
   "./src/sfx_yarlak.js",
   "./src/sfx_minis.js",
+  "./src/sfx_fam4.js",
+  "./src/sfx_melaria.js",
   "./src/assets_peligro.js",
   "./src/player.js",
   "./src/combat.js",
   "./src/enemies.js",
   "./src/tundra.js",
+  "./src/panal.js",
   "./src/enemies_tundra.js",
+  "./src/enemies_panal.js",
   "./src/weapons.js",
   "./src/waves.js",
   "./src/cards.js",
@@ -41,14 +45,17 @@ const FILES = /*FILES*/[
   "./src/assets_boss.js",
   "./src/assets_boss2.js",
   "./src/assets_boss3.js",
+  "./src/assets_boss4.js",
   "./src/assets_mini1.js",
   "./src/assets_mini2.js",
+  "./src/assets_fam4.js",
   "./src/mini_ui.js",
   "./src/assets_tree.js",
   "./src/boss.js",
   "./src/boss_karceron.js",
   "./src/boss_letea.js",
   "./src/boss_yarlak.js",
+  "./src/boss_melaria.js",
   "./src/quests.js",
   "./src/tree.js",
   "./src/dialog.js",
@@ -58,6 +65,7 @@ const FILES = /*FILES*/[
   "./src/hud.js",
   "./src/minis.js",
   "./src/minis_atk.js",
+  "./src/minis_panal.js",
   "./icons/icon-192.png",
   "./icons/apple-touch-icon.png",
   "./icons/icon-512.png",

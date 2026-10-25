@@ -165,8 +165,31 @@
         warlock:   U('Chamán del aullido',      'pelaje',   { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 2, capGrow: 2, hp: 1.05, spd: 0.95, tun: true, shaman: true, castMs: 600, spr: 'enemy_tun_chaman', fbSpr: 'warlock', fbSkin: { tint: '#9fd8ff', a: 0.45 }, sfx: { tele: 'wolf_howl', summon: 'wolf_howl' } })
       }
     },
-    // Esqueleto del Panal (P5): use vacío = nunca activo, ni siquiera con ?fam=1 (cae al roster legado).
-    panal:  { name: 'La colmena de Melaria', ready: false, boss: 'melaria', ponds: 0, star: null, light: {}, amb: {}, packs: [], use: {} }
+    // ---- PANAL (P5, B.4 / B.6): la colmena de Melaria. 9 tipos; suma de w por tier = 55 / 44 / 29 / 25. `ready:false` (sin jefa hasta la P6): el spawn normal no lo usa y el Portal lo muestra '? PANAL';
+    //      solo se activa con ?biome=panal (urlOk) o ?fam=1. pan:true = el rol usa la IA de enemies_panal.js (vuelo, miel, humo); fly:true = vuela (ignora la miel y los pilares); insect:true = se seda con el humo.
+    //      `fbSpr`/`fbSkin` = sprite existente teñido de ámbar mientras no exista el arte propio (assets_fam4.js). sfx.* = SFX propios (sfx_fam4.js; si no existen, silencio).
+    panal: {
+      name: 'La colmena de Melaria', ready: true, urlOk: true, boss: 'melaria', ponds: 0, star: null, light: { worm: 1, archer: 1, bomb: 1, pollinator: 1 },   // con la jefa viva: Obreras, Aguijoneras, Larvas y el Polinizador (cura a la Reina 1 % por pulso, B.6)
+      amb: { flies: 0, fog: 0.5, vig: 1, tint: 'rgba(255,170,40,0.06)', pollen: [24, 12, 0] },   // B.4.1: tinte ámbar 0,06, 24 / 12 / 0 motas de polen (Alta / Media / Baja), sin luciérnagas
+      packs: [
+        { id: 'falange',   layout: 'line',   parts: [['shield', 3], ['warlock', 1]] },          // Falange: 3 Guardias de cera en línea + Nodriza detrás
+        { id: 'abejorros', layout: 'cross',  parts: [['boar', 2]] },                           // Abejorros: 2 Zánganos en lados opuestos
+        { id: 'flores',    layout: 'field',  parts: [['pollinator', 2], ['worm', 4]] },        // Campo de flores: 2 Polinizadores + 4 Obreras
+        { id: 'avispero',  layout: 'pincer', parts: [['blinker', 2], ['honeyslug', 1]] }      // Avispero: 2 Avispas opuestas + 1 Babosa
+      ],
+      lens: { best: ['fire', 'ice'], worst: ['poison', 'lightning'] },
+      use: {
+        worm:       U('Obrera',            'insecto', { tier: 0, from: 0,      w: 55, cost: 1, maxAlive: 40, hp: 0.9, spd: 1.1, dmg: 5 / 6, pan: true, insect: true, spr: 'enemy_pan_obrera', fbSpr: 'worm', fbSkin: { tint: '#f3a31f', a: 0.5 }, sfx: { spawn: 'worker_buzz' } }),
+        archer:     U('Abeja aguijonera',  'insecto', { tier: 1, from: 45000,  w: 28, cost: 3, maxAlive: 12, pan: true, insect: true, fly: true, pspd: 230, proj: 'proj_stinger', fb: 'arrow', spr: 'enemy_pan_aguijonera', fbSpr: 'archer', fbSkin: { tint: '#f3a31f', a: 0.55 }, sfx: { tele: 'bee_aim', shoot: 'bee_sting', hit: 'stinger_hit' } }),
+        bomb:       U('Larva explosiva',   'miel',    { tier: 1, from: 90000,  w: 16, cost: 2, maxAlive: 6, spd: 0.95, dmg: 0.9, pan: true, honey: [36, 5000], spr: 'enemy_pan_larva', fbSpr: 'bomb', fbSkin: { tint: '#d9921a', a: 0.5 }, sfx: { tele: 'larva_fuse', boom: 'larva_burst' } }),
+        boar:       U('Zángano',           'insecto', { tier: 2, from: 120000, w: 10, cost: 5, maxAlive: 6, hp: 0.9, spd: 1.1, pan: true, insect: true, fly: true, drone: true, spr: 'enemy_pan_zangano', fbSpr: 'boar', fbSkin: { tint: '#f3a31f', a: 0.5 }, sfx: { tele: 'drone_wind', charge: 'drone_charge', crash: 'drone_crash' } }),
+        shield:     U('Guardia de cera',   'cera',    { tier: 2, from: 165000, w: 10, cost: 5, maxAlive: 6, hp: 1.1, spd: 0.95, pan: true, wax: true, plate: 40, spr: 'enemy_pan_guardia', fbSpr: 'enemy_shield', fbSkin: { tint: '#f0d98a', a: 0.55 }, sfx: { tele: 'guard_shove_tele', bash: 'shield_bash', hit: 'wax_shield_hit', melt: 'wax_shield_melt', brk: 'wax_shield_break' } }),
+        honeyslug:  U('Babosa de miel',    'miel',    { tier: 2, from: 210000, w: 9,  cost: 5, maxAlive: 4, pan: true, slug: true, spr: 'enemy_pan_babosa', fbSpr: 'worm', fbSkin: { tint: '#c97a14', a: 0.7 }, sfx: { tele: 'honey_glob_tele', crawl: 'slug_crawl' } }),
+        pollinator: U('Polinizador',       'insecto', { tier: 3, from: 270000, w: 8,  cost: 6, maxAlive: 2, capGrow: 1.5, pan: true, insect: true, fly: true, healer: true, spr: 'enemy_pan_polinizador', fbSpr: 'enemy_moth', fbSkin: { tint: '#b8ff9a', a: 0.45 }, sfx: { tele: 'pollen_tele', pulse: 'pollen_chime' } }),
+        blinker:    U('Avispa',            'insecto', { tier: 3, from: 315000, w: 9,  cost: 6, maxAlive: 4, hp: 0.9, spd: 1.3, dmg: 0.9, pan: true, insect: true, fly: true, spr: 'enemy_pan_avispa', fbSpr: 'enemy_blinker', fbSkin: { tint: '#f3a31f', a: 0.55 }, sfx: { tele: 'wasp_fade', blink: 'wasp_zip', slash: 'wasp_slash' } }),
+        warlock:    U('Nodriza',           'insecto', { tier: 3, from: 405000, w: 8,  cost: 8, maxAlive: 2, pan: true, insect: true, fly: true, nurse: true, spr: 'enemy_pan_nodriza', fbSpr: 'warlock', fbSkin: { tint: '#f3a31f', a: 0.5 }, sfx: { tele: 'nurse_cast', summon: 'larva_hatch' } })
+      }
+    }
   };
 
   // ---------------------------------------------------------------- Resolución según el bioma activo
@@ -228,7 +251,13 @@
     bat:      { name: 'Murciélago de hielo (picado, línea fina)',  ms: 700, exit: 30, strong: true, ice: true },
     stalag:   { name: 'Estalagmita viva (fisuras + anillo r 40)',  ms: 800, exit: 50, strong: true, ice: true },
     spirit:   { name: 'Espíritu de nieve (desvanece + tajo)',      ms: 950, exit: 60, strong: true, ice: true },
-    shaman:   { name: 'Chamán del aullido (invocación)',           ms: 600, exit: 0,  strong: false, ice: true }
+    shaman:   { name: 'Chamán del aullido (invocación)',           ms: 600, exit: 0,  strong: false, ice: true },
+    // ---- P5 (Panal, B.6): regla normal (no hay hielo). Aguijonera = archer (400 ms), Larva = bomb (700), Guardia = shield (500)
+    drone:    { name: 'Zángano (viento + carril 60 x 300)',        ms: 600, exit: 45, strong: true },
+    slug:     { name: 'Babosa de miel (escupitajo: círculo r 34)',  ms: 500, exit: 44, strong: false },
+    pollen:   { name: 'Polinizador (pulso de cura, anillo verde)', ms: 500, exit: 0,  strong: false },
+    wasp:     { name: 'Avispa (desvanece + tajo 100 grados)',      ms: 850, exit: 60, strong: true },
+    nurse:    { name: 'Nodriza (invocación de Larvas)',            ms: 500, exit: 0,  strong: false }
   };
   B.teleOf = function (id) { return B.tele[id].ms; };
   B.teleRule = function (t) { return 250 + (t.ice ? 220 : 0) + 1000 * t.exit / 190; };   // P3: en la Tundra (t.ice) se suman los 220 ms de arrancar (tau del hielo)

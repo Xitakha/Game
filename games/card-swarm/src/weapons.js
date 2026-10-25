@@ -65,6 +65,7 @@
     if (q.kind === 'dagger' || q.kind === 'shard') q.rot = q.ang;
     q.x += q.vx * s; q.y += q.vy * s;
     var out = q.life <= 0 || q.x < G.WALL || q.y < G.WALL || q.x > G.AW - G.WALL || q.y > G.AH - G.WALL;
+    if (G.Panal.on) { if (!out && G.Panal.outside(q.x, q.y)) out = true; if (q.tag === 'fire') G.Panal.fireArea(q.x, q.y, 10); }   // P5: los muros diagonales detienen los proyectiles; el Fuego carameliza la miel que sobrevuela
     // estela por etiqueta
     if (Math.random() < 0.6) {
       if (q.tag === 'fire') fx.dot(q.x, q.y, G.rnd(-20, 20), G.rnd(-40, -5), 320, Math.random() < 0.5 ? '#ff9a3c' : '#ffd27a', 3, { add: true });

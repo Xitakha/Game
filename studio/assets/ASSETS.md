@@ -23,3 +23,5 @@ Sin dependencias ni descargas; API en games/survival-lamb/ASSETS_API.md; visor e
 | SFX familia P3 Tundra (32 efectos + viento Assets.wind + pista 'tundra') | Audio | Generado por codigo (games/card-swarm/src/sfx_fam3.js) | audio-designer | Propia/libre | games/card-swarm |
 | SFX Yarlak P4 (41 efectos y stingers + pista 'boss_yarlak' de 4 capas + desesperado) | Audio | Generado por codigo (games/card-swarm/src/sfx_yarlak.js) | audio-designer | Propia/libre | games/card-swarm |
 | SFX minijefes P4.5 (67 efectos + 4 stingers stg_mini_*) | Audio | Generado por codigo (games/card-swarm/src/sfx_minis.js) | audio-designer | Propia/libre | games/card-swarm |
+| SFX Panal P5 (46 efectos + zumbido ambiente Assets.hum + pista 'panal') | Audio | Generado por codigo (games/card-swarm/src/sfx_fam4.js) | audio-designer | Propia/libre | games/card-swarm |
+| SFX Melaria P6 (29 efectos + 10 stingers stg_melaria_* + pista 'boss_melaria' de 3 capas + desesperado) | Audio | Generado por codigo (games/card-swarm/src/sfx_melaria.js) | audio-designer | Propia/libre | games/card-swarm |

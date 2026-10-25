@@ -39,6 +39,9 @@
     // P3 (Tundra, B.7): encargo de la familia. Solo avanza en la Tundra (rol `frostwolf`); la Tundra sigue cerrada hasta Yarlak (P4), así que el Tablón no lo ofrece todavía (?quests=wolves lo fuerza)
     { id: 'wolves', cat: 'C', tier: 2, kind: 'hunt', name: 'Caza Lobos de escarcha', target: 'frostwolf', goal: 30, label: 'Lobos de escarcha',
       desc: 'Abate 30 Lobos de escarcha (Tundra). Rodean y atacan por turnos: cuenta la secuencia y esquiva el lance.', rewardParts: { fang: 8 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    // P5 (Panal): encargo de la familia. Solo avanza en el Panal (rol `pollinator`); el Panal sigue cerrado hasta Melaria (P6), así que el Tablón no lo ofrece (?quests=pollinators lo fuerza)
+    { id: 'pollinators', cat: 'C', tier: 3, kind: 'hunt', name: 'Apaga a los Polinizadores', target: 'pollinator', goal: 10, label: 'Polinizadores',
+      desc: 'Abate 10 Polinizadores (Panal). Curan a los suyos cada 3,5 s: acaba con ellos primero (o sedalos con humo).', rewardParts: { spine: 8 }, brasas: 140, pf: 1, pfRepeat: 1 },
     { id: 'scorchers', cat: 'B', tier: 3, kind: 'hunt', name: 'Apaga las Ascuas', target: 'scorcher', goal: 12, label: 'Ascuas',
       desc: 'Apaga 12 Ascuas. Cargan con rastro de fuego: no te quedes en su línea.', rewardParts: { wick: 9 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Derriba al guardián del primer aviso', target: 'slot1', goal: 1, label: 'Guardián 1.er aviso', elite: true,
@@ -82,17 +85,17 @@
   // ------------------------------------------------------------- Cumplibilidad por bioma (v5 P2: las familias quitan roles de algunos biomas)
   // Un encargo de caza solo avanza en los biomas cuya familia tiene el rol objetivo (los minijefes, bajas, partes, etiquetas y duraciones valen en todos). El Tablón solo ofrece
   // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
-  Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra'];
+  Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'];
   Q.biomesOf = function (d) {
     if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];
     if (d.kind === 'minipart') return [G.Minis ? G.Minis.BIOME_OF[d.key] : 'bosque'];
     if (d.kind === 'minicaut') return ['asfodelo'];   // Cuernos y Salto aplastante son del Pastor
     if (d.kind !== 'hunt') return Q.BIOMES.slice();
-    return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b) || (b === 'tundra' ? G.B.fam.tundra : null); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });   // P3: la Tundra (ready:false) ya declara sus roles: el encargo de los Lobos existe, pero no se ofrece hasta abrirla (Yarlak, P4)
+    return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b) || (b === 'tundra' ? G.B.fam.tundra : b === 'panal' ? G.B.fam.panal : null); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });   // P3: la Tundra (ready:false) ya declara sus roles: el encargo de los Lobos existe, pero no se ofrece hasta abrirla (Yarlak, P4)
   };
   Q.unlockedBiomes = function (kills) {
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
-    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0) || (b === 'panal' && kills.yarlak > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
   };
   Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
@@ -260,10 +263,12 @@
       lore: 'Letea se comía los recuerdos, ¿sabes? Por eso olvidé tantas cosas. Gracias por devolverme alguna.' },
     { id: 'yarlak', name: 'Fin del invierno', desc: 'Vence a Yarlak, el Coloso Gélido.', ok: function (s) { return (s.bossKills.yarlak || 0) > 0; },
       lore: 'Yarlak guardaba la última hoguera del norte. Si lo derribaste, el frío ya no tiene dueño. Abrígate igual.' },
-    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe.', ok: function (s) { return Object.keys(s.insignias || {}).length >= 3; },
+    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe.', ok: function (s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.IDS.indexOf(k) >= 0; }).length >= 3; },
       lore: 'Tres insignias de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
-    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue las 8 Insignias (+1 Esencia rara, una vez).', ok: function (s) { return Object.keys(s.insignias || {}).length >= 8; }, give: { rare: 1 },
+    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue las 8 Insignias (+1 Esencia rara, una vez).', ok: function (s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.IDS.indexOf(k) >= 0; }).length >= 8; }, give: { rare: 1 },
       lore: 'Las ocho... Cada guardián tenía su historia y tú te las has quedado todas. Toma, una Esencia: me la guardaba para alguien así.' },
+    { id: 'melaria', name: 'La reina destronada', desc: 'Vence a Melaria, la Reina Abeja.', ok: function (s) { return (s.bossKills.melaria || 0) > 0; },
+      lore: 'Melaria se comió la jalea de todas sus hermanas. Tú te has comido su corona. Me parece justo.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Activa 5 combos distintos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Activa los 12 combos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

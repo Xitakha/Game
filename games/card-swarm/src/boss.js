@@ -81,7 +81,7 @@
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
   S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
-  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak' };   // el bioma del Portal decide el jefe
+  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak', panal: 'melaria' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
   // 250 ms de reacción + 1000 x salida / 190 + 100 ms de margen de decisión (DESIGN 1.2: "Peligro puede acortar la telegrafía como máximo -15 %"; aquí además se respeta la regla).
@@ -989,7 +989,7 @@
     // debilidades / resistencias (bajo la barra, a la derecha)
     var items = [], k2;
     D.weak.forEach(function (w) { items.push({ tag: w.tag, weak: true, on: w.phases.indexOf(e.phase) >= 0, mul: w.mul }); });
-    D.resist.forEach(function (r) { items.push({ tag: r.tag, weak: false, on: true, mul: r.mul }); });
+    D.resist.forEach(function (r) { items.push({ tag: r.tag, weak: false, on: true, mul: r.mul, imm: !!r.immune }); });
     var rx = bx + bw - items.length * 52;
     for (k2 = 0; k2 < items.length; k2++) {
       var it = items[k2], xx = rx + k2 * 52;
@@ -997,8 +997,9 @@
       c.fillStyle = it.weak ? WEAKCOL[it.tag] : '#6a6a78'; c.fillRect(xx, py, 22, 16);
       c.strokeStyle = '#0c0814'; c.lineWidth = 1.5; c.strokeRect(xx + 0.5, py + 0.5, 21, 15);
       G.txt(c, WEAKTXT[it.tag], xx + 11, py + 8, 9, it.weak ? '#1a0a00' : '#e8e8f0', 'center', 'rgba(0,0,0,0)');
-      var ic = Assets.sprite(it.weak ? 'icon_weak' : 'icon_resist', 0); c.drawImage(ic, xx + 24, py + 2, 12, 12);
-      G.txt(c, 'x' + it.mul, xx + 38, py + 22, 9, it.weak ? '#9dffb4' : '#9a9aa8', 'left');
+      var ic = Assets.sprite(it.imm && G.hasSpr('icon_immune') ? 'icon_immune' : it.weak ? 'icon_weak' : 'icon_resist', 0); c.drawImage(ic, xx + 24, py + 2, 12, 12);
+      if (it.imm) { G.txt(c, 'INM', xx + 38, py + 8, 8, '#d8d8e8', 'left'); G.txt(c, 'dir. x' + it.mul, xx + 2, py + 22, 9, '#9a9aa8', 'left'); }
+      else G.txt(c, 'x' + it.mul, xx + 38, py + 22, 9, it.weak ? '#9dffb4' : '#9a9aa8', 'left');
       c.restore();
     }
   }

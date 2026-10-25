@@ -52,6 +52,7 @@
     boar: ['fang', 0.14], shield: ['plate', 0.14], bomb: ['wick', 0.13], scorcher: ['wick', 0.15], moth: ['frost', 0.14], blinker: ['static', 0.15],
     dog: ['fang', 0.13], salamander: ['wick', 0.14], chainer: ['plate', 0.14],   // monstruos nuevos de las familias v5 (A.10)
     leech: ['frost', 0.13], headlet: ['spine', 0.14],                             // P2: Sanguijuela (Escarcha) y Cabeza menor (Púa; solo la primera muerte)
+    honeyslug: ['frost', 0.14], pollinator: ['spine', 0.14],                      // P5 (Panal): la Babosa de miel suelta Escarcha y el Polinizador Púa (partes que el Panal no daba)
     frostwolf: ['fang', 0.13]                                                     // P3 (Tundra): Lobo de escarcha (Colmillo). Estalagmita viva: Escarcha 0,14 (override `drop` de la familia); el resto, el rol base
   };
   // Garantía de élites y jefe (partes fijas) + probabilidad de Esencia rara (el jefe da 1 de trofeo seguro)

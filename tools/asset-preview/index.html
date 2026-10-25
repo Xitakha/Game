@@ -87,6 +87,12 @@
   <label>apuntar (rad) <input id="baim" type="range" min="-3.14" max="3.14" step="0.05" value="0.6" style="width:110px"></label>
   <label><input type="checkbox" id="barena" checked> arena de ejemplo</label>
 </div>
+<div style="margin-bottom:8px;display:none" id="bextraM">
+  <label>Melaria: <input type="checkbox" id="bland"> aterrizada</label>
+  <label><input type="checkbox" id="bstuckM"> atrapada en miel</label>
+  <label>abdomen hinchado <input id="bswell" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
+  <label>(salto = altura extra, apuntar = direccion del aguijon; aturdido/inmune/ventana usan los controles generales)</label>
+</div>
 <div style="margin-bottom:8px;display:none" id="bextraY">
   <label>Yarlak: armadura (salud) <input id="barmor" type="range" min="0" max="1" step="0.05" value="1" style="width:90px"></label>
   <label>pecho abierto <input id="bopenY" type="range" min="0" max="1" step="0.01" value="0" style="width:90px"></label>
@@ -104,7 +110,7 @@
 </div>
 <canvas id="bossCv" width="960" height="540" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
 
-<canvas id="bossCv2" width="960" height="270" style="width:100%;max-width:960px;border:1px solid var(--line);margin-top:6px"></canvas>
+<canvas id="bossCv2" width="960" height="490" style="width:100%;max-width:960px;border:1px solid var(--line);margin-top:6px"></canvas>
 </div>
 
 <div id="treeBox" style="display:none">
@@ -116,7 +122,7 @@
 
 <div id="famBox" style="display:none">
 <h2>Familias P1 y P2: Bosque, Cripta y Asfodelo (solo con ?game=card-swarm)</h2>
-<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option><option value="asfodelo">Asfodelo (P2)</option><option value="tundra">Tundra (P3)</option><option value="mini2c">Minijefes Cripta (P4.5)</option><option value="mini2t">Minijefes Tundra (P4.5)</option></select></label>
+<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option><option value="asfodelo">Asfodelo (P2)</option><option value="tundra">Tundra (P3)</option><option value="mini2c">Minijefes Cripta (P4.5)</option><option value="mini2t">Minijefes Tundra (P4.5)</option><option value="panal">Panal (P5)</option></select></label>
 <label><input type="checkbox" id="famMix"> mezclar las 3 familias en la prueba</label>
 <label>Zoom <select id="famZoom"><option>1</option><option selected>2</option><option>3</option></select></label>
 <label>Enemigos en la prueba de densidad <input id="famN" type="range" min="10" max="150" step="10" value="100" style="width:120px"><output id="famNv">100</output></label></div>
@@ -131,6 +137,15 @@
 <label><input type="checkbox" id="tunTele" checked> telegrafia de ejemplo (sobre la ventisca)</label>
 <label><input type="checkbox" id="tunMix" checked> enemigos y proyectiles de ejemplo</label></div>
 <canvas id="tunCv" width="960" height="540" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
+</div>
+<div id="panBox" style="display:none">
+<p class="sub" style="margin:12px 0 4px">Arena Panal (Assets.arena en bioma panal: hexagono con muros diagonales, celdas de cera, miel, celdas que se abren/cierran, nidos, humo, polen). Coste de drawCells+humo+polen: <span id="panCost">-</span> ms</p>
+<div style="margin-bottom:8px"><label>Humo (alfa) <input id="panSmoke" type="range" min="0" max="0.5" step="0.01" value="0.2" style="width:140px"></label>
+<label>Calidad <select id="panQ"><option value="2">Alta</option><option value="1">Media</option><option value="0">Baja</option></select></label>
+<label>Celdas abiertas (0-36) <input id="panN" type="range" min="0" max="36" step="1" value="14" style="width:140px"></label>
+<label><input type="checkbox" id="panTele" checked> telegrafia de ejemplo</label>
+<label><input type="checkbox" id="panMix" checked> enemigos y guardianes de ejemplo</label></div>
+<canvas id="panCv" width="960" height="540" style="width:100%;max-width:960px;border:1px solid var(--line)"></canvas>
 </div>
 </div>
 
@@ -162,7 +177,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_boss3.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam3.js"><\/script>'); document.write('<script src="' + b + 'assets_mini2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_yarlak.js"><\/script>'); document.write('<script src="' + b + 'sfx_minis.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_boss3.js"><\/script>'); document.write('<script src="' + b + 'assets_boss4.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam3.js"><\/script>'); document.write('<script src="' + b + 'assets_mini2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam4.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_yarlak.js"><\/script>'); document.write('<script src="' + b + 'sfx_minis.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam4.js"><\/script>'); document.write('<script src="' + b + 'sfx_melaria.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -263,18 +278,26 @@
 
   // --- vista Jefe (Pastor / Karceron / Letea)
   var BCOL = { barrido: 'arc', embestida: 'rect', pisoton: 'ring', salto: 'circle', abanico: 'cone', llamada: 'summon', esporas: 'spore', estampida: 'rect' };
-  var BIOME_OF = { pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra' }, bossGround = {}, bossArenaObj = {};
+  var BIOME_OF = { pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal' }, bossGround = {}, bossArenaObj = {};
   var HEAD_ATK = { mordisco: 1, escupitajo: 1, aliento: 1, rayo: 1 };
+  // suelo de cera hexagonal de ejemplo para Melaria (si el bioma 'panal' aun no existe): celdas r48 x1,25, muros y pilares
+  function waxGround() {
+    var c = document.createElement('canvas'); c.width = 960; c.height = 540; var g = c.getContext('2d'), i, j; g.fillStyle = '#f0d98a'; g.fillRect(0, 0, 960, 540);
+    g.strokeStyle = '#7a4a14'; g.lineWidth = 2; var R0 = 40, dx = R0 * 1.5, dy = R0 * 0.866 * 2;
+    for (i = -1; i < 960 / dx + 2; i++) for (j = -1; j < 540 / dy + 2; j++) { var cx = i * dx, cy = j * dy + (i % 2 ? dy / 2 : 0); g.fillStyle = ((i * 7 + j * 3) % 5 === 0) ? '#e8cd78' : '#f0d98a'; g.beginPath(); for (var k = 0; k < 6; k++) g.lineTo(cx + Math.cos(k * Math.PI / 3) * (R0 - 1), cy + Math.sin(k * Math.PI / 3) * (R0 - 1)); g.closePath(); g.fill(); g.stroke(); }
+    g.fillStyle = '#5a3a14'; g.fillRect(0, 0, 960, 16); g.fillRect(0, 524, 960, 16); return c;
+  }
   function groundFor(id) {
     if (bossGround[id]) return bossGround[id];
+    if (id === 'melaria' && A.biomes().indexOf('panal') < 0) return (bossGround[id] = waxGround());
     var prev = A.getBiome(); A.setBiome(BIOME_OF[id] || 'bosque'); var ar = A.arena(960, 540, { seed: 99, wall: 20 }); bossArenaObj[id] = ar; A.setBiome(prev); return (bossGround[id] = ar.canvas);
   }
-  var BLAB = { pastor: ['cuernos', 'cayado', 'vellon'], karceron: ['brazo-maza', 'brazo-grillete', 'nucleo'], letea: ['cabeza acida', 'cabeza helada', 'cabeza rayo'], yarlak: ['colmillos', 'armadura', 'corazon'] };
+  var BLAB = { pastor: ['cuernos', 'cayado', 'vellon'], karceron: ['brazo-maza', 'brazo-grillete', 'nucleo'], letea: ['cabeza acida', 'cabeza helada', 'cabeza rayo'], yarlak: ['colmillos', 'armadura', 'corazon'], melaria: ['alas', 'aguijon', 'corona'] };
   function fillAtk() {
     var id = $('bid').value || 'pastor', sel = $('bwin'); sel.innerHTML = '<option value="">(ninguno)</option>';
     A.bossPoseNames(id).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
     var L = BLAB[id]; for (var i = 0; i < 3; i++) $('bl' + (i + 1)).textContent = L[i];
-    $('bextra').style.display = id === 'karceron' || id === 'yarlak' ? 'block' : 'none'; $('bextraL').style.display = id === 'letea' ? 'block' : 'none'; $('bextraY').style.display = id === 'yarlak' ? 'block' : 'none';
+    $('bextra').style.display = id === 'karceron' || id === 'yarlak' || id === 'melaria' ? 'block' : 'none'; $('bextraM').style.display = id === 'melaria' ? 'block' : 'none'; $('bextraL').style.display = id === 'letea' ? 'block' : 'none'; $('bextraY').style.display = id === 'yarlak' ? 'block' : 'none';
     var ph = $('bphase'), np = id === 'yarlak' ? 4 : 3, cur = ph.value; ph.innerHTML = ''; for (var q = 1; q <= np; q++) { var po = document.createElement('option'); po.textContent = q; ph.appendChild(po); } if (cur && +cur <= np) ph.value = cur;
   }
   function bossInit() {
@@ -294,9 +317,10 @@
     var b1 = $('bb1').checked, b2 = $('bb2').checked, b3 = $('bb3').checked;
     var s = { t: t, facing: $('bf').checked ? -1 : 1, phase: +$('bphase').value, hurt: $('bh').checked ? (0.5 + 0.5 * Math.sin(t / 120)) : 0, enraged: $('be').checked, desperate: $('bd').checked,
       exposed: $('bx').checked, stun: $('bs').checked, immune: $('bi').checked, roar: $('br').checked ? 1 : 0, speed: +$('bspeed').value, moving: +$('bspeed').value > 4 ? 1 : 0, lift: +$('blift').value,
-      broken: id === 'karceron' ? { maza: b1, grillete: b2, nucleo: b3 } : id === 'yarlak' ? { colmillos: b1, armadura: b2, corazon: b3 } : { cuernos: b1, cayado: b2, vellon: b3 }, dying: $('bdy').checked, dt: +$('bdt').value };
-    if ($('bdy').checked && $('bloop').checked) s.dt = (t % (id === 'pastor' ? 4200 : id === 'yarlak' ? 4000 : 4600));
+      broken: id === 'karceron' ? { maza: b1, grillete: b2, nucleo: b3 } : id === 'yarlak' ? { colmillos: b1, armadura: b2, corazon: b3 } : id === 'melaria' ? { alas: b1, aguijon: b2, corona: b3 } : { cuernos: b1, cayado: b2, vellon: b3 }, dying: $('bdy').checked, dt: +$('bdt').value };
+    if ($('bdy').checked && $('bloop').checked) s.dt = (t % (id === 'pastor' ? 4200 : id === 'yarlak' || id === 'melaria' ? 4000 : 4600));
     if (id === 'yarlak') { s.armor = +$('barmor').value; var oy = +$('bopenY').value; if (oy > 0) s.open = oy; s.skid = +$('bskid').value; s.aim = +$('baim').value; }
+    if (id === 'melaria') { s.landed = $('bland').checked ? 1 : 0; s.stuck = $('bstuckM').checked; s.swollen = +$('bswell').value; s.exposed = $('bx').checked; s.immune = $('bi').checked; s.stun = $('bs').checked; if (s.stun || s.stuck) s.landed = 1; s.aim = +$('baim').value; }
     var aim = +$('baim').value;
     if (id === 'karceron') {
       var op = +$('bopen').value; if (op > 0) s.open = op; if (+$('bsunk').value > 0) s.sunk = +$('bsunk').value; if (+$('bemerge').value < 1) s.emerge = +$('bemerge').value;
@@ -321,6 +345,7 @@
       if (k) A.drawBossTele(x, k, bx, by, o); return;
     }
     if (id === 'yarlak') { yarlakTele(x, s, bx, by, aim); return; }
+    if (id === 'melaria') { melariaTele(x, s, bx, by, aim); return; }
     var tx = bx + Math.cos(aim) * 250, ty = by + Math.sin(aim) * 250 + 20, i;
     if (id === 'karceron') {
       if (w === 'martillazo') A.drawBossTele(x, 'mace', tx, ty, { r: 90, p: p, sig: true });
@@ -350,6 +375,20 @@
     else if (w === 'latido') A.drawBossTele(x, 'heartbeat', bx + an.chest.x, by + an.chest.y, { r: 280, inner: 100, p: p, sig: true, cd: (1 - p) * 1.3 + 0.01, t: s.t });
     else if (w === 'ventisca') A.drawBossBand(x, 60, 270, 0, 460, 120, { gaps: [[90, 230]], style: 'water', tele: true, p: p, t: s.t });
     else if (w === 'invierno') A.drawBossTele(x, 'donut', bx, gy - 20, { r: 260, inner: 120, p: p, color: 'blue' });
+  }
+  // Melaria: telegrafias del doc B.5 (tabla de ataques) con sus parametros reales
+  function melariaTele(x, s, bx, by, aim) {
+    var f = s.facing, w = s.w, p = s.pp, DEG = Math.PI / 180, an = A.bossAnchors('melaria', s), i, gy = by + 84, tp = { x: bx + an.stingTip.x, y: by + an.stingTip.y }, sa = an.stingTip.a;
+    if (w === 'estocada') A.drawBossTele(x, 'stinglane', tp.x, tp.y, { w: 70, len: 420, a: sa, p: p, sig: false });
+    else if (w === 'picado') A.drawBossTele(x, 'dive', 250, 330, { r: 100, p: p, sig: true });
+    else if (w === 'lluvia') A.drawBossTele(x, 'quills', tp.x, tp.y, { r: 420, arc: 80 * DEG, n: 11, a: sa, p: p });
+    else if (w === 'llamada') A.drawBossTele(x, 'swarm', bx, gy - 20, { r: 150, p: p });
+    else if (w === 'panal') { var cells = [], q = [[0, 0], [1, 0], [0.5, 0.87], [-0.5, 0.87], [-1, 0], [-0.5, -0.87], [0.5, -0.87], [1.5, 0.87]]; q.forEach(function (c, k) { cells.push({ x: 250 + c[0] * 70, y: 340 + c[1] * 70, nest: k === 2 || k === 5 }); }); A.drawBossTele(x, 'honeycells', 0, 0, { cells: cells, r: 40, p: p }); }
+    else if (w === 'torbellino') A.drawBossTele(x, 'whirl', bx, gy - 30, { r: 260, inner: 100, p: p });
+    else if (w === 'jalea') A.drawBossTele(x, 'jelly', bx, gy - 30, { r: 130, p: p, hit: (Math.sin(s.t / 900) * 0.5 + 0.5) });
+    else if (w === 'eclosion') { var pts = []; for (i = 0; i < 4; i++) pts.push({ x: bx + Math.cos(i * 1.57 + 0.78) * 170, y: gy - 30 + Math.sin(i * 1.57 + 0.78) * 100 }); A.drawBossTele(x, 'larvae', 0, 0, { pts: pts, r: 46, p: p }); }
+    else if (w === 'alazo') A.drawBossTele(x, 'arc', bx, gy - 30, { r: 110, inner: 0, arc: 140 * DEG, a: f > 0 ? 0 : Math.PI, p: p });
+    else if (w === 'zumbido') { for (i = 1; i <= 5; i++) A.drawMelariaRing(x, bx, gy - 30, 70 * i, { state: i === 3 ? 'warn' : 'idle', p: p, ry: 0.55, th: 22, gaps: [i * 1.1, i * 1.1 + 3.14], t: s.t }); }
   }
   function bossHeadTele(x, id, s, an) {
     if (id !== 'letea') return; var nm = null, aim = +$('baim').value, DEG = Math.PI / 180, mode = $('bmode').value, p = s.pp;
@@ -395,7 +434,13 @@
       if (s.w === 'ventisca') A.drawBossBand(x, 60 + s.pp * 840, 270, 0, 460, 120, { gaps: [[90, 230]], style: 'ice', t: t });
       if (s.w === 'alud') for (var ai = 0; ai < 8; ai++) { var apr = clamp01((s.pp - ai * 0.08) * 3); if (apr > 0 && apr < 1) A.drawYarlakIcicle(x, 120 + ai * 105, 110 + ai * 48 + 20, apr, { h: 200, scale: 1.8 }); else if (apr >= 1) x.drawImage(A.sprite('fx_ice_block', 0), 120 + ai * 105 - 22, 110 + ai * 48 - 22); }
     }
-    if (s.desperate && id !== 'yarlak') A.drawBossArenaTint(x, 960, 540, t, 1);
+    if (id === 'melaria' && s.strike) {
+      if (s.w === 'panal') for (var hi = 0; hi < 6; hi++) x.drawImage(A.sprite('fx_hex_ring', 0), 250 + Math.cos(hi * 1.05) * 90 - 34, 340 + Math.sin(hi * 1.05) * 60 - 30, 68, 60);
+      if (s.w === 'lluvia') for (var qi = 0; qi < 9; qi++) { var qa = s.aim + (qi - 4) * 0.17, qd = 60 + s.pp * 380, tpq = A.bossAnchors('melaria', s).stingTip; x.save(); x.translate(bx + tpq.x + Math.cos(qa) * qd, by + tpq.y + Math.sin(qa) * qd); x.rotate(qa); x.drawImage(A.animFrame('proj_boss_quill', 'loop', s.t), -14, -6); x.restore(); }
+      if (s.w === 'picado') A.drawBossWave(x, 250, 340, 30 + 160 * s.pp, { gap: 0, style: 0, alpha: 1 - s.pp });
+    }
+    if (id === 'melaria' && s.desperate) for (var ri = 1; ri <= 5; ri++) A.drawMelariaRing(x, bx, by + 54, 70 * ri, { state: ri === 2 ? 'hit' : (ri === 3 ? 'warn' : 'idle'), p: 0.8, ry: 0.55, th: 22, gaps: [ri * 1.1, ri * 1.1 + 3.14], t: s.t });
+    if (s.desperate && id !== 'yarlak' && id !== 'melaria') A.drawBossArenaTint(x, 960, 540, t, 1);
     bossPillars(x, id, t);
     if ($('bplayer').checked) { var pl = A.sprite('player', 'idle:' + ((t / 300) | 0)); x.drawImage(pl, 250 - 24, 330 - 24); }
     A.drawBoss(id, x, bx, by, s);
@@ -410,12 +455,12 @@
     bossProps(id, t);
   }
   function bossProps(id, t) {
-    var c = $('bossCv2'), x = c.getContext('2d'); x.clearRect(0, 0, 960, 270); x.fillStyle = '#17121f'; x.fillRect(0, 0, 960, 270); x.imageSmoothingEnabled = false;
+    var c = $('bossCv2'), x = c.getContext('2d'); x.clearRect(0, 0, 960, 490); x.fillStyle = '#17121f'; x.fillRect(0, 0, 960, 490); x.imageSmoothingEnabled = false;
     x.fillStyle = '#9a90b0'; x.font = '11px monospace'; x.fillText('iconos de parte / trofeo (normal y roto), debilidad / resistencia', 8, 12);
-    var ic = id === 'pastor' ? ['trophy_pastor_horn', 'trophy_pastor_staff', 'trophy_pastor_fleece'] : id === 'karceron' ? ['trophy_karceron_mace', 'trophy_karceron_shackle', 'trophy_karceron_core'] : id === 'yarlak' ? ['trophy_yarlak_tusk', 'trophy_yarlak_plate', 'trophy_yarlak_heart'] : ['trophy_letea_acid', 'trophy_letea_ice', 'trophy_letea_bolt'];
+    var ic = id === 'pastor' ? ['trophy_pastor_horn', 'trophy_pastor_staff', 'trophy_pastor_fleece'] : id === 'karceron' ? ['trophy_karceron_mace', 'trophy_karceron_shackle', 'trophy_karceron_core'] : id === 'yarlak' ? ['trophy_yarlak_tusk', 'trophy_yarlak_plate', 'trophy_yarlak_heart'] : id === 'melaria' ? ['trophy_reina_wing', 'trophy_reina_sting', 'trophy_reina_jelly'] : ['trophy_letea_acid', 'trophy_letea_ice', 'trophy_letea_bolt'];
     ic.forEach(function (n, k) { x.drawImage(A.sprite(n, 0), 8 + k * 40, 20); x.drawImage(A.sprite(n, 1), 8 + k * 40, 56); });
-    var weak = id === 'pastor' ? [['fire', 0], ['steel', 0], ['poison', 1]] : id === 'karceron' ? [['ice', 0], ['lightning', 0], ['fire', 1], ['poison', 1]] : id === 'yarlak' ? [['fire', 0], ['lightning', 0], ['ice', 1], ['poison', 1]] : [['blood', 0], ['poison', 0], ['ice', 1]];
-    weak.forEach(function (w, k) { A.drawWeakIcon(x, w[0], 150 + k * 70, 24, { resist: w[1], mult: w[1] ? '0.8' : '1.25' }); });
+    var weak = id === 'pastor' ? [['fire', 0], ['steel', 0], ['poison', 1]] : id === 'karceron' ? [['ice', 0], ['lightning', 0], ['fire', 1], ['poison', 1]] : id === 'yarlak' ? [['fire', 0], ['lightning', 0], ['ice', 1], ['poison', 1]] : id === 'melaria' ? [['fire', 0], ['ice', 0], ['lightning', 1], ['poison', 1, 'immune']] : [['blood', 0], ['poison', 0], ['ice', 1]];
+    weak.forEach(function (w, k) { A.drawWeakIcon(x, w[0], 150 + k * 70, 24, { resist: w[1], mult: w[1] ? '0.8' : '1.25', immune: !!w[2] }); });
     var X0 = 8, Y0 = 100;
     if (id === 'karceron') {
       x.fillText('arena: pilar (4 estados), charco, isla (3), brasas, grietas, splash, meteoro, puas, brazo caido, maza', 8, 96);
@@ -447,6 +492,22 @@
       for (k2 = 0; k2 < 3; k2++) x.drawImage(A.sprite('fx_yarlak_icicle', k2), 670 + k2 * 20, 190, 8, 18);
       A.drawYarlakPulse(x, 600, 232, (t % 1200) / 1200, { r: 22, t: t }); x.drawImage(A.sprite('fx_ice_shockwave', 0), 650, 224, 64, 16); A.drawYarlakSkid(x, 730, 236, 0, 90, 1, { t: t });
       A.drawYarlakShards(x, 880, 236, (t % 1000) / 1000, { kind: 'plate', n: 7 });
+    } else if (id === 'melaria') {
+      x.fillText('piezas: torax (2), abdomen (4: normal/brillo/hinchado/grietas), cabeza (4), ojos (3), corona (3), aguijon (3), alas delantera/trasera (4 aleteo + rota), patas (8: cercanas/lejanas)', 8, 96);
+      var k3;
+      for (k3 = 0; k3 < 2; k3++) x.drawImage(A.sprite('boss_reina_thorax', k3), 8 + k3 * 116, 104, 112, 92);
+      for (k3 = 0; k3 < 4; k3++) x.drawImage(A.sprite('boss_reina_abdomen', k3), 240 + k3 * 144, 104, 140, 92);
+      for (k3 = 0; k3 < 4; k3++) x.drawImage(A.sprite('boss_reina_head', k3), 8 + k3 * 70, 200, 68, 64);
+      for (k3 = 0; k3 < 3; k3++) { x.drawImage(A.sprite('boss_reina_eyes', k3), 296 + k3 * 36, 204, 32, 18); x.drawImage(A.sprite('boss_reina_crown', k3), 296 + k3 * 48, 226, 44, 34); x.drawImage(A.sprite('boss_reina_sting', k3), 450 + k3 * 52, 210, 48, 24); }
+      for (k3 = 0; k3 < 5; k3++) x.drawImage(A.sprite('boss_reina_wing_front', k3), 8 + k3 * 134, 272, 132, 72);
+      for (k3 = 0; k3 < 4; k3++) { x.drawImage(A.sprite('boss_reina_legs', k3), 690 + k3 * 66, 272, 64, 51); x.drawImage(A.sprite('boss_reina_legs', 4 + k3), 690 + k3 * 66, 326, 64, 51); }
+      for (k3 = 0; k3 < 5; k3++) x.drawImage(A.sprite('boss_reina_wing_back', k3), 8 + k3 * 120, 350, 116, 64);
+      x.fillText('VFX: cruz de jalea (4), hex (reposo/aviso/golpe), ventana, cupula, gotas (3), esquirlas (6), ondas de zumbido (4), aguijon proyectil, icono inmune, trofeos', 8, 430);
+      for (k3 = 0; k3 < 4; k3++) { x.drawImage(A.sprite('fx_royal_jelly', k3), 8 + k3 * 30, 438, 28, 28); x.drawImage(A.sprite('fx_melaria_buzz', k3), 140 + k3 * 36, 436, 34, 34); }
+      for (k3 = 0; k3 < 3; k3++) { x.drawImage(A.sprite('fx_hex_ring', k3), 290 + k3 * 40, 438, 38, 33); x.drawImage(A.sprite('fx_melaria_drip', k3), 420 + k3 * 18, 436, 16, 32); }
+      x.drawImage(A.animFrame('fx_melaria_window', 'loop', t), 484, 436, 40, 40); x.drawImage(A.sprite('fx_melaria_shield', 0), 530, 436, 40, 40); x.drawImage(A.animFrame('proj_boss_quill', 'loop', t), 578, 448, 28, 12); x.drawImage(A.sprite('icon_immune'), 612, 442, 24, 24);
+      for (k3 = 0; k3 < 6; k3++) x.drawImage(A.sprite('fx_melaria_chip', k3), 644 + k3 * 30, 440, 28, 28);
+      A.drawMelariaShards(x, 900, 460, (t % 1000) / 1000, { kind: 'wing', n: 6 });
     } else {
       x.fillText('arena: tronco, zarzal, espina, grieta, estallido, aro, puas, esporas', 8, 96);
       x.drawImage(A.sprite('obs_log', 0), 8, 110); x.drawImage(A.sprite('obs_log', 1), 80, 110); x.drawImage(A.sprite('obs_log', 2), 152, 110);
@@ -490,12 +551,14 @@
     if (A.sfxFam3 && A.sfxFam3[n]) { var f3 = A.sfxFam3[n]; b.title = f3.fam + ' / ' + f3.kind; if (f3.kind === 'tele') b.style.borderColor = '#ffd25a'; }
     if (A.sfxYarlak && A.sfxYarlak[n]) { var fy = A.sfxYarlak[n]; b.title = fy.fam + ' / ' + fy.kind; if (fy.kind === 'tele') b.style.borderColor = '#ffd25a'; else if (fy.kind === 'stinger') b.style.borderColor = '#9fd8ff'; }
     if (A.sfxMinis && A.sfxMinis[n]) { var fmi = A.sfxMinis[n]; b.title = 'minijefe ' + fmi.biome + ' / ' + fmi.kind; if (fmi.kind === 'tele') b.style.borderColor = '#ffd25a'; else if (fmi.kind === 'stinger') b.style.borderColor = '#9fd8ff'; }
+    [['sfxFam4', 'panal'], ['sfxMelaria', 'melaria']].forEach(function (pr) { var o4 = A[pr[0]] && A[pr[0]][n]; if (o4) { b.title = pr[1] + ' / ' + o4.kind + ' / ' + o4.dur.toFixed(2) + ' s'; if (o4.kind === 'tele') b.style.borderColor = '#ffd25a'; else if (o4.kind === 'stinger') b.style.borderColor = '#9fd8ff'; } });
     b.onclick = function () { A.unlock().then(function () { A.sfx(n, opts()); }); };
     var w = document.createElement('button'); w.textContent = 'WAV'; w.className = 'sm'; w.style.marginTop = '0'; w.title = 'Exportar ' + n + '.wav (pitch/volumen actuales, sin variacion)';
     w.onclick = function () { var o = opts(); o.vary = 0; A.exportSfxWav(n, o).then(function (bl) { download(bl, n + '.wav'); }); };
     wrap.appendChild(b); wrap.appendChild(w); $('sfx').appendChild(wrap);
   });
   if (A.wind) { var wb = document.createElement('button'); wb.textContent = 'wind (on/off)'; wb.title = 'Assets.wind(vol)'; wb.onclick = function () { A.unlock().then(function () { A.wind(A.windLevel() > 0 ? 0 : +$('vol').value || 0.6); }); }; $('sfx').appendChild(wb); }
+  if (A.hum) { var hb = document.createElement('button'); hb.textContent = 'hum (on/off)'; hb.title = 'Assets.hum(intensidad)'; hb.onclick = function () { A.unlock().then(function () { A.hum(A.humLevel() > 0 ? 0 : +$('vol').value || 0.6); }); }; $('sfx').appendChild(hb); }
   A.music.tracks().forEach(function (t) { var o = document.createElement('option'); o.textContent = t; $('track').appendChild(o); });
   function showLayers() { $('layers').textContent = ' capas: ' + A.music.layers().join(' / '); }
   showLayers();
@@ -514,7 +577,7 @@
 // Vista "Familias P1": cada sprite de Assets.FAM1 con todos sus frames y animaciones en bucle + prueba de 100 enemigos
 (function () {
   var A = window.Assets, $ = function (id) { return document.getElementById(id); };
-  if (!A || !A.FAM1) return; var FAMS = {}; [A.FAM1, A.FAM2, A.FAM3].forEach(function (o) { for (var k in (o || {})) FAMS[k] = o[k]; }); if (A.MINI2) { FAMS.mini2c = A.MINI2.cripta; FAMS.mini2t = A.MINI2.tundra; } $('famBox').style.display = 'block';
+  if (!A || !A.FAM1) return; var FAMS = {}; [A.FAM1, A.FAM2, A.FAM3, A.FAM4].forEach(function (o) { for (var k in (o || {})) FAMS[k] = o[k]; }); if (A.MINI2) { FAMS.mini2c = A.MINI2.cripta; FAMS.mini2t = A.MINI2.tundra; } if (A.FAM4) FAMS.panal = A.FAM4.panal; $('famBox').style.display = 'block';
   var live = [], mob = [];
   function el(t, c, txt) { var e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; }
   function build() {
@@ -585,7 +648,30 @@
     if ($('tunTele').checked) { x.fillStyle = 'rgba(255,40,30,0.25)'; x.strokeStyle = '#ff3b30'; x.lineWidth = 3; x.beginPath(); x.arc(700, 200, 70, 0, 6.2832); x.fill(); x.stroke(); x.fillRect(300, 150, 110, 24); x.strokeRect(300, 150, 110, 24); }
     A.drawColdVignette(x, 960, 540, +$('tunCold').value, t); A.drawColdBar(x, 10, 10, +$('tunCold').value, t);
   }
-  var tick0 = tick; tick = function (t) { tunDraw(t); tick0(t); };
+  // --- Panal: arena + celdas + humo + polen
+  var panAr = null, panAcc = 0, panCnt = 0, panSt = {}, panLast = -1;
+  function panDraw(t) {
+    var on = $('famSel').value === 'panal'; $('panBox').style.display = on ? 'block' : 'none'; if (!on || !A.PANAL) return;
+    if (!panAr) { var prev = A.getBiome(); A.setBiome('panal'); panAr = A.arena(1440, 810, { seed: 777 }); A.setBiome(prev); var sm = document.createElement('canvas'); sm.width = 960; sm.height = 540; sm.getContext('2d').drawImage(panAr.canvas, 0, 0, 960, 540); panAr.small = sm; }
+    var cv = $('panCv'), x = cv.getContext('2d'), S = 960 / 1440, n = +$('panN').value, q = +$('panQ').value, cells = A.PANAL.cells, k;
+    if (n !== panLast) { panSt = {}; panLast = n; var sts = ['honey', 'honey', 'honey', 'tele', 'seal', 'caramel']; for (k = 0; k < n; k++) panSt[cells[(k * 37 + 11) % cells.length].id] = { s: sts[k % sts.length], p: 0.3 + (k % 5) * 0.15 }; A.PANAL.nests.forEach(function (c, i) { panSt[c.id] = { s: i % 3 === 2 ? 'nesttele' : 'nest' }; }); }
+    x.drawImage(panAr.small, 0, 0); x.save(); x.scale(S, S);
+    var p0 = performance.now();
+    A.drawSmoke(x, t, +$('panSmoke').value, { w: 1440, h: 810, quality: q });
+    A.drawCells(x, panSt, t);
+    panAr.pillars.forEach(function (p, i) { A.drawWaxPillar(x, p.x, p.y, { hp: [1, 1, 0.4, 0][i], rebuild: 0.6 }); });
+    A.drawHoney(x, 700, 260, { r: 36, t }); A.drawHoney(x, 770, 290, { r: 34, t }); A.drawHoney(x, 640, 292, { r: 26, t }); A.drawSmokeCloud(x, 1000, 250, 36, (t % 1800) / 1800, t);
+    A.drawPollen(x, 1440, 810, t, { quality: q });
+    panAcc += performance.now() - p0; if (++panCnt >= 30) { $('panCost').textContent = (panAcc / panCnt).toFixed(2); panAcc = 0; panCnt = 0; }
+    if ($('panTele').checked) { A.drawHoneyTele(x, 900, 450, 50, (t % 800) / 800, t); A.drawPollenPulse(x, 400, 600, 120, (t % 1000) / 1000); x.fillStyle = 'rgba(255,40,30,0.25)'; x.strokeStyle = '#ff3b30'; x.lineWidth = 3; x.beginPath(); x.arc(560, 430, 70, 0, 6.2832); x.fill(); x.stroke(); }
+    if ($('panMix').checked) {
+      A.FAM4.panal.filter(function (m) { return m.indexOf('enemy_pan_') === 0; }).forEach(function (m, i) { var an = A.hasAnim(m, 'walk') ? 'walk' : 'idle', f = A.animFrame(m, an, t + i * 90), xx = 160 + i * 130, yy = 740, sh = A.sprite('shadow'); x.drawImage(sh, xx - sh.width / 2, yy - 8); x.drawImage(f, xx - f.width / 2, yy - f.height + 4); });
+      var g1 = A.animFrame('enemy_mini_reina_joven', 'float', t), g2 = A.animFrame('enemy_mini_avispon', 'fly', t); x.drawImage(g1, 1100, 560, g1.width * 1.3, g1.height * 1.3); x.drawImage(g2, 1250, 560, g2.width * 1.3, g2.height * 1.3);
+      x.drawImage(A.animFrame('proj_stinger', 'loop', t), 300, 480); x.drawImage(A.animFrame('proj_honey_glob', 'loop', t), 340, 480);
+    }
+    x.restore();
+  }
+  var tick0 = tick; tick = function (t) { tunDraw(t); panDraw(t); tick0(t); };
   build(); requestAnimationFrame(tick);
 })();
 </script>
