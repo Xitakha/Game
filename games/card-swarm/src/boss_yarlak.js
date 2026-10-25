@@ -92,7 +92,7 @@
     a.open = false; a.openU = 0; a.cracks = []; a.warns = []; a.bands = []; a.gust = 0; a.stepT = 0; a.coldK = pel().n >= 4 ? 1.3 : 1; a.des = null; a.fires = null; a.hitCool = 0;
     BZ.clearR = BZ.clearR0 * (pel().n >= 4 ? 300 / 330 : 1);   // Peligro IV: ventisca de r 300
     setBz(0);
-    e.cadMul = 1; e.rise = 1; e.foot = D.gy;
+    a.cad0 = (/[?&]ycad=([\d.]+)/.exec(location.search) || [0, D.cadK || 1])[1] * 1; e.cadMul = a.cad0; e.rise = 1; e.foot = D.gy;   // ?ycad=1.2 = calibración (más / menos cadencia)
     e.parts.corazon.spawnT = 99999;
     S.cds.y_latido = 9000; S.cds.y_ventisca = 6000; S.cds.y_alud = 5000; S.cds.y_llamada = 4000; S.cds.y_aliento = 2500;
     S.obs.length = 0;   // Yarlak no usa los troncos del Pastor: sus obstáculos son las estalagmitas de la Tundra
@@ -142,7 +142,7 @@
     else if (k === 'armadura') G.Hud.banner('LA ARMADURA CEDE: SE VE EL CORAZÓN', 1800, '#9fd8ff');
     else if (k === 'corazon') {
       setChest(e, false); e.exps = e.exps.filter(function (x) { return x.kind !== 'window' && x.kind !== 'despair' || x.mul >= 1.5; });
-      e.cadMul = 1.2;   // modo Invierno profundo
+      e.cadMul = A().cad0 * 1.2;   // modo Invierno profundo
       G.Hud.banner('¡INVIERNO PROFUNDO! +20 % CADENCIA', 1800, '#5ff0ff'); fx.shake(9, 300);
     }
   };
