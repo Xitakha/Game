@@ -133,6 +133,9 @@
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
     if (k.letea && !k.yarlak) out.push('Con Letea vencida se abre la Tundra: hielo que resbala, ventisca y un Frío que sube. Yarlak, el mamut, odia el Fuego y el Rayo. Quédate cerca de las hogueras.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
+    try { G.Minis.IDS.forEach(function (mid) {   // P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
+      if ((S.insignias || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
+    }); } catch (eI) { /* sin minijefes */ }
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });
     if (unseen.length) { var cb = unseen[(S.flags.tip_combo || 0) % unseen.length]; S.flags.tip_combo = (S.flags.tip_combo || 0) + 1; out.push('¿Has probado ' + G.TAGS[cb.a].name + ' con ' + G.TAGS[cb.b].name + '? Dicen que da ' + cb.name + ': ' + cb.desc); }
     if (T.pfFree() > 0) out.push('Tienes ' + T.pfFree() + ' punto' + (T.pfFree() > 1 ? 's' : '') + ' de forja sin gastar. Grum se aburre.');

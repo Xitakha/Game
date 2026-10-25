@@ -209,7 +209,8 @@
     var S = SV(), got = 0;
     S.pf.frag = Math.round(((S.pf.frag || 0) + (G.mode === 'practice' ? 1 : L.dur().pf)) * 100) / 100;   // fragmento x pf de la duración (Rápida 1,4)
     if (S.pf.frag >= L.PF_SOURCES.miniFrag) { S.pf.frag -= L.PF_SOURCES.miniFrag; got += T.addPF(1); }
-    if (!S.elites[type]) { S.elites[type] = 1; got += T.addPF(L.PF_SOURCES.firstElite); }
+    var ek = e && e.mini ? 'mini_slot' + e.slot : type === 'mini_bulwark' ? 'mini_slot1' : type === 'mini_hive' ? 'mini_slot2' : type;   // P4.5: primer élite por SLOT (como mucho +2 PF de por vida)
+    if (!S.elites[ek]) { S.elites[ek] = 1; got += T.addPF(L.PF_SOURCES.firstElite); }
     G.Save.save();
     if (got) L.run.pf = (L.run.pf || 0) + got;
     try {

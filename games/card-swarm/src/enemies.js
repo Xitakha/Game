@@ -59,6 +59,7 @@
       case 'mini_hive': e.big = true; e.atkT = 2500; e.ecT = 9000; e.spawnT = e.spawnMax = 900; e.sacHp = e.sacMax = B.mini.hive.sacPct * hp; e.sacBroken = false;
         e.enraged = false; e.expT = 0; e.expMul = 1; e.bag = []; e.rain = null; e.partName = 'SACO'; break;
     }
+    if (d.mini && G.Minis) G.Minis.init(e, d);   // P4.5: minijefes por bioma (minis.js)
     G.enemies.push(e);
     return e;
   };
@@ -93,7 +94,7 @@
   // Fases: arm (telegrafía, sin daño, ms) y activa (life ms). kind: 'spore' / 'acid' (verde ácido) o 'fire' (rastro del Ascua).
   E.zone = function (o) {
     var z = { team: 'e', kind: o.kind, x: o.x, y: o.y, r: o.r, arm: o.arm || 0, armMax: o.arm || 0, life: o.life, max: o.life,
-      dmg: o.dmg, tick: o.tick || 500, tk: 0, slow: o.slow || 0, slowMs: o.slowMs || 0, cold: o.cold || 0, cd: !!o.cd, owner: o.owner || null, src: o.src || o.kind, t: 0 };
+      dmg: o.dmg, tick: o.tick || 500, tk: 0, slow: o.slow || 0, slowMs: o.slowMs || 0, cold: o.cold || 0, cd: !!o.cd, cdPct: o.cdPct || 0, owner: o.owner || null, src: o.src || o.kind, t: 0 };
     G.zones.push(z);
     return z;
   };
@@ -114,7 +115,7 @@
       if (G.dist(z.x, z.y, p.x, p.y) <= z.r) {
         if (z.slow) G.Player.slow(p, z.slow, z.slowMs || 400);
         if (z.cold) G.Tundra.coldAdd(z.cold * dt / 1000);   // P3: la Ventisca local del Ventisquero sube el Frío mientras estés dentro
-        if (z.cd) { G.Player.cdSlow(p, CDSLOW[0], CDSLOW[1]); var hn = performance.now(); if (hn - (E._hum || 0) > 1600) { E._hum = hn; G.sfx('olvido_hum', { vol: 0.5 }); } }   // M9: las cartas recargan más lento mientras estés dentro (+2 s al salir)
+        if (z.cd) { G.Player.cdSlow(p, z.cdPct || CDSLOW[0], CDSLOW[1]); var hn = performance.now(); if (hn - (E._hum || 0) > 1600) { E._hum = hn; G.sfx('olvido_hum', { vol: 0.5 }); } }   // M9: las cartas recargan más lento mientras estés dentro (+2 s al salir)
         z.tk -= dt;
         if (z.tk <= 0) { z.tk = z.tick; if (z.dmg > 0) G.Player.hurt(p, z.dmg, z.x, z.y, { soft: true, src: z.src }); }   // dmg 0 = solo ralentiza (remolino del Espíritu de nieve)
       } else z.tk = Math.min(z.tk, 0);
@@ -146,6 +147,7 @@
       regrown = !!e.rewarded;   // ya cobró XP / Ceniza / botín en su primera muerte
     }
     e.dead = true;
+    if (e.mini || e.isPod) G.Minis.onDie(e, silent);   // P4.5
     if (silent) { fx.smoke(e.x, e.y, 4); return; }
     var p = PL(), i;
     if (e.type !== 'boss') fx.corpse(e.spr || B.enemy[e.type].spr, e.x, e.y, e.face < 0);
@@ -186,7 +188,7 @@
     if (!G.hasSpr(spr)) spr = o.fb || null;
     if (G.projectiles.length > G.Q.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
-      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null, sfxBrk: o.sfxBrk || null, cold: o.cold || 0 });
+      spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null, sfxBrk: o.sfxBrk || null, cold: o.cold || 0, onEnd: o.onEnd || null });
   };
 
   function updateProjectiles(dt, onlyPlayer) {
@@ -214,6 +216,7 @@
       if (!dead && !p.dead && G.dist(q.x, q.y, p.x, p.y) < q.r + p.r - 2) {
         if (G.Player.hurt(p, q.dmg, q.x - q.vx, q.y - q.vy, { slow: q.slow, src: q.src }) || G.god) { dead = true; if (q.cold) G.Tundra.coldAdd(q.cold); if (q.sfxHit) { G.sfx(q.sfxHit, { vol: 0.8 }); if (q.kind === 'chain') fx.ring(p.x, p.y, 4, 26, 260, '#7fd4ff', 3); } }
       }
+      if (dead && q.onEnd && q.life <= 0) { try { q.onEnd(q); } catch (x) { /* efecto final opcional */ } }   // P4.5: el glóbulo de magma deja su charco al agotar su alcance
       if (dead) G.projectiles.splice(i, 1);
     }
   }
@@ -1012,7 +1015,7 @@
   }
   // pruebas / capturas: E.forceMini(e, 'charge') encola un ataque concreto en el siguiente ciclo de ataque
   E.forceMini = function (e, name) { e.force = name; e.atkT = 0; };
-  E.minis = function () { return G.enemies.filter(function (q) { return !q.dead && (q.type === 'mini_bulwark' || q.type === 'mini_hive'); }); };
+  E.minis = function () { return G.enemies.filter(function (q) { return !q.dead && (q.mini || q.type === 'mini_bulwark' || q.type === 'mini_hive'); }); };
 
   // ---- Jefe: la IA vive en boss.js (G.Boss.update se llama al principio de E.update)
   function ai_boss() { }
@@ -1401,6 +1404,7 @@
       }
       if (e.type === 'mini_bulwark') drawBulwark(c, e, p);
       if (e.type === 'mini_hive') drawHive(c, e, p);
+      if (e.mini) G.Minis.drawTele(c, e, p);   // P4.5
     }
   };
 
@@ -1491,6 +1495,7 @@
 
   // Devuelve { cv, sc, fb } con el canvas actual del enemigo
   function visual(e) {
+    if (e.mini) return G.Minis.visual(e);   // P4.5
     var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
     if (!fb && FAMSPR.test(name)) return { cv: Assets.sprite(name, famAnim(e)), sc: 1, fb: null };
     if (!fb && ASFSPR.test(name)) return { cv: safeSpr(name, asfAnim(e)), sc: 1, fb: null };
@@ -1517,12 +1522,12 @@
   E.draw = function (c, e) {
     if (e.type === 'boss') { G.Boss.draw(c, e); return; }
     if (e.partOf) return;
-    if (e.hidden) return;   // Sanguijuela oculta en su charco: solo se ven las ondas (drawGround)
+    if (e.hidden || e.hide) return;   // Sanguijuela oculta en su charco: solo se ven las ondas (drawGround)
     if (e.fe && e.fe.stalag && !G.hasSpr(e.fe.spr)) { E.tunStalag(c, e); return; }   // P3: sin arte propio, la Estalagmita viva se dibuja como las de la arena pero con ojos tenues
-    var v = visual(e), cv = v.cv, sc = v.sc * (e.sc || 1);
+    var v = visual(e), cv = v.cv, sc = v.sc * (e.sc || 1) * (e.vsc || 1);
     var jump = e.jump || 0, hh = cv.height * sc;
-    G.fx.spr(c, Assets.sprite('shadow', 0), e.x, e.y + hh / 2 - 6, { alpha: 0.6, sx: SHADOW[e.type] || (e.sc || 1) });
-    var o = { flip: e.face < 0, sx: sc, sy: sc };
+    G.fx.spr(c, Assets.sprite('shadow', 0), e.x, e.y + hh / 2 - 6, { alpha: 0.6, sx: e.shadow || SHADOW[e.type] || (e.sc || 1) });
+    var o = { flip: e.face < 0, sx: sc, sy: sc }, mt0;
     if (e.spawnT > 0) { o.alpha = 0.25 + 0.4 * (1 - e.spawnT / (e.spawnMax || B.spawnTelegraph)); }
     else if (e.flash > 0) { o.tint = '#ffffff'; o.tintA = 1; }
     else if (e.stunT > 0) { o.tint = '#ffffaa'; o.tintA = 0.5; }
@@ -1539,6 +1544,7 @@
     else if (e.type === 'dog' && e.st === 'bark') { o.tint = '#ff4040'; o.tintA = 0.2 + 0.3 * Math.abs(Math.sin(e.t / 45)); }
     else if (e.type === 'chainer' && e.st === 'wind') { o.tint = '#ff9a2a'; o.tintA = 0.2 + 0.3 * (e.t / 700); }
     else if (e.type === 'warlock' && e.st === 'cast' && e.fe) { o.tint = '#b070ff'; o.tintA = 0.25; }
+    else if (e.mini && (mt0 = G.Minis.tint(e))) { o.tint = mt0[0]; o.tintA = mt0[1]; }
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
@@ -1553,6 +1559,7 @@
     if (e.type === 'boss' && e.st === 'tele' && e.kind !== 'slam') { o.sx = 1 + 0.05 * Math.sin(e.t / 40); }
     if (G.Tundra.on) { var fa0 = G.Tundra.farAlpha(e); if (fa0 < 1) o.alpha = (o.alpha != null ? o.alpha : 1) * fa0; }   // P3: los lejanos se pierden en la bruma (hasta -35 %)
     G.fx.spr(c, cv, e.x, e.y - jump + (e.fe && e.fe.tun && e.fly ? E.tunBob(e) : 0), o);
+    if (e.mini) G.Minis.drawOver(c, e, o);
     if (e.fe && e.fe.tun) E.tunDraw(c, e, o);   // placa de hielo del Yeti, ojos de la Estalagmita...
     if (e.spawnT <= 0 && e.type !== 'boss') {
       var elite = B.enemy[e.type].elite;
@@ -1562,9 +1569,10 @@
         c.fillStyle = '#1a0a12'; c.fillRect(bx2 - 1, by2 - 1, bw + 2, 7);
         c.fillStyle = blink ? '#ffffff' : (e.enraged ? '#ff5a30' : '#ffb347'); c.fillRect(bx2, by2, Math.max(0, bw * e.hp / e.maxHp), 5);
         c.fillStyle = 'rgba(255,255,255,0.8)'; c.fillRect(bx2 + bw / 2, by2 - 2, 1, 9);   // muesca del enrage (50 %)
-        var pm = e.shieldMax ? (e.shieldBroken ? 0 : e.shieldHp / e.shieldMax) : e.sacMax ? (e.sacBroken ? 0 : e.sacHp / e.sacMax) : -1;
+        var pm = e.mini ? (e.part.broken ? 0 : e.part.hp / e.part.max) : e.shieldMax ? (e.shieldBroken ? 0 : e.shieldHp / e.shieldMax) : e.sacMax ? (e.sacBroken ? 0 : e.sacHp / e.sacMax) : -1;
+        if (e.mini) e.partName = e.part.name;
         if (pm >= 0) {   // medidor de la parte rompible (Escudo / Saco)
-          var pw = e.partName ? 64 : 0, flash = (e.shieldFlash > 0 || e.sacFlash > 0);
+          var pw = e.partName ? 64 : 0, flash = (e.shieldFlash > 0 || e.sacFlash > 0 || (e.mini && e.part.flash > 0));
           c.fillStyle = '#1a0a12'; c.fillRect(bx2 - 1, by2 + 7, pw + 2, 6);
           c.fillStyle = flash ? '#ffffff' : (e.shieldMax ? '#8fb4e8' : '#c8e85a'); c.fillRect(bx2, by2 + 8, Math.max(0, pw * pm), 4);
           G.txt(c, (pm > 0 ? e.partName : e.partName + ' ROTO'), e.x, by2 + 19, 9, pm > 0 ? '#d8cfe8' : '#ffd27a', 'center');

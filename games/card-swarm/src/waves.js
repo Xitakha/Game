@@ -5,7 +5,7 @@
   var G = window.G, B = G.B, W = G.Waves = {};
 
   W.MINI_LAST = 45000;   // ms reales: un minijefe pendiente no entra en los últimos 45 s antes del jefe final
-  W.reset = function () { W.cleanT = null; W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
+  W.reset = function () { if (G.Minis) G.Minis.reset(); W.cleanT = null; W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
   W.reset();
 
   // Posición en anillo fuera de cámara (cae dentro de la arena)
@@ -20,6 +20,7 @@
     }
     return [x, y];
   }
+  W.spawnPos = spawnPos;
   function mirror(pos) { var p = G.player; return [G.clamp(2 * p.x - pos[0], G.WALL + 30, G.AW - G.WALL - 30), G.clamp(2 * p.y - pos[1], G.WALL + 30, G.AH - G.WALL - 30)]; }
 
   function spawnBoss() {
@@ -123,8 +124,10 @@
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
     // v5: los dos minijefes nunca coexisten (la Madre Colmena espera a que el Coloso caiga) y ninguno entra en el último minuto previo al jefe final
-    if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) {
-      if (!B.enemy[k].elite || W.elitesDone[k] || vt < (k === qt ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) return;
+    var MN = G.Minis;
+    if (!W.bossSpawned && MN && MN.active()) MN.direct(dt, vt, qt);   // P4.5: 2 minijefes por bioma (cola de slots)
+    else if (!W.bossSpawned) Object.keys(B.enemy).forEach(function (k) {
+      if (!B.enemy[k].elite || B.enemy[k].mini || W.elitesDone[k] || vt < ((k === qt || (qt === 'slot1' && k === 'mini_bulwark') || (qt === 'slot2' && k === 'mini_hive')) ? Math.min(B.enemy[k].at, G.Quests.EARLY) : B.enemy[k].at)) return;
       if (E.minis().length || G.runT >= G.BOSS_T - W.MINI_LAST) return;
       spawnElite(k);
     });
@@ -133,6 +136,7 @@
     W.t -= 1500;
     var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
     var fbp = B.famOf(), bp = B.bp(m) * (bm ? bm.mul : 1) * (fbp && fbp.bp && m >= (fbp.bpFrom || 0) ? fbp.bp : 1);   // fam.bp = multiplicador del presupuesto por pulso desde el minuto bpFrom (Asfódelo 0,95 desde el 2: sus emboscadores y cabezas fijas viven más y no gastan presupuesto al reponerse; censo A.2)
+    if (MN && E.minis().some(function (q) { return q.mini; })) bp *= MN.hordeMulNow();   // P4.5: mientras vive un minijefe nuevo la horda aprieta menos (calibración de muertes)
     W.budget = Math.min(W.budget + bp, bp * 2.5);
     var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.Q.enemyMul)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
     if (bm && bm.mul <= 0) return;
@@ -154,7 +158,7 @@
         pk.parts.forEach(function (q) {
           total += q[1];
           if (!B.has(q[0]) || B.val(q[0], 'from') > vt || ((counts[q[0]] || 0) + q[1] > capOf(q[0], m))) ok = false;
-          if (q[0] === 'shield' && counts.mini_bulwark) ok = false;
+          if (q[0] === 'shield' && (counts.mini_bulwark || (MN && MN.suppressed('shield')))) ok = false;
         });
         return ok && alive + total <= cap;
       });
@@ -169,7 +173,7 @@
     while (guard++ < 60 && alive < cap) {
       var opts = types.filter(function (k) {
         var d = B.enemy[k];
-        return B.val(k, 'cost') <= W.budget && (counts[k] || 0) < capOf(k, m) && !(k === 'shield' && counts.mini_bulwark);
+        return B.val(k, 'cost') <= W.budget && (counts[k] || 0) < capOf(k, m) && !(k === 'shield' && counts.mini_bulwark) && !(MN && MN.suppressed(k));
       });
       if (!opts.length) break;
       var tot = 0; opts.forEach(function (k) { tot += wOf(k); });

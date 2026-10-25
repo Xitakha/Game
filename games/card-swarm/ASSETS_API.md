@@ -338,7 +338,7 @@ Coste medido (Chromium headless sin GPU, mediana de 700 frames con ataques varia
 - `heads:{acid:H, ice:H, bolt:H}`, `H = {windup, wp, strike, sp, aim, tx, ty, hurt, broken, regrow, cauter, exposed, down}`:
   - ataques de cabeza (`windup`/`strike`): `mordisco` (cualquiera: wp tira atras y abre la boca; sp 0-0.45 se lanza en linea recta 320 px desde la base del cuello hacia `aim` y 0.45-1 vuelve), `escupitajo` (acid: se yergue y brilla verde; sp: embiste 36 px y escupe), `aliento` (ice: inhala; sp: boca abierta + niebla helada en cono de 420 px hacia `aim`), `rayo` (bolt: mira al cielo, chisporrotea; sp: baja la cabeza), `coro` (canta; arcos de sonido).
   - `aim` rad hacia donde ataca | `tx,ty` (opcional) posicion ABSOLUTA de la cabeza, manda sobre la animacion (la logica puede mover la cabeza ella misma y usar `bossAnchors` para el hitbox) | `hurt` 0..1 (cabeza "dano" + brillo blanco) | `broken` = cabeza cortada (muñon corto con herida abierta de su color) | `regrow` 0..1 (brote que crece en el muñon; a 0.97 vuelve la cabeza entera) | `cauter` 0..1 (llamas sobre el muñon; con 1 queda un muñon negro sin rebrote) | `exposed` (aro dorado en la cabeza) | `down` (cabeza caida).
-- Ataques de cuerpo (`windup`/`strike` en el state raiz): `coletazo` (wp se enrosca; sp la cola barre 360 grados a radio 85-225 con estela; empieza en el lado opuesto a `facing`), `sumersion` (wp: se hunde con burbujas; sp: emerge con erupcion de agua; maneja `submerge` solo si no se pasa), `marea` (se yergue, cabezas arriba, rugido), `plaideras` (las 3 cabezas cantan con brillo morado), `coro` (= `desperate`: cabezas arriba cantando; combinar con `heads.X.strike:'coro'` si se quiere cada una por separado). Los nombres de cabeza (`mordisco`, `escupitajo`, `aliento`, `rayo`) tambien salen en `Assets.bossPoseNames('letea')`.
+- Ataques de cuerpo (`windup`/`strike` en el state raiz): `coletazo` (wp se enrosca; sp la cola barre 360 grados a radio 85-225 con estela; empieza en el lado opuesto a `facing`), `sumersion` (wp: se hunde con burbujas; sp: emerge con erupcion de agua; maneja `submerge` solo si no se pasa), `marea` (se yergue, cabezas arriba, rugido), `plañideras` (las 3 cabezas cantan con brillo morado), `coro` (= `desperate`: cabezas arriba cantando; combinar con `heads.X.strike:'coro'` si se quiere cada una por separado). Los nombres de cabeza (`mordisco`, `escupitajo`, `aliento`, `rayo`) tambien salen en `Assets.bossPoseNames('letea')`.
 
 ## Anclas (`Assets.bossAnchors(id, state)`, `{x,y,r}` relativas a (x,y); siguen la animacion: usar el MISMO state que `drawBoss`)
 **karceron** (reposo): `body` (0,0) r90 | `skull` (0,-102) r30 | `maza` (205,30) r34 = cabeza de la maza (parte Brazo-Maza; con martillazo/stuck = (tx,ty) recortado) | `grillete` (-170,112) r34 = mano IZQ (parte Brazo-Grillete) | `nucleo` (0,-10) r34 (pecho; la logica lo activa solo en ventana) | `mouth` (0,-66) (origen del aliento) | `chest` (0,-10) (origen de costillas y erupcion) | `shoulderR/L` (+-98,-58) | `elbowR/L` (+-169,12) r16 | `feet` (0,78) | `groundShadow` (0,86) r130. Con `broken.maza/grillete` el ancla de la parte pasa al hombro.
@@ -764,3 +764,132 @@ Reusan (P3): `proj_icicle` (los 12 carambanos del desesperado), `fx_ice_block` (
 - Partes: al romperse poner `broken.X = true` y lanzar `drawYarlakShards(ctx, ancla.x, ancla.y, p, {kind})` (plate/tusk/heart) en el ancla; con `armor` (0..1) las placas se rompen una a una antes de la rotura total.
 - Furia: `enraged` pone tinte blanco-cian (el rojo se reserva para peligro). Barra del jefe en ventana: usar `Assets.BOSS.yarlak.windowColor` (#cfeeff, blanco azulado).
 - Pisadas: `anchors.step.impact` > 0,5 es el instante de la pisada (2 por ciclo; `foot` rear/front en `Assets.yarlakGait`).
+
+---
+# Minijefes P4.5 (Cripta y Tundra) (src/assets_mini2.js, cargado tras assets_boss3.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Mismo estilo que fam1/fam3 (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo). Diseno: `DESIGN-v6-minijefes.md` 4.3, 4.4, 4.7, 4.8. Todo precompuesto al cargar (offscreen): en juego es un `drawImage` (`Assets.animFrame(n, anim, ms)` o `Assets.sprite(n, 'anim:i')`). Ancla de pies = (final_w/2, final_h-4). `Assets.MINI2 = {cripta:[...], tundra:[...]}` lista todo. Los indices de frame de `enemy_mini_yeti` y `enemy_mini_ventisquero` YA existentes NO cambian: se anaden frames y anims detras (al final, tras sus `die`). Los `*_np` = "no part" = parte rota (escudo / nucleo / placa / corazon).
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias" -> "Minijefes Cripta (P4.5)" / "Minijefes Tundra (P4.5)".
+
+## Cripta
+| sprite | base -> final | frames | anims (fps) |
+|---|---|---|---|
+| `enemy_mini_alcaide` | 36x36 -> 72x72 | 31: 0-1 idle, 2-5 walk, 6 bash-wind, 7 bash, 8 keys-wind, 9 keys-orbit, 10 chain-wind, 11 chain-sweep, 12 rec, 13 hurt, 14 roar, 15-19 die, 20-21 idle_np, 22-25 walk_np, 26 punch-wind_np, 27 punch_np, 28 chain-wind_np, 29 chain-sweep_np, 30 rec_np | idle [0,1] 3; walk [0,2,1,3,4,5] 6; bash [6,7] 8; keys [8,9] 8; chain [10,11] 8; rec [12]; hurt [13]; roar [14]; die [15..19] 9; idle_np [20,21] 3; walk_np [20,22,21,23,24,25] 6; bash_np [26,27] 8; chain_np [28,29] 8; rec_np [30] |
+| `enemy_mini_centinela` | 32x40 -> 64x80 | 29: 0-1 idle, 2-5 walk, 6 charge-wind, 7 charge, 8 fan-wind, 9 fan-cast, 10 core-wind, 11 core-open, 12 rec, 13 hurt, 14 roar, 15-19 die, 20-21 idle_np, 22-25 walk_np, 26 charge-wind_np, 27 fan-wind_np, 28 fan-cast_np | idle [0,1] 3; walk [0,2,1,3,4,5] 6; charge [6,7] 8; fan [8,9] 8; core [10,11] 6 (el juego mantiene 11); rec [12]; hurt [13]; roar [14]; die [15..19] 9; idle_np [20,21]; walk_np [20,22,21,23,24,25]; charge_np [26]; fan_np [27,28] |
+| `fx_shackle_ball` | 24x24 -> 48x48 | 2: 0 volando (girando, rayas), 1 clavada | `fly` [0] ; `pin` [1]; `loop` [0,1] 6. Centrada. Cadena: dibujarla por codigo con `fx_chain_link` / `proj_chain` |
+| `proj_mini_key` | 12x12 -> 24x24 | 2 (giro) | `loop` [0,1] 10. Centrada. Llave dorada |
+| `proj_magma_glob` | 16x16 -> 32x32 | 2: 0 vuelo (cola de goteo hacia la izquierda; rotar al angulo), 1 impacto/salpicadura | `loop` [0,1] 8; `fly` [0]; `splash` [1]. Centrada |
+
+Paletas: Alcaide hierro #6b7385 / oscuro #3a4050 / brillo #aab4c8, ranura y mirilla naranja #ff6a1a, llaves doradas #ffd23a, pano violeta #4a3a6a. Centinela roca #201a2e, magma #ff6a1a, lava #ffd23a, hierro #6b7385, nucleo #ff9a2a (apagado #5a3a30).
+
+## Tundra
+| sprite | base -> final | frames NUEVOS (se suman a los 16 / 15 existentes) | anims NUEVAS (fps) |
+|---|---|---|---|
+| `enemy_mini_yeti` (32x32 -> 64x64; el juego lo escala x1,25) | 31 en total: 0-15 igual que P3; 16-17 idle_np, 18-21 walk_np, 22 bash-wind_np, 23 bash_np, 24 stomp-wind_np, 25 stomp_np, 26 rec_np, 27 charge-wind, 28 charge-slide, 29 hurt, 30 roar | `charge` [27,28] 8; `idle_np` [16,17] 3; `walk_np` [16,18,17,19,20,21] 6; `bash_np` [22,23] 8; `stomp_np` [24,25] 8; `rec_np` [26]; `hurt` [29]; `roar` [30]. Sin placa: sin casco ni escudo de hielo, pelo mojado y goteando |
+| `enemy_mini_ventisquero` (32x32 -> 64x64) | 27 en total: 0-14 igual que P3; 15 wave-wind, 16 wave-cast, 17 hurt, 18 roar, 19-20 idle_np, 21-24 float_np, 25 blow_np, 26 wave-wind_np | `wave` [15,16] 8; `hurt` [17]; `roar` [18]; `idle_np` [19,20] 3; `float_np` [19,21,20,22,23,24] 7; `blow_np` [25]; `wave_np` [26,16] 8. Corazon roto: pecho agrietado sin brillo |
+| `fx_blizz_wave` | 32x32 -> 64x64 | 4 | `loop` [0,1,2,3] 10. Loseta de la banda de la ola, SIN costuras en x e y (el bucle desplaza las rayas a lo largo de +x): repetir a lo largo de 520 px y 100 px de grosor; alfa propio ~0,55, dibujar bajo la telegrafia |
+Notas: `fx_blizz_wave` y los auxiliares no llevan contorno grueso (alfa propio). Coste: todo precompuesto, 1 `drawImage` por minijefe y frame. `Assets._h` ahora expone `reg` y `vframe` (una linea en assets.js) para poder ampliar sprites ya registrados.
+
+---
+# Audio minijefes P4.5 (src/sfx_minis.js, tras sfx_yarlak.js; solo audio)
+Mismo patron y API que P1-P4: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch final +-10 % max), <= 4 voces por nombre y separacion minima `min` (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxMinis[nombre]` = `{kind, fam:'minis', biome, min, dur}`. 67 SFX + 4 stingers (nombres exactos de DESIGN-v6-minijefes.md s.8). Lo existente no cambia.
+- **Tipos y mezcla**: `tele` = aviso (sube y se sostiene, ~6 dB mas suave que el golpe; solo al INICIO del aviso, `vol` 0.8-1), `impact` = golpe (la firma +3 dB), `move` = movimiento/ambiente. La tele nunca lleva golpe seco, asi se distingue con muchos enemigos. Con muchos a la vez usar `vol` 0.5 y no repetir: `min` ya los separa.
+- **Un solo rugido a la vez**: `mini_spawn_roar`, `mini_enrage_roar`, `yetim_roar` y `vent_howl` se bloquean entre si mientras suena uno (Assets.sfx devuelve false). No bloquea a `boss_roar*` de jefes.
+- **Timbres**: bosque = lana/madera/viento; cripta = metal/cadenas/magma; asfodelo = agua/almas/olvido; tundra = hielo/viento.
+- **Stingers** (1 vez por evento): `G.Snd.play('stg_mini_spawn'|'stg_mini_enrage'|'stg_mini_part'|'stg_mini_die')` (registrados en `G.Snd.V`; tambien `Assets.sfx` con el mismo nombre). Spawn al aparecer (~1,6 s), enrage al 50 % (junto con `mini_enrage_roar`), part al romper la parte (junto con el SFX de rotura del minijefe), die en la muerte (junto con `mini_die`). La pista de run no cambia.
+
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `mini_spawn_roar` | tele | Entrada (rugido ~1,5 s) |
+| `mini_enrage_roar` | tele | Al 50 % (enrage), ~1,3 s |
+| `mini_part_break` | impact | Rotura de parte, generico (si el minijefe no tiene propio; los de abajo ya lo incluyen) |
+| `mini_expose_chime` | move | Se abre una ventana (aturdido/descanso/pecho abierto/cabeza expuesta) |
+| `mini_die` | impact | Muerte (~1,8 s), con `stg_mini_die`; los `*_burst` van encima |
+| `mini_insignia` | move | Suelta la Insignia (tintineo corto) |
+| `ram_snort` | tele | Carnero P1 Cornada: inicio de los 650 ms |
+| `ram_horn_scrape` | impact | Cornada: al embestir con la cabeza (tambien la Coz sin cuernos, `pitch` 0.8) |
+| `ram_charge_wind` | tele | Embestida (firma): inicio de los 900 ms (2.a embestida enrage: otra vez) |
+| `ram_charge_crash` | impact | Choque contra pared/obstaculo y onda final |
+| `ram_stun` | move | Aturdido con cuernos clavados (1,6 s), una vez al empezar |
+| `ram_horn_break` | impact | Se rompen los CUERNOS (con `stg_mini_part`) |
+| `ram_bleat` | tele | P2 Balido: inicio de los 800 ms |
+| `weaver_root_tele` | tele | Tejedora P1 Raices: inicio de los 900 ms |
+| `weaver_root_erupt` | impact | Cada raiz que erupciona (cada 250 ms, `vol` 0.7) |
+| `weaver_bloom` | tele | P2 Floracion: inicio de los 800 ms; al brotar cada vaina `weaver_pod_pop` `pitch` 0.8 `vol` 0.5 |
+| `weaver_pod_pulse` | move | Pulso de cura de una vaina (cada 1,5 s; `vol` 0.6 si hay 2) |
+| `weaver_pod_pop` | impact | Muere una vaina |
+| `weaver_thorn_arm` | tele | Maraña de espinas (firma): inicio de los 1000 ms; al activarse las zonas `weaver_root_erupt` `pitch` 0.8 |
+| `weaver_rootmother_break` | impact | Se rompe la RAIZ MADRE |
+| `weaver_burst` | impact | Estallido final de zarzas (muerte, con `mini_die`) |
+| `warden_bash` | impact | Alcaide P1 Golpe de reja: al golpear (tele: reutilizar `warden_chain_wind` `pitch` 1.4 `vol` 0.5) |
+| `warden_key_jingle` | tele | P2 Llavero: inicio de los 650 ms |
+| `warden_key_orbit` | move | Las llaves giran (3,2 s): llamar al empezar y cada ~1,4 s |
+| `warden_key_launch` | tele | Aviso de lanzamiento de 500 ms; el disparo puede usar `warden_shield_hit` `vol` 0.4 |
+| `warden_chain_wind` | tele | Barrido de grilletes (firma): inicio de los 1000 ms |
+| `warden_chain_sweep` | impact | La cadena barre el arco |
+| `warden_chain_pin` | impact | El grillete queda clavado (ventana x1,4) |
+| `warden_shield_hit` | impact | Golpe recibido en el escudo/reja (min 90; usar `vol` 0.5 si es continuo) |
+| `warden_shield_break` | impact | Se rompe la parte (escudo) |
+| `sentinel_ember_charge` | tele | Centinela P1 Arremetida: inicio de los 800 ms |
+| `sentinel_dash` | move | Empieza la carga a 340 px/s |
+| `sentinel_fan_wind` | tele | P2 Abanico: inicio de los 750 ms |
+| `sentinel_fan_spit` | impact | Cada globulo de magma (min 55; `vol` 0.6 con 5 seguidos) |
+| `sentinel_puddle_hiss` | move | Aparece un charco de lava (min 300) |
+| `sentinel_core_open` | tele | Erupcion del nucleo (firma): inicio de los 1200 ms |
+| `sentinel_core_pulse` | impact | Estalla el pulso r 200 y se abre el pecho |
+| `sentinel_core_break` | impact | Se rompe el NUCLEO |
+| `hydra_lunge_wind` | tele | Hidra P1 Mordisco: inicio de los 700 ms |
+| `hydra_lunge` | impact | La cabeza se lanza |
+| `hydra_spit_wind` | tele | P2 Escupitajo: inicio de los 900 ms |
+| `hydra_spit` | impact | Cada charco acido que aterriza (min 90; `vol` 0.6 con 3) |
+| `hydra_dive` | tele | Sumersion (firma): inicio de los 1000 ms y se hunde |
+| `hydra_emerge` | impact | Emerge bajo el jugador |
+| `hydra_sever` | impact | Se corta la cabeza (parte rota) |
+| `hydra_sizzle` | move | Cauterizacion (~1,1 s) |
+| `hydra_regrow` | move | Rebrota la cabeza (~1,1 s) |
+| `weeper_wail_wind` | tele | Plañidera P1 Lluvia de almas: inicio de los 750 ms |
+| `weeper_soul_rain` | impact | Cada impacto de alma (min 60; `vol` 0.5 con 5-7) |
+| `weeper_zone_hum` | tele | P2 Marea del olvido: inicio de los 1000 ms (opcional al activarse, `vol` 0.5) |
+| `weeper_choir` | tele | Coro de plañideras (firma): inicio de los 800 ms |
+| `weeper_veil_tear` | impact | Se rasga el velo (parte rota) |
+| `weeper_burst` | impact | Estallido de almas (muerte, con `mini_die`) |
+| `yetim_roar` | tele | Yeti Mayor: entrada o rugido propio (un solo rugido a la vez) |
+| `yetim_bash` | impact | P1 Empellon: al golpear (tele: `yar_charge_tele` `vol` 0.5) |
+| `yetim_stomp` | impact | P2 Pisoton: al pisar (tele: `yar_stomp_tele` `vol` 0.6) |
+| `yetim_charge_wind` | tele | Embestida con derrape (firma): inicio de los 850 ms |
+| `yetim_slide` | move | Tramo de carga/derrape; `pitch` 0.8-1.1 segun velocidad |
+| `yetim_ring` | impact | Anillo final tras parar (r 100) |
+| `yetim_plate_crack` | impact | Grieta de la placa (a 66 % y 33 % del medidor) |
+| `yetim_plate_break` | impact | Se rompe la PLACA |
+| `vent_howl` | tele | Ventisquero: entrada o aullido propio (un solo rugido a la vez) |
+| `vent_zone_hum` | tele | P2 Ventisca local: inicio de los 1000 ms |
+| `vent_wave_wind` | tele | Ola de ventisca (firma): inicio de los 1150 ms |
+| `vent_wave` | move | Cada ola (cada 1,2 s) |
+| `vent_heart_crack` | impact | Se rompe el CORAZON |
+| `vent_burst` | impact | Estallido de hielo (muerte, con `mini_die`) |
+Notas: los `*_burst` son el estallido de muerte propio de cada bioma (capa extra a `mini_die`). La Lluvia del Ventisquero reutiliza `icicle_rain`/Yarlak; sus tele de ataque sin SFX propio reutilizan los `yar_*_tele` indicados. Vista previa: `tools/asset-preview` (los nombres salen en la lista de sonidos; borde dorado = tele, azul = stinger).
+
+---
+# Minijefes P4.5 (Bosque y Asfodelo) (src/assets_mini1.js, tras assets_boss3.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Diseno: `DESIGN-v6-minijefes.md` 4.1, 4.2, 4.5, 4.6. Mismo estilo (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, ancla de pies = (w/2, h-4)). Son sprites normales (NO `drawBoss`): se dibujan con `Assets.animFrame(nombre, anim, t)`; no hay `state` ni telegrafias nuevas (cono, rectangulo, circulos, anillos y hilos van por codigo). `die` = 5 frames, 9 fps, sin ciclo. Una sola `drawImage` por minijefe. `Assets.MINI1 = {bosque:[...], asfodelo:[...], anchors:{...}}`.
+Anclas en px FINALES desde la esquina superior izquierda (sin voltear; al voltear, x -> w - x): ver `Assets.MINI1.anchors`.
+
+| sprite | base -> final | frames | anims (fps) |
+|---|---|---|---|
+| `enemy_mini_carnero` | 44x32 -> 88x64 | 29: 0-1 idle, 2-5 walk, 6 horn-wind (cuernos con brillo naranja), 7 horn-hit, 8 charge-wind, 9 charge, 10 stun, 11 call (notas moradas), 12 hurt, 13 roar (ojos rojos), 14-18 die, 19-20 idle_np, 21-24 walk_np, 25 charge-wind_np, 26 charge_np, 27 stun_np, 28 coz-hit_np | idle [0,1] 3; walk [0,2,1,3,4,5] 7; horn [6,7] 8; charge_wind [8]; charge [9]; stun [10]; call [11]; hurt [12]; roar [13]; die [14..18]; idle_np; walk_np [19,21,20,22,23,24]; charge_wind_np [25]; charge_np [26]; stun_np [27]; horn_np [28] |
+| `enemy_mini_tejedora` | 40x40 -> 80x80 | 30: 0-1 idle, 2-5 walk, 6 roots-wind, 7 roots-cast, 8 bloom-wind, 9 bloom-cast, 10 thorn-wind, 11 thorn-cast, 12 burst-wind, 13 burst, 14 hurt, 15 roar, 16-20 die, 21-22 idle_np (sin bulbo), 23-26 walk_np, 27 roots-wind_np, 28 thorn-wind_np, 29 burst_np | idle 3; walk 6; roots [6,7] 8; bloom [8,9] 8; thorn [10,11] 8; burst [12,13] 8; hurt [14]; roar [15]; die [16..20]; idle_np [21,22]; walk_np [21,23,22,24,25,26]; roots_np [27]; thorn_np [28]; burst_np [29] (sin bloom_np) |
+| `enemy_mini_hidra` (cuerpo) | 40x32 -> 80x64 | 26: 0-1 idle, 2-5 slither, 6 dive-wind, 7 dive (solo ondas y burbujas), 8 emerge (columna de agua), 9 tail-wind, 10 tail-hit, 11 hurt, 12 roar, 13-17 die, 18-19 idle_np (herida), 20-23 slither_np, 24 burn_np (cauterizado, humo), 25 bud_np (brote) | idle 3; slither/walk [0,2,1,3,4,5] 7; dive [6,7] 6; emerge [8]; tail [9,10] 8; hurt [11]; roar [12]; die [13..17]; idle_np [18,19]; slither_np/walk_np [18,20,19,21,22,23] 7; burn_np [24]; bud_np [25] |
+| `enemy_mini_hidra_head` | 24x24 -> 48x48 | 9: 0 idle, 1 lunge-wind, 2 lunge, 3 spit-wind, 4 spit, 5 hurt, 6 exposed, 7 severed, 8 regrow (brote) | idle [0]; lunge [1,2] 8; spit [3,4] 8; hurt [5]; exposed [6]; severed [7]; regrow [8] |
+| `enemy_mini_hidra_neck` | 12x12 -> 24x24 | 1 | idle [0] (segmento; encadenar 3) |
+| `enemy_mini_planidera` | 36x40 -> 72x80 | 32: 0-1 idle, 2-5 float, 6 rain-wind, 7 rain-cast, 8 tide-wind, 9 tide-cast, 10 choir-wind, 11 choir-cast, 12 burst-wind, 13 burst, 14 hurt, 15 roar, 16-20 die, 21-22 idle_np (sin velo, rostro), 23-26 float_np, 27-28 tide_np, 29-30 choir_np, 31 burst_np | idle 3; float/walk [0,2,1,3,4,5] 7; rain [6,7] 8; tide [8,9] 8; choir [10,11] 8; burst [12,13] 8; hurt [14]; roar [15]; die [16..20]; idle_np; float_np [21,23,22,24,25,26]; tide_np [27,28]; choir_np [29,30]; burst_np [31] (sin rain_np) |
+| `enemy_mini_pod` (Vaina) | 14x14 -> 28x28 | 9: 0-1 idle, 2-3 pulse (halo), 4-8 die | idle [0,1] 3; pulse [2,3] 6; die [4..8] 9 |
+| `fx_root_spike` | 24x48 -> 48x96 | 4: 0-1 emerge, 2 clavada, 3 retrae | emerge [0,1,2] 12 sin ciclo; stuck [2]; retract [3]. Base de la raiz en el borde inferior (y 92 final), centrada en x |
+| `fx_mini_thorn_patch` (el diseno la llama `fx_thorn_patch`, nombre YA usado por el Pastor) | 64x64 -> 128x128 | 3: 0 aviso, 1-2 activa | arm [0]; active/idle [1,2] 4. Disco r ~55 final + puas en el borde (hasta r ~62), centrado |
+| `fx_horn_shard` | 16x16 -> 32x32 | 4 | spin/loop 14 (esquirlas, particulas) |
+| `fx_mini_crack_carnero` / `_tejedora` / `_planidera` | igual que su minijefe | 2 (0 = grieta 66 %, 1 = 33 %, mas brillo) | `loop`. Superponer en el MISMO ancla sobre idle/walk (y con `*_np` NO): cuernos, Raiz madre, velo |
+
+Notas para la logica:
+- Partes rompibles (anclas finales): Carnero cuernos `[73,35]`, Tejedora Raiz madre `[17,52]` (bulbo, a la espalda/izquierda), Plañidera velo/rostro `[36,20]`; Hidra: cuello `enemy_mini_hidra.neck=[63,26]` (donde engancha el cuello/herida) y `enemy_mini_hidra_head.neck=[8,28]` (union de la cabeza). Segmentos de cuello: interpolar de la base a la cabeza.
+- Hidra: los frames 9-10 (`tail`) llevan ya la herida (solo se usa Coletazo con la cabeza perdida); el resto de frames no-`np` llevan el collar del cuello. En `die` el cuerpo no incluye cabeza: ocultar cabeza y cuello (o dibujar `severed`).
+- Cabeza: en `severed` no hay cuello; `regrow` es un brote con base herida.
+- Las anims `*_np` solo existen para las partes rotas indicadas; ataques sin frame propio reutilizan `walk`/`idle`.
+- Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Minijefes P4.5 (Bosque y Asfodelo)". Capturas en `studio/docs/capturas-p45/`. Pendiente fuera de arte: `sw.js` aun no precachea `assets_mini1.js`.

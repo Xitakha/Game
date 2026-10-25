@@ -202,6 +202,7 @@
     if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
   };
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
+  L.dropPart = drop;   // P4.5: la Hidra cauterizada suelta Placa extra
   L.onMiniPart = function (e) {
     var b = L.MINI_PART_BONUS[e.type]; if (!b) return;
     for (var k in b) drop(e, k, L.scaleN(b[k], L.dur().parts));
@@ -215,7 +216,7 @@
   // Fin de expedición: auto-recoge lo que quede en el suelo, calcula Brasas, aplica pity, guarda y prepara el resumen
   L.endRun = function (won) {
     var i, g, S = G.Save.data, R = L.run, p = G.player;
-    for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } }
+    for (i = G.gems.length - 1; i >= 0; i--) { g = G.gems[i]; if (g.kind === 'part') { L.collect(g.part, g.trophy); G.gems.splice(i, 1); } else if (g.kind === 'insignia') { try { G.Minis.collectInsignia(g); } catch (x0) { /* insignia opcional */ } G.gems.splice(i, 1); } }
     var hunt = G.mode === 'hunt';
     var mins = hunt ? 0 : Math.max(0, (G.runT - G.t0) / 60000);   // la cacería no tiene reloj de run: solo pagan el jefe y sus partes
     var DU = L.dur(), brasas = hunt ? 0 : Math.round((p.ash * L.BRASAS_ASH + L.BRASAS_MIN * (mins + L.BRASAS_GROW / 2 * mins * mins) + (won ? L.BRASAS_WIN : 0)) * DU.brasas);

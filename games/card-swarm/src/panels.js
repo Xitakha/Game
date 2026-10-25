@@ -376,7 +376,7 @@
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
     for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 236 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    var qt = Q.target(), qf = qt && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
+    var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
     if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 930, 222, 10, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right'); }
     U.panel(c, 650, 266, 290, 56);
     G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
@@ -523,6 +523,12 @@
       if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
       if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 14, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 7, 10, '#2a1a00', 'center', '#ffd24a'); }
     }
+    // P4.5: Insignias de minijefe (trofeo menor; 3 = logro, 8/8 = logro + 1 Esencia)
+    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/8', 614, 42, 10, '#c8a0ff', 'left');
+    G.Minis.IDS.forEach(function (mid, k) {
+      var have = (S.insignias || {})[mid], ix = 688 + k * 32;
+      try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
+    });
     // detalle de la carta
     U.panel(c, 614, 60, 336, 296, { border: tc });
     G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 70, 62, 84, { nocd: true });
