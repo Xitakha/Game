@@ -6,8 +6,8 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
 const cfg = Object.assign({ base: 'http://localhost:8842', runs: 16, len: 9, god: 1, par: 4, ids: ['carnero', 'tejedora', 'alcaide', 'centinela', 'hidra', 'planidera', 'yeti_mayor', 'ventisquero'], speed: 20, hand1: 'spark:2,dart:2,shard:2,dagger:1,fang:1', hand2: 'spark:3,dart:3,shard:2,dagger:2,fang:2', mul: 1 }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/bot_page.js', 'utf8');
-const SLOT = { carnero: 1, tejedora: 2, alcaide: 1, centinela: 2, hidra: 1, planidera: 2, yeti_mayor: 1, ventisquero: 2 };
-const BIO = { carnero: 'bosque', tejedora: 'bosque', alcaide: 'cripta', centinela: 'cripta', hidra: 'asfodelo', planidera: 'asfodelo', yeti_mayor: 'tundra', ventisquero: 'tundra' };
+const SLOT = { carnero: 1, tejedora: 2, alcaide: 1, centinela: 2, hidra: 1, planidera: 2, yeti_mayor: 1, ventisquero: 2, avispon: 1, reina_joven: 2 };
+const BIO = { carnero: 'bosque', tejedora: 'bosque', alcaide: 'cripta', centinela: 'cripta', hidra: 'asfodelo', planidera: 'asfodelo', yeti_mayor: 'tundra', ventisquero: 'tundra', avispon: 'panal', reina_joven: 'panal' };
 async function one(b, id) {
   const ctx = await b.newContext({ viewport: { width: 640, height: 360 } }), pg = await ctx.newPage(), errs = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));

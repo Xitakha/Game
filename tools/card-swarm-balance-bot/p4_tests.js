@@ -226,7 +226,7 @@ async function unlock(b) {
   const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), pg = await ctx.newPage(); pg.errs = [];
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
   await pg.goto(`${base}/index.html?dbg=1&reset=1`); await pg.waitForTimeout(500);
-  const chip = { x: 650 + 3 * 72 + 34, y: 357 };
+  const chip = { x: 650 + 3 * 58 + 28, y: 357 };
   async function portal(kills) {
     await pg.evaluate(k => { G.Save.data.bossKills = k; G.Save.data.biome = 'bosque'; G.Save.save(); }, kills);
     await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(600);

@@ -30,7 +30,7 @@
     smoke: { r: 36, life: 1800, max: 6, sedSpd: 0.6 },
     puddleMax: 28,
     heal: { pct: 0.2, ms: 2000, r: 120, mini: 0.01 },
-    env: { first: 25000, every: [16000, 26000], minEvery: 9000, n: [1, 3], dist: [150, 380] }
+    env: { first: 20000, every: [10000, 18000], minEvery: 6000, n: [2, 4], dist: [90, 300] }
   };
   var CR = D.cellR, OX = D.origin[0], OY = D.origin[1], WD = D.wallD;
 
@@ -372,7 +372,7 @@
     // zumbido ambiente: sube con el nº de abejas vivas
     if ((hum.t -= dt) <= 0) {
       hum.t = 500; var n = 0; for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead && G.enemies[i].fe && G.enemies[i].fe.insect) n++;
-      var lv = G.state === 'play' ? Math.min(1, Math.max(0.12, n / 30)) : 0; try { if (Assets.hum) Assets.hum(lv); } catch (e2) { /* sin audio */ }
+      var lv = G.state === 'play' ? Math.min(1, Math.max(0.12, n / 30)) : 0; hum.lvl = lv; try { if (Assets.hum) Assets.hum(lv); } catch (e2) { /* sin audio */ }
     }
     if (P.nobos && !nobosEnded && G.runT >= G.RUN_LEN && G.mode === 'run' && !p.dead) { nobosEnded = true; G.Hud.banner('FIN DE LA PRUEBA (SIN JEFA)', 2500, '#f3a31f'); G.finish(true); }
   };
@@ -484,6 +484,7 @@
     if (n) Assets.drawCells(c, cst, G.time / 1000, { s: 1 });
   }
   P.drawGround = function (c) {
+    if (G.state !== 'play' && hum.lvl !== 0) { hum.lvl = 0; try { if (Assets.hum) Assets.hum(0); } catch (e) { /* sin audio */ } }   // pausa / cartas / fin: el zumbido se apaga
     var useArt = typeof Assets.drawCells === 'function' && P.art;
     if (!useArt && dirty) repaintHoney();
     var t = G.time / 1000, i, k, q;

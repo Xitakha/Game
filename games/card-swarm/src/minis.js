@@ -52,12 +52,12 @@
       fb: { spr: 'enemy_mini_hive', tint: '#bfe4ff', a: 0.4, kind: 'flo', sc: 1 }, lore: 'Un copo de viento viejo que olvidó cómo caer; allí donde pasa, el invierno se queda un rato más.' },
     // ---- Panal (P5): Avispón Real (slot 1, presión, voladora) y Reina Joven (slot 2, control; la Madre Colmena movida al Panal). Sus ataques viven en minis_panal.js. `panal:true` = no cuentan en las 8 Insignias del logro
     //      HP: el diseño dice 2300 / 2900; se calibran con el bot (minis_ttk.js) como los demás (TTK p50 45-60 s). fly: ignoran la miel y los pilares; sedable: el humo lo seda 1 s.
-    avispon: { id: 'avispon', panal: true, fly: true, sedable: true, dmgK: 0.7, name: 'AVISPÓN REAL', sub: 'Guardaespaldas de Melaria', role: 'PRESIÓN', biome: 'panal', slot: 1, hp: 4600, spd: 78, spdE: 100, r: 22, dmg: 24, foot: 22, shadow: 1.7, gap: 1000, gapE: 650, expMul: 1.4,
+    avispon: { id: 'avispon', panal: true, fly: true, sedable: true, dmgK: 0.7, name: 'AVISPÓN REAL', sub: 'Guardaespaldas de Melaria', role: 'PRESIÓN', biome: 'panal', slot: 1, hp: 7500, spd: 78, spdE: 100, r: 22, dmg: 24, foot: 22, shadow: 1.7, gap: 1000, gapE: 650, expMul: 1.4,
       mat: 'insecto', contact: 0.3, part: { key: 'aguijon', name: 'AGUIJÓN', pct: 0.24, mode: 'share', share: 0.45 }, bag: ['picado', 'zumbido', 'estocada', 'ala'],
       guaranteed: { spine: 3, thread: 2, feather: 2 }, bonus: { spine: 2 }, ins: { id: 'trophy_mini_avispon', name: 'Aguijón Real' }, xp: 30, ash: 20, spr: 'enemy_mini_avispon',
       fb: { spr: 'enemy_mini_bulwark', tint: '#f3a31f', a: 0.5, kind: 'sol', sc: 1 }, lore: 'El guardaespaldas de Melaria; zumba antes de que lo veas, y cuando lo ves ya te ha picado.' },
-    reina_joven: { id: 'reina_joven', panal: true, fly: true, hm: 0.6, dmgK: 0.7, name: 'REINA JOVEN', sub: 'Crisálida de Melaria', role: 'CONTROL', biome: 'panal', slot: 2, hp: 3800, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
-      mat: 'insecto', kite: [150, 230], contact: 0.4, part: { key: 'abdomen', name: 'ABDOMEN', pct: 0.28, mode: 'share', share: 0.40 }, bag: ['escupitajo', 'miel', 'lluvia'],
+    reina_joven: { id: 'reina_joven', panal: true, fly: true, hm: 0.6, dmgK: 0.7, name: 'REINA JOVEN', sub: 'Crisálida de Melaria', role: 'CONTROL', biome: 'panal', slot: 2, hp: 6400, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
+      mat: 'insecto', kite: [150, 230], contact: 0.4, part: { key: 'abdomen', name: 'ABDOMEN', pct: 0.28, mode: 'share', share: 0.50 }, bag: ['escupitajo', 'miel', 'lluvia'],
       guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { thread: 2 }, ins: { id: 'trophy_mini_reina_joven', name: 'Corona de Cera' }, xp: 40, ash: 25, spr: 'enemy_mini_reina_joven', sSpawn: 'reinaj_roar',
       fb: { spr: 'enemy_mini_hive', tint: '#f3a31f', a: 0.5, kind: 'flo', sc: 1 }, lore: 'La crisálida de Melaria; todavía cree que puede ser reina.' }
   };
