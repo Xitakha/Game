@@ -8,7 +8,10 @@
   var G = window.G, S = G.Boss, fx = G.fx, E = G.Enemies, U = S && S.u, T = G.Tundra;
   if (!S || !U) return;
   var ATKS = S.ATKS, ATK = S.ATK, TAU = Math.PI * 2, DEG = Math.PI / 180, B = G.B;
-  var ease = U.ease, angTo = U.angTo, sfx = U.sfx, hurt = U.hurt, pel = U.pel, expose = U.expose;
+  var ease = U.ease, angTo = U.angTo, sfx = U.sfx, pel = U.pel, expose = U.expose;
+  // Calibración con el bot (README, Yarlak P4): el bot esquiva casi todo, así que el daño por golpe lleva un multiplicador propio (D.dmgK; ?ydmg=1.4 para probar). Nunca pasa de HIT_CAP 32
+  function dmgK() { var m = /[?&]ydmg=([\d.]+)/.exec(location.search); return m ? +m[1] : (S.DEFS.yarlak.dmgK || 1); }
+  function hurt(e, base, src, o) { return U.hurt(e, src === 'boss_embestida' ? base : Math.min(32, base * dmgK()), src, o); }
   function PL() { return G.player; }
   function A() { return S.A; }
   function ART() { try { return !!(Assets.drawBossBand !== undefined && Assets.bossIds().indexOf('yarlak') >= 0 && G.hasSpr('boss_yarlak_body')); } catch (x) { return false; } }
@@ -33,7 +36,7 @@
     },
     weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2, 3, 4] }, { tag: 'lightning', mul: 1.25, phases: [3, 4] }],
     resist: [{ tag: 'ice', mul: 0.6 }, { tag: 'poison', mul: 0.8 }],
-    hpCal: 3.0,
+    hpCal: 3.5, dmgK: 1.3,   // calibración con el bot (README, Yarlak P4): 3,0 del doc daba 98 % de victorias; 3,5 deja el p50 en ~140 s (límite 150 s)
     brasas: 14, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { static: 2, wick: 2, thread: 1 },
     h: { camW: 0.35 }

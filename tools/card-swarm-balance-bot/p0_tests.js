@@ -19,7 +19,7 @@ async function unit(b) {
     const B = G.B, out = {}, roles = ['worm', 'archer', 'fanner', 'boar', 'shield', 'bomb', 'moth', 'sower', 'blinker', 'scorcher', 'warlock'];
     out.biomes = Object.keys(B.fam).join(',');
     // resolución por modo
-    B.famMode = 'auto'; out.autoNull = ['tundra', 'panal'].every(k => B.famOf(k) === null) && ['bosque', 'cripta', 'asfodelo'].every(k => B.famOf(k) === B.fam[k]);   // P1/P2: Bosque, Cripta y Asfodelo ready; Tundra (P3, ready:false) y Panal siguen en legado en modo auto
+    B.famMode = 'auto'; out.autoNull = ['panal'].every(k => B.famOf(k) === null) && ['bosque', 'cripta', 'asfodelo', 'tundra'].every(k => B.famOf(k) === B.fam[k]);   // P1/P2: Bosque, Cripta y Asfodelo ready; Tundra (P3, ready:false) y Panal siguen en legado en modo auto
     B.famMode = 1; out.f1 = ['bosque', 'cripta', 'asfodelo'].every(k => B.famOf(k) === B.fam[k]); out.f1Empty = B.famOf('tundra') === B.fam.tundra && B.famOf('panal') === null;   // P3: la Tundra ya tiene familia (ready:false: solo con ?fam=1 / ?biome=tundra); el Panal sigue vacío
     B.famMode = 0; out.f0 = B.famOf('bosque') === null;
     // P2: ya no queda ningun bioma real con familia identidad: se inyecta una familia identidad (11 roles, valores legados) en 'tundra' (ready:false) para probar el mecanismo
@@ -57,7 +57,7 @@ async function unit(b) {
     u.skin = { tint: '#ff0000', a: 0.4 }; const e4 = E.spawn('boar', 400, 400); o.skin = !!e4.skin && e4.skin.tint === '#ff0000';
     Object.keys(u).forEach(k => delete u[k]); Object.assign(u, save);
     // familia no lista (modo auto) -> roster legado aunque haya override
-    B.famMode = 'auto'; u.hp = 5; const e5 = E.spawn('boar', 400, 400); o.autoLegacy = Math.abs(e5.hp - e0.hp) < 1e-9; delete u.hp; u.hp = 1;
+    B.famMode = 'auto'; const rdy = B.fam.tundra.ready; B.fam.tundra.ready = false; B.fam.tundra.urlOk = false; u.hp = 5; const e5 = E.spawn('boar', 400, 400); o.autoLegacy = Math.abs(e5.hp - e0.hp) < 1e-9; B.fam.tundra.ready = rdy; B.fam.tundra.urlOk = true;   // P4: la Tundra ya está lista; para probar 'no lista' se apaga un momento delete u.hp; u.hp = 1;
     B.famMode = 1;
     // capGrow
     const W = G.Waves, cs = B.fam.tundra.use.sower; delete cs.capGrow;

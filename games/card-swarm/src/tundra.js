@@ -448,7 +448,7 @@
       if (Q.level === 'baja') { Assets.drawBlizzard(c, performance.now(), a, o); return; }   // Baja: solo degradado estático (0,4 ms)
       // Alta / Media: la bruma cuesta ~2,5-3 ms por fotograma (la mayor parte del coste de la Tundra): se pinta en una caché de pantalla cada 2.º fotograma (30 Hz; las rayas se mueven a 90-350 px/s, no se nota) y se vuelca cada uno (0,25 ms)
       if (!hzC) { hzC = cv(G.W, G.H); hzG = hzC.getContext('2d'); }
-      if ((hzN++ & 1) === 0 || hzQ !== Q.level) { hzQ = Q.level; hzG.clearRect(0, 0, G.W, G.H); Assets.drawBlizzard(hzG, performance.now(), a, o); }
+      if ((hzN++ % 3) === 0 || hzQ !== Q.level) { hzQ = Q.level; hzG.clearRect(0, 0, G.W, G.H); Assets.drawBlizzard(hzG, performance.now(), a, o); }
       c.drawImage(hzC, 0, 0);
       return;
     }
