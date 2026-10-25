@@ -132,7 +132,7 @@
       if (!np) { door(v, sx, sy, sh.rot || 0, { glow: sh.glow, hit: sh.hit }); }
       else {
         // escudo roto: la puerta cuelga del brazo, arrastrando por el suelo
-        door(v, sx + 1.2, sy + 5.6, 0.2 + (sh.rot || 0), { h: 19, brk: true, dark: true });
+        door(v, sx - 1.6, sy + 5.2, 0.2 + (sh.rot || 0), { h: 19, brk: true, dark: true });
         v.part(Pcirc(sx - 3.2, sy - 3.4, 3), IRD, { lw: 1.3, sh: '#262a36', hi: IRH, so: 0.4 });
       }
       if (arm === 'sweep' || arm === 'punch') {
@@ -158,12 +158,12 @@
     F.push(P({}), P({ by: 0.8 }));
     for (k = 0; k < 4; k++) { q = wk(k); F.push(P({ by: q.by * 0.8, legs: [-q.c * 1.3, q.c * 1.3] })); }
     F.push(P({ bx: -1.6, sh: { dx: -3.6, glow: true }, lean: -0.05, by: 0.4 }));                 // 6 bash-wind
-    F.push(P({ bx: 1, sh: { dx: 3.2, hit: true }, legs: [0, 1.4], lean: 0.05 }));                   // 7 bash
+    F.push(P({ bx: 0.4, sh: { dx: 1.8, hit: true }, legs: [0, 1.4], lean: 0.05 }));                   // 7 bash
     F.push(P({ arm: 'keysUp', by: -0.4 }));                                                         // 8 keys-wind
     F.push(P({ arm: 'orbit', by: -0.2, bx: -0.6 }));                                                // 9 keys-orbit
     F.push(P({ arm: 'chainUp', by: -0.6, rage: false, sh: { dx: -1.2, glow: true } }));            // 10 chain-wind
     F.push(P({ arm: 'sweep', bx: 0.8, sh: { dx: -3.4, dy: 1.2, rot: -0.12 }, lean: 0.04, legs: [-1, 1.4] })); // 11 chain-sweep
-    F.push(P({ arm: 'pin', by: 1.8, hy: 2.2, lean: 0.12, sweat: true, sh: { dy: 2.8, dx: -1, rot: 0.06 } })); // 12 rec
+    F.push(P({ arm: 'pin', by: 1.8, hy: 2.2, lean: 0.12, sweat: true, sh: { dy: 1.4, dx: -1.6, rot: 0.06 } })); // 12 rec
     F.push(P({ hurt: true, bx: -2, by: 0.8, lean: -0.1, flash: true, sh: { dx: -1.6, dy: -0.6, rot: -0.1 } })); // 13 hurt
     F.push(P({ roar: true, rage: true, by: -0.8, hy: -1.2, lean: -0.05, waves: true, sh: { dy: -2, glow: true } })); // 14 roar
     var dieA = withDie(F, P({}), 36, 36, { lw: 1.5 });                                              // 15-19
@@ -257,9 +257,9 @@
         if (!np) { glow(X, 27.6, 3 + by, 7, '255,106,26', 0.7); v.part(Pcirc(27.6, 3 + by, 3.1), MG, { lw: 1.2, sh: '#c8501c', hi: LV, so: 0.6 }); v.dot(27.2, 2.6 + by, 1.1, '#fff2b0'); }
         else v.part(Pcirc(27.6, 3 + by, 3.1), ROC, { lw: 1.3, sh: ROCS, hi: ROCH, so: 0.4 });
       } else if (arm === 'fanCast') {
-        v.stick([[22.4, 14.2 + by], [27, 15.2 + by], [30.2, 15 + by]], 4.8, ROC, { lw: 1.5, curve: true, hi: ROCH });
-        if (!np) { glow(X, 30.8, 15 + by, 7, '255,106,26', 0.75); v.part(Pcirc(30.8, 15 + by, 3), MG, { lw: 1.2, sh: '#c8501c', hi: LV, so: 0.6 }); star(v, 31.2, 15 + by, 2.8, '#fff2b0', MG); }
-        else v.part(Pcirc(30.6, 15 + by, 3), ROC, { lw: 1.3, sh: ROCS, hi: ROCH, so: 0.4 });
+        v.stick([[22.4, 14.2 + by], [25.4, 15.2 + by], [27.8, 15 + by]], 4.8, ROC, { lw: 1.5, curve: true, hi: ROCH });
+        if (!np) { glow(X, 28.4, 15 + by, 7, '255,106,26', 0.75); v.part(Pcirc(28.4, 15 + by, 3), MG, { lw: 1.2, sh: '#c8501c', hi: LV, so: 0.6 }); star(v, 28.8, 15 + by, 2.8, '#fff2b0', MG); }
+        else v.part(Pcirc(28.2, 15 + by, 3), ROC, { lw: 1.3, sh: ROCS, hi: ROCH, so: 0.4 });
       } else if (arm === 'up') {
         v.stick([[22.4, 13.4 + by], [27.4, 9.6 + by], [28.4, 5.4 + by]], 4.8, ROC, { lw: 1.5, curve: true, hi: ROCH }); v.part(Pcirc(28.4, 4.6 + by, 2.7), ROC, { lw: 1.3, sh: ROCS, hi: ROCH, so: 0.4 });
       }
@@ -283,7 +283,7 @@
     F.push(P({}), P({ by: 0.8, em: 1 }));
     for (k = 0; k < 4; k++) { q = wk(k); F.push(P({ by: q.by * 0.8, c: q.c, em: k + 1 })); }
     F.push(P({ heat: true, by: 2, lean: -0.1, hot: 1, wide: true, arm: 'back', cw: 0.5, hy: 1 }));                       // 6 charge-wind
-    F.push(P({ lean: 0.32, by: 1, arm: 'back', backArm: 'back', trail: true, c: 1, hot: 1, hy: 1.4, heat: true }));        // 7 charge
+    F.push(P({ lean: 0.24, by: 1, arm: 'back', backArm: 'back', trail: true, c: 1, hot: 1, hy: 1.4, heat: true }));        // 7 charge
     F.push(P({ arm: 'fanWind', by: -0.4, lean: -0.05 }));                                                                  // 8 fan-wind
     F.push(P({ arm: 'fanCast', by: 0.4, lean: 0.06, c: 1 }));                                                              // 9 fan-cast
     F.push(P({ cw: 1, heat: true, by: -0.4, hy: -0.6, arm: 'down', em: 2 }));                                              // 10 core-wind
@@ -427,7 +427,7 @@
     N({ lean: 0.2, hy: 2.8, by: 1.4, mouth: 0.4, breath: true, sx: -2, sy: 3 });                                   // 26 rec_np
     Y({ by: 2.6, wide: 2.4, lean: -0.08, hy: 1.2, mouth: 0.8, sx: -3.2, sy: 1.4, fist: true });                     // 27 charge-wind
     Y({ by: 1.4, lean: 0.22, fwd: 3.4, hy: 2, mouth: 1, slide: true, sx: -1, sy: 1, fist: true });                   // 28 charge-slide
-    Y({ hurt: true, lean: -0.16, by: 0.6, hy: 0.4, mouth: 0.8, sx: -2.4, sy: 2, flash: true });                      // 29 hurt
+    Y({ hurt: true, lean: -0.16, by: 0.6, hy: 0.4, mouth: 0.8, sx: -4.6, sy: 2, flash: true });                      // 29 hurt
     Y({ au: 0.8, hy: -1.6, mouth: 1.4, by: -1.2, fist: true, fistR: 0.7, lean: -0.06, waves: true, breath: true }); // 30 roar
     var cv = D.map(function (fn) { return H.vframe(32, 32, fn, { lw: 1.7 }); });
     n0 = E.frames.length; cv.forEach(function (c) { E.frames.push(c); });
@@ -497,10 +497,10 @@
     var D = [];
     function V(o) { D.push(vent2(o)); }
     function N(o) { o.np = true; V(o); }
-    V({ arms: 'out', mouth: 0.5, sc: 1.06, by: -0.8, windup: true, crown: 1, hang: 0.6 });                          // 15 wave-wind
-    V({ arms: 'fwd', mouth: 1, sc: 1.04, by: -0.2, gust: true, sw: 1.2, crown: 1 });                                // 16 wave-cast
+    V({ arms: 'out', mouth: 0.5, sc: 1.02, by: 0.2, windup: true, hang: 0.6 });                          // 15 wave-wind
+    V({ arms: 'fwd', mouth: 1, sc: 1.02, by: 0.2, gust: true, sw: 1.2 });                                // 16 wave-cast
     V({ hurt: true, sw: -1.6, by: 0.4, flash: true, mouth: 0.4, flap: 1 });                                         // 17 hurt
-    V({ arms: 'up', sc: 1.12, mouth: 1.2, by: -1, crown: 1.6, hang: 1.2, blow: true });                             // 18 roar
+    V({ arms: 'up', sc: 1.04, mouth: 1.2, by: 0.4, hang: 1.2, blow: true });                             // 18 roar
     N({ drip: 0 }); N({ by: -1, sw: 1, drip: 1.4 });                                                                // 19-20 idle_np
     for (k = 0; k < 4; k++) N({ by: [-1.4, -0.4, 0.8, -0.2][k], sw: [1.2, 0.2, -1.2, -0.2][k], flap: k % 2, drip: k * 0.5 }); // 21-24 float_np
     N({ blow: true, mouth: 0.8, sw: 1.4, hang: 1.4 });                                                              // 25 blow_np

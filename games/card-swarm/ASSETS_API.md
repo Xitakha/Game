@@ -787,7 +787,7 @@ Paletas: Alcaide hierro #6b7385 / oscuro #3a4050 / brillo #aab4c8, ranura y miri
 | `enemy_mini_yeti` (32x32 -> 64x64; el juego lo escala x1,25) | 31 en total: 0-15 igual que P3; 16-17 idle_np, 18-21 walk_np, 22 bash-wind_np, 23 bash_np, 24 stomp-wind_np, 25 stomp_np, 26 rec_np, 27 charge-wind, 28 charge-slide, 29 hurt, 30 roar | `charge` [27,28] 8; `idle_np` [16,17] 3; `walk_np` [16,18,17,19,20,21] 6; `bash_np` [22,23] 8; `stomp_np` [24,25] 8; `rec_np` [26]; `hurt` [29]; `roar` [30]. Sin placa: sin casco ni escudo de hielo, pelo mojado y goteando |
 | `enemy_mini_ventisquero` (32x32 -> 64x64) | 27 en total: 0-14 igual que P3; 15 wave-wind, 16 wave-cast, 17 hurt, 18 roar, 19-20 idle_np, 21-24 float_np, 25 blow_np, 26 wave-wind_np | `wave` [15,16] 8; `hurt` [17]; `roar` [18]; `idle_np` [19,20] 3; `float_np` [19,21,20,22,23,24] 7; `blow_np` [25]; `wave_np` [26,16] 8. Corazon roto: pecho agrietado sin brillo |
 | `fx_blizz_wave` | 32x32 -> 64x64 | 4 | `loop` [0,1,2,3] 10. Loseta de la banda de la ola, SIN costuras en x e y (el bucle desplaza las rayas a lo largo de +x): repetir a lo largo de 520 px y 100 px de grosor; alfa propio ~0,55, dibujar bajo la telegrafia |
-Nota Ventisquero: el corazon (pecho) brilla cian en frames normales; ya es visible el nucleo oscuro `*_np`.
+Notas: `fx_blizz_wave` y los auxiliares no llevan contorno grueso (alfa propio). Coste: todo precompuesto, 1 `drawImage` por minijefe y frame. `Assets._h` ahora expone `reg` y `vframe` (una linea en assets.js) para poder ampliar sprites ya registrados.
 
 ---
 # Audio minijefes P4.5 (src/sfx_minis.js, tras sfx_yarlak.js; solo audio)
