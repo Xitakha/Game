@@ -136,6 +136,7 @@
     W.t -= 1500;
     var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
     var fbp = B.famOf(), bp = B.bp(m) * (bm ? bm.mul : 1) * (fbp && fbp.bp && m >= (fbp.bpFrom || 0) ? fbp.bp : 1);   // fam.bp = multiplicador del presupuesto por pulso desde el minuto bpFrom (Asfódelo 0,95 desde el 2: sus emboscadores y cabezas fijas viven más y no gastan presupuesto al reponerse; censo A.2)
+    if (MN && E.minis().some(function (q) { return q.mini; })) bp *= MN.hordeMulNow();   // P4.5: mientras vive un minijefe nuevo la horda aprieta menos (calibración de muertes)
     W.budget = Math.min(W.budget + bp, bp * 2.5);
     var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.Q.enemyMul)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
     if (bm && bm.mul <= 0) return;

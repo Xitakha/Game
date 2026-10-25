@@ -2,7 +2,7 @@
    La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp.py (la VERSION es un hash del contenido: cualquier cambio en el juego
    cambia este archivo, el navegador instala el worker nuevo y el juego avisa "hay una versión nueva" sin recargar por su cuenta).
    Todas las rutas son relativas al propio sw.js, así que sirve igual en / que en una subruta (https://usuario.github.io/Game/card-swarm/). */
-const VERSION = '2f7bf1f6f2';
+const VERSION = '48fe3c63e3';
 const CACHE = 'swarmhand-' + VERSION;
 const FILES = /*FILES*/[
   "./",
@@ -24,6 +24,7 @@ const FILES = /*FILES*/[
   "./src/sfx_fam2.js",
   "./src/sfx_fam3.js",
   "./src/sfx_yarlak.js",
+  "./src/sfx_minis.js",
   "./src/assets_peligro.js",
   "./src/player.js",
   "./src/combat.js",
@@ -40,6 +41,9 @@ const FILES = /*FILES*/[
   "./src/assets_boss.js",
   "./src/assets_boss2.js",
   "./src/assets_boss3.js",
+  "./src/assets_mini1.js",
+  "./src/assets_mini2.js",
+  "./src/mini_ui.js",
   "./src/assets_tree.js",
   "./src/boss.js",
   "./src/boss_karceron.js",
@@ -52,6 +56,8 @@ const FILES = /*FILES*/[
   "./src/aldea.js",
   "./src/base.js",
   "./src/hud.js",
+  "./src/minis.js",
+  "./src/minis_atk.js",
   "./icons/icon-192.png",
   "./icons/apple-touch-icon.png",
   "./icons/icon-512.png",

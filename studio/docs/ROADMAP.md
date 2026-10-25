@@ -21,4 +21,5 @@
 5. [x] Versión móvil (web móvil + PWA + workflow de Pages) — falta probar en teléfono real
 6. [x] Familias por bioma P0-P2 (Bosque, Cripta, Asfódelo)
 7. [x] P3 Tundra y P4 Yarlak
-8. [ ] P5-P8: Panal + Reina Abeja, integración (Ruta, platos, Peligro de jefes nuevos), balance final (ver DESIGN-v5-biomas.md)
+8. [x] P4.5: 2 minijefes por bioma (DESIGN-v6-minijefes.md)
+9. [ ] P5-P8: Panal + Reina Abeja, integración (Ruta, platos, Peligro de jefes nuevos), balance final (ver DESIGN-v5-biomas.md)

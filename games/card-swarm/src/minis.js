@@ -11,34 +11,34 @@
   var q1 = /[?&]minis=(\d)/.exec(location.search);
   M.on = !(q1 && q1[1] === '0');                       // ?minis=0 -> guardián legado
   G.miniUrl = (/[?&]mini=(\w+)/.exec(location.search) || [])[1] || null;
-  M.HIT_CAP = 32; M.MAX_ADDS = 3;
+  M.hordeMul = 0.85; M.HIT_CAP = 32; M.MAX_ADDS = 3;
   M.ATK = {};                                          // M.ATK[id][nombre] = ataque (minis_atk.js)
 
   // ================================================================= DATOS
   // pct = fracción del HP máximo que aguanta la parte. mode: 'share' (fracción `share` de TODO el daño recibido), 'frontal' (daño frontal bloqueado; fire:true = también cualquier Fuego),
   // 'core' (solo con el pecho abierto, daño base x2), 'head' (cabeza de la Hidra: x1,15 del daño recibido mientras la cabeza existe).
   var D = {
-    carnero: { id: 'carnero', name: 'CARNERO MAYOR', sub: 'Morueco del Pastor', role: 'PRESIÓN', biome: 'bosque', slot: 1, hp: 7000, spd: 48, spdE: 62, r: 26, dmg: 22, foot: 26, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.4,
+    carnero: { id: 'carnero', dmgK: 0.85, name: 'CARNERO MAYOR', sub: 'Morueco del Pastor', role: 'PRESIÓN', biome: 'bosque', slot: 1, hp: 7000, spd: 48, spdE: 62, r: 26, dmg: 22, foot: 26, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.4,
       mat: 'lana', contact: 0.5, part: { key: 'cuernos', name: 'CUERNOS', pct: 0.24, mode: 'share', share: 0.45 }, bag: ['cornada', 'balido', 'embestida'],
       guaranteed: { static: 3, plate: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_carnero', name: 'Insignia de Cuerno' }, xp: 30, ash: 20, spr: 'enemy_mini_carnero',
       fb: { spr: 'enemy_mini_bulwark', tint: '#e8e4d4', a: 0.45, kind: 'sol', sc: 1.1 }, lore: 'El morueco más viejo del rebaño. El Pastor le dejó los cuernos de hierro negro para que le abra camino.' },
-    tejedora: { id: 'tejedora', name: 'TEJEDORA DE ZARZAS', sub: 'Tejedora del Bosque quemado', role: 'CONTROL', biome: 'bosque', slot: 2, hp: 3600, spd: 34, spdE: 42, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2200, gapE: 1500, expMul: 1.4,
+    tejedora: { id: 'tejedora', dmgK: 0.7, name: 'TEJEDORA DE ZARZAS', sub: 'Tejedora del Bosque quemado', role: 'CONTROL', biome: 'bosque', slot: 2, hp: 4000, spd: 34, spdE: 42, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2200, gapE: 1500, expMul: 1.4,
       mat: 'vegetal', kite: [200, 280], contact: 0.4, part: { key: 'raiz', name: 'RAÍZ MADRE', pct: 0.22, mode: 'share', share: 0.33 }, bag: ['raices', 'floracion', 'maranya'],
       guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_tejedora', name: 'Insignia de Raíz' }, xp: 40, ash: 25, spr: 'enemy_mini_tejedora',
       noSpawn: ['sower'], fb: { spr: 'enemy_mini_hive', tint: '#3a5a2a', a: 0.55, kind: 'flo', sc: 1 }, lore: 'Hiló su red con las espinas del bosque quemado; lo que se enreda en ella alimenta a las zarzas.' },
-    alcaide: { id: 'alcaide', name: 'ALCAIDE DE HIERRO', sub: 'Guardián de las celdas vacías', role: 'PRESIÓN', biome: 'cripta', slot: 1, hp: 4200, spd: 44, spdE: 59, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 600, expMul: 1.5,
+    alcaide: { id: 'alcaide', dmgK: 0.55, name: 'ALCAIDE DE HIERRO', sub: 'Guardián de las celdas vacías', role: 'PRESIÓN', biome: 'cripta', slot: 1, hp: 4200, spd: 44, spdE: 59, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 600, expMul: 1.5,
       mat: 'metal', contact: 0.3, shield: true, part: { key: 'escudo', name: 'ESCUDO-REJA', pct: 0.30, mode: 'frontal', fw: 0.6 }, bag: ['reja', 'llavero', 'grilletes'],
       guaranteed: { spine: 3, plate: 2, thread: 2 }, bonus: { plate: 2 }, ins: { id: 'trophy_mini_alcaide', name: 'Llave del Alcaide' }, xp: 30, ash: 20, spr: 'enemy_mini_alcaide', escort: { role: 'shield', n: 2 }, noSpawn: ['shield'],
       fb: { spr: 'enemy_mini_bulwark', tint: '#7d8aa8', a: 0.3, kind: 'sol', sc: 1 }, lore: 'Guardó las llaves de mil celdas; ahora las lleva al cinto y no le pesan: las celdas están vacías.' },
-    centinela: { id: 'centinela', name: 'CENTINELA DE BRASA', sub: 'Soldado de guardia encendido', role: 'CONTROL', biome: 'cripta', slot: 2, hp: 5400, spd: 40, spdE: 52, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1400, gapE: 900, expMul: 1.5,
+    centinela: { id: 'centinela', hm: 0.7, dmgK: 0.5, name: 'CENTINELA DE BRASA', sub: 'Soldado de guardia encendido', role: 'CONTROL', biome: 'cripta', slot: 2, hp: 5400, spd: 40, spdE: 52, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1400, gapE: 900, expMul: 1.5,
       mat: 'magma', contact: 0.3, part: { key: 'nucleo', name: 'NÚCLEO', pct: 0.20, mode: 'core' }, bag: ['arremetida', 'abanico', 'erupcion'],
       guaranteed: { frost: 3, feather: 2, thread: 2 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_centinela', name: 'Brasa Latente' }, xp: 40, ash: 25, spr: 'enemy_mini_centinela',
       fb: { spr: 'enemy_mini_bulwark', tint: '#c4501a', a: 0.62, kind: 'sol', sc: 1 }, lore: 'Soldado de guardia que no se enteró de que su fuego se apagó; el magma le sale por las juntas.' },
-    hidra: { id: 'hidra', name: 'HIDRA JOVEN', sub: 'Cría de Letea', role: 'PRESIÓN', biome: 'asfodelo', slot: 1, hp: 7700, spd: 52, spdE: 68, r: 24, dmg: 20, foot: 22, shadow: 2, gap: 1100, gapE: 700, expMul: 1.3,
+    hidra: { id: 'hidra', dmgK: 0.8, name: 'HIDRA JOVEN', sub: 'Cría de Letea', role: 'PRESIÓN', biome: 'asfodelo', slot: 1, hp: 7700, spd: 52, spdE: 68, r: 24, dmg: 20, foot: 22, shadow: 2, gap: 1100, gapE: 700, expMul: 1.3,
       mat: 'pantano', mx: { fire: 1.25 }, contact: 0.4, part: { key: 'cabeza', name: 'CABEZA', pct: 0.25, mode: 'head' }, bag: ['mordisco', 'escupitajo', 'sumersion', 'coletazo'],
       guaranteed: { plate: 3, feather: 2, thread: 2 }, bonus: { plate: 1 }, ins: { id: 'trophy_mini_hidra', name: 'Escama Joven' }, xp: 30, ash: 20, spr: 'enemy_mini_hidra', noSpawn: ['leech', 'headlet'],
       fb: { spr: 'enemy_mini_hive', tint: '#2f6f6a', a: 0.6, kind: 'flo', sc: 1 }, lore: 'Una cría de Letea que mordió antes de aprender a nadar; sus cuellos aún no saben cuántos son.' },
-    planidera: { id: 'planidera', name: 'PLAÑIDERA ANEGADA', sub: 'Llorona del río', role: 'CONTROL', biome: 'asfodelo', slot: 2, hp: 3300, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
+    planidera: { id: 'planidera', hm: 0.5, dmgK: 0.7, name: 'PLAÑIDERA ANEGADA', sub: 'Llorona del río', role: 'CONTROL', biome: 'asfodelo', slot: 2, hp: 4200, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
       mat: 'espectro', kite: [150, 230], contact: 0.4, part: { key: 'velo', name: 'VELO', pct: 0.28, mode: 'share', share: 0.55 }, bag: ['lluvia', 'marea', 'coro'],
       guaranteed: { static: 3, feather: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_planidera', name: 'Velo Anegado' }, xp: 40, ash: 25, spr: 'enemy_mini_planidera',
       fb: { spr: 'enemy_mini_hive', tint: '#2f9a9a', a: 0.62, kind: 'flo', sc: 1 }, lore: 'Lloró tanto en el río que el río la lloró de vuelta; ahora llora por todos los que olvidan.' },
@@ -65,6 +65,7 @@
     panal:    { ready: false, slot1: { id: 'avispon',   at: AT[1] }, slot2: { id: 'reina_joven', at: AT[2] } },   // reserva P5/P6: ready:false = guardián legado
     def: D
   };
+  M.hordeMulNow = function () { var m = M.hordeMul; E.minis().forEach(function (q) { if (q.mini) m = Math.min(m, q.D.hm || M.hordeMul); }); return m; };
   M.IDS = Object.keys(D).filter(function (k) { return !D[k].reserve; });
   M.BIOME_OF = {}; M.IDS.forEach(function (k) { M.BIOME_OF[k] = D[k].biome; });
 
@@ -93,7 +94,7 @@
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   M.hurt = function (e, p, dmg, name, kb, o) {
     if (p.dead) return false;
-    dmg = Math.min(M.HIT_CAP, dmg);
+    dmg = Math.min(M.HIT_CAP, dmg * (e.D && e.D.dmgK || 1));   // dmgK: calibración con el bot (muertes <= 35 %)
     return G.Player.hurt(p, dmg, e.x, e.y, Object.assign({ src: 'mini_' + e.mid + '_' + name, kb: kb == null ? 1 : kb }, o || {}));
   };
   M.addsAlive = function (e) { var n = 0; for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.mown === e) n++; } return n; };
@@ -273,7 +274,7 @@
     switch (P.mode) {
       case 'share': fill = dmg * (De.shareNow ? De.shareNow(e) : De.part.share); break;
       case 'frontal': fill = (blocked || (De.part.fire && tag === 'fire')) ? pre * De.part.fw : 0; break;
-      case 'core': fill = e.coreOpen ? dmg / (e.expMul || 1) * 2 : 0; break;
+      case 'core': fill = e.coreOpen ? dmg / (e.expMul || 1) * 2 : dmg * 0.3; break;   // fuera de la ventana solo se desgasta despacio (que la parte rompa antes de morir)
       case 'head': fill = dmg * 0.5; break;
     }
     if (fill <= 0) return;

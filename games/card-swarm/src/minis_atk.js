@@ -514,10 +514,10 @@
     start: function (e, X) {
       var n = e.enraged ? 5 : 4, a0 = rnd(0, TAU), br = e.part.broken; dropOldest(e, 'olvido', 5 - n);
       for (var i = 0; i < n; i++) { var a = a0 + i * TAU / n, q = clampPt(X.p.x + Math.cos(a) * 115, X.p.y + Math.sin(a) * 115, 55);
-        E.zone({ kind: 'olvido', x: q[0], y: q[1], r: br ? 42 : 50, arm: 1000, life: 5500, dmg: br ? 3 : 4, tick: 500, cd: true, cdPct: br ? 0.25 : 0.4, owner: e, src: 'mini_planidera_marea' }); }
+        E.zone({ kind: 'olvido', x: q[0], y: q[1], r: br ? 42 : 50, arm: 1000, life: 5500, dmg: br ? 3 : 4, tick: 500, cd: true, cdPct: br ? 0.2 : 0.3, owner: e, src: 'mini_planidera_marea' }); }
     },
     fire: function (e) { M.endAtk(e, 600, null, 'idle'); }, draw: function () { } };
-  PL.coro = { name: 'coro', sig: true, cd: function (e) { return e.enraged ? 14000 : e.part.broken ? 27000 : 18000; }, exit: 0, dmg: 0, sT: ['weeper_choir', 'wave_start'], pz: ['choir:0', 'choir:1'],
+  PL.coro = { name: 'coro', sig: true, cd: function (e) { return e.enraged ? 18000 : e.part.broken ? 27000 : 22000; }, exit: 0, dmg: 0, sT: ['weeper_choir', 'wave_start'], pz: ['choir:0', 'choir:1'],
     tele: function () { return 800; },
     start: function (e, X) { e.pts = []; for (var i = 0; i < 2; i++) { var a = rnd(0, TAU), d = rnd(140, 220); e.pts.push(clampPt(X.p.x + Math.cos(a) * d, X.p.y + Math.sin(a) * d, 30)); } },
     fire: function (e) { for (var i = 0; i < e.pts.length; i++) { var q = M.addAdd(e, 'moth', e.pts[i][0], e.pts[i][1], {}); if (q) fx.ring(q.x, q.y, 6, 34, 350, '#b060ff', 4); } M.endAtk(e, 500, null, 'idle'); },
