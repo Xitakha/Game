@@ -1898,6 +1898,6 @@
   evs.forEach(function (e) { window.addEventListener(e, onGesture, true); });
 
   // Kit de dibujo para extensiones (src/assets_enemies2.js)
-  Assets._h = { addV: addV, V: V, Pclosed: Pclosed, Ppoly: Ppoly, Pblob: Pblob, Prr: Prr, Pcirc: Pcirc, dyingFrames: dyingFrames, DIE_ANIM: DIE_ANIM, PH: PH, OLC: OLC, rrand: rrand, puff: puff, mkCanvas: mkCanvas };
+  Assets._h = { addV: addV, V: V, Pclosed: Pclosed, Ppoly: Ppoly, Pblob: Pblob, Prr: Prr, Pcirc: Pcirc, dyingFrames: dyingFrames, DIE_ANIM: DIE_ANIM, PH: PH, OLC: OLC, rrand: rrand, puff: puff, mkCanvas: mkCanvas, reg: reg, vframe: vframe };
   window.Assets = Assets;
 })();

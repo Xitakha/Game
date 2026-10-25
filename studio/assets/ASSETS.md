@@ -22,3 +22,4 @@ Sin dependencias ni descargas; API en games/survival-lamb/ASSETS_API.md; visor e
 | SFX familia P2 Asfodelo (24 efectos) | Audio | Generado por codigo (games/card-swarm/src/sfx_fam2.js) | audio-designer | Propia/libre | games/card-swarm |
 | SFX familia P3 Tundra (32 efectos + viento Assets.wind + pista 'tundra') | Audio | Generado por codigo (games/card-swarm/src/sfx_fam3.js) | audio-designer | Propia/libre | games/card-swarm |
 | SFX Yarlak P4 (41 efectos y stingers + pista 'boss_yarlak' de 4 capas + desesperado) | Audio | Generado por codigo (games/card-swarm/src/sfx_yarlak.js) | audio-designer | Propia/libre | games/card-swarm |
+| SFX minijefes P4.5 (67 efectos + 4 stingers stg_mini_*) | Audio | Generado por codigo (games/card-swarm/src/sfx_minis.js) | audio-designer | Propia/libre | games/card-swarm |
