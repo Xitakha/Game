@@ -18,35 +18,35 @@
   // pct = fracción del HP máximo que aguanta la parte. mode: 'share' (fracción `share` de TODO el daño recibido), 'frontal' (daño frontal bloqueado; fire:true = también cualquier Fuego),
   // 'core' (solo con el pecho abierto, daño base x2), 'head' (cabeza de la Hidra: x1,15 del daño recibido mientras la cabeza existe).
   var D = {
-    carnero: { id: 'carnero', name: 'CARNERO MAYOR', sub: 'Morueco del Pastor', role: 'PRESIÓN', biome: 'bosque', slot: 1, hp: 2500, spd: 48, spdE: 62, r: 26, dmg: 22, foot: 26, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.4,
+    carnero: { id: 'carnero', name: 'CARNERO MAYOR', sub: 'Morueco del Pastor', role: 'PRESIÓN', biome: 'bosque', slot: 1, hp: 7000, spd: 48, spdE: 62, r: 26, dmg: 22, foot: 26, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.4,
       mat: 'lana', contact: 0.5, part: { key: 'cuernos', name: 'CUERNOS', pct: 0.24, mode: 'share', share: 0.45 }, bag: ['cornada', 'balido', 'embestida'],
       guaranteed: { static: 3, plate: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_carnero', name: 'Insignia de Cuerno' }, xp: 30, ash: 20, spr: 'enemy_mini_carnero',
       fb: { spr: 'enemy_mini_bulwark', tint: '#e8e4d4', a: 0.45, kind: 'sol', sc: 1.1 }, lore: 'El morueco más viejo del rebaño. El Pastor le dejó los cuernos de hierro negro para que le abra camino.' },
-    tejedora: { id: 'tejedora', name: 'TEJEDORA DE ZARZAS', sub: 'Tejedora del Bosque quemado', role: 'CONTROL', biome: 'bosque', slot: 2, hp: 3000, spd: 34, spdE: 42, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2200, gapE: 1500, expMul: 1.4,
-      mat: 'vegetal', kite: [200, 280], contact: 0.4, part: { key: 'raiz', name: 'RAÍZ MADRE', pct: 0.22, mode: 'share', share: 0.40 }, bag: ['raices', 'floracion', 'maranya'],
+    tejedora: { id: 'tejedora', name: 'TEJEDORA DE ZARZAS', sub: 'Tejedora del Bosque quemado', role: 'CONTROL', biome: 'bosque', slot: 2, hp: 3600, spd: 34, spdE: 42, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2200, gapE: 1500, expMul: 1.4,
+      mat: 'vegetal', kite: [200, 280], contact: 0.4, part: { key: 'raiz', name: 'RAÍZ MADRE', pct: 0.22, mode: 'share', share: 0.33 }, bag: ['raices', 'floracion', 'maranya'],
       guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_tejedora', name: 'Insignia de Raíz' }, xp: 40, ash: 25, spr: 'enemy_mini_tejedora',
       noSpawn: ['sower'], fb: { spr: 'enemy_mini_hive', tint: '#3a5a2a', a: 0.55, kind: 'flo', sc: 1 }, lore: 'Hiló su red con las espinas del bosque quemado; lo que se enreda en ella alimenta a las zarzas.' },
-    alcaide: { id: 'alcaide', name: 'ALCAIDE DE HIERRO', sub: 'Guardián de las celdas vacías', role: 'PRESIÓN', biome: 'cripta', slot: 1, hp: 2600, spd: 44, spdE: 59, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 600, expMul: 1.5,
-      mat: 'metal', contact: 0.5, shield: true, part: { key: 'escudo', name: 'ESCUDO-REJA', pct: 0.30, mode: 'frontal' }, bag: ['reja', 'llavero', 'grilletes'],
+    alcaide: { id: 'alcaide', name: 'ALCAIDE DE HIERRO', sub: 'Guardián de las celdas vacías', role: 'PRESIÓN', biome: 'cripta', slot: 1, hp: 4200, spd: 44, spdE: 59, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 600, expMul: 1.5,
+      mat: 'metal', contact: 0.3, shield: true, part: { key: 'escudo', name: 'ESCUDO-REJA', pct: 0.30, mode: 'frontal', fw: 0.6 }, bag: ['reja', 'llavero', 'grilletes'],
       guaranteed: { spine: 3, plate: 2, thread: 2 }, bonus: { plate: 2 }, ins: { id: 'trophy_mini_alcaide', name: 'Llave del Alcaide' }, xp: 30, ash: 20, spr: 'enemy_mini_alcaide', escort: { role: 'shield', n: 2 }, noSpawn: ['shield'],
       fb: { spr: 'enemy_mini_bulwark', tint: '#7d8aa8', a: 0.3, kind: 'sol', sc: 1 }, lore: 'Guardó las llaves de mil celdas; ahora las lleva al cinto y no le pesan: las celdas están vacías.' },
-    centinela: { id: 'centinela', name: 'CENTINELA DE BRASA', sub: 'Soldado de guardia encendido', role: 'CONTROL', biome: 'cripta', slot: 2, hp: 2900, spd: 40, spdE: 52, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1400, gapE: 900, expMul: 1.5,
-      mat: 'magma', contact: 0.5, part: { key: 'nucleo', name: 'NÚCLEO', pct: 0.20, mode: 'core' }, bag: ['arremetida', 'abanico', 'erupcion'],
+    centinela: { id: 'centinela', name: 'CENTINELA DE BRASA', sub: 'Soldado de guardia encendido', role: 'CONTROL', biome: 'cripta', slot: 2, hp: 5400, spd: 40, spdE: 52, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1400, gapE: 900, expMul: 1.5,
+      mat: 'magma', contact: 0.3, part: { key: 'nucleo', name: 'NÚCLEO', pct: 0.20, mode: 'core' }, bag: ['arremetida', 'abanico', 'erupcion'],
       guaranteed: { frost: 3, feather: 2, thread: 2 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_centinela', name: 'Brasa Latente' }, xp: 40, ash: 25, spr: 'enemy_mini_centinela',
       fb: { spr: 'enemy_mini_bulwark', tint: '#c4501a', a: 0.62, kind: 'sol', sc: 1 }, lore: 'Soldado de guardia que no se enteró de que su fuego se apagó; el magma le sale por las juntas.' },
-    hidra: { id: 'hidra', name: 'HIDRA JOVEN', sub: 'Cría de Letea', role: 'PRESIÓN', biome: 'asfodelo', slot: 1, hp: 2400, spd: 52, spdE: 68, r: 24, dmg: 20, foot: 22, shadow: 2, gap: 1100, gapE: 700, expMul: 1.3,
+    hidra: { id: 'hidra', name: 'HIDRA JOVEN', sub: 'Cría de Letea', role: 'PRESIÓN', biome: 'asfodelo', slot: 1, hp: 7700, spd: 52, spdE: 68, r: 24, dmg: 20, foot: 22, shadow: 2, gap: 1100, gapE: 700, expMul: 1.3,
       mat: 'pantano', mx: { fire: 1.25 }, contact: 0.4, part: { key: 'cabeza', name: 'CABEZA', pct: 0.25, mode: 'head' }, bag: ['mordisco', 'escupitajo', 'sumersion', 'coletazo'],
       guaranteed: { plate: 3, feather: 2, thread: 2 }, bonus: { plate: 1 }, ins: { id: 'trophy_mini_hidra', name: 'Escama Joven' }, xp: 30, ash: 20, spr: 'enemy_mini_hidra', noSpawn: ['leech', 'headlet'],
       fb: { spr: 'enemy_mini_hive', tint: '#2f6f6a', a: 0.6, kind: 'flo', sc: 1 }, lore: 'Una cría de Letea que mordió antes de aprender a nadar; sus cuellos aún no saben cuántos son.' },
-    planidera: { id: 'planidera', name: 'PLAÑIDERA ANEGADA', sub: 'Llorona del río', role: 'CONTROL', biome: 'asfodelo', slot: 2, hp: 3000, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
+    planidera: { id: 'planidera', name: 'PLAÑIDERA ANEGADA', sub: 'Llorona del río', role: 'CONTROL', biome: 'asfodelo', slot: 2, hp: 3300, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
       mat: 'espectro', kite: [150, 230], contact: 0.4, part: { key: 'velo', name: 'VELO', pct: 0.28, mode: 'share', share: 0.55 }, bag: ['lluvia', 'marea', 'coro'],
       guaranteed: { static: 3, feather: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_planidera', name: 'Velo Anegado' }, xp: 40, ash: 25, spr: 'enemy_mini_planidera',
       fb: { spr: 'enemy_mini_hive', tint: '#2f9a9a', a: 0.62, kind: 'flo', sc: 1 }, lore: 'Lloró tanto en el río que el río la lloró de vuelta; ahora llora por todos los que olvidan.' },
-    yeti_mayor: { id: 'yeti_mayor', name: 'YETI MAYOR', sub: 'El más viejo de la manada', role: 'PRESIÓN', biome: 'tundra', slot: 1, hp: 2500, spd: 46, spdE: 62, r: 28, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.5, vsc: 1.25,
-      mat: 'escarcha', contact: 0.5, shield: true, ice: true, part: { key: 'placa', name: 'PLACA DE HIELO', pct: 0.30, mode: 'frontal', fire: true }, bag: ['empellon', 'pisoton', 'derrape'],
+    yeti_mayor: { id: 'yeti_mayor', name: 'YETI MAYOR', sub: 'El más viejo de la manada', role: 'PRESIÓN', biome: 'tundra', slot: 1, hp: 4400, spd: 46, spdE: 62, r: 28, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.5, vsc: 1.25,
+      mat: 'escarcha', contact: 0.5, shield: true, ice: true, part: { key: 'placa', name: 'PLACA DE HIELO', pct: 0.30, mode: 'frontal', fire: true, fw: 0.35 }, bag: ['empellon', 'pisoton', 'derrape'],
       guaranteed: { wick: 3, plate: 2, thread: 2 }, bonus: { wick: 2 }, ins: { id: 'trophy_mini_yeti_mayor', name: 'Garra del Yeti Mayor' }, xp: 30, ash: 20, spr: 'enemy_mini_yeti', escort: { role: 'worm', n: 2 }, noSpawn: ['shield'],
       fb: { spr: 'enemy_mini_bulwark', tint: '#9fd8ff', a: 0.5, kind: 'sol', sc: 1 }, lore: 'El yeti más viejo de la manada; su placa de hielo es un casco que lleva puesto desde el último invierno.' },
-    ventisquero: { id: 'ventisquero', name: 'VENTISQUERO', sub: 'Copo de viento viejo', role: 'CONTROL', biome: 'tundra', slot: 2, hp: 2800, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
+    ventisquero: { id: 'ventisquero', name: 'VENTISQUERO', sub: 'Copo de viento viejo', role: 'CONTROL', biome: 'tundra', slot: 2, hp: 4800, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
       mat: 'escarcha', kite: [150, 230], ice: true, contact: 0.4, part: { key: 'corazon', name: 'CORAZÓN DE HIELO', pct: 0.28, mode: 'share', share: 0.55 }, bag: ['carambanos', 'ventisca', 'ola'],
       guaranteed: { spine: 3, feather: 2, thread: 2 }, bonus: { spine: 2 }, ins: { id: 'trophy_mini_ventisquero', name: 'Esquirla de Corazón' }, xp: 40, ash: 25, spr: 'enemy_mini_ventisquero',
       fb: { spr: 'enemy_mini_hive', tint: '#bfe4ff', a: 0.4, kind: 'flo', sc: 1 }, lore: 'Un copo de viento viejo que olvidó cómo caer; allí donde pasa, el invierno se queda un rato más.' },
@@ -272,9 +272,9 @@
     if (!P || P.broken || e.spawnT > 0) return;
     switch (P.mode) {
       case 'share': fill = dmg * (De.shareNow ? De.shareNow(e) : De.part.share); break;
-      case 'frontal': fill = (blocked || (De.part.fire && tag === 'fire')) ? pre : 0; break;
+      case 'frontal': fill = (blocked || (De.part.fire && tag === 'fire')) ? pre * De.part.fw : 0; break;
       case 'core': fill = e.coreOpen ? dmg / (e.expMul || 1) * 2 : 0; break;
-      case 'head': fill = dmg * 1.15; break;
+      case 'head': fill = dmg * 0.5; break;
     }
     if (fill <= 0) return;
     P.hp -= fill; P.flash = 90;
@@ -437,7 +437,7 @@
         [0, 1].forEach(function (st) {
           var fk = { atk: A, stage: st, enraged: st === 1, part: { broken: false }, D: De, mid: id, maxHp: 1, hp: 1 };
           if (st === 1 && !A.double) return;
-          var ms = A.tele(fk), ex = [].concat(A.exit == null ? 0 : A.exit), mx = Math.max.apply(null, ex), need = Math.round(250 + (ice ? 220 : 0) + 1000 * mx / 190), dm = A.dmg || 0;
+          var ms = A.tele(fk), ex = [].concat(st && A.exit2 != null ? A.exit2 : A.exit == null ? 0 : A.exit), mx = Math.max.apply(null, ex), need = Math.round(250 + (ice ? 220 : 0) + 1000 * mx / 190), dm = A.dmg || 0;
           var ok = ms >= 400 && (mx === 0 || ms >= need) && (dm < 25 || ms >= 800 || st === 1) && dm <= M.HIT_CAP;
           out.push({ mini: id, atk: n + (st ? ' (2.ª)' : ''), ms: ms, exit: mx, need: need, dmg: dm, ok: ok });
         });

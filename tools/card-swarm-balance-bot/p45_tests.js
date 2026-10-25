@@ -35,7 +35,7 @@ async function spawnMini(pg, id) {
           for (let i = 0; i < 700; i++) { __step(1); p.x = e.x + 190 * 0 + 190; p.y = e.y; if (e.st !== last) { segs.push([e.st, i]); last = e.st; } if (e.st === 'move' && segs.length > 2) break; }
           G.Player.hurt = oh;
           const tele = []; for (let i = 0; i < segs.length; i++) if (segs[i][0] === 'tele') tele.push(Math.round(((segs[i + 1] ? segs[i + 1][1] : 700) - segs[i][1]) * 1000 / 60));
-          return { tele, hits: hits.map(h => Math.round(h)), A: { dmg: A.dmg, exit: A.exit, ice: !!e.D.ice } };
+          return { tele, hits: hits.map(h => Math.round(h)), A: { dmg: A.dmg, exit: enr && A.exit2 != null ? A.exit2 : A.exit, ice: !!e.D.ice } };
         }, [name, enr]);
         if (!r) continue;
         const need = [].concat(r.A.exit || 0); const mx = Math.max(...need); const rule = 250 + (r.A.ice ? 220 : 0) + 1000 * mx / 190;

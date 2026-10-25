@@ -523,6 +523,12 @@
       if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
       if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 14, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 7, 10, '#2a1a00', 'center', '#ffd24a'); }
     }
+    // P4.5: Insignias de minijefe (trofeo menor; 3 = logro, 8/8 = logro + 1 Esencia)
+    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/8', 614, 42, 10, '#c8a0ff', 'left');
+    G.Minis.IDS.forEach(function (mid, k) {
+      var have = (S.insignias || {})[mid], ix = 688 + k * 32;
+      try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
+    });
     // detalle de la carta
     U.panel(c, 614, 60, 336, 296, { border: tc });
     G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 70, 62, 84, { nocd: true });

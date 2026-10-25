@@ -284,7 +284,7 @@
       }
     },
     cancel: function (e) { e.ph = null; } };
-  AL.grilletes = { name: 'grilletes', sig: true, double: true, cd: 9000, exit: [100, 80], dmg: 26, fix: 250, sT: ['warden_chain_wind', 'whoosh'], pz: ['chain:0', 'chain:1'],
+  AL.grilletes = { name: 'grilletes', sig: true, double: true, cd: 9000, exit: 100, exit2: 80, dmg: 26, fix: 250, sT: ['warden_chain_wind', 'whoosh'], pz: ['chain:0', 'chain:1'],
     ok: function (e, d) { return d < 330; },
     tele: function (e) { return e.stage ? 720 : 1000; },
     start: function (e, X) { e.ang = e.stage ? e.ang0 + Math.PI : X.a; if (!e.stage) e.ang0 = X.a; },
@@ -317,7 +317,7 @@
     E.zone({ kind: 'fire', x: x, y: y, r: br ? r * 0.7 : r, arm: 600, life: br ? 1500 : life, dmg: 6, tick: 400, owner: e, src: 'mini_centinela_charco' });
     snd('sentinel_puddle_hiss', null, { vol: 0.4 });
   }
-  CE.arremetida = { name: 'arremetida', double: true, cd: 9000, exit: [42, 105], dmg: 24, fix: 300, sT: ['sentinel_ember_charge', 'wave_start'], pz: ['charge:0', 'charge:1'],
+  CE.arremetida = { name: 'arremetida', double: true, cd: 9000, exit: 42, dmg: 24, fix: 300, sT: ['sentinel_ember_charge', 'wave_start'], pz: ['charge:0', 'charge:1'],
     ok: function (e, d) { return d >= 130 && d <= 430; },
     tele: function (e) { return e.stage ? 600 : 800; },
     start: function (e, X) { if (!e.stage) { e.shortC = e.short; e.short = false; } e.ang = X.a; e.fa = X.a; chargeEnd(e, e.shortC ? 180 : 300); },
@@ -358,7 +358,7 @@
       var n = fanN(e), sp = (e.enraged ? 20 : 18) * DEG, u = e.t / e.teleMs, fixed = e.t >= e.teleMs - (e.stage ? 500 : 250);
       for (var i = 0; i < n; i++) thin(c, e.x, e.y, e.ang + e.fanOff + (i - (n - 1) / 2) * sp, 330, u, fixed);
     } };
-  CE.erupcion = { name: 'erupcion', sig: true, cd: 20000, exit: 170, dmg: 22, sT: ['sentinel_core_open', 'wave_start'], pz: ['core:0', 'core:1'],
+  CE.erupcion = { name: 'erupcion', sig: true, cd: 14000, exit: 170, dmg: 22, sT: ['sentinel_core_open', 'wave_start'], pz: ['core:0', 'core:1'],
     off: function (e) { return e.part.broken; }, tele: function () { return 1200; },
     fire: function (e, X) {
       var p = X.p; if (!p.dead && X.d <= 200 + p.r * 0.5) hurt(e, p, 22, 'erupcion', 1.4);
@@ -575,7 +575,7 @@
       }
     } };
   function derrapeLen(e) { return e.part.broken ? 120 : 220; }
-  YE.derrape = { name: 'derrape', sig: true, double: true, cd: 9000, exit: [45, 100], dmg: 28, fix: function (e) { return Math.round((e.stage ? 720 : 850) * 0.3); }, sT: ['yetim_charge_wind', 'whoosh'], pz: ['charge:0', 'charge:1'],
+  YE.derrape = { name: 'derrape', sig: true, double: true, cd: 9000, exit: 45, dmg: 28, fix: function (e) { return Math.round((e.stage ? 720 : 850) * 0.3); }, sT: ['yetim_charge_wind', 'whoosh'], pz: ['charge:0', 'charge:1'],
     ok: function (e, d) { return d >= 130 && d <= 430; },
     tele: function (e) { return e.stage ? 720 : 850; },
     start: function (e, X) { e.ang = X.a; e.fa = X.a; chargeEnd(e, 360 + derrapeLen(e)); },
