@@ -116,7 +116,7 @@
 
 <div id="famBox" style="display:none">
 <h2>Familias P1 y P2: Bosque, Cripta y Asfodelo (solo con ?game=card-swarm)</h2>
-<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option><option value="asfodelo">Asfodelo (P2)</option><option value="tundra">Tundra (P3)</option></select></label>
+<div style="margin-bottom:8px"><label>Familia <select id="famSel"><option value="bosque">Bosque</option><option value="cripta">Cripta</option><option value="asfodelo">Asfodelo (P2)</option><option value="tundra">Tundra (P3)</option><option value="mini2c">Minijefes Cripta (P4.5)</option><option value="mini2t">Minijefes Tundra (P4.5)</option></select></label>
 <label><input type="checkbox" id="famMix"> mezclar las 3 familias en la prueba</label>
 <label>Zoom <select id="famZoom"><option>1</option><option selected>2</option><option>3</option></select></label>
 <label>Enemigos en la prueba de densidad <input id="famN" type="range" min="10" max="150" step="10" value="100" style="width:120px"><output id="famNv">100</output></label></div>
@@ -162,7 +162,7 @@
 // ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
 (function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
-  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_boss3.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_yarlak.js"><\/script>'); document.write('<script src="' + b + 'sfx_minis.js"><\/script>'); } })();
+  if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_boss3.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam3.js"><\/script>'); document.write('<script src="' + b + 'assets_mini2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_yarlak.js"><\/script>'); document.write('<script src="' + b + 'sfx_minis.js"><\/script>'); } })();
 </script>
 <script>
 (function () {
@@ -514,7 +514,7 @@
 // Vista "Familias P1": cada sprite de Assets.FAM1 con todos sus frames y animaciones en bucle + prueba de 100 enemigos
 (function () {
   var A = window.Assets, $ = function (id) { return document.getElementById(id); };
-  if (!A || !A.FAM1) return; var FAMS = {}; [A.FAM1, A.FAM2, A.FAM3].forEach(function (o) { for (var k in (o || {})) FAMS[k] = o[k]; }); $('famBox').style.display = 'block';
+  if (!A || !A.FAM1) return; var FAMS = {}; [A.FAM1, A.FAM2, A.FAM3].forEach(function (o) { for (var k in (o || {})) FAMS[k] = o[k]; }); if (A.MINI2) { FAMS.mini2c = A.MINI2.cripta; FAMS.mini2t = A.MINI2.tundra; } $('famBox').style.display = 'block';
   var live = [], mob = [];
   function el(t, c, txt) { var e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; }
   function build() {
@@ -589,5 +589,6 @@
   build(); requestAnimationFrame(tick);
 })();
 </script>
+<script src="minis1.js"></script>
 </body>
 </html>

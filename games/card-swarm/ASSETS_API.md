@@ -867,3 +867,29 @@ Mismo patron y API que P1-P4: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`
 | `vent_heart_crack` | impact | Se rompe el CORAZON |
 | `vent_burst` | impact | Estallido de hielo (muerte, con `mini_die`) |
 Notas: los `*_burst` son el estallido de muerte propio de cada bioma (capa extra a `mini_die`). La Lluvia del Ventisquero reutiliza `icicle_rain`/Yarlak; sus tele de ataque sin SFX propio reutilizan los `yar_*_tele` indicados. Vista previa: `tools/asset-preview` (los nombres salen en la lista de sonidos; borde dorado = tele, azul = stinger).
+
+---
+# Minijefes P4.5 (Bosque y Asfodelo) (src/assets_mini1.js, tras assets_boss3.js; solo arte, sin logica)
+Script clasico que extiende `window.Assets`. Diseno: `DESIGN-v6-minijefes.md` 4.1, 4.2, 4.5, 4.6. Mismo estilo (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, ancla de pies = (w/2, h-4)). Son sprites normales (NO `drawBoss`): se dibujan con `Assets.animFrame(nombre, anim, t)`; no hay `state` ni telegrafias nuevas (cono, rectangulo, circulos, anillos y hilos van por codigo). `die` = 5 frames, 9 fps, sin ciclo. Una sola `drawImage` por minijefe. `Assets.MINI1 = {bosque:[...], asfodelo:[...], anchors:{...}}`.
+Anclas en px FINALES desde la esquina superior izquierda (sin voltear; al voltear, x -> w - x): ver `Assets.MINI1.anchors`.
+
+| sprite | base -> final | frames | anims (fps) |
+|---|---|---|---|
+| `enemy_mini_carnero` | 44x32 -> 88x64 | 29: 0-1 idle, 2-5 walk, 6 horn-wind (cuernos con brillo naranja), 7 horn-hit, 8 charge-wind, 9 charge, 10 stun, 11 call (notas moradas), 12 hurt, 13 roar (ojos rojos), 14-18 die, 19-20 idle_np, 21-24 walk_np, 25 charge-wind_np, 26 charge_np, 27 stun_np, 28 coz-hit_np | idle [0,1] 3; walk [0,2,1,3,4,5] 7; horn [6,7] 8; charge_wind [8]; charge [9]; stun [10]; call [11]; hurt [12]; roar [13]; die [14..18]; idle_np; walk_np [19,21,20,22,23,24]; charge_wind_np [25]; charge_np [26]; stun_np [27]; horn_np [28] |
+| `enemy_mini_tejedora` | 40x40 -> 80x80 | 30: 0-1 idle, 2-5 walk, 6 roots-wind, 7 roots-cast, 8 bloom-wind, 9 bloom-cast, 10 thorn-wind, 11 thorn-cast, 12 burst-wind, 13 burst, 14 hurt, 15 roar, 16-20 die, 21-22 idle_np (sin bulbo), 23-26 walk_np, 27 roots-wind_np, 28 thorn-wind_np, 29 burst_np | idle 3; walk 6; roots [6,7] 8; bloom [8,9] 8; thorn [10,11] 8; burst [12,13] 8; hurt [14]; roar [15]; die [16..20]; idle_np [21,22]; walk_np [21,23,22,24,25,26]; roots_np [27]; thorn_np [28]; burst_np [29] (sin bloom_np) |
+| `enemy_mini_hidra` (cuerpo) | 40x32 -> 80x64 | 26: 0-1 idle, 2-5 slither, 6 dive-wind, 7 dive (solo ondas y burbujas), 8 emerge (columna de agua), 9 tail-wind, 10 tail-hit, 11 hurt, 12 roar, 13-17 die, 18-19 idle_np (herida), 20-23 slither_np, 24 burn_np (cauterizado, humo), 25 bud_np (brote) | idle 3; slither/walk [0,2,1,3,4,5] 7; dive [6,7] 6; emerge [8]; tail [9,10] 8; hurt [11]; roar [12]; die [13..17]; idle_np [18,19]; slither_np/walk_np [18,20,19,21,22,23] 7; burn_np [24]; bud_np [25] |
+| `enemy_mini_hidra_head` | 24x24 -> 48x48 | 9: 0 idle, 1 lunge-wind, 2 lunge, 3 spit-wind, 4 spit, 5 hurt, 6 exposed, 7 severed, 8 regrow (brote) | idle [0]; lunge [1,2] 8; spit [3,4] 8; hurt [5]; exposed [6]; severed [7]; regrow [8] |
+| `enemy_mini_hidra_neck` | 12x12 -> 24x24 | 1 | idle [0] (segmento; encadenar 3) |
+| `enemy_mini_planidera` | 36x40 -> 72x80 | 32: 0-1 idle, 2-5 float, 6 rain-wind, 7 rain-cast, 8 tide-wind, 9 tide-cast, 10 choir-wind, 11 choir-cast, 12 burst-wind, 13 burst, 14 hurt, 15 roar, 16-20 die, 21-22 idle_np (sin velo, rostro), 23-26 float_np, 27-28 tide_np, 29-30 choir_np, 31 burst_np | idle 3; float/walk [0,2,1,3,4,5] 7; rain [6,7] 8; tide [8,9] 8; choir [10,11] 8; burst [12,13] 8; hurt [14]; roar [15]; die [16..20]; idle_np; float_np [21,23,22,24,25,26]; tide_np [27,28]; choir_np [29,30]; burst_np [31] (sin rain_np) |
+| `enemy_mini_pod` (Vaina) | 14x14 -> 28x28 | 9: 0-1 idle, 2-3 pulse (halo), 4-8 die | idle [0,1] 3; pulse [2,3] 6; die [4..8] 9 |
+| `fx_root_spike` | 24x48 -> 48x96 | 4: 0-1 emerge, 2 clavada, 3 retrae | emerge [0,1,2] 12 sin ciclo; stuck [2]; retract [3]. Base de la raiz en el borde inferior (y 92 final), centrada en x |
+| `fx_mini_thorn_patch` (el diseno la llama `fx_thorn_patch`, nombre YA usado por el Pastor) | 64x64 -> 128x128 | 3: 0 aviso, 1-2 activa | arm [0]; active/idle [1,2] 4. Disco r ~55 final + puas en el borde (hasta r ~62), centrado |
+| `fx_horn_shard` | 16x16 -> 32x32 | 4 | spin/loop 14 (esquirlas, particulas) |
+| `fx_mini_crack_carnero` / `_tejedora` / `_planidera` | igual que su minijefe | 2 (0 = grieta 66 %, 1 = 33 %, mas brillo) | `loop`. Superponer en el MISMO ancla sobre idle/walk (y con `*_np` NO): cuernos, Raiz madre, velo |
+
+Notas para la logica:
+- Partes rompibles (anclas finales): Carnero cuernos `[73,35]`, Tejedora Raiz madre `[17,52]` (bulbo, a la espalda/izquierda), Plañidera velo/rostro `[36,20]`; Hidra: cuello `enemy_mini_hidra.neck=[63,26]` (donde engancha el cuello/herida) y `enemy_mini_hidra_head.neck=[8,28]` (union de la cabeza). Segmentos de cuello: interpolar de la base a la cabeza.
+- Hidra: los frames 9-10 (`tail`) llevan ya la herida (solo se usa Coletazo con la cabeza perdida); el resto de frames no-`np` llevan el collar del cuello. En `die` el cuerpo no incluye cabeza: ocultar cabeza y cuello (o dibujar `severed`).
+- Cabeza: en `severed` no hay cuello; `regrow` es un brote con base herida.
+- Las anims `*_np` solo existen para las partes rotas indicadas; ataques sin frame propio reutilizan `walk`/`idle`.
+- Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Minijefes P4.5 (Bosque y Asfodelo)". Capturas en `studio/docs/capturas-p45/`. Pendiente fuera de arte: `sw.js` aun no precachea `assets_mini1.js`.
