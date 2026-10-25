@@ -324,7 +324,7 @@ async function data(b) {
     o.packs = f.packs.map(p => p.id);
     o.drops = [G.Loot.DROPS.honeyslug, G.Loot.DROPS.pollinator];
     o.famOf = !!G.B.famOf(); o.matOn = G.B.mat.on; o.light = Object.keys(f.light);
-    o.q = G.Quests.def('pollinators') && G.Quests.feasible(G.Quests.def('pollinators'), { pastor: 1, karceron: 1, letea: 1, yarlak: 1 });
+    o.q = G.Quests.def('pollinators') && G.Quests.feasible(G.Quests.def('pollinators'), { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }); o.q0 = G.Quests.feasible(G.Quests.def('pollinators'), { pastor: 1, karceron: 1, letea: 1 });   // P6: el Panal se abre con Yarlak
     o.qBiomes = G.Quests.biomesOf(G.Quests.def('pollinators'));
     o.biomeBoss = G.Boss.BIOME_BOSS.panal;
     // el director del Panal solo lista roles de su familia con la masa por tier
@@ -338,10 +338,10 @@ async function data(b) {
   const exp = { worm: [0, 0, 55, 1, 40], archer: [1, 45, 28, 3, 12], bomb: [1, 90, 16, 2, 6], boar: [2, 120, 10, 5, 6], shield: [2, 165, 10, 5, 6], honeyslug: [2, 210, 9, 5, 4], pollinator: [3, 270, 8, 6, 2], blinker: [3, 315, 9, 6, 4], warlock: [3, 405, 8, 8, 2] };
   ok(r.rows.every(x => { const e = exp[x[0]]; return e && x[2] === e[0] && x[3] === e[1] && x[4] === e[2] && x[5] === e[3] && x[6] === e[4]; }), 'tier / entrada (0:00 ... 6:45) / peso / coste / tope de cada tipo = tabla B.6');
   ok(r.rows.find(x => x[0] === 'pollinator')[7] === 'insecto' && r.rows.find(x => x[0] === 'shield')[7] === 'cera' && r.rows.find(x => x[0] === 'bomb')[7] === 'miel' && r.rows.find(x => x[0] === 'honeyslug')[7] === 'miel', 'materiales: Insecto / Cera (Guardia) / Miel (Larva, Babosa)');
-  ok(!r.ready && r.urlOk && r.famOf && r.matOn, 'ready:false (bloqueado) pero activo con ?biome=panal (familia y materiales)');
+  ok(r.ready && r.urlOk && r.famOf && r.matOn, 'ready:true desde la P6 (el Panal se abre con Yarlak): familia y materiales activos');
   ok(r.packs.join() === 'falange,abejorros,flores,avispero', 'packs: Falange, Abejorros, Campo de flores, Avispero');
   ok(r.drops[0][0] === 'frost' && r.drops[1][0] === 'spine', 'drops: Babosa Escarcha, Polinizador Púa');
-  ok(r.q === false && r.qBiomes.indexOf('panal') >= 0, 'encargo "Apaga a los Polinizadores": existe pero el Tablón no lo ofrece (Panal cerrado)');
+  ok(r.q === true && r.q0 === false && r.qBiomes.indexOf('panal') >= 0, 'encargo "Apaga a los Polinizadores": el Tablón lo ofrece con Yarlak vencido (P6) y no sin él');
   ok(r.light.indexOf('pollinator') >= 0 && r.biomeBoss === 'melaria', 'light del Panal y Boss.BIOME_BOSS.panal = melaria');
   ok(r.allow.sort().join() === Object.keys(r.rows.reduce((m, x) => (m[x[0]] = 1, m), {})).sort().join(), 'el director solo conoce los 9 roles de la familia (' + r.allow + ')');
   ok(r.matTable[0] === '1.25,1.25,1,0.75,1,1' && r.matTable[1] === '1.25,1,0.75,1,1,1' && r.matTable[2] === '1,1.25,1,0.75,1,1', 'tabla de materiales A.8 (Insecto, Cera, Miel)');
@@ -349,14 +349,16 @@ async function data(b) {
   const p2 = await b.newPage({ viewport: { width: 960, height: 540 } }); p2.errs = []; p2.on('pageerror', e => p2.errs.push(e.message));
   await p2.goto(`${base}/index.html?reset=1&nosw=1`); await p2.waitForTimeout(400);
   const bi = await p2.evaluate(() => { G.Save.data.biome = 'panal'; G.Save.data.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; G.startGame(); return [G.curBiome, G.Panal.on]; });
-  ok(bi[0] === 'bosque' && !bi[1], 'sin ?biome=panal el Panal sigue bloqueado aunque el guardado lo pida (' + bi + ')');
+  ok(bi[0] === 'panal' && bi[1], 'P6: con Yarlak vencido el destino del guardado (panal) se abre sin ?biome= (' + bi + ')');
+  const bi0 = await p2.evaluate(() => { G.Save.data.biome = 'panal'; G.Save.data.bossKills = { pastor: 1, karceron: 1, letea: 1 }; G.startGame(); return [G.curBiome, G.Panal.on]; });
+  ok(bi0[0] === 'tundra' && !bi0[1], 'sin Yarlak vencido el Panal sigue cerrado aunque el guardado lo pida (' + bi0 + ')');
   // Portal: chip '? PANAL' bloqueado
   const p3 = await b.newPage({ viewport: { width: 960, height: 540 } }); p3.errs = []; p3.on('pageerror', e => p3.errs.push(e.message)); p3.on('console', m => { if (m.type() === 'error') p3.errs.push(m.text()); });
   await p3.goto(`${base}/index.html?reset=1&nosw=1&len=7`); await p3.waitForTimeout(500);
   await p3.evaluate(() => { G.Save.data.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; G.Save.data.biome = 'tundra'; G.Save.save(); });
   await p3.keyboard.press('Tab'); await p3.waitForTimeout(900); await p3.keyboard.press('KeyE'); await p3.waitForTimeout(700);
   await p3.mouse.click(650 + 4 * 58 + 28, 357); await p3.waitForTimeout(400);
-  const bio = await p3.evaluate(() => G.Save.data.biome); ok(bio === 'tundra', 'el chip "? PANAL" no se puede elegir aunque Yarlak esté vencido (' + bio + ')');
+  const bio = await p3.evaluate(() => G.Save.data.biome); ok(bio === 'panal', 'P6: el chip PANAL se elige con Yarlak vencido (' + bio + ')');
   await p3.screenshot({ path: process.env.SHOT || '/tmp/p5_portal.png' });
   await p3.mouse.click(650 + 3 * 58 + 28, 357); await p3.waitForTimeout(300); ok((await p3.evaluate(() => G.Save.data.biome)) === 'tundra', 'el chip TUNDRA (4.º de 5, 56 px) sigue eligiéndose');
   ok(!pg.errs.length && !p2.errs.length && !p3.errs.length, 'datos: 0 errores de consola ' + [].concat(pg.errs, p2.errs, p3.errs).slice(0, 3).join(' | '));

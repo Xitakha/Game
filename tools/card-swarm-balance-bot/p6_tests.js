@@ -10,7 +10,7 @@
 //  hunt   : ?hunt=melaria (HP x0,75), ?practice=1 (HP x0,5), ?boss=melaria y ?biome=panal
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const mode = process.argv[2] || 'all', base = process.argv[3] || 'http://localhost:8793';
-const HPCAL = 3.5;   // hpCal final de Melaria (README, calibración P6)
+const HPCAL = 3.6;   // hpCal final de Melaria (README, calibración P6)
 let fails = 0; const ok = (c, msg) => { if (!c) fails++; console.log((c ? 'OK     ' : 'FALLO  ') + msg); };
 const launch = () => chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
 async function page(b, q, vp) {
@@ -172,7 +172,7 @@ async function mech(b) {
     G.god = true; return o;
   });
   console.log(JSON.stringify(s));
-  ok(s.lane[0] === 140 && s.lane[1] === 420, 'Estocada: carril 140 (doc 70 x 2,0 de calibración) x 420 desde la punta del aguijón (' + s.lane + ', ángulo ' + s.dir + ')');
+  ok(s.lane[0] === 168 && s.lane[1] === 420, 'Estocada: carril 168 (doc 70 x 2,4 de calibración) x 420 desde la punta del aguijón (' + s.lane + ', ángulo ' + s.dir + ')');
   ok(s.expMax === 1000 && s.expMul === 1.25, 'Estocada fallada: queda expuesta 1,0 s (x1,25)');
   ok(s.hit >= 20 && s.hit <= 40, 'Estocada acertada: daño ~26 + Peligro (' + s.hit + ')');
   // Picado sobre miel = atrapada 2,4 s (x1,35); sin miel = se eleva en 0,8 s
@@ -209,7 +209,7 @@ async function mech(b) {
     window.__sim(A.tele + 60, null, false); o.hit = Math.round(100 - G.player.hp); window.__sim(900, null, false); o.push = Math.round(G.player.y - y0); G.god = true; return o;
   });
   console.log(JSON.stringify(t));
-  ok(t.safe === 0 && t.hit >= 15 && t.push > 40, 'Torbellino: pegado al cuerpo (r < 62) es seguro; en la rosquilla hiere ~18 y el viento empuja ' + t.push + ' px');
+  ok(t.safe === 0 && t.hit >= 15 && t.push > 40, 'Torbellino: pegado al cuerpo (r < 57) es seguro; en la rosquilla hiere ~18 y el viento empuja ' + t.push + ' px');
   // Jalea real: curación 2,5 % y interrupción con >= 1,2 % de daño
   const j = await pg.evaluate(() => {
     var S = G.Boss, e = S.e, o = {}; window.__clean(); window.__prep(); e.hp = e.maxHp * 0.5; var h0 = e.hp; S.cds.m_jalea = 0; S.force('m_jalea'); var A = e.atk; o.tele = A.tele;

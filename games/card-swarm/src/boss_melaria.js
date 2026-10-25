@@ -36,7 +36,7 @@
     weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2, 3] }, { tag: 'ice', mul: 1.25, phases: [2, 3] }],
     resist: [{ tag: 'poison', mul: 0.5, immune: true }, { tag: 'lightning', mul: 0.8 }],   // Veneno: inmune a los estados (Combat.poison) y x0,5 directo
     noPoison: true,
-    hpCal: 3.5, dmgK: 1.3, geo: { estocada: 2, picado: 1.4, lluvia: 1.25, torbellino: 1.6 },   // calibración con el bot (README, Melaria P6)
+    hpCal: 3.6, dmgK: 1.3, geo: { estocada: 2.4, picado: 1.4, lluvia: 1, torbellino: 1.75 },   // calibración con el bot (README, Melaria P6)
     brasas: 14, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { wick: 2, frost: 2, thread: 2 },
     h: { camW: 0.4 }
@@ -141,7 +141,7 @@
     var k = pe.key, a = A();
     a.shards.push({ kind: k === 'alas' ? 'wing' : k === 'aguijon' ? 'sting' : 'crown', x: pe.x, y: pe.y, t0: G.time });
     if (k === 'alas') { G.Hud.banner('ALAS ROTAS: ATERRIZA', 1800, '#e6f7ff'); sfx('mel_land', { vol: 0.9 }); a.dip = 0; fx.dust(e.x, e.y + 60, 10); e.fly = false; }
-    else if (k === 'aguijon') G.Hud.banner('SIN AGUIJÓN: SOLO GOLPES DE ALA', 1800, '#ffd27a');
+    else if (k === 'aguijon') G.Hud.banner('SIN AGUIJÓN: GOLPES DE ALA', 1800, '#ffd27a');
     else if (k === 'corona') {
       G.Hud.banner('LA CORONA CAE: SIN JALEA REAL', 1800, '#eafff0');
       G.Combat.dropGem(pe.x + 20, pe.y + 10, 'heart', 20); var gg = G.gems[G.gems.length - 1]; if (gg) gg.jelly = true;   // gota de jalea: cura 20 HP (1 vez)
@@ -154,8 +154,8 @@
   H.onGate = function (e) {
     try { Assets.music.setPhase(e.phase); } catch (x) { /* audio */ }
     setCaps(e);
-    if (e.phase === 2) G.Hud.banner('EL ENJAMBRE DESPIERTA: PANAL ABIERTO Y TORBELLINO', 2200, '#ffc440');
-    if (e.phase === 3) G.Hud.banner('LA REINA BRILLA: ECLOSIÓN MASIVA', 2400, '#ffe6f2');
+    if (e.phase === 2) G.Hud.banner('EL ENJAMBRE DESPIERTA', 2200, '#ffc440');
+    if (e.phase === 3) G.Hud.banner('LA REINA BRILLA', 2400, '#ffe6f2');
   };
 
   // ------------------------------------------------------------------ arena viva: nidos que eclosionan, zumbido de alas
@@ -433,13 +433,13 @@
     var a = A(), second = e.despLeft === 0 && !!pel().x2, rings = [], k, n = 0;
     for (k = 5; k >= 1; k--) {
       var R = k * 83, g0 = Math.random() * TAU;
-      rings.push({ k: k, R: R, apo: R * COS30, th: 26, gh: Math.min(0.95, Math.atan(75 / R)), gaps: [g0, g0 + Math.PI + G.rnd(-0.5, 0.5)], at: 1000 + 1300 * n, state: 'idle', done: false, tg: 0 }); n++;
+      rings.push({ k: k, R: R, apo: R * COS30, th: 32, gh: Math.min(0.95, Math.atan(75 / R)), gaps: [g0, g0 + Math.PI + G.rnd(-0.5, 0.5)], at: 1000 + 1300 * n, state: 'idle', done: false, tg: 0 }); n++;
     }
     a.des = { rings: rings, fx: e.x, fy: e.y, second: second }; a.land2 = false; a.hatch.length = 0;
     PN.setCap(0, 1); for (var i = PN.activeCells().length - 1; i >= 0; i--) PN.sealCell(PN.activeCells()[i]);   // sin miel en estos 10 s
     expose(e, 1.25, 10600, 'despair'); winSt();
     try { Assets.music.setPhase(3); Assets.music.setDespair(true); } catch (x) { /* audio */ }
-    G.Hud.banner('LOS ANILLOS SE ENCIENDEN: BUSCA LOS HUECOS', 2400, '#ffe6f2');
+    G.Hud.banner('¡A LOS HUECOS!', 2400, '#ffe6f2');
   };
   H.updDespair = function (e, dt) {
     var a = A(), p = PL(), ds = a.des, t, i, rg;

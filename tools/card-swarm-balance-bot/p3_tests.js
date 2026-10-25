@@ -162,13 +162,15 @@ async function cold(b) {
   const px = await pg.evaluate(() => {
     const c = document.createElement('canvas'); c.width = 960; c.height = 540; const g = c.getContext('2d');
     g.fillStyle = '#2a4f8a'; g.fillRect(0, 0, 960, 540); G.Q.level = 'alta'; G.Tundra.bz.a = 0.6; const sv = G.cam.x, sy = G.cam.y; G.cam.x = 0; G.cam.y = 0; G.player.x = 100; G.player.y = 100; G.Tundra.drawHaze(g);
-    const pre = g.getImageData(850, 450, 1, 1).data; // fondo con bruma
-    g.save(); g.strokeStyle = 'rgba(8,4,14,0.7)'; g.lineWidth = 8; g.beginPath(); g.arc(850, 450, 30, 0, 6.283); g.stroke(); g.restore();
-    const ring = g.getImageData(850 + 30, 450, 1, 1).data; G.cam.x = sv; G.cam.y = sy;
     function lum(c) { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); }
-    const a = lum(pre), b2 = lum(ring); return +((Math.max(a, b2) + 0.05) / (Math.min(a, b2) + 0.05)).toFixed(2);
+    // la bruma es una textura animada: se mide en 48 puntos del aro (mismo pixel antes y despues del contorno oscuro) y se toma la mediana
+    const pts = []; for (let k = 0; k < 48; k++) { const a = k / 48 * 6.283; pts.push([Math.round(850 + Math.cos(a) * 30), Math.round(450 + Math.sin(a) * 30)]); }
+    const pre = pts.map(p => Array.from(g.getImageData(p[0], p[1], 1, 1).data));
+    g.save(); g.strokeStyle = 'rgba(8,4,14,0.7)'; g.lineWidth = 8; g.beginPath(); g.arc(850, 450, 30, 0, 6.283); g.stroke(); g.restore();
+    const r = pts.map((p, i) => { if (pre[i][2] < 170) return null; const post = g.getImageData(p[0], p[1], 1, 1).data, a = lum(pre[i]), b2 = lum(post); return (Math.max(a, b2) + 0.05) / (Math.min(a, b2) + 0.05); }).filter(v => v != null).sort((x, y) => x - y);   // solo los puntos con bruma (azul >= 170): los huecos de la textura dejan el hielo oscuro
+    G.cam.x = sv; G.cam.y = sy; return r.length ? +r[Math.floor(r.length / 2)].toFixed(2) : 0;
   });
-  ok(px >= 3, `contraste medido en píxeles (contorno sobre la bruma de Alta al 0,6) = ${px}:1`);
+  ok(px >= 3, `contraste medido en píxeles (mediana de los puntos del contorno con bruma, Alta al 0,6) = ${px}:1`);
   ok(!pg.errs.length, 'cold: 0 errores ' + pg.errs.slice(0, 3).join(' | '));
   await pg.close();
 }

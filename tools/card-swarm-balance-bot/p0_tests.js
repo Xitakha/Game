@@ -19,7 +19,7 @@ async function unit(b) {
     const B = G.B, out = {}, roles = ['worm', 'archer', 'fanner', 'boar', 'shield', 'bomb', 'moth', 'sower', 'blinker', 'scorcher', 'warlock'];
     out.biomes = Object.keys(B.fam).join(',');
     // resolución por modo
-    B.famMode = 'auto'; out.autoNull = ['panal'].every(k => B.famOf(k) === null) && ['bosque', 'cripta', 'asfodelo', 'tundra'].every(k => B.famOf(k) === B.fam[k]);   // P1/P2: Bosque, Cripta y Asfodelo ready; Tundra (P3, ready:false) y Panal siguen en legado en modo auto
+    B.famMode = 'auto'; out.autoNull = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'].every(k => B.famOf(k) === B.fam[k]);   // P1-P6: los 5 biomas tienen familia ready (Tundra desde la P4, Panal desde la P6)
     B.famMode = 1; out.f1 = ['bosque', 'cripta', 'asfodelo'].every(k => B.famOf(k) === B.fam[k]); out.f1Empty = B.famOf('tundra') === B.fam.tundra && B.famOf('panal') === B.fam.panal;   // P3: la Tundra y (P5) el Panal tienen familia (ready:false: solo con ?fam=1 / ?biome=)
     B.famMode = 0; out.f0 = B.famOf('bosque') === null;
     // P2: ya no queda ningun bioma real con familia identidad: se inyecta una familia identidad (11 roles, valores legados) en 'tundra' (ready:false) para probar el mecanismo
@@ -34,7 +34,7 @@ async function unit(b) {
     return out;
   });
   ok(r.biomes === 'bosque,cripta,asfodelo,tundra,panal', 'G.B.fam tiene bosque, cripta, asfodelo y esqueletos tundra/panal');
-  ok(r.autoNull, 'modo auto: Bosque, Cripta y Asfodelo (ready, P1/P2) usan su familia; Tundra/Panal -> roster legado (famOf = null)');
+  ok(r.autoNull, 'modo auto: los 5 biomas (ready: Bosque, Cripta, Asfodelo, Tundra P4 y Panal P6) usan su familia');
   ok(r.f1 && r.f1Empty, '?fam=1 fuerza familias en los 3 biomas y en la Tundra (P3); y el Panal (P5)');
   ok(r.f0, '?fam=0 -> famOf = null');
   ok(r.identity, 'identidad (familia de prueba inyectada en Tundra): tierOf/from/w/cost/maxAlive == roster actual y hp/spd/dmg = 1, sin sprite propio (11 roles)');

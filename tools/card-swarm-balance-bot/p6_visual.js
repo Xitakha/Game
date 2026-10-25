@@ -2,12 +2,12 @@
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
 const base = process.argv[2] || 'http://localhost:8793', OUT = process.argv[3] || '/tmp/';
-const SIM = `window.__sim = function (ms) { var dt = 1000 / 60, t = 0; while (t < ms) { G.time += dt; G.Player.update(G.player, dt); G.Enemies.update(dt); G.Combat.update(dt); G.Panal.update(dt); G.fx.update(dt); G.pendingLevels = 0; G.player.hp = G.player.maxHp; t += dt; } };`;
+const SIM = `window.__sim = function (ms) { var dt = 1000 / 60, t = 0; while (t < ms) { G.time += dt; G.Player.update(G.player, dt); G.Enemies.update(dt); G.Combat.update(dt); G.Panal.update(dt); G.fx.update(dt); G.Hud.update(dt); G.pendingLevels = 0; G.player.hp = G.player.maxHp; t += dt; } };`;
 async function open(b, q, vp, ctxOpts) {
   const ctx = ctxOpts ? await b.newContext(ctxOpts) : null, pg = ctx ? await ctx.newPage() : await b.newPage({ viewport: vp || { width: 960, height: 540 } }); pg.errs = [];
   pg.on('pageerror', e => pg.errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); });
   await pg.goto(`${base}/index.html?reset=1&god=1&dbg=1&boss=melaria&nointro=1&prep=0&hand=spark:3,ember:2,shard:2,dart:2,dagger:2&nosw=1&speed=1${q}`); await pg.waitForTimeout(600);
-  await pg.evaluate(SIM); await pg.evaluate(() => { G.state = 'play'; window.__sim(3700); });
+  await pg.evaluate(SIM); await pg.evaluate(() => { G.state = 'play'; window.__sim(5400); });
   return pg;
 }
 const prep = () => { var e = G.Boss.e; e.atk = null; e.bst = 'idle'; e.mode = 'fight'; e.immune = false; e.stagT = 0; e.exps.length = 0; e.cadT = 1e9; for (var k in G.Boss.cds) G.Boss.cds[k] = 0; };
