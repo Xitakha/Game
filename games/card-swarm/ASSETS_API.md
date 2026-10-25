@@ -616,3 +616,50 @@ Paleta: pelaje #e8eef5/#8fa4bf, hielo #9fd8ff/#5aa8e8/#2a4f8a/#1b2f66, marfil #f
 - `Assets.drawColdBar(ctx, x, y, value, t, {w 140, h 10, text true, frozen, alpha})`: icono de copo + barra 140x10 + "NN%"; `value` 0-100; marcas en 40 y 70; azul claro <40, mas blanco con pulso desde 70, borde destellante a 100 / `frozen`. (x,y) esquina sup. izq.; devuelve el ancho total (w+58). Pensada bajo la barra de vida.
 - `Assets.drawColdVignette(ctx, W, H, value, t, {alpha})`: escarcha azul en bordes y esquinas (canvas cacheado + alfa): nada <20, suave 20-40, clara >=40, intensa >=70, blanqueada a 100.
 - `Assets.drawFlake(ctx, x, y, r, {color, rot, alpha})`: copo vectorial suelto.
+
+---
+# Audio Yarlak P4 (src/sfx_yarlak.js, tras sfx_fam3.js; solo audio)
+Mismo patron y API que P1-P3: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch final +-10 % max), <= 4 voces por nombre y separacion minima `min` (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxYarlak[nombre]` = `{kind, fam:'yarlak', min, dur}`. Tipos: **tele** (rumor/glissando que SUBE y se sostiene, solo al INICIO del aviso, `vol` 0.8-1), **impact** (golpe grave + ruido/cristal, al golpear), **move** (movimiento), **stinger** (jingle de evento, una vez). Cada ataque tiene su tele distinguible de su impacto (la tele nunca tiene golpe seco). Lo existente no cambia. Duraciones reales en `Assets.sfxYarlak[n].dur`.
+
+## Musica `boss_yarlak` (78 BPM, Re menor, procedural, 4 capas)
+- `Assets.music.setTrack('boss_yarlak')` al empezar la pelea (igual que 'tundra': intercepta `Assets.music`; `setTrack('normal'|'boss'|'tundra')` vuelve y reanuda). `tracks()` la incluye; `renderMusic({track:'boss_yarlak', bars, phase:1..4, despair:bool})` y `exportMusicWav` funcionan.
+- Siempre: bajo grave, bordon de quinta fria y ventisca. **F1** ostinato de cuernos graves + golpe de hielo en 1 y 3 + campanas escasas; **F2** + aullidos de manada (glissando), mas golpes, mas campanas; **F3** + bombo "dum-dum" al ritmo del Corazon y coro de quintas, crujidos; **F4** + golpes en negras, barrido de ventisca ascendente cada 8 compases, coro grave; **desesperado** = F4 + triton disonante, golpes a corcheas, ventisca al maximo.
+- **Cambio de fase**: `Assets.music.setPhase(n)` (1..4; lo mas claro, entra en el siguiente 1/16) o `Assets.music.setIntensity(v)` (con la pista activa: v < 0.375 -> F1, < 0.625 -> F2, < 0.875 -> F3, si no F4; ojo: los valores actuales de Boss 0.55 / 0.78 / 1.0 darian F2/F3/F4, usar 0.25 / 0.5 / 0.75 / 1.0). **Desesperado**: `Assets.music.setDespair(true)` (a < 8 %; `false` al terminar). `Assets.music.getPhase()`. Al llamar `setTrack('boss_yarlak')` se reinicia a F1 sin desesperado.
+- Stingers por G.Boss.stinger (sin tocar boss.js): `G.Snd.V.stg_yarlak_<intro|p2|p3|p4|despair>` y `stg_yarlak_<part_tusk|part_armor|part_heart|window|death|victory>` delegan en los `yar_stg_*` de abajo.
+
+## SFX y cuando llamarlos
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `boss_roar_yarlak` | tele | Rugido (~2,5 s): entrada y arranque del desesperado. Un solo rugido a la vez |
+| `mammoth_step` | move | Pisada al caminar (cada ciclo de pata; F1-F4 `pitch` 1.0 -> 1.1 con la velocidad; min 240) |
+| `yar_step_big` | impact | 3er paso de la entrada (shake 8/220) y onda de nieve |
+| `yar_stomp_tele` / `yar_stomp` / `yar_ring` | tele / impact / move | Ataque 1 Pisoton: tele al inicio de los 1100 ms; `yar_stomp` al pisar; `yar_ring` al lanzar el anillo de hielo |
+| `yar_spike_tele` / `yar_spike` | tele / impact | Estalagmita: aviso de 900 ms (`vol` 0.5 si hay 3 a la vez) / al brotar |
+| `yar_charge_tele` | tele | Ataque 2 Embestida: inicio de los 1200 ms del carril |
+| `yar_charge_go` | move | Arranque de la aceleracion (750 ms) |
+| `yar_skid` | move | Inicio del tramo de derrape (220 px) |
+| `tusk_crash` | impact | Choque contra pared/estalagmita (aturdido, ventana x1,35) |
+| `yar_gore_tele` / `yar_gore` | tele / impact | Ataque 3 Cornada: inicio de los 950 ms / al barrer los colmillos |
+| `yar_trunk` | impact | Golpe de trompa (empuje o remate; no hay ataque propio en B.2) |
+| `yar_breath_tele` | tele | Ataque 4 Aliento: inicio de los 1150 ms |
+| `ice_breath` | move | Inicio del barrido de 1,2 s (una vez; min 1000) |
+| `yar_breath_tick` | impact | Cada tick de 7 + Frio (250 ms): `vol` 0.5 |
+| `yar_call_tele` / `yar_call` | tele / move | Ataque 5 Llamada: inicio de los 900 ms / al invocar los lobos |
+| `yar_slide_tele` | tele | Ataque 6 Alud: inicio de los 1000 ms |
+| `yar_block_tele` | tele | Sombra de cada bloque (si se quiere por bloque; `vol` 0.5) |
+| `yar_block` | impact | Cada bloque que cae (cada 220 ms, 8 seguidos: `vol` 0.6, `pitch` 0.9-1.1) |
+| `yar_pulse_tele` | tele | Ataque 7 Latido gelido (firma): inicio de los 1300 ms (latidos que se aceleran = cuenta atras) |
+| `yar_pulse` | impact | Estalla el pulso de r 280 |
+| `yar_window_loop` | move | Pecho abierto: cada ~0,6 s mientras dura la ventana (min 380) |
+| `yar_blizz_tele` | tele | Ataque 8 Ventisca blanca: inicio de los 1250 ms |
+| `yar_blizz_wave` | move | Cada una de las 3 olas (cada 1,5 s) |
+| `icicle_rain` | move | Desesperado: cada oleada de 12 carambanos (cada 1,4 s; min 800) |
+| `yar_chasm` | impact | Se abre una grieta de hielo (F2+) |
+| `yar_stg_intro` | stinger | Titulo de la intro (Boss.stinger('intro')) |
+| `yar_stg_p2` / `p3` / `p4` | stinger | Transicion a F2 / F3 / F4 (junto con `setPhase`) |
+| `yar_stg_despair` | stinger | Entra el desesperado (< 8 %), junto con `boss_roar_yarlak` si se quiere |
+| `yar_stg_part_tusk` / `_armor` / `_heart` | stinger | Parte rota: Colmillo / Armadura / Corazon |
+| `yar_stg_window` | stinger | Se abre la ventana de dano (inicio de los 4 s) |
+| `yar_stg_death` | stinger | Muerte: desmoronamiento largo (~6,6 s); parar la musica antes |
+| `yar_stg_victory` | stinger | Victoria / pantalla de botin (~4 s) |
+Las telegrafias de ataque son las del ritmo B.2 (todas >= 900 ms) y estan hechas para durar menos que ellas; `min` evita que dos jefes/adds saturen. Viento ambiente de la arena: `Assets.wind(intensity)` (P3), subir a 0.9 en F4 y desesperado.
