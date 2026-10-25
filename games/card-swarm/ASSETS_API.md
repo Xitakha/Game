@@ -616,3 +616,151 @@ Paleta: pelaje #e8eef5/#8fa4bf, hielo #9fd8ff/#5aa8e8/#2a4f8a/#1b2f66, marfil #f
 - `Assets.drawColdBar(ctx, x, y, value, t, {w 140, h 10, text true, frozen, alpha})`: icono de copo + barra 140x10 + "NN%"; `value` 0-100; marcas en 40 y 70; azul claro <40, mas blanco con pulso desde 70, borde destellante a 100 / `frozen`. (x,y) esquina sup. izq.; devuelve el ancho total (w+58). Pensada bajo la barra de vida.
 - `Assets.drawColdVignette(ctx, W, H, value, t, {alpha})`: escarcha azul en bordes y esquinas (canvas cacheado + alfa): nada <20, suave 20-40, clara >=40, intensa >=70, blanqueada a 100.
 - `Assets.drawFlake(ctx, x, y, r, {color, rot, alpha})`: copo vectorial suelto.
+
+---
+# Audio Yarlak P4 (src/sfx_yarlak.js, tras sfx_fam3.js; solo audio)
+Mismo patron y API que P1-P3: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch final +-10 % max), <= 4 voces por nombre y separacion minima `min` (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxYarlak[nombre]` = `{kind, fam:'yarlak', min, dur}`. Tipos: **tele** (rumor/glissando que SUBE y se sostiene, solo al INICIO del aviso, `vol` 0.8-1), **impact** (golpe grave + ruido/cristal, al golpear), **move** (movimiento), **stinger** (jingle de evento, una vez). Cada ataque tiene su tele distinguible de su impacto (la tele nunca tiene golpe seco). Lo existente no cambia. Duraciones reales en `Assets.sfxYarlak[n].dur`.
+
+## Musica `boss_yarlak` (78 BPM, Re menor, procedural, 4 capas)
+- `Assets.music.setTrack('boss_yarlak')` al empezar la pelea (igual que 'tundra': intercepta `Assets.music`; `setTrack('normal'|'boss'|'tundra')` vuelve y reanuda). `tracks()` la incluye; `renderMusic({track:'boss_yarlak', bars, phase:1..4, despair:bool})` y `exportMusicWav` funcionan.
+- Siempre: bajo grave, bordon de quinta fria y ventisca. **F1** ostinato de cuernos graves + golpe de hielo en 1 y 3 + campanas escasas; **F2** + aullidos de manada (glissando), mas golpes, mas campanas; **F3** + bombo "dum-dum" al ritmo del Corazon y coro de quintas, crujidos; **F4** + golpes en negras, barrido de ventisca ascendente cada 8 compases, coro grave; **desesperado** = F4 + triton disonante, golpes a corcheas, ventisca al maximo.
+- **Cambio de fase**: `Assets.music.setPhase(n)` (1..4; lo mas claro, entra en el siguiente 1/16) o `Assets.music.setIntensity(v)` (con la pista activa: v < 0.375 -> F1, < 0.625 -> F2, < 0.875 -> F3, si no F4; ojo: los valores actuales de Boss 0.55 / 0.78 / 1.0 darian F2/F3/F4, usar 0.25 / 0.5 / 0.75 / 1.0). **Desesperado**: `Assets.music.setDespair(true)` (a < 8 %; `false` al terminar). `Assets.music.getPhase()`. Al llamar `setTrack('boss_yarlak')` se reinicia a F1 sin desesperado.
+- Stingers por G.Boss.stinger (sin tocar boss.js): `G.Snd.V.stg_yarlak_<intro|p2|p3|p4|despair>` y `stg_yarlak_<part_tusk|part_armor|part_heart|window|death|victory>` delegan en los `yar_stg_*` de abajo.
+
+## SFX y cuando llamarlos
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `boss_roar_yarlak` | tele | Rugido (~2,5 s): entrada y arranque del desesperado. Un solo rugido a la vez |
+| `mammoth_step` | move | Pisada al caminar (cada ciclo de pata; F1-F4 `pitch` 1.0 -> 1.1 con la velocidad; min 240) |
+| `yar_step_big` | impact | 3er paso de la entrada (shake 8/220) y onda de nieve |
+| `yar_stomp_tele` / `yar_stomp` / `yar_ring` | tele / impact / move | Ataque 1 Pisoton: tele al inicio de los 1100 ms; `yar_stomp` al pisar; `yar_ring` al lanzar el anillo de hielo |
+| `yar_spike_tele` / `yar_spike` | tele / impact | Estalagmita: aviso de 900 ms (`vol` 0.5 si hay 3 a la vez) / al brotar |
+| `yar_charge_tele` | tele | Ataque 2 Embestida: inicio de los 1200 ms del carril |
+| `yar_charge_go` | move | Arranque de la aceleracion (750 ms) |
+| `yar_skid` | move | Inicio del tramo de derrape (220 px) |
+| `tusk_crash` | impact | Choque contra pared/estalagmita (aturdido, ventana x1,35) |
+| `yar_gore_tele` / `yar_gore` | tele / impact | Ataque 3 Cornada: inicio de los 950 ms / al barrer los colmillos |
+| `yar_trunk` | impact | Golpe de trompa (empuje o remate; no hay ataque propio en B.2) |
+| `yar_breath_tele` | tele | Ataque 4 Aliento: inicio de los 1150 ms |
+| `ice_breath` | move | Inicio del barrido de 1,2 s (una vez; min 1000) |
+| `yar_breath_tick` | impact | Cada tick de 7 + Frio (250 ms): `vol` 0.5 |
+| `yar_call_tele` / `yar_call` | tele / move | Ataque 5 Llamada: inicio de los 900 ms / al invocar los lobos |
+| `yar_slide_tele` | tele | Ataque 6 Alud: inicio de los 1000 ms |
+| `yar_block_tele` | tele | Sombra de cada bloque (si se quiere por bloque; `vol` 0.5) |
+| `yar_block` | impact | Cada bloque que cae (cada 220 ms, 8 seguidos: `vol` 0.6, `pitch` 0.9-1.1) |
+| `yar_pulse_tele` | tele | Ataque 7 Latido gelido (firma): inicio de los 1300 ms (latidos que se aceleran = cuenta atras) |
+| `yar_pulse` | impact | Estalla el pulso de r 280 |
+| `yar_window_loop` | move | Pecho abierto: cada ~0,6 s mientras dura la ventana (min 380) |
+| `yar_blizz_tele` | tele | Ataque 8 Ventisca blanca: inicio de los 1250 ms |
+| `yar_blizz_wave` | move | Cada una de las 3 olas (cada 1,5 s) |
+| `icicle_rain` | move | Desesperado: cada oleada de 12 carambanos (cada 1,4 s; min 800) |
+| `yar_chasm` | impact | Se abre una grieta de hielo (F2+) |
+| `yar_stg_intro` | stinger | Titulo de la intro (Boss.stinger('intro')) |
+| `yar_stg_p2` / `p3` / `p4` | stinger | Transicion a F2 / F3 / F4 (junto con `setPhase`) |
+| `yar_stg_despair` | stinger | Entra el desesperado (< 8 %), junto con `boss_roar_yarlak` si se quiere |
+| `yar_stg_part_tusk` / `_armor` / `_heart` | stinger | Parte rota: Colmillo / Armadura / Corazon |
+| `yar_stg_window` | stinger | Se abre la ventana de dano (inicio de los 4 s) |
+| `yar_stg_death` | stinger | Muerte: desmoronamiento largo (~6,6 s); parar la musica antes |
+| `yar_stg_victory` | stinger | Victoria / pantalla de botin (~4 s) |
+Las telegrafias de ataque son las del ritmo B.2 (todas >= 900 ms) y estan hechas para durar menos que ellas; `min` evita que dos jefes/adds saturen. Viento ambiente de la arena: `Assets.wind(intensity)` (P3), subir a 0.9 en F4 y desesperado.
+
+
+---
+# Jefes v4 (P4: Yarlak, el Coloso Gelido) (src/assets_boss3.js; solo arte, sin logica)
+Misma API que Pastor/Karceron/Letea: `Assets.drawBoss('yarlak', ctx, x, y, state)`, `renderBoss`, `bossAnchors`, `drawBossShadow(ctx,x,y,{id:'yarlak',...})`, `drawBossPortrait('yarlak', ctx, x, y, {size, mood})`, `bossPoseNames('yarlak')`, `Assets.BOSS.yarlak`, `bossIds()` (= pastor, karceron, letea, yarlak). Diseno: `DESIGN-v5-biomas.md` B.2 y C.4-B. Vista previa: `tools/asset-preview/index.html?game=card-swarm&boss=yarlak` (seccion "Jefe": ataque, telegrafia/golpe, progreso, fase 1-4, armadura, pecho abierto, derrape, partes rotas, muerte, anclajes, arena de Tundra con hogueras y pilares). Capturas: `studio/docs/capturas-p4/`.
+**Orden de carga**: `<script src="src/assets_boss3.js">` va DESPUES de `assets_boss2.js` (envuelve sus funciones; `assets_fam3.js` ya esta cargado antes y aporta fx_ice_*, drawCampfire, drawBlizzard). Si falta `Assets.drawBoss` imprime un error y no registra nada.
+Coste medido (Chromium headless sin GPU, 700 frames mezclando ataques, muerte, derribo y anclas): ~2,1 ms/frame (jefe + sombra + aura + fx). Un canvas compartido 640x520 con rect sucio; sin `shadowBlur`.
+
+| dato | valor |
+|---|---|
+| `Assets.BOSS.yarlak` | `{id, name:'Yarlak', title:'El Coloso Gélido', r:96, gy:100, w:300, h:250, deathMs:3500, windups, phases:['Primera nevada','La manada','Corazón helado','Invierno eterno'], despair:'Invierno Eterno', parts:{colmillos:{r:30}, armadura:{r:46}, corazon:{r:24}}, windowColor:'#cfeeff', speeds:[55,65,75,85], eyes:[...4 colores]}` |
+| (x,y) | centro del cuerpo = circulo de colision `r` 96. Pies en `y + 100` (ordenar por profundidad con `y + 100`), sombra en `y + 106` (elipse 176x48) |
+| tamano visual | ~306 x 250: x -116..+190 (trasera a punta de colmillo/trompa), y -125 (placas) .. +104 (patas); con la trompa en alto llega a y -170 |
+| `facing` | 1 mira a la DERECHA, -1 lo voltea (el dibujo compuesto se refleja; anclas y efectos tambien) |
+
+## state (todo opcional salvo `t`)
+`t` ms | `facing` | `phase` 1-4 (ojos: F1 azul claro, F2 blanco, F3 cian, F4 amarillo palido; **nunca rojo**; F2+ caen carambanos del flequillo, F3+ vaho en la trompa y costra del pecho agrietada) | `moving` bool/0..1 + `speed` px/s (ciclo de paso de 4 frames: cadencia `speed/70` ciclos/s, 2 pisadas por ciclo con polvo y cabeceo; con `speed` 0 y `moving` true usa 60) | `hurt` 0..1 (flash blanco + retroceso + cabeza "dano") | `broken:{colmillos, armadura, corazon}` bool | `armor` 0..1 (salud restante de la Armadura: las 5 placas del lomo se van rompiendo de atras hacia el cuello cuando `armor` baja de 0,8 / 0,6 / 0,4 / 0,2 / 0; las que estan a punto de caer salen agrietadas; `broken.armadura` = ninguna, solo munones) | `open` 0..1 pecho abierto (la costra se parte y se ve el Corazon grande; con `exposed:true` ademas aro blanco-azulado) | `windup`+`wp`, `strike`+`sp` (como en los demas; `strike` manda; sin `wp`/`sp` hacen bucle: solo preview) | `aim` rad (centro del aliento; direccion de la embestida) | `skid` 0..1 (derrape tras la embestida: cuerpo hacia atras, patas delanteras clavadas, nieve y rayones; pasar 1 mientras patina) | `enraged` (furia: tinte blanco-cian pulsante + brillo; no hay rojo) | `desperate` (= `windup:'invierno'`) | `exposed` (ventana: tinte + aro blanco-azulado en el suelo y sobre el Corazon si `open>0.5`) | `stun` (derribo/aturdido: cabeza gacha ojos cerrados, patas abiertas, estrellitas de hielo) | `immune` (puerta de fase: tinte azul + elipse punteada) | `roar` 0..1 (intro/cambio de fase: se encabrita, trompa arriba, boca abierta) | `dying`+`dt` | `alpha` (entrada entre la ventisca) | `noShadow` / `noFx`. `lift`/`emerge` se ignoran.
+**Ataques** (`Assets.bossPoseNames('yarlak')` = `pisoton embestida cornada aliento llamada alud latido ventisca invierno`; para el ataque numero N del doc B.2 usar el nombre homonimo):
+| ataque | windup (wp 0->1) | strike (sp 0->1) |
+|---|---|---|
+| `pisoton` | se encabrita (tren delantero y patas arriba, trompa en alto, ruge) | pisa de golpe: cuerpo +8 px, temblor 6, polvo (la onda: `drawBossWave(..., {style:3})`) |
+| `embestida` | agacha el cuerpo, cabeza y colmillos hacia delante, la pata delantera escarba (alterna) y levanta nieve | galope con inercia (`speed` >= 400: cadencia 5 ciclos/s), cabeza gacha, rastro de derrape detras; al acabar pasar `skid:1` |
+| `cornada` | agacha la cabeza y recoge la trompa, colmillos hacia abajo/atras | barre de abajo arriba (cabeza -0,68 rad) con estela blanca de la punta del colmillo |
+| `aliento` | inhala: cabeza y trompa se alzan hacia `aim` (la trompa apunta, limitada a -66..+57 grados), vaho | cono de aliento polar desde la punta de la trompa (`anchors.breath`) hasta 480 px, sigue `aim` cada frame; el barrido de 30 grados lo hace la logica variando `aim` |
+| `llamada` | cabeza atras, trompa en alto, boca abierta; anillo morado punteado en el suelo | pisotazo + rugido; el anillo sigue visible |
+| `alud` | se alza, 4 bloques de hielo flotan sobre el lomo y las placas brillan | la trompa golpea hacia delante, los bloques salen despedidos hacia arriba |
+| `latido` | se encorva, cabeza gacha, el Corazon late fuerte a traves de la costra (pecho se entreabre) | pulso de onda r 280 desde el pecho (lo dibuja el jefe) y el pecho se abre (`open` sube a 1); despues usar `open:1, exposed:true` durante la ventana |
+| `ventisca` | se encabrita, trompa arriba, remolinos de nieve alrededor | ruge y pisa; remolinos al maximo (las olas las dibuja `drawBossBand(...,{style:'ice'})`) |
+| `invierno` (= `desperate`) | (pose fija) planta en el centro, ruge, pecho abierto, ojos amarillos, anillo de carambanos girando en el suelo, ventisca alrededor | - |
+Lo que cada pose dibuja ya solo es el jefe; el dano y las telegrafias las pone la logica.
+
+## Anclas (`Assets.bossAnchors('yarlak', state)`, `{x,y,r}` relativos a (x,y), con `facing` aplicado; MISMO state que `drawBoss`)
+| clave | que es | r | reposo (facing 1) |
+|---|---|---|---|
+| `body` | hurtbox de contacto | 96 | (0,0) |
+| `head` | cabeza | 40 | (123,-38) |
+| `colmillos` | parte rompible Colmillos (centro del colmillo cercano; con `broken.colmillos` pasa al munon) | 30 | (175,67); roto (154,26) |
+| `armadura` | parte rompible Armadura (lomo) | 46 | (-26,-78) |
+| `corazon` | parte rompible Corazon (pecho; apuntable solo con el pecho abierto) | 24 | (60,0) |
+| `mouth` | boca/hocico (rugido) | 10 | (159,22) |
+| `trunkTip` = `breath` | punta de la trompa = origen del Aliento polar | 12 | (195,102); con `aliento` apunta a `aim` (p. ej. aim 0,3: (267,-16)) |
+| `chest` | origen del pulso del Latido | 0 | (60,0) |
+| `tuskTip` / `tuskBase` / `tuskFar` | punta, raiz del colmillo cercano y raiz del lejano (la Cornada barre con la punta) | 8/10/10 | (184,82) / (146,10) / (134,6) |
+| `eyes` / `hump` | ojos / joroba | 8/30 | (143,-36) / (-28,-92) |
+| `plate0..plate4` | cada placa del lomo (de atras al cuello; sirven para lanzar `drawYarlakShards`) | 18 | (-84,-78) (-58,-102) (-30,-114) (0,-109) (30,-93) |
+| `feet` / `groundShadow` | suelo bajo el cuerpo / centro de la sombra | 0/190 | (0,100) / (0,108) |
+| `step` | `{u, impact}`: fase del ciclo de paso y envolvente 0..1 de la pisada (para `fx.shake`/`mammoth_step`); `Assets.yarlakGait(speed, t)` da lo mismo sin state | - | - |
+Cambian con la pose (tilt, cabeza, trompa): llamar a la funcion cada frame. Las placas rotas siguen teniendo ancla.
+
+## Telegrafias nuevas: `Assets.drawBossTele(ctx, kind, x, y, o)` (mismas `o`: `p` 0..1, `a`, `color`, `fix` (por defecto p>=0,7), `sig`, `t`; alfa maximo ~0,4; se amplian las de J1/J2)
+| kind | parametros | uso en B.2 |
+|---|---|---|
+| `skidlane` | `w:110, len:560, skid:220, a` (origen (x,y), avanza hacia `a`) | Embestida: carril rojo + tramo de derrape punteado y mas claro con flechas blancas |
+| `polar` | `r:480, arc:50 grados (rad), sweep:30 grados (rad), a` | Aliento polar: cono azul con flecha de barrido y bordes punteados (origen = `anchors.breath`) |
+| `stalag` | `r:26` | aviso de 900 ms de cada estalagmita del Pisoton (circulo rojo con puas) |
+| `block` | `r:50` | sombra de un bloque del Alud (cuadrado de hielo que cae sobre la cruz) |
+| `avalanche` | `pts:[{x,y,fix}], r:50, stag:0.1` | los 8 bloques del Alud a la vez, escalonados |
+| `heartbeat` | `r:280, inner:100, cd` (cd = segundos que faltan: numero grande encima) | Latido gelido: rosquilla roja, zona segura interior blanca-azulada punteada, ondas que convergen |
+Sirven los viejos: `circle {r:130}` Pisoton, `cone {r:220, arc:90 grados}` Cornada, `summon {r:120}` Llamada, `donut`, y `drawBossBand(ctx, x, y, a, len, th, {tele:true, style:'water', gaps:[[desde,hasta]], p})` para la banda roja de la Ventisca blanca. **Ampliaciones de funciones existentes**: `drawBossWave(ctx,x,y,r,{style:3, th:24, gap, a, alpha})` = anillo de hielo con hueco (usa `fx_ice_shockwave`); `drawBossBand(ctx,x,y,a,len,th,{style:'ice', gaps, t, alpha})` = ola blanca de la Ventisca (borde dentado, huecos, nieve).
+
+## VFX en funciones (dibujan en `ctx`, coordenadas de juego)
+- `Assets.drawYarlakSkid(ctx, x, y, a, len, p, {t, snow, alpha})`: estela de derrape (3 rayones + nieve); (x,y) = origen, `a` = direccion en la que se EXTIENDE (detras del jefe = direccion de carga + pi). El jefe ya la pinta solo en `strike:'embestida'` y con `skid>0`.
+- `Assets.drawYarlakBreath(ctx, x, y, a, p, {len:480, arc, t})`: cono de aliento (3 capas aditivas + nubes + cristales), p = despliegue. Lo pinta el jefe en `strike:'aliento'`.
+- `Assets.drawYarlakPulse(ctx, x, y, p, {r:280, t})`: onda del Latido (anillo + chispas); lo pinta el jefe en `strike:'latido'`.
+- `Assets.drawYarlakSpike(ctx, x, y, p, {scale 1.25, sink})`: estaca de hielo que brota (p 0..1); (x,y) = centro de la colision (r 26).
+- `Assets.drawYarlakShards(ctx, x, y, p, {kind:'plate'|'tusk'|'heart', n})`: fragmentos que salen volando al romper una parte (~800 ms) + `fx_ice_burst`.
+- `Assets.drawYarlakIcicle(ctx, x, y, p, {h:140, scale})`: carambano que cae hasta (x,y); p 0..1.
+- El propio jefe suelta carambanos del flequillo (F2+), polvo/nieve en cada pisada, vaho en F3+, anillo morado (Llamada), bloques flotantes (Alud), remolinos (Ventisca), anillo de ventana blanco-azulado y estrellitas de hielo.
+
+## Sprites (nombre, base -> final, frames)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `boss_yarlak_body` | 224x160 | 2: 0 pecho cerrado, 1 abierto | origen de dibujo (-116,-100) |
+| `boss_yarlak_head` | 112x112 | 4: 0 neutra, 1 rugido, 2 herida, 3 aturdida | cuello (24,76) -> se dibuja a escala 1,15 |
+| `boss_yarlak_tusk_l` / `_r` | 56x120 | 2+2: 0 entero, 1 roto (munon) | l = lejano (oscuro), r = cercano; raiz (16,8) -> punta (+38,+72) |
+| `boss_yarlak_plate` | 48x60 | 3: 0 entera, 1 agrietada, 2 munon | ancla centro-base (24,56) |
+| `boss_yarlak_armor` | 160x96 | 3: 0 entera, 1 agrietada, 2 rota | las 5 placas compuestas (retrato/preview) |
+| `boss_yarlak_heart` | 56x56 | 3: 0 late, 1 expuesto (aro), 2 roto | |
+| `boss_yarlak_crust` | 48x56 | 3: 0 costra translucida, 1 agrietada, 2 abierta (borde astillado) | |
+| `boss_yarlak_leg` | 48x112 | 8: 0-3 cercana (apoyada, contacto, levantada, adelantando), 4-7 lejana | |
+| `boss_yarlak_eyes` | 48x20 | 4 (una por fase) | |
+| `boss_yarlak_portrait` | 96x96 | 3: neutro, furia (ojos amarillos), herido | `drawBossPortrait('yarlak', ctx, x, y, {size:96, mood})` |
+| `trophy_yarlak_tusk` / `_plate` / `_heart` | 32x32 | 2: 0 normal, 1 ROTO (gris, aspa roja) | **Colmillo de Yarlak, Placa Glaciar, Corazon de Escarcha**; dibujar a 16x16 = escala 0,5 |
+| `fx_yarlak_breath` | 64x64 | 4 (`puff` 10 sin ciclo; `loop`) | particula de aliento |
+| `fx_yarlak_pulse` | 128x128 | 4 (`loop` 10) | anillo del Latido |
+| `fx_ice_shockwave` | 128x32 | 1 | segmento de onda de hielo (borde exterior dentado arriba) |
+| `fx_yarlak_shard` | 32x32 | 4 formas (`s0..s3`) | fragmentos de armadura / marfil (1) |
+| `fx_yarlak_icicle` | 16x36 | 3: 0 colgando, 1 agrietandose, 2 cayendo | punta abajo |
+| `fx_yarlak_spike` | 28x48 | 4 (`rise` [0,1,2] 12 sin ciclo; `sink` [3,0]) | estaca del Pisoton, azul LISO sin ojos; ancla base-centro (14,44) |
+| `fx_yarlak_window` | 128x128 | 4 (`loop` 8) | aro de ventana blanco azulado (el dorado `fx_window_ring` no se usa) |
+Reusan (P3): `proj_icicle` (los 12 carambanos del desesperado), `fx_ice_block` (Alud), `obs_ice_pillar` (estalagmitas), `fx_ice_crack` (grietas), `fx_ice_burst`, `fx_snow_puff`, `drawCampfire`, `drawBlizzard`, `drawColdBar`.
+
+## Muerte (`dying:true, dt:ms`; `deathMs` 3500)
+0-150 ms flash blanco; 0-900 tambalea (parpadeos, temblor) mientras grietas de escarcha blancas recorren el cuerpo; 500-1800 colmillos y placas salen despedidos girando (solo los que no estuvieran rotos); 900-1800 se arrodilla (patas plegadas, cuerpo -46 px, cabeza gacha, Corazon late en la cavidad abierta); 1800-3300 el cuerpo se parte en celdas de hielo que caen y se amontonan al pie (cada celda es un bloque azul con contorno); 3000-3500 el monton se desvanece; a 3500 no pinta nada (quitar la entidad). Recomendado: `fx.shake(12, 900)`, hit-stop 120 ms y, si muere en el desesperado, "congelado" 400 ms sin avanzar `dt`.
+
+## Notas para la logica / HUD
+- No tapa a Marlo: telegrafias <= 0,4 de alfa; el jefe ordena por `y + 100`; el aro de ventana y el anillo de la Llamada van en el suelo; el pulso y el aliento son aditivos (los pinta el jefe encima: dibujar telegrafia ANTES y Marlo DESPUES si se quiere verlo siempre).
+- Entrada: `alpha` 0->1 en 500 ms + `moving:true, speed:55` (pasos pesados) y la onda de nieve con `fx_snow_puff`/`drawBossWave style 3` sin dano; rugido de intro: `roar` 0->1.
+- Partes: al romperse poner `broken.X = true` y lanzar `drawYarlakShards(ctx, ancla.x, ancla.y, p, {kind})` (plate/tusk/heart) en el ancla; con `armor` (0..1) las placas se rompen una a una antes de la rotura total.
+- Furia: `enraged` pone tinte blanco-cian (el rojo se reserva para peligro). Barra del jefe en ventana: usar `Assets.BOSS.yarlak.windowColor` (#cfeeff, blanco azulado).
+- Pisadas: `anchors.step.impact` > 0,5 es el instante de la pisada (2 por ciclo; `foot` rear/front en `Assets.yarlakGait`).

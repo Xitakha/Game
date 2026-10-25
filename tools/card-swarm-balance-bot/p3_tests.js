@@ -360,14 +360,14 @@ async function data(b) {
     return o;
   });
   console.log(JSON.stringify(r.rows)); console.log('packs', r.packs.join(' | ')); console.log('topes mín/máx', JSON.stringify(r.caps2));
-  ok(!r.ready && r.famOn && r.n === 9, 'familia Tundra: 9 tipos, ready:false pero activa con ?biome=tundra');
+  ok(r.ready && r.famOn && r.n === 9, 'familia Tundra: 9 tipos, ready:true desde la P4 (activa con ?biome=tundra)');
   ok(r.sums.join() === '55,44,29,25', 'suma de w por tier 55/44/29/25 = ' + r.sums.join('/'));
   ok(r.caps.join() === '40,17,16,9', 'topes base por tier 40/17/16/9 = ' + r.caps.join('/'));
   ok(r.has, 'roles presentes (9) y ausentes (fanner bomb scorcher dog salamander chainer leech headlet)');
   ok(r.mat, 'materiales encendidos (Pelaje / Escarcha)');
   ok(r.sprs.every(q => q[1]), 'los 9 sprites enemy_tun_* existen: ' + r.sprs.map(q => q[0] + (q[1] ? '' : '?')).join(' '));
   ok(r.packs.length === 4 && /manada:frostwolf3/.test(r.packs[0]), 'packs B.3 (Manada, Cordada, Pinza del aullido, Trampal)');
-  ok(r.noBoss && !r.bossDefs, 'sin jefe hasta la P4 (noBoss)');
+  ok(r.bossDefs && r.noBoss, 'P4: Yarlak existe y &nobos=1 sigue dando la prueba sin jefe');
   ok(r.drops.every(Boolean) && r.stalagDrop[0] === 'frost', 'drops: Lobo = Colmillo, Estalagmita = Escarcha');
   ok(!pg.errs.length, 'data: 0 errores ' + pg.errs.slice(0, 3).join(' | '));
   await pg.close();
@@ -389,7 +389,7 @@ async function flow(b) {
   await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(700);
   const chip = { x: 650 + 3 * 72 + 34, y: 357 };
   await pg.mouse.click(chip.x, chip.y); await pg.waitForTimeout(400);
-  const bio = await pg.evaluate(() => G.Save.data.biome); ok(bio === 'asfodelo', 'el chip "? TUNDRA" está bloqueado: el destino no cambia (' + bio + ')');
+  const bio = await pg.evaluate(() => G.Save.data.biome); ok(bio === 'tundra', 'P4: con Letea vencida el chip TUNDRA se abre (' + bio + ')');
   await pg.screenshot({ path: process.env.SHOT || '/tmp/p3_portal.png' });
   await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
   await pg.close(); await ctx.close();

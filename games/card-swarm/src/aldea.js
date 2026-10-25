@@ -98,7 +98,8 @@
       ulalume: { pastor: 'Desde el Pastor, las cartas susurran más fuerte.', karceron: 'Karceron ha caído y hasta las cartas de Hielo y Rayo suspiran.', letea: 'Letea ha callado. Por primera vez, oigo todas mis cartas a la vez.' },
       lanudo: {}, castana: { pastor: 'Con esos cuernos del Pastor se hace un caldo... no, mejor no.', karceron: 'Un carcelero menos y más pan en la mesa, cielo.', letea: 'Dicen que Letea se comía los recuerdos. Yo guardo los míos en la olla.' }
     };
-    ['pastor', 'karceron', 'letea'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
+    X.vesper.yarlak = 'Yarlak cayó. Nadie apostaba por el mamut. Yo sí, pero no se lo digas a nadie.'; X.grum.yarlak = 'Ese marfil helado... pásame un colmillo y te hago algo que no se derrita.'; X.castana.yarlak = 'Con tanto frío, un caldo de brasa es lo mínimo, cielo.';
+    ['pastor', 'karceron', 'letea', 'yarlak'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
     if (id === 'ulalume') {
       var seen = S.combosSeen || {};
       if (seen.vapor) out.push('Fuego y Hielo... qué vapor tan dramático.');
@@ -130,6 +131,7 @@
     if (!k.pastor) out.push('El Pastor tiene tres partes: cuernos, cayado y vellón. Rómpelas y caen trofeos. Le duelen el Fuego y el Acero; el Veneno le resbala.');
     else if (!k.karceron) out.push('Con el Pastor vencido se abre la Cripta. Karceron es un coloso casi inmóvil: Hielo y Rayo lo parten; el Fuego y el Veneno apenas le hacen cosquillas.');
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
+    if (k.letea && !k.yarlak) out.push('Con Letea vencida se abre la Tundra: hielo que resbala, ventisca y un Frío que sube. Yarlak, el mamut, odia el Fuego y el Rayo. Quédate cerca de las hogueras.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });
     if (unseen.length) { var cb = unseen[(S.flags.tip_combo || 0) % unseen.length]; S.flags.tip_combo = (S.flags.tip_combo || 0) + 1; out.push('¿Has probado ' + G.TAGS[cb.a].name + ' con ' + G.TAGS[cb.b].name + '? Dicen que da ' + cb.name + ': ' + cb.desc); }
@@ -146,13 +148,14 @@
   function talkLanudo(it) {
     var S = G.Save.data, w = who(it), A_ = G.Ach, bye = { label: 'Adiós', fn: function () {} };
     var pre = [];
-    ['pastor', 'karceron', 'letea'].forEach(function (b) {
+    ['pastor', 'karceron', 'letea', 'yarlak'].forEach(function (b) {
       if (S.bossKills[b] && !S.flags['told_' + b]) {
         S.flags['told_' + b] = 1;
         pre = pre.concat({
           pastor: ['¿Lo derribaste? Al Pastor... Era el mejor de nosotros. Gracias por darle descanso.', 'Ahora la Cripta se abre. Dicen que allí duerme un carcelero.'],
           karceron: ['Las cadenas de Karceron ya no suenan. La cripta respira por fin.', 'Queda el Asfodelo: allí vive Letea, la que se come los recuerdos.'],
-          letea: ['Letea ha caído... y me acuerdo de mi propio nombre. Me llamo Lanudo, ¿lo sabías?', 'Ya no queda nadie que nos robe el pasado. Ve y cuéntalo.']
+          letea: ['Letea ha caído... y me acuerdo de mi propio nombre. Me llamo Lanudo, ¿lo sabías?', 'Ya no queda nadie que nos robe el pasado. Ve y cuéntalo.', 'Al norte se ha abierto la Tundra. Allí el invierno camina.'],
+          yarlak: ['Yarlak... guardaba la última hoguera del norte. Gracias por devolverle el descanso.', 'Ahora el hielo respira un poco más cálido.']
         }[b]);
       }
     });

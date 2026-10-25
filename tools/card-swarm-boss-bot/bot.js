@@ -57,14 +57,24 @@ window.installBot = function (opts) {
     var hearts = G.gems.filter(function (g) { return g.kind === 'heart' || g.kind === 'part'; });
     for (i = 0; i < cand.length; i++) {
       var c = cand[i], cost = 0, dmax = 0;
+      var ice = G.Tundra && G.Tundra.on && G.Tundra.params, ip = ice ? G.Tundra.params() : null, svx = p.vx || 0, svy = p.vy || 0, sx = p.x, sy = p.y, f6x = p.x, f6y = p.y;   // P4: modelo de movimiento con inercia (tau / lambda) para planificar la esquiva con derrape
       for (var tau = 0; tau <= opts.horizon; tau += 100) {
         var x = p.x + c.x * spd * tau / 1000, y = p.y + c.y * spd * tau / 1000;
+        if (ice) {
+          if (tau > 0) {
+            var sf = G.Tundra.slipAt(sx, sy), il = Math.hypot(c.x, c.y), tc = ip.tau * sf;
+            if (il > 0) { if (tc < 3) { svx = c.x * spd; svy = c.y * spd; } else { var kk = 1 - Math.exp(-100 / tc); svx += (c.x * spd * ip.spd - svx) * kk; svy += (c.y * spd * ip.spd - svy) * kk; } }
+            else { var inv = (1 - sf) / 40 + sf / ip.lambda, kf = Math.exp(-0.1 / inv); svx *= kf; svy *= kf; }
+            sx += svx * 0.1; sy += svy * 0.1; if (tau === 600) { f6x = sx; f6y = sy; }
+          }
+          x = sx; y = sy;
+        }
         var m = G.WALL + pr; if (x < m || x > G.AW - m || y < m || y > G.AH - m) { x = G.clamp(x, m, G.AW - m); y = G.clamp(y, m, G.AH - m); cost += 0.4; }
         cost += dangerAt(x, y, pr, hz, zs, pj, tau) * (tau < 400 ? 2 : 1);
         if (B.obs) for (var o = 0; o < B.obs.length; o++) if (!B.obs[o].dead && Math.hypot(x - B.obs[o].x, y - B.obs[o].y) < B.obs[o].r + pr) cost += 1.5;
         if (e) for (var kk = 0; kk < B.briers.length; kk++) if (Math.hypot(x - B.briers[kk].x, y - B.briers[kk].y) < B.briers[kk].r) cost += 0.6;
       }
-      var fx = p.x + c.x * spd * 0.6, fy = p.y + c.y * spd * 0.6;
+      var fx = ice ? f6x : p.x + c.x * spd * 0.6, fy = ice ? f6y : p.y + c.y * spd * 0.6;
       if (B.insetOn) { var mi = G.WALL + B.inset + 22; if (fx < mi || fx > G.AW - mi || fy < mi || fy > G.AH - mi) cost += 2; }
       // posicionamiento: orbitar al jefe a ~opts.dist (las cartas de proyectil alcanzan 440)
       if (e && !e.dead) {

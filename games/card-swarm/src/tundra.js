@@ -62,7 +62,7 @@
     T.on = biome === 'tundra'; T.nobos = false; T.ended = false;
     if (!T.on) { G.cold.v = 0; G.cold.frozenT = 0; G.cold.immuneT = 0; return; }
     iceOn = qnum('ice', 1) > 0; coldOn = qnum('cold', 1) > 0;
-    patchR = qnum('patch', D.patchR); ledgeR = null; heatR = D.campfireR;
+    patchR = qnum('patch', D.patchR); ledgeR = null; heatR = D.campfireR; if (BZ.clearR0) BZ.clearR = BZ.clearR0;   // P4: Yarlak cambia el claro de la ventisca (Peligro IV, desesperado)
     T.opts.soft = qnum('softice', 0) > 0 || T.settingOn('softIce'); T.opts.light = qnum('lightstorm', 0) > 0 || T.settingOn('lightStorm');
     T.nobos = qnum('nobos', 0) > 0 || (!G.bossUrl && !(G.Boss.DEFS && G.Boss.DEFS.yarlak));   // sin jefe hasta la P4
     T.dormant.length = 0; pillars.length = 0; D.pillars.forEach(function (q, i) { pillars.push({ x: q[0], y: q[1], r: D.pillarR, hp: D.pillarHp, max: D.pillarHp, dead: false, t: 0, shake: 0, i: i }); });
@@ -208,7 +208,7 @@
   };
   T.coldMul = function () {
     var tf = G.Tree && G.Tree.fx || {}, rb = G.runBuff && G.runBuff.fx || {};
-    return (rb.cold ? 1 - rb.cold : 1) * (tf.abrigo ? 0.7 : 1);   // Caldo de brasa -35 %, Abrigo de escarcha -30 % de ganancia
+    return (rb.cold ? 1 - rb.cold : 1) * (tf.abrigo ? 0.7 : 1) * ((G.Boss.A && G.Boss.A.coldK) || 1);   // Caldo de brasa -35 %, Abrigo de escarcha -30 % de ganancia
   };
   T.coldAdd = function (n) {   // golpes de Frío (flecha, picado, ventisca local): respetan la inmunidad de la Escarcha y las mitigaciones de ganancia
     if (!T.on || !coldOn || n <= 0) return;
@@ -448,7 +448,7 @@
       if (Q.level === 'baja') { Assets.drawBlizzard(c, performance.now(), a, o); return; }   // Baja: solo degradado estático (0,4 ms)
       // Alta / Media: la bruma cuesta ~2,5-3 ms por fotograma (la mayor parte del coste de la Tundra): se pinta en una caché de pantalla cada 2.º fotograma (30 Hz; las rayas se mueven a 90-350 px/s, no se nota) y se vuelca cada uno (0,25 ms)
       if (!hzC) { hzC = cv(G.W, G.H); hzG = hzC.getContext('2d'); }
-      if ((hzN++ & 1) === 0 || hzQ !== Q.level) { hzQ = Q.level; hzG.clearRect(0, 0, G.W, G.H); Assets.drawBlizzard(hzG, performance.now(), a, o); }
+      if ((hzN++ % 3) === 0 || hzQ !== Q.level) { hzQ = Q.level; hzG.clearRect(0, 0, G.W, G.H); Assets.drawBlizzard(hzG, performance.now(), a, o); }
       c.drawImage(hzC, 0, 0);
       return;
     }

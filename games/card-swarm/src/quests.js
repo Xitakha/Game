@@ -83,7 +83,7 @@
   };
   Q.unlockedBiomes = function (kills) {
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
-    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.yarlak > 0); });   // la Tundra se abre con Yarlak (P4)
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
   };
   Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
@@ -239,6 +239,8 @@
       lore: 'Karceron guardaba la cripta desde antes que yo tuviera cuernos. Nadie le hizo ni cosquillas. Hasta ti.' },
     { id: 'letea', name: 'Memoria de Letea', desc: 'Vence a Letea, la Hidra del Olvido.', ok: function (s) { return (s.bossKills.letea || 0) > 0; },
       lore: 'Letea se comía los recuerdos, ¿sabes? Por eso olvidé tantas cosas. Gracias por devolverme alguna.' },
+    { id: 'yarlak', name: 'Fin del invierno', desc: 'Vence a Yarlak, el Coloso Gélido.', ok: function (s) { return (s.bossKills.yarlak || 0) > 0; },
+      lore: 'Yarlak guardaba la última hoguera del norte. Si lo derribaste, el frío ya no tiene dueño. Abrígate igual.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Activa 5 combos distintos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Activa los 12 combos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

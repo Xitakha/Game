@@ -146,7 +146,7 @@
     // ---- TUNDRA (P3, B.3): la manada de Yarlak. 9 tipos; suma de w por tier = 55 / 44 / 29 / 25. `ready:false` (sin jefe hasta la P4): solo se activa con ?biome=tundra (o ?fam=1); el Portal la muestra bloqueada.
     //      tun:true = el rol usa la IA de enemies_tundra.js (hielo: tau 300 ms, derrape). `fbSpr`/`fbSkin` = sprite existente teñido mientras no haya arte propio.
     tundra: {
-      name: 'La manada de Yarlak', ready: false, urlOk: true, boss: 'yarlak', ponds: 0, star: null, light: { worm: 1, archer: 1, frostwolf: 1, moth: 1 }, amb: amb(), packs: [
+      name: 'La manada de Yarlak', ready: true, urlOk: true, boss: 'yarlak', ponds: 0, star: null, light: { worm: 1, archer: 1, frostwolf: 1, moth: 1 }, amb: amb(), packs: [
         { id: 'manada',  layout: 'fan',    parts: [['frostwolf', 3]] },                    // Manada: 3 Lobos en abanico
         { id: 'cordada', layout: 'line',   parts: [['shield', 2], ['boar', 1]] },          // Cordada: Oso + 2 Yetis en línea (el Oso detrás)
         { id: 'pinza',   layout: 'pincer', parts: [['frostwolf', 2], ['warlock', 1]] },    // Pinza del aullido: 2 Lobos opuestos + Chamán detrás
