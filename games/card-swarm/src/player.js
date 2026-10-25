@@ -104,14 +104,19 @@
     else { p.x += ix * spd * s; p.y += iy * spd * s; }
     G.Boss.collide(p, p.r);   // troncos de la arena del jefe
     if (G.Tundra.on) G.Tundra.collide(p, p.r);   // estalagmitas
+    if (G.Panal.on) G.Panal.collide(p, p.r);     // P5: pilares de cera
     wallClamp(p);
+    if (G.Panal.on) G.Panal.pushIn(p, p.r);      // P5: muros diagonales del hexágono
     if (G.Tundra.on) G.Tundra.afterWall(p);
     if (p.moving && Math.random() < 0.06) G.fx.dust(p.x, p.y + 12, 1);
   };
 
   P.draw = function (c, p) {
     G.fx.spr(c, Assets.sprite('shadow', 0), p.x, p.y + 14, { alpha: 0.6 });
-    if (p.slowT > 0 && !p.dead) { // aro de hielo bajo los pies
+    if (p.slowT > 0 && !p.dead && p.honeyT > 0) {   // P5: sobre miel el aro es ámbar (el azul sigue siendo hielo)
+      c.save(); c.globalAlpha = 0.85; c.fillStyle = 'rgba(201,122,20,0.35)'; c.strokeStyle = '#c97a14'; c.lineWidth = 3; c.beginPath(); c.ellipse(p.x, p.y + 12, 18, 7, 0, 0, 6.283); c.fill(); c.stroke();
+      c.setLineDash([4, 5]); c.lineDashOffset = -p.animT / 40; c.strokeStyle = '#ffd070'; c.lineWidth = 2; c.beginPath(); c.ellipse(p.x, p.y + 12, 12, 5, 0, 0, 6.283); c.stroke(); c.restore();
+    } else if (p.slowT > 0 && !p.dead) { // aro de hielo bajo los pies
       var rs = G.hasSpr('fx_freeze_ring') ? Assets.sprite('fx_freeze_ring', Math.floor(p.animT / 200) % 2) : null;
       if (rs) G.fx.spr(c, rs, p.x, p.y + 12, { alpha: Math.min(1, p.slowT / 300) });
       else {
@@ -129,7 +134,7 @@
     if (p.hurtT > 0 && !p.dead) alpha = (Math.floor(p.hurtT / 60) % 2) ? 0.45 : 1;
     var o = { flip: p.dirx < 0, alpha: alpha };
     if (p.hurtT > 450) { o.tint = '#ff2020'; o.tintA = 0.7; }
-    else if (p.slowT > 0) { o.tint = '#7fd4ff'; o.tintA = 0.35; }
+    else if (p.slowT > 0) { o.tint = p.honeyT > 0 ? '#e8a53a' : '#7fd4ff'; o.tintA = 0.35; }
     else if (p.frenzyT > 0) { o.tint = '#ff3050'; o.tintA = 0.25 + 0.15 * Math.sin(p.animT / 40); }
     G.fx.spr(c, cv, p.x, p.y, o);
   };

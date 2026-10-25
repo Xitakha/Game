@@ -50,11 +50,16 @@
       mat: 'escarcha', kite: [150, 230], ice: true, contact: 0.4, part: { key: 'corazon', name: 'CORAZÓN DE HIELO', pct: 0.28, mode: 'share', share: 0.55 }, bag: ['carambanos', 'ventisca', 'ola'],
       guaranteed: { spine: 3, feather: 2, thread: 2 }, bonus: { spine: 2 }, ins: { id: 'trophy_mini_ventisquero', name: 'Esquirla de Corazón' }, xp: 40, ash: 25, spr: 'enemy_mini_ventisquero',
       fb: { spr: 'enemy_mini_hive', tint: '#bfe4ff', a: 0.4, kind: 'flo', sc: 1 }, lore: 'Un copo de viento viejo que olvidó cómo caer; allí donde pasa, el invierno se queda un rato más.' },
-    // ---- Reserva del Panal (P5/P6): SOLO datos inactivos, no se registran como tipos ni se programan
-    avispon: { id: 'avispon', reserve: true, name: 'AVISPÓN REAL', sub: 'Guardaespaldas de Melaria', role: 'PRESIÓN', biome: 'panal', slot: 1, hp: 2300, spd: 78, spdE: 100, r: 22, dmg: 24, mat: 'insecto', part: { key: 'aguijon', name: 'AGUIJÓN', pct: 0.24, mode: 'share', share: 0.45 },
-      guaranteed: { spine: 3, thread: 2, feather: 2 }, bonus: { spine: 2 }, ins: { id: 'trophy_mini_avispon', name: 'Aguijón Real' }, spr: 'enemy_mini_avispon' },
-    reina_joven: { id: 'reina_joven', reserve: true, name: 'REINA JOVEN', sub: 'Crisálida de Melaria', role: 'CONTROL', biome: 'panal', slot: 2, hp: 2900, spd: 38, spdE: 46, r: 24, dmg: 14, mat: 'insecto', part: { key: 'abdomen', name: 'ABDOMEN', pct: 0.28, mode: 'share', share: 0.40 },
-      guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { thread: 2 }, ins: { id: 'trophy_mini_reina_joven', name: 'Corona de Cera' }, spr: 'enemy_mini_reina_joven' }
+    // ---- Panal (P5): Avispón Real (slot 1, presión, voladora) y Reina Joven (slot 2, control; la Madre Colmena movida al Panal). Sus ataques viven en minis_panal.js. `panal:true` = no cuentan en las 8 Insignias del logro
+    //      HP: el diseño dice 2300 / 2900; se calibran con el bot (minis_ttk.js) como los demás (TTK p50 45-60 s). fly: ignoran la miel y los pilares; sedable: el humo lo seda 1 s.
+    avispon: { id: 'avispon', panal: true, fly: true, sedable: true, dmgK: 0.7, name: 'AVISPÓN REAL', sub: 'Guardaespaldas de Melaria', role: 'PRESIÓN', biome: 'panal', slot: 1, hp: 4600, spd: 78, spdE: 100, r: 22, dmg: 24, foot: 22, shadow: 1.7, gap: 1000, gapE: 650, expMul: 1.4,
+      mat: 'insecto', contact: 0.3, part: { key: 'aguijon', name: 'AGUIJÓN', pct: 0.24, mode: 'share', share: 0.45 }, bag: ['picado', 'zumbido', 'estocada', 'ala'],
+      guaranteed: { spine: 3, thread: 2, feather: 2 }, bonus: { spine: 2 }, ins: { id: 'trophy_mini_avispon', name: 'Aguijón Real' }, xp: 30, ash: 20, spr: 'enemy_mini_avispon',
+      fb: { spr: 'enemy_mini_bulwark', tint: '#f3a31f', a: 0.5, kind: 'sol', sc: 1 }, lore: 'El guardaespaldas de Melaria; zumba antes de que lo veas, y cuando lo ves ya te ha picado.' },
+    reina_joven: { id: 'reina_joven', panal: true, fly: true, hm: 0.6, dmgK: 0.7, name: 'REINA JOVEN', sub: 'Crisálida de Melaria', role: 'CONTROL', biome: 'panal', slot: 2, hp: 3800, spd: 38, spdE: 46, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2600, gapE: 1900, expMul: 1.4,
+      mat: 'insecto', kite: [150, 230], contact: 0.4, part: { key: 'abdomen', name: 'ABDOMEN', pct: 0.28, mode: 'share', share: 0.40 }, bag: ['escupitajo', 'miel', 'lluvia'],
+      guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { thread: 2 }, ins: { id: 'trophy_mini_reina_joven', name: 'Corona de Cera' }, xp: 40, ash: 25, spr: 'enemy_mini_reina_joven', sSpawn: 'reinaj_roar',
+      fb: { spr: 'enemy_mini_hive', tint: '#f3a31f', a: 0.5, kind: 'flo', sc: 1 }, lore: 'La crisálida de Melaria; todavía cree que puede ser reina.' }
   };
   var AT = { 1: 210000, 2: 330000 };
   B.minis = {
@@ -62,15 +67,17 @@
     cripta:   { ready: true,  slot1: { id: 'alcaide',   at: AT[1] }, slot2: { id: 'centinela',   at: AT[2] } },
     asfodelo: { ready: true,  slot1: { id: 'hidra',     at: AT[1] }, slot2: { id: 'planidera',   at: AT[2] } },
     tundra:   { ready: true,  slot1: { id: 'yeti_mayor', at: AT[1] }, slot2: { id: 'ventisquero', at: AT[2] } },
-    panal:    { ready: false, slot1: { id: 'avispon',   at: AT[1] }, slot2: { id: 'reina_joven', at: AT[2] } },   // reserva P5/P6: ready:false = guardián legado
+    panal:    { ready: true,  slot1: { id: 'avispon',   at: AT[1] }, slot2: { id: 'reina_joven', at: AT[2] } },   // P5: activos (el Panal solo se abre con ?biome=panal hasta la P6)
     def: D
   };
   M.hordeMulNow = function () { var m = M.hordeMul; E.minis().forEach(function (q) { if (q.mini) m = Math.min(m, q.D.hm || M.hordeMul); }); return m; };
-  M.IDS = Object.keys(D).filter(function (k) { return !D[k].reserve; });
-  M.BIOME_OF = {}; M.IDS.forEach(function (k) { M.BIOME_OF[k] = D[k].biome; });
+  M.IDS = Object.keys(D).filter(function (k) { return !D[k].reserve && !D[k].panal; });   // los 8 de las Insignias (logros 3 / 8)
+  M.IDS_PANAL = Object.keys(D).filter(function (k) { return D[k].panal; });                // P5: Avispón Real y Reina Joven
+  M.ALL = M.IDS.concat(M.IDS_PANAL);
+  M.BIOME_OF = {}; M.ALL.forEach(function (k) { M.BIOME_OF[k] = D[k].biome; });
 
   // Se registran como tipos élite 'mini_<id>' (from: Infinity, w: 0: el director normal nunca los elige; waves.js los salta por .mini)
-  M.IDS.forEach(function (id) {
+  M.ALL.forEach(function (id) {
     var d = D[id];
     B.enemy['mini_' + id] = { hp: d.hp, spd: d.spd, dmg: d.dmg, r: d.r, cost: 0, from: Infinity, w: 0, spr: d.spr, xp: d.xp, ash: d.ash, elite: true, mini: true, mid: id, slot: d.slot, at: AT[d.slot], name: d.name };
   });
@@ -78,7 +85,7 @@
   B.enemy.mini_pod = { hp: 90, spd: 0, dmg: 0, r: 14, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_pod', xp: 0, ash: 0, maxAlive: 2, famOnly: true };
 
   // Botín y bonus por romper la parte: por tipo (loot.js los lee por e.type)
-  M.IDS.forEach(function (id) {
+  M.ALL.forEach(function (id) {
     var d = D[id], L = G.Loot;
     L.GUARANTEED['mini_' + id] = { parts: d.guaranteed, rare: 0.35 };
     L.MINI_PART_BONUS['mini_' + id] = d.bonus;
@@ -110,12 +117,12 @@
     fx.ring(e.x, e.y, 10, e.r + 26, 350, '#ffe27a', 3); M.snd('mini_expose_chime', 'card_select', { pitch: 1.6, vol: 0.5 });
   };
   function miniHeart(e) { G.Combat.dropGem(e.x + 20, e.y + 14, 'heart', B.player.heal); }
-  function clampArena(x, y, m) { return [G.clamp(x, G.WALL + m, G.AW - G.WALL - m), G.clamp(y, G.WALL + m, G.AH - G.WALL - m)]; }
+  function clampArena(x, y, m) { if (G.Panal.on) return G.Panal.clampPt(x, y, m); return [G.clamp(x, G.WALL + m, G.AW - G.WALL - m), G.clamp(y, G.WALL + m, G.AH - G.WALL - m)]; }   // Panal: también dentro de los muros diagonales
   M.clampArena = clampArena;
 
   // ================================================================= INICIALIZACIÓN (la llama E.spawn para los tipos .mini)
   M.init = function (e, d) {
-    var De = D[d.mid]; e.D = De; e.mid = De.id; e.mini = true; e.big = true; e.slot = De.slot;
+    var De = D[d.mid]; e.D = De; e.mid = De.id; e.mini = true; e.big = true; e.slot = De.slot; if (De.fly) e.fly = true;   // fly (P5): ignora la miel y los pilares
     e.spawnT = e.spawnMax = 900; e.atkT = 1800; e.bag = []; e.cd = {}; e.enraged = false; e.expT = 0; e.expMul = 1; e.expMax = 0; e.age = 0; e.stage = 0;
     e.foot = De.foot; e.shadow = De.shadow; e.vsc = De.vsc || 1; e.hitCd = 0; e.pvx = 0; e.pvy = 0; e.dmgIn = 1; e.spdMul = 1; e.recDur = 0;
     var P = De.part; e.part = { key: P.key, name: P.name, mode: P.mode, max: P.pct * e.maxHp, hp: P.pct * e.maxHp, broken: false, flash: 0, cracked: 0 };
@@ -160,7 +167,7 @@
     }
     e.banner = 2000;
     G.Hud.banner('¡GUARDIÁN: ' + d.name + '!', 2000, '#ffb347');
-    M.snd('mini_spawn_roar', 'boss_roar', { pitch: 1.3, vol: 0.6 }); M.stg('stg_mini_spawn');
+    M.snd(d.sSpawn || 'mini_spawn_roar', 'boss_roar', { pitch: 1.3, vol: 0.6 }); M.stg('stg_mini_spawn');
     W.eliteBoost = 25000;
     return e;
   };
@@ -260,7 +267,7 @@
       if (e.t >= e.recDur) { e.st = 'move'; e.shieldDown = false; e.atkT = (e.enraged ? De.gapE : De.gap) * (e.part.broken ? 0.85 : 1); if (e.atk && e.atk.recEnd) e.atk.recEnd(e); e.stunned = false; }
     }
   }
-  E.AI.mini_hidra = E.AI.mini_carnero = E.AI.mini_tejedora = E.AI.mini_alcaide = E.AI.mini_centinela = E.AI.mini_planidera = E.AI.mini_yeti_mayor = E.AI.mini_ventisquero = ai;
+  E.AI.mini_avispon = E.AI.mini_reina_joven = E.AI.mini_hidra = E.AI.mini_carnero = E.AI.mini_tejedora = E.AI.mini_alcaide = E.AI.mini_centinela = E.AI.mini_planidera = E.AI.mini_yeti_mayor = E.AI.mini_ventisquero = ai;
   // pruebas / capturas: forceMini(e, 'embestida') encola ese ataque en el siguiente ciclo
   M.force = function (e, name) { e.force = name; e.atkT = 0; };
 
@@ -429,9 +436,9 @@
   };
   // Auditoría de telegrafías: cada ataque declara dmg, exit (px de salida; número o lista), ice y sus tiempos (tele por etapa). Reglas: tele >= 400, tele >= 250 + (hielo 220) + 1000 x salida / 190,
   // >= 800 ms si el golpe es >= 25 (las 2.as telegrafías del enrage lo muestran ya en pantalla y solo exigen la regla de esquiva) y ningún golpe > HIT_CAP.
-  M.teleAudit = function () {
+  M.teleAudit = function (withPanal) {
     var out = [];
-    M.IDS.forEach(function (id) {
+    (withPanal ? M.ALL : M.IDS).forEach(function (id) {
       var De = D[id], list = M.ATK[id] || {};
       Object.keys(list).forEach(function (n) {
         var A = list[n], ice = !!De.ice;

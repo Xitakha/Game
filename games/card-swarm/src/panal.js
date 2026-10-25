@@ -136,7 +136,7 @@
     if ((act.length + 1) * area > (1 - D.honey.freeMin) * P.hexArea()) return false;
     if (!connectedWithout(c)) return false;
     c.st = ST_TELE; c.t = o.tele || D.honey.tele; c.life = o.life || D.honey.life; c.src = o.src || 'env'; addAct(c);
-    pSfx('cell_open', null, { vol: 0.5, pitch: 0.9 });
+    if (!P.teleSnd || G.time - P.teleSnd > 300) { P.teleSnd = G.time; pSfx('cell_tele', null, { vol: 0.8 }); }
     return true;
   };
   // Abre la celda que cubre (x, y) y hasta n - 1 vecinas de cera. Devuelve cuántas abrió
@@ -159,7 +159,7 @@
     var did = false, c = cellAt(x, y), i;
     if (c && (c.st === ST_HONEY || c.st === ST_ARM) && caramelBudget()) {
       c.st = ST_CARAMEL; c.t = D.honey.caramel; dirty = true; caramelLog.push(G.time); did = true;
-      G.fx.burst(c.x, c.y, 6, '#e8a53a', 120, 380, 3, { add: true }); pSfx('smoke_hiss', null, { vol: 0.5 });
+      G.fx.burst(c.x, c.y, 6, '#e8a53a', 120, 380, 3, { add: true }); pSfx('caramel_seal', null, { vol: 0.8 });
       P.smoke(c.x, c.y);
     }
     for (i = puddles.length - 1; i >= 0 && !did; i--) {
@@ -200,7 +200,7 @@
   };
   // Multiplicador de velocidad de un enemigo por la miel (1 = nada). Voladores y Babosa: inmunes
   P.enemySlow = function (e) {
-    if (!honeyOn || e.fly || e.honeyImmune || e.big && e.mini && e.fly) return 1;
+    if (!honeyOn || e.fly || e.honeyImmune) return 1;
     return P.honeyAt(e.x, e.y) ? 1 - D.honey.enemy : 1;
   };
 
@@ -213,7 +213,7 @@
     for (i = 0; i < clouds.length; i++) { q = clouds[i]; if (Math.hypot(q.x - x, q.y - y) < 22) { q.life = life; q.max = life; return; } }   // un impacto sobre una nube existente la refresca (no se apila)
     if (clouds.length >= S.max) clouds.shift();
     clouds.push({ x: x, y: y, r: r, life: life, max: life, ph: Math.random() * 6 });
-    pSfx('smoke_hiss', null, { vol: 0.35 });
+    pSfx('smoke_puff', null, { vol: 0.5 });
   };
   P.inSmoke = function (x, y, pad) {
     for (var i = 0; i < clouds.length; i++) { var q = clouds[i]; if (Math.hypot(q.x - x, q.y - y) <= q.r + (pad || 0)) return true; }
@@ -251,14 +251,14 @@
     o = o || {};
     var d = Math.hypot(tx - src.x, ty - src.y), dur = G.clamp(d / 140 * 1000, 600, 2000);
     globs.push({ x0: src.x, y0: src.y - 6, tx: tx, ty: ty, t: 0, dur: dur, r: o.r || 34, dmg: src.dmg, life: o.life || 6000, src: src, tele: 500 });
-    pSfx('honey_squelch', null, { vol: 0.5 });
+    pSfx('honey_spit', null, { vol: 0.6 });
   };
   function landGlob(g) {
     var p = G.player;
     G.fx.ring(g.tx, g.ty, 4, g.r + 6, 260, '#c97a14', 4); G.fx.burst(g.tx, g.ty, 8, '#c97a14', 130, 420, 3);
     if (!p.dead && G.dist(g.tx, g.ty, p.x, p.y) <= g.r + p.r * 0.5) G.Player.hurt(p, 3, g.tx, g.ty, { src: 'honeyslug', soft: true });
     P.puddle(g.tx, g.ty, g.r, g.life, { owner: g.src });
-    pSfx('honey_drip', null, { vol: 0.5 });
+    pSfx('honey_splat', null, { vol: 0.8 });
   }
 
   // ================================================================= PILARES de cera (obstáculos de 300 HP)
@@ -279,7 +279,7 @@
   P.blocks = function (x, y, r) { var o = P.pillarAt(x, y, r * 0.5); if (o) { o.shake = 120; return true; } return false; };
   P.breakPillar = function (i) {
     var o = pillars[i]; if (!o || o.dead) return;
-    o.dead = true; o.t = 0; G.fx.burst(o.x, o.y, 14, '#f0d98a', 220, 600, 4, { g: 260 }); G.fx.ring(o.x, o.y, 10, 60, 300, '#c9a850', 4); pSfx('wax_shield_hit', 'hit_heavy', { vol: 0.7 });
+    o.dead = true; o.t = 0; G.fx.burst(o.x, o.y, 14, '#f0d98a', 220, 600, 4, { g: 260 }); G.fx.ring(o.x, o.y, 10, 60, 300, '#c9a850', 4); pSfx('drone_crash', 'hit_heavy', { vol: 0.7 });
   };
   P.hitPillar = function (i, dmg) { var o = pillars[i]; if (!o || o.dead) return; o.hp -= dmg; o.shake = 140; if (o.hp <= 0) P.breakPillar(i); };
 
@@ -298,7 +298,7 @@
     var n = P.nestFor(pos), E = G.Enemies, e;
     if (!n) return E.spawn('bomb', pos[0], pos[1]);
     n.lastUse = G.time; n.hatch = 900; e = E.spawn('bomb', n.x, n.y, { spawnT: 900 }); e.fromNest = true;
-    pSfx('cell_open', null, { vol: 0.45, pitch: 1.2 });
+    pSfx('larva_hatch', null, { vol: 0.7 });
     return e;
   };
 
@@ -328,7 +328,7 @@
     for (i = act.length - 1; i >= 0; i--) {
       c = act[i]; c.t -= dt;
       if (c.t > 0) continue;
-      if (c.st === ST_TELE) { c.st = ST_ARM; c.t = D.honey.arm; dirty = true; G.fx.puff && G.fx.puff(c.x, c.y, 1); pSfx('honey_drip', null, { vol: 0.4 }); }
+      if (c.st === ST_TELE) { c.st = ST_ARM; c.t = D.honey.arm; dirty = true; G.fx.puff && G.fx.puff(c.x, c.y, 1); if (!P.openSnd || G.time - P.openSnd > 200) { P.openSnd = G.time; pSfx('cell_open', null, { vol: 0.6 }); } }
       else if (c.st === ST_ARM) { c.st = ST_HONEY; c.t = c.life; dirty = true; }
       else if (c.st === ST_HONEY) { c.st = ST_SEAL; c.t = D.honey.seal; dirty = true; pSfx('cell_close', null, { vol: 0.4 }); }
       else if (c.st === ST_SEAL || c.st === ST_CARAMEL) { c.st = ST_WAX; c.t = 0; act.splice(i, 1); dirty = true; }
@@ -368,7 +368,7 @@
     // zumbido ambiente: sube con el nº de abejas vivas
     if ((hum.t -= dt) <= 0) {
       hum.t = 500; var n = 0; for (i = 0; i < G.enemies.length; i++) if (!G.enemies[i].dead && G.enemies[i].fe && G.enemies[i].fe.insect) n++;
-      var lv = G.state === 'play' ? Math.min(1, 0.15 + n / 30) : 0; try { if (Assets.hum) Assets.hum(lv); } catch (e2) { /* sin audio */ }
+      var lv = G.state === 'play' ? Math.min(1, Math.max(0.12, n / 30)) : 0; try { if (Assets.hum) Assets.hum(lv); } catch (e2) { /* sin audio */ }
     }
     if (P.nobos && !nobosEnded && G.runT >= G.RUN_LEN && G.mode === 'run' && !p.dead) { nobosEnded = true; G.Hud.banner('FIN DE LA PRUEBA (SIN JEFA)', 2500, '#f3a31f'); G.finish(true); }
   };

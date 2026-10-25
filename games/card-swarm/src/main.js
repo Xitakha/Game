@@ -319,7 +319,7 @@
     else if (armed) G.state = 'play';
     else { G.state = 'cards'; G.Cards.open('start'); }
     inp.lock = 250;
-    try { Assets.music.setTrack(biome === 'tundra' && Assets.music.tracks().indexOf('tundra') >= 0 ? 'tundra' : 'normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
+    try { Assets.music.setTrack(biome === 'tundra' && Assets.music.tracks().indexOf('tundra') >= 0 ? 'tundra' : biome === 'panal' && Assets.music.tracks().indexOf('panal') >= 0 ? 'panal' : 'normal'); Assets.music.setIntensity(0.1); Assets.music.start(); } catch (e) { /* sin audio */ }
   };
 
   G.finish = function (won) {

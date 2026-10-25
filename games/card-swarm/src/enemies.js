@@ -35,6 +35,7 @@
     e.spawnMax = e.spawnT; if (fe && fe.nosep) e.nosep = true;
     if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
     if (G.Tundra.on) E.tunInit(e, d, fe);   // P3: hielo (derrape, tau 300 ms) y estado propio de los 9 monstruos de la Tundra (enemies_tundra.js)
+    if (G.Panal.on) { G.Panal.pushIn(e, e.r); if (fe && fe.pan) E.panInit(e, d, fe); }   // P5: dentro de los muros diagonales del hexágono; vuelo, miel y estado propio de los 9 monstruos del Panal (enemies_panal.js)
     switch (type) {
       case 'boss': e.spawnT = e.spawnMax = 900; e.sumT = 12000; e.atkT = 1500; e.callT = 14000; e.sporeT = 8000; e.age = 0; break;
       case 'worm': e.sndT = G.rnd(3000, 12000); break;
@@ -135,6 +136,7 @@
     fx.flames(e.x, e.y, 10, 40); fx.shake(7, 180); G.sfx('explosion'); fsfx(e, 'boom', { vol: 0.9 });
     var p = PL();
     if (!p.dead && G.dist(e.x, e.y, p.x, p.y) <= 60 + p.r) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'bomb' });
+    if (e.fe && e.fe.honey) G.Panal.puddle(e.x, e.y, e.fe.honey[0], e.fe.honey[1], { owner: e });   // P5: la Larva explosiva deja un charco de miel (r 36, 5 s)
   }
 
   E.kill = function (e, silent, tag) {
@@ -200,6 +202,7 @@
       q.x += q.vx * s; q.y += q.vy * s; q.life -= dt; q.t += dt;
       var dead = q.life <= 0 || q.x < G.WALL || q.y < G.WALL || q.x > G.AW - G.WALL || q.y > G.AH - G.WALL;
       if (!dead && G.Boss.obs.length && G.Boss.blocks(q.x, q.y, q.r)) { fx.burst(q.x, q.y, 4, '#c89060', 100, 250, 3); dead = true; }   // los troncos de la arena frenan proyectiles
+      if (!dead && G.Panal.on && (G.Panal.outside(q.x, q.y) || G.Panal.blocks(q.x, q.y, q.r))) { fx.burst(q.x, q.y, 4, '#d9b85a', 100, 250, 3); dead = true; }   // P5: los muros diagonales y los pilares de cera detienen los proyectiles
       if (!dead && G.Tundra.on && G.Tundra.blocks(q.x, q.y, q.r)) { fx.burst(q.x, q.y, 5, '#bfeaff', 120, 280, 3, { add: true }); dead = true; }   // P3: las estalagmitas de la Tundra bloquean los proyectiles enemigos
       if (!dead && q.hp) {   // el orbe de hielo se destruye con cualquier golpe de carta (proyectil u orbital)
         var j, o2;
@@ -1043,16 +1046,17 @@
       }
       // estados (quemado, veneno, sangrado...) y ralentización
       if (G.Combat.tickStatus(e, dt)) continue;
-      var slowF = e.slowT > 0 ? 1 - e.slowPct : 1;
+      var slowF = (e.slowT > 0 ? 1 - e.slowPct : 1) * (G.Panal.on ? G.Panal.enemySlow(e) : 1);   // P5: la miel ralentiza 35 % a los terrestres (los voladores y la Babosa no)
       e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
       if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash' || e.st === 'roll' || e.st === 'roll2' || e.st === 'bounce' || e.st === 'slide')) && !((e.type === 'dog' || e.type === 'chainer') && e.st !== 'move' && e.st !== 'rec') && !(e.type === 'frostwolf' && e.st !== 'surround' && e.st !== 'rec')) e.face = dx >= 0 ? 1 : -1;
       if (e.slide) { e.mvx = e.mvy = 0; }
-      if (!p.dead) (e.tai ? E.TAI[e.type] : AI[e.type])(e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
+      if (!p.dead) (e.tai ? E.TAI[e.type] : e.pai ? E.PAI[e.type] : AI[e.type])(e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
       if (e.slide) G.Tundra.slideEnemy(e, dt, s);   // P3: integra la velocidad con inercia (tau 300 ms) y choca con las estalagmitas
       var m = G.WALL + e.r;
       e.x = G.clamp(e.x, m, G.AW - m); e.y = G.clamp(e.y, m, G.AH - m);
+      if (G.Panal.on) { G.Panal.pushIn(e, e.r); if (!e.fly) G.Panal.collide(e, e.r); }   // P5: muros diagonales del hexágono y pilares de cera (los voladores los sobrevuelan)
     }
     // separación entre enemigos
     for (i = 0; i < list.length; i++) {
@@ -1242,6 +1246,7 @@
   }
   function drawFamTele(c, e, p) {
     if (e.fe && e.fe.tun) { E.tunTele(c, e, p); return; }   // P3: telegrafías de la Tundra (enemies_tundra.js)
+    if (e.fe && e.fe.pan) { E.panTele(c, e, p); return; }   // P5: telegrafías del Panal (enemies_panal.js)
     var u, ty = e.type, st = e.st, hw = e.r + p.r;
     if (ty === 'archer' && st === 'aim') {   // línea fina de la flecha (parpadeo amarillo en el cuerpo)
       u = e.t / B.tele.archer.ms; thinLine(c, e.x, e.y, e.ang, 260, 'rgba(255,226,122,' + (0.35 + 0.5 * u) + ')', 1.5, e.t >= 250 ? null : [5, 5]);
@@ -1349,6 +1354,7 @@
       if (mode === 1) { if (e.fe && e.fe.shaman) E.tunAura(c, e); continue; }   // capa base de la Tundra: sin telegrafías (el aura del Chamán es suelo, no aviso)
       var tun = e.fe && e.fe.tun;
       if (e.fe) drawFamTele(c, e, p);   // telegrafías de las familias (Zarzal / Arquero, Perro, Calavera rodante, Guardián de cadenas)
+      if (e.fe && e.fe.pan) continue;   // P5: los 9 monstruos del Panal dibujan todo en panTele
       if (tun) { if (e.fe.shaman && mode === 0) E.tunAura(c, e); if (e.type !== 'mini_bulwark' && e.type !== 'mini_hive') continue; }   // P3: los 9 monstruos de la Tundra dibujan sus avisos en tunTele (enemies_tundra.js)
       if (e.type === 'boar' && e.st === 'wind' && !(e.fe && e.fe.roll)) {
         var len = 171 + e.r, w = e.r * 2, f = e.t / 600;
@@ -1497,6 +1503,7 @@
   function visual(e) {
     if (e.mini) return G.Minis.visual(e);   // P4.5
     var name = e.spr || B.enemy[e.type].spr, fb = FB[name];
+    if (e.fe && e.fe.pan) return { cv: safeSpr(name, E.panAnim(e)), sc: 1, fb: null };   // P5: sprites del Panal (assets_fam4.js) o el sprite existente teñido de ámbar
     if (!fb && FAMSPR.test(name)) return { cv: Assets.sprite(name, famAnim(e)), sc: 1, fb: null };
     if (!fb && ASFSPR.test(name)) return { cv: safeSpr(name, asfAnim(e)), sc: 1, fb: null };
     if (name === 'enemy_mini_yeti' || name === 'enemy_mini_ventisquero') return { cv: safeSpr(name, newAnim(e)), sc: 1, fb: null };
@@ -1548,6 +1555,7 @@
     else if (e.type === 'mini_hive' && (e.st === 'swell' || e.st === 'burst')) { o.tint = '#ffb73a'; o.tintA = 0.3 + 0.3 * Math.sin(e.t / 40); o.sx = sc * (1 + 0.15 * Math.min(1, e.t / (e.st === 'burst' ? 1150 : 800))); o.sy = o.sx; }
     else if (e.type === 'boss' && e.rage) { o.tint = e.fury ? '#ff0000' : '#ff2020'; o.tintA = 0.25 + 0.1 * Math.sin(e.anim / 100); }
     else if (v.fb) { o.tint = (e.variant && E.VARIANTS[e.variant].tint) || v.fb.tint; o.tintA = e.variant ? 0.62 : 0.5; }
+    if (e.fe && e.fe.pan && o.tint == null) E.panTint(e, o);   // P5: avisos en el cuerpo, sedación por humo
     if (e.fe && e.fe.tun && o.tint == null) E.tunTint(e, o);   // P3: avisos en el cuerpo (Oso, Lobo, Yeti...), alpha de la Estalagmita dormida
     else if ((e.variant === 'yeti' || e.variant === 'ventisquero') && o.tint == null && e.spr === B.enemy[e.type].spr) { o.tint = E.VARIANTS[e.variant].tint; o.tintA = 0.38; }   // guardianes de la Tundra: tinte azul hielo
     if (e.skin && o.tint == null) { o.tint = e.skin.tint; o.tintA = e.skin.a != null ? e.skin.a : 0.35; }   // tinte de la piel de familia (si no hay ya un tinte de estado)
@@ -1558,7 +1566,7 @@
     else if (e.type === 'headlet' && (e.st === 'emerge' || e.st === 'regrow')) { o.alpha = 0.45 + 0.4 * Math.min(1, e.t / 500); }
     if (e.type === 'boss' && e.st === 'tele' && e.kind !== 'slam') { o.sx = 1 + 0.05 * Math.sin(e.t / 40); }
     if (G.Tundra.on) { var fa0 = G.Tundra.farAlpha(e); if (fa0 < 1) o.alpha = (o.alpha != null ? o.alpha : 1) * fa0; }   // P3: los lejanos se pierden en la bruma (hasta -35 %)
-    G.fx.spr(c, cv, e.x, e.y - jump + (e.fe && e.fe.tun && e.fly ? E.tunBob(e) : 0), o);
+    G.fx.spr(c, cv, e.x, e.y - jump + (e.fe && e.fe.tun && e.fly ? E.tunBob(e) : 0) + (e.fe && e.fe.pan && e.fly ? E.panBob(e) : 0), o);
     if (e.mini) G.Minis.drawOver(c, e, o);
     if (e.fe && e.fe.tun) E.tunDraw(c, e, o);   // placa de hielo del Yeti, ojos de la Estalagmita...
     if (e.spawnT <= 0 && e.type !== 'boss') {
@@ -1619,6 +1627,6 @@
   }
 
   // Para enemies_tundra.js (P3): IA y utilidades compartidas
-  E.AI = AI; E.TAI = {};
-  E.H = { moveTo: moveTo, contact: contact, kite: kite, inFan: inFan, fsfx: fsfx, thinLine: thinLine, tdisc: tdisc, lane: lane, fan: fan, disc: disc, RED: RED, bubbles: bubbles, explode: explode };
+  E.AI = AI; E.TAI = {}; E.PAI = {};
+  E.H = { oldAnim: oldAnim, newAnim: newAnim, safeSpr: safeSpr, moveTo: moveTo, contact: contact, kite: kite, inFan: inFan, fsfx: fsfx, thinLine: thinLine, tdisc: tdisc, lane: lane, fan: fan, disc: disc, RED: RED, bubbles: bubbles, explode: explode };
 })();

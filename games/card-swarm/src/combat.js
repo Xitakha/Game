@@ -126,6 +126,7 @@
     }
     if (e.type === 'boar' && e.st === 'stun') dmg *= 1.5;
     // escudo frontal: solo cuenta si el golpe trae posición de origen (o.sx/o.sy); auras, orbitales y pulsos cuentan como por la espalda
+    if (G.Panal.on && tag === 'fire') G.Panal.fireHit(e.x, e.y, e);   // P5: el Fuego carameliza la miel bajo el impacto y levanta humo sobre los insectos
     if (e.plateHp > 0 && tag === 'fire') G.Enemies.plateHit(e, dmg);   // P3: la placa de hielo del Yeti se derrite con 30 de daño de Fuego (antes del bloqueo: el golpe que la rompe ya pasa)
     var blocked = false, pre = dmg;
     if (e.shield && o.sx != null && e.fa != null && Math.abs(G.angDiff(Math.atan2(o.sy - e.y, o.sx - e.x), e.fa)) <= e.shield) {
@@ -262,6 +263,7 @@
     fx.ring(x, y, 6, r, 300, c, 5); fx.shockwave(x, y, r * 2.2);
     fx.burst(x, y, 10, c, 220, 420, 4, { add: true });
     if (tag === 'fire') fx.flames(x, y, 6, r * 0.6);
+    if (tag === 'fire' && G.Panal.on) G.Panal.fireArea(x, y, r);   // P5: la explosión de Fuego carameliza la miel
     var list = C.inRange(x, y, r);
     for (var i = 0; i < list.length; i++) {
       C.deal(list[i], dmg, { tag: tag, id: o.id, ang: Math.atan2(list[i].y - y, list[i].x - x), kb: o.kb || 40, depth: o.depth || 0, noChain: true, zone: o.zone, burn: o.burn, slow: o.slow, poison: o.poison });
@@ -278,6 +280,7 @@
       if (z.kind === 'pool' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-z.r, z.r) * 0.7, z.y + G.rnd(-z.r, z.r) * 0.5, 0, -30, 600, '#9aff6a', 3, { drag: 1 });
       if (z.tk <= 0) {
         z.tk = z.interval || 300;
+        if (z.tag === 'fire' && G.Panal.on) G.Panal.fireArea(z.x, z.y, z.r * 0.6);   // P5: el suelo ardiente carameliza la miel
         var list = C.inRange(z.x, z.y, z.r);
         for (var j = 0; j < list.length; j++) C.deal(list[j], z.dps * (z.interval || 300) / 1000, { tag: z.tag, id: z.id, poison: z.poison, slow: z.slow, zone: true, noChain: true });
       }

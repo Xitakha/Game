@@ -81,7 +81,7 @@
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
   S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
-  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak' };   // el bioma del Portal decide el jefe
+  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak', panal: 'melaria' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
   // 250 ms de reacción + 1000 x salida / 190 + 100 ms de margen de decisión (DESIGN 1.2: "Peligro puede acortar la telegrafía como máximo -15 %"; aquí además se respeta la regla).

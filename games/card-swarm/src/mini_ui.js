@@ -13,10 +13,13 @@
     hidra: function (x, f, a) { x.beginPath(); x.moveTo(8, 1.5); x.lineTo(14, 5); x.lineTo(14, 11); x.lineTo(8, 14.5); x.lineTo(2, 11); x.lineTo(2, 5); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); x.beginPath(); x.moveTo(8, 4); x.lineTo(11.5, 6); x.lineTo(11.5, 10); x.lineTo(8, 12); x.lineTo(4.5, 10); x.lineTo(4.5, 6); x.closePath(); x.fillStyle = a; x.fill(); },
     planidera: function (x, f, a) { x.beginPath(); x.moveTo(8, 1); x.bezierCurveTo(14, 8, 13, 14, 8, 14.5); x.bezierCurveTo(3, 14, 2, 8, 8, 1); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); x.beginPath(); x.moveTo(5, 9); x.quadraticCurveTo(8, 12, 11, 9); x.strokeStyle = a; x.stroke(); },
     yeti_mayor: function (x, f, a) { [3.5, 7, 10.5].forEach(function (px, i) { x.beginPath(); x.moveTo(px, 13); x.quadraticCurveTo(px - 1.5, 6 - i % 2, px + 1.5, 2 + i % 2); x.quadraticCurveTo(px + 3, 8, px + 2.5, 13); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); }); x.fillStyle = a; x.fillRect(2, 12.5, 12, 1.6); },
+    avispon: function (x, f, a) { x.beginPath(); x.moveTo(2, 8); x.bezierCurveTo(4, 3, 10, 3, 12, 6); x.lineTo(15, 8); x.lineTo(12, 10); x.bezierCurveTo(10, 13, 4, 13, 2, 8); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); x.fillStyle = a; x.fillRect(5, 4.5, 1.8, 7); x.fillRect(8.5, 4.5, 1.8, 7); },
+    reina_joven: function (x, f, a) { x.beginPath(); x.moveTo(2.5, 13); x.lineTo(2, 5); x.lineTo(5.5, 8); x.lineTo(8, 3); x.lineTo(10.5, 8); x.lineTo(14, 5); x.lineTo(13.5, 13); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); x.fillStyle = a; x.fillRect(3.5, 10.5, 9, 1.8); },
     ventisquero: function (x, f, a) { x.beginPath(); x.moveTo(8, 1); x.lineTo(11, 7); x.lineTo(8, 15); x.lineTo(5, 7); x.closePath(); x.fillStyle = f; x.fill(); x.stroke(); x.beginPath(); x.moveTo(8, 3); x.lineTo(9.5, 7); x.lineTo(8, 12); x.lineTo(6.5, 7); x.closePath(); x.fillStyle = a; x.fill(); }
   };
-  var COL = { carnero: ['#b8a890', '#6a1f2f'], tejedora: ['#4a7a2a', '#c8e85a'], alcaide: ['#aab4c8', '#ffd23a'], centinela: ['#c4501a', '#ffd23a'], hidra: ['#2f6f6a', '#7be34a'], planidera: ['#2f9a9a', '#e8e4d4'], yeti_mayor: ['#dfe8f2', '#7fe8ff'], ventisquero: ['#9fd8ff', '#eef4fc'] };
+  var COL = { carnero: ['#b8a890', '#6a1f2f'], tejedora: ['#4a7a2a', '#c8e85a'], alcaide: ['#aab4c8', '#ffd23a'], centinela: ['#c4501a', '#ffd23a'], hidra: ['#2f6f6a', '#7be34a'], planidera: ['#2f9a9a', '#e8e4d4'], yeti_mayor: ['#dfe8f2', '#7fe8ff'], ventisquero: ['#9fd8ff', '#eef4fc'], avispon: ['#f3a31f', '#2a1b10'], reina_joven: ['#f0d98a', '#c97a14'] };
   Object.keys(SH).forEach(function (id) {
+    if (A._h.reg['trophy_mini_' + id]) return;   // P5: si el arte del Panal (assets_fam4.js) ya trae la Insignia, manda ella
     var fr = [0, 1].map(function (lock) {
       var o = cv(), c = o[0], x = o[1]; x.lineWidth = 1; x.strokeStyle = OL;
       SH[id](x, lock ? '#3a3046' : COL[id][0], lock ? '#2a2236' : COL[id][1]);

@@ -960,3 +960,79 @@ Mismo patron y API que P1-P5: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`
 | `mel_stg_<intro,p2,p3,despair,part_wings,part_stinger,part_crown,window,death,victory>` | stinger | Equivalentes a `stg_melaria_*` de arriba (preferir `G.Snd.play`) |
 Mapa de ataques: 1 Estocada, 2 Picado, 3 Lluvia, 4 Llamada, 5 Panal abierto, 6 Torbellino, 7 Jalea real, 8 Eclosion masiva. Con adds en pantalla: los tele de Melaria son mas graves y largos (>= 0,6 s, banda 80-700 Hz + zumbido) que los de la familia (agudos y cortos), asi se oyen aunque haya 20+ insectos; el golpe de firma (`mel_dive`) lleva +3 dB.
 Vista previa: `tools/asset-preview/index.html?game=card-swarm` (botones de SFX con borde amarillo = tele, azul = stinger; boton `hum (on/off)`; pistas `panal` y `boss_melaria` en el selector).
+
+---
+# Panal P5 (src/assets_fam4.js, cargado tras assets_mini2.js; solo arte, sin logica; NO incluye a Melaria = P6, assets_boss4.js)
+Script clasico que extiende `window.Assets`. Mismo estilo que fam1/fam3/mini* (contorno #1b1124, color plano + sombra + brillo, miran a la DERECHA, base x2 = final, `die` = 5 frames 9 fps sin ciclo, ancla de pies/centro = (final_w/2, final_h-4)). Diseno: `DESIGN-v5-biomas.md` B.4, B.6, C.4-C; `DESIGN-v6-minijefes.md` 5. `Assets.FAM4.panal` lista todo. Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Familias" -> "Panal (P5)" (hoja, anims, arena con celdas/miel/humo/polen, prueba de 100 con "mezclar"). Capturas: `studio/docs/capturas-p5/`.
+Paleta: ambar #f3a31f, negro #2a1b10, cera #f0d98a (borde #7a4a14), miel #c97a14 (nunca dorado puro), alas #e9f4ff. Acentos: obrera saco de polen amarillo; aguijonera naranja rojizo con ojos lima; larva crema con mecha de cera; zangano pardo con ojos azul oscuro; guardia casco ambar + escudo hexagonal; babosa miel translucida con ojos en tallo; polinizador crema/verde palido #b8ff9a + flor rosa; avispa limon/negro delgada; nodriza crema con velo MORADO.
+
+## Familia (9) (volar = `fly` en el doc B.6: aguijonera, zangano, polinizador, avispa, nodriza)
+| sprite | base -> final | frames | anims (fps) |
+|---|---|---|---|
+| `enemy_pan_obrera` (worm) | 18x18 -> 36x36 | 11: 0-1 idle, 2-5 walk, 6-10 die | idle 4; walk [0,2,1,3,4,5] 9; die |
+| `enemy_pan_aguijonera` (archer) | 22x22 -> 44x44 | 14: 0-1 idle, 2-5 fly, 6 aim, 7-8 shoot, 9-13 die | idle 4; fly/walk [2,3,4,5] 14; aim [6] (abdomen curvado, aguijon brilla); shoot [7,8] 8 (destello; el proyectil sale a la DERECHA a ~(+14,+4) de la esquina sup. izq. final); die |
+| `enemy_pan_larva` (bomb) | 18x14 -> 36x28 | 12: 0-3 crawl, 4-5 lit, 6 prime, 7-11 die | idle/crawl/walk [0..3] 5-9; lit [4,5] 10 (mecha encendida); prime [6] (hinchada, grietas blancas); die |
+| `enemy_pan_zangano` (boar) | 28x24 -> 56x48 | 15: 0-1 idle, 2-5 fly, 6 wind, 7-8 charge, 9 stun, 10-14 die | idle 4; fly/walk [2..5] 14; wind [6]; charge [7,8] 12 (rayas de velocidad a la izq.); stun [9] (estrellas); die |
+| `enemy_pan_guardia` (shield) | 26x26 -> 52x52 | 17: 0-1 idle, 2-5 walk, 6 wind, 7 bash, 8 rec, 9 melt (escudo agrietado y goteando miel), 10-14 die, SIN ESCUDO: 15-16 | idle 3; walk [0,2,1,3,4,5] 6; wind [6]; bash [6,7,8] 10; rec [8]; melt [9]; die; `idle_np` [15,16] 3; `walk_np` [15,16] 7; `wind_np` [15]; `bash_np` [16,15] 10; `rec_np` [15]. Al fundirse el escudo (40 de Fuego) pasar a `*_np`; `fx_wax_shield` = el escudo suelto |
+| `enemy_pan_babosa` (honeyslug) | 30x16 -> 60x32 | 13: 0-1 idle, 2-5 crawl, 6-7 spit, 8-12 die | idle 3; crawl/walk [2..5] 6; spit [6,7] 6 (7 = escupe el glob a +x); die |
+| `enemy_pan_polinizador` (pollinator) | 24x24 -> 48x48 | 15: 0-3 float, 4-5 pulse, 6-10 die, +4: 11-12 flee, 13-14 sedated | idle/float/fly/walk [0..3] 8-12; pulse [4,5] 6 (halo verde + cruz); flee [11,12] 14; sedated [13,14] 2 (ojos cerrados, zz: usar dentro del humo); die |
+| `enemy_pan_avispa` (blinker) | 22x22 -> 44x44 | 15: 0-1 idle, 2-5 fly, 6-7 fade, 8-9 sting, 10-14 die | idle 6; fly/walk [2..5] 15; fade [6,7] 10 (alpha 0,42/0,16 y aro punteado ya horneados en el sprite); sting [8,9] 12 (9 = tajo con arco a +x); die |
+| `enemy_pan_nodriza` (warlock) | 26x28 -> 52x56 | 13: 0-1 idle, 2-5 fly, 6-7 cast, 8-12 die | idle 4; fly/walk [2..5] 13; cast [6,7] 6; cast_hold [7] (aro morado a los pies, larvas asomando); die |
+
+## Guardianes (DESIGN-v6 5: sustituyen a "Guardia Real"/Madre Colmena de B.6). Las anims `*_np` = parte rota
+| sprite | base -> final | frames | anims (fps) |
+|---|---|---|---|
+| `enemy_mini_reina_joven` (slot 2, 5:30; crisalida de Melaria: saco de celdas, alas sin formar, corona de cera a medio hacer) | 36x36 -> 72x72 | 26: 0-1 idle, 2-5 float, 6 spit, 7 honey, 8 swell, 9 burst, 10 rain-wind, 11 hurt, 12 roar, 13-17 die, 18-19 idle_np, 20-23 float_np, 24 spit_np, 25 honey_np | idle [0,1] 3; float/walk [0,2,1,3,4,5] 7; spit [6]; honey/acid [7]; swell [8,9] 8; burst [9]; rain [10]; hurt [11]; roar [12]; die [13..17] 9; idle_np [18,19] 3; float_np/walk_np [18,20,19,21,22,23] 7; spit_np [24]; honey_np/acid_np [25]. Sin Saco: saco deshinchado, roto y goteando |
+| `enemy_mini_avispon` (slot 1, 3:30; avispon negro/ambar, gorguera dorada, aguijon largo) | 30x28 -> 60x56 | 26: 0-1 idle, 2-5 fly, 6 dash-wind, 7 dash, 8 stun, 9 sting-wind, 10 sting, 11 hurt, 12 roar, 13-17 die, 18-19 idle_np, 20-23 fly_np, 24 wing-wind_np, 25 wing_np | idle [0,1] 6; fly/walk [2..5] 14; dash_wind [6]; dash [7]; stun [8]; sting_wind [9] (abdomen apunta, aguijon brilla = carril); sting [10]; stab [9,10] 8; hurt [11]; roar [12]; die [13..17]; idle_np [18,19]; fly_np/walk_np [20..23] 14; wing_wind_np [24]; wing_np [25]; wing_hit_np [24,25] 10. Sin Aguijon: muñon con gota |
+Insignias/partes: anclas sugeridas en px finales: Saco = (22,48) del sprite de la Reina Joven; Aguijon del Avispon = punta del abdomen (hacia abajo-izq. en idle/fly, ~(2,46)).
+
+## Proyectiles y VFX (final, frames, anims, ancla)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `proj_stinger` | 32x12 | 2 (`loop` 10) | aguijon, apunta a la derecha, centrado (rotar al angulo) |
+| `proj_honey_glob` | 28x28 | 2 (`loop` 8) | glob de miel de la Babosa, cola a la izq., centrado |
+| `fx_wax_shield` | 48x56 | 2 (0 entero, 1 fundido/goteando; `melt` 3 fps sin ciclo) | escudo hexagonal suelto, centrado |
+| `fx_honey_puddle` | 72x72 | 3 (`idle` 2) | charco de miel, disco r ~33 final centrado: escalar a r 36 (larva) / 34 (babosa) / 26 (rastro) |
+| `tile_hex_wax` | 96x84 | 4 (variantes) | celda de cera r 48 "flat-top", centrada |
+| `fx_honey_cell` | 112x96 | 4 (`idle`/`loop` 3) | celda de MIEL (ambar oscuro #c97a14 con burbujas, borde marron): hexagono de 96x84 centrado + brillo |
+| `fx_cell_open` | 112x96 | 4 (`open` 3,5 fps sin ciclo) | aviso de apertura: contorno marron punteado que se llena de ambar (0 = solo contorno, 3 = llena) |
+| `fx_nest_cell` | 112x96 | 3 (0-1 `idle` 2: larva dormida; 2 = `hatch`: aro ROJO de eclosion) | nido |
+| `fx_smoke_puff` | 40x40 | 4 (`puff` 3 fps sin ciclo) | nube gris calida #9a8f84, centrada (usar `drawSmokeCloud`) |
+| `fx_pollen_pulse` | 120x120 | 4 (`pulse` 8 fps sin ciclo) | anillo verde #b8ff9a con cruz; radio del anillo (final): 28/37/46/56 en los frames 0-3; escalar para que el anillo = radio de curacion (`drawPollenPulse`) |
+| `fx_heal_mote` | 20x20 | 3 (`rise` 6) | cruz verde que sube (particula de curacion de aliados), centrada |
+| `icon_sedado` | 24x24 | 2 (`loop` 2) | burbuja "zz" sobre un insecto sedado |
+| `obs_wax_pillar` | 56x104 | 3 (0 entero, 1 agrietado, 2 escombro) | pilar r 28; ancla de la colision = (28,82) final: dibujar en (x-28, y-82) (o `drawWaxPillar`) |
+| `fx_swarm_cloud` | 64x48 | 4 (`loop` 8) | nube de abejitas, centrada |
+| `fx_wax_wall` | 64x64 | 3 (0 entero, 1 agrietado, 2 escombro) | segmento de muro de cera |
+| `fx_wax_burst` | 96x96 | 5 (`burst` 14 sin ciclo) | esquirlas de cera (pilar/escudo roto), centrado |
+| `decor_panal` | 56x56 | 4: 0 pila de hexagonos, 1 flores, 2 vela de cera con miel, 3 trozos de panal | ancla base-centro (28,52) |
+| `tile_wax_plain` | 64x64 | 3 | losetas de cera lisas SIN costuras (para `ground0..9` del bioma) |
+
+## Bioma `panal` (`Assets.setBiome('panal')`)
+- `Assets.biomes()` incluye `'panal'`; `getBiome()` -> `'panal'`; `biomeInfo('panal')`. Envoltorio sobre fam3 (mismo mecanismo que tundra; `setBiome('tundra'|otro)` lo desactiva): `ground0..9` = cera lisa (32x32 final), `rock/grass/bush/bones/stump/column/torch/fog` = versiones del panal, `vignette()` por defecto AMBAR (`tint '58,28,4'`), `drawFireflies()` = `drawPollen`, `drawRitualGlow()` nada, `decorate()` no esparce nada (todo va horneado), `addToPhaser` registra `name@panal:i`.
+- `Assets.arena(w,h,{seed})` en panal -> `{canvas, torches:[], ritual:null, cells:[{id,q,r,x,y}], cellR, walls:[{x1,y1,x2,y2}x6], pillars:[{x,y,r:28}x4], nests:[{id,x,y}x6], lights:[{x,y,r}]}` (coordenadas escaladas por `w/1440`, `h/810`). El canvas lleva horneados: exterior de panal oscuro, hexagono de vertices (180,0)(1260,0)(1440,405)(1260,810)(180,810)(0,405) con el MURO de cera (borde marron/ambar/crema, gotas de miel, esquinas), 166 celdas de cera (r 48, `#f0d98a` borde `#7a4a14`) con variacion de tono, 6 nidos marcados (aro punteado + huevos), luces calidas en los vertices, rayos de luz oblicuos y viñeta ambar. Pilares, miel, celdas dinamicas, humo y polen NO estan horneados. Generacion ~7-60 ms (una vez).
+- Geometria exacta para la logica (`Assets.PANAL`, coordenadas base 1440x810): `R` 48, `center` [720,405], `verts`, `cells` (166; `id = (q+12)*40 + (r+20)`, hex flat-top axial: `x = 720+72q`, `y = 405+83,138(r+q/2)`), `byId`, `cellAt(x,y)` -> celda o null (O(1), conversion pixel-celda), `cellId(q,r)`, `nests` (6, la celda mas cercana al anillo r 330), `pillars` [[480,300],[960,300],[480,510],[960,510]], `lights`, `cellStates`.
+
+## Estados de celda y `Assets.drawCells(ctx, state, t, o)`
+`state = {cellId: {s, p}}` (sin entrada = cera, no se dibuja; 1 `drawImage` por celda activa, ~0,1-0,5 ms con 36). `o`: `{s (escala del mundo, 1 = 1440 de ancho), alpha}`.
+| `s` | `p` | aspecto |
+|---|---|---|
+| `tele` | 0..1 progreso del aviso (1000-1200 ms) | contorno marron punteado que se llena de ambar (frame de `fx_cell_open` = floor(p*4)) |
+| `honey` | - | celda abierta con miel (10 s): `fx_honey_cell` con burbujas animadas |
+| `seal` | 1 -> 0 (fundido de 1 s) | la miel se endurece (tinte cera) y se desvanece a cera |
+| `caramel` | 1 -> 0 | carameliza por Fuego: se oscurece a marron brillante y se funde (sellado inmediato) |
+| `nest` | - | nido con larva dormida |
+| `nesttele` | - | eclosion inminente: aro rojo pulsante (Panal abierto / Eclosion) |
+Contraste: la miel (#c97a14, borde oscuro, burbujas claras) es muy distinta del suelo crema; el "dorado/blanco" se reserva a la ventana de dano.
+
+## Funciones de dibujo (todas dibujan en `ctx`, coordenadas de juego; (x,y) = centro de la colision/efecto)
+- `Assets.drawHoney(ctx, x, y, {r 36, alpha, t, fade 0..1})`: charco suelto (larva r36, babosa r34, rastro r26). `fade` <1 lo encoge y aclara antes de sellar.
+- `Assets.drawHoneyTele(ctx, x, y, r, p, t)`: aviso del escupitajo (circulo ambar punteado que se llena, 500 ms).
+- `Assets.drawPollenPulse(ctx, x, y, r, p, {alpha})`: aviso/HoT del Polinizador (`r` 120; `p` 0..1: el anillo crece hasta `r`; verde #b8ff9a con cruz).
+- `Assets.drawSmokeCloud(ctx, x, y, r, p, t)`: nube de humo sedante de Fuego (`r` 36, `p` = edad 0..1 de 1,8 s, gris calido #9a8f84). Coste ~0,04 ms cada una.
+- `Assets.drawSmoke(ctx, t, intensity, {w,h,quality})`: bruma AMBAR ambiental de pantalla; **dibujar debajo de las telegrafias** (mundo -> humo -> telegrafias -> proyectiles enemigos -> HUD). `intensity` = alfa (0 nada; 0,12 calma; 0,3 humo intenso). Alta 2 capas a la deriva, Media/Baja 1 capa (Baja estatica). Coste: ~1,5 blends a pantalla completa (usar solo cuando haya humo).
+- `Assets.drawPollen(ctx, w, h, t, {count 24, view, quality, rays false, tint false})`: motas de polen (= `drawFireflies` en panal): Alta 24, Media 12, Baja 0. Zumbido visual. Rayos de luz y luces calidas ya van horneados en el arena; `rays:true`/`tint:true` los repintan en vivo (tinte rgba(255,170,40,0.06); cuestan un blend completo cada uno).
+- `Assets.drawWarmLights(ctx, lights, t, {alpha, quality})`: luces calidas aditivas extra (p. ej. sobre `arena().lights`; ya horneadas, solo para luces dinamicas; costosa: ~0,6 blend por luz grande).
+- `Assets.drawWaxPillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawIcePillar` (entero hp>0,5, agrietado >0, escombro 0; con hp 0 y `rebuild`>0 aro de aviso + fantasma). Ordenar por y+12.
+Calidad Baja: motas 0, humo 1 capa estatica, sin parpadeo de luces. Coste medido (Chromium headless sin GPU, 960x540, mediana, incluyendo volcado): drawCells(36) ~0,3-0,5 ms, polen Alta ~0,17 ms, Baja ~0,02 ms; un blit del arena entero ~2,3 ms de referencia en este entorno (el humo ambiental ~1,5x un blit, mucho menos con GPU).
+Notas: `sw.js` aun no precachea `assets_fam4.js`. La Reina Joven y el Avispon usan los nombres `enemy_mini_reina_joven` / `enemy_mini_avispon`; insignias `trophy_mini_*` siguen pendientes (P6).

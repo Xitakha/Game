@@ -302,8 +302,10 @@
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
     { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' },
     // P4: la Tundra (Yarlak) se abre al vencer a Letea
-    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' }];
-  function biomeRect(i) { return { x: 650 + i * 72, y: 336, w: 68, h: 42 }; }   // 4 destinos de 68 px (5 con el Panal)
+    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' },
+    // P5: el Panal existe (arena hexagonal, miel, humo y su familia) pero sigue BLOQUEADO hasta que llegue Melaria (P6): '? PANAL'. Solo se prueba con ?biome=panal
+    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'melaria', needName: 'Melaria', bid: 'melaria', locked: true }];
+  function biomeRect(i) { return { x: 650 + i * 58, y: 336, w: 56, h: 42 }; }   // 5 destinos de 56 px (650 + 4 x 58 + 56 = 938 <= 940)
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
   function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
@@ -328,7 +330,7 @@
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
     for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
       if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-      else say(BIOMES[i].locked ? 'La Tundra sigue cerrada: Yarlak, su jefe, aún no ha llegado a Rescoldo.' : 'Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
+      else say(BIOMES[i].locked ? 'El Panal sigue cerrado: Melaria, su jefa, aún no ha llegado a Rescoldo.' : 'Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
     }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     var bid = effBiome().bid;
@@ -387,7 +389,7 @@
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
       var open = biomeOpen(b), on = cb.id === b.id;
-      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 11, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
+      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 9, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'bloqueado' });
     });
     // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
     var ln = G.B.matLens(cb.id);
