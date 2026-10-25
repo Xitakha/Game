@@ -293,7 +293,7 @@
     else if (!G.peligroUrl) G.peligro = G.bossUrl || rq ? 1 : G.Save.pelSel(G.bossId);
     else G.peligro = qnum('peligro', 1);
     G.dbgPhase = (rq && rq.phase) || qnum('phase', 0);
-    if (G.bossUrl || rq) { G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true }; }
+    if (G.bossUrl || rq) { G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true, mini1: true, mini2: true }; }
     if (G.mode !== 'run') {   // cacería / práctica: arena solo con el jefe; 6 ofertas de preparación (la práctica reutiliza la mano del primer intento)
       var sv = G.Save.data, rec = sv.practice[G.bossId] = sv.practice[G.bossId] || { tries: 0, wins: 0 };
       if (G.mode === 'practice') { rec.tries++; G.practiceTries = rec.tries; }
@@ -476,7 +476,7 @@
     G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();
-    var bq = /[?&]biome=(\w+)/.exec(location.search); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
+    var bq = /[?&]biome=(\w+)/.exec(location.search) || (G.Minis && G.Minis.urlBiome() ? [0, G.Minis.urlBiome()] : null); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();

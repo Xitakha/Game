@@ -41,16 +41,23 @@
       desc: 'Abate 30 Lobos de escarcha (Tundra). Rodean y atacan por turnos: cuenta la secuencia y esquiva el lance.', rewardParts: { fang: 8 }, brasas: 110, pf: 1, pfRepeat: 1 },
     { id: 'scorchers', cat: 'B', tier: 3, kind: 'hunt', name: 'Apaga las Ascuas', target: 'scorcher', goal: 12, label: 'Ascuas',
       desc: 'Apaga 12 Ascuas. Cargan con rastro de fuego: no te quedes en su línea.', rewardParts: { wick: 9 }, brasas: 150, pf: 2, pfRepeat: 1 },
-    { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Mata al Coloso Escudero', target: 'mini_bulwark', goal: 1, label: 'Coloso', elite: true,
-      desc: 'Derriba al Coloso Escudero: flanquéalo o usa área.', rewardParts: { plate: 8 }, brasas: 100, pf: 2, pfRepeat: 1 },
-    { id: 'hive', cat: 'B', tier: 3, kind: 'mini', name: 'Quema la Colmena', target: 'mini_hive', goal: 1, label: 'Colmena', elite: true,
-      desc: 'Acaba con la Madre Colmena: rompe su saco de larvas y no te quedes quieto.', rewardParts: { spine: 8 }, brasas: 150, pf: 2, pfRepeat: 1 },
+    { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Derriba al guardián del primer aviso', target: 'slot1', goal: 1, label: 'Guardián 1.er aviso', elite: true,
+      desc: 'Derriba al guardián del primer aviso (3:30): Carnero Mayor, Alcaide de Hierro, Hidra Joven o Yeti Mayor según el destino. Lee su telegrafía y rompe su parte.', rewardParts: { plate: 8 }, brasas: 100, pf: 2, pfRepeat: 1 },
+    { id: 'hive', cat: 'B', tier: 3, kind: 'mini', name: 'Derriba al guardián del segundo aviso', target: 'slot2', goal: 1, label: 'Guardián 2.º aviso', elite: true,
+      desc: 'Derriba al guardián del segundo aviso (5:30): Tejedora, Centinela, Plañidera o Ventisquero. No te quedes quieto: sus zonas te cercan.', rewardParts: { spine: 8 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'cauterize', cat: 'C', tier: 3, kind: 'hunt', needBurn: true, name: 'Cauteriza las Cabezas menores', target: 'headlet', goal: 12, label: 'Cabezas cauterizadas', rare: 1,
       desc: 'Cauteriza 12 Cabezas menores en el Asfódelo: mátalas con Fuego (o ardiendo) para que no rebroten a los 8 s. Solo cuentan las cauterizadas.', rewardParts: { spine: 8 }, brasas: 160, pf: 2, pfRepeat: 1 },
     { id: 'parts3', cat: 'C', tier: 3, kind: 'part', name: 'Rompe-partes', goal: 3, label: 'Partes de jefe', rare: 1,
       desc: 'Rompe 3 partes de jefe (suman entre expediciones, aunque pierdas). Mira los medidores de la barra.', rewardParts: { thread: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'horn', cat: 'C', tier: 2, kind: 'partkey', key: 'cuernos', name: 'Rompe el cuerno', goal: 1, label: 'Cuernos del Pastor',
       desc: 'Rompe los Cuernos del Pastor Corrupto (aunque pierdas, cuenta). Apunta a su cabeza.', rewardParts: { fang: 5 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    // P4.5: encargos opcionales de los minijefes por bioma
+    { id: 'miniHorn', cat: 'C', tier: 2, kind: 'minipart', key: 'carnero', name: 'Rompe los Cuernos del Carnero', goal: 1, label: 'Cuernos del Carnero Mayor',
+      desc: 'Rompe los Cuernos del Carnero Mayor (Bosque, 3:30): aprovecha que se aturde al chocar contra la pared.', rewardParts: { static: 6 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'miniCauter', cat: 'C', tier: 3, kind: 'minicaut', name: 'Cauteriza la Hidra Joven', goal: 1, label: 'Hidra cauterizada', rare: 1,
+      desc: 'Corta la cabeza de la Hidra Joven (Asfódelo) y cauterízala con 60 de Fuego en 12 s para que no rebrote.', rewardParts: { plate: 8 }, brasas: 160, pf: 2, pfRepeat: 1 },
+    { id: 'miniParts3', cat: 'C', tier: 3, kind: 'miniparts', name: 'Rompe 3 partes de guardián en una run', goal: 3, label: 'Partes de guardián', rare: 1,
+      desc: 'Rompe 3 partes de guardián en la misma expedición (hay hasta 2 por bioma; también cuenta la parte de la Hidra al rebrotar).', rewardParts: { thread: 10 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'nojump', cat: 'C', tier: 3, kind: 'nojump', name: 'Sin Salto aplastante', goal: 1, label: 'Sin Salto', rare: 1,
       desc: 'Derrota al Pastor Corrupto sin que te alcance su Salto aplastante: su sombra avisa 1 s.', rewardParts: { feather: 8 }, brasas: 170, pf: 2, pfRepeat: 1 },
     { id: 'clean45', cat: 'C', tier: 2, kind: 'clean', name: 'Intocable', goal: 45, label: 'Sin daño', unit: ' s',
@@ -77,7 +84,9 @@
   // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
   Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra'];
   Q.biomesOf = function (d) {
-    if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];   // Cuernos y Salto aplastante son del Pastor
+    if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];
+    if (d.kind === 'minipart') return [G.Minis ? G.Minis.BIOME_OF[d.key] : 'bosque'];
+    if (d.kind === 'minicaut') return ['asfodelo'];   // Cuernos y Salto aplastante son del Pastor
     if (d.kind !== 'hunt') return Q.BIOMES.slice();
     return Q.BIOMES.filter(function (b) { var f = G.B.famOf(b) || (b === 'tundra' ? G.B.fam.tundra : null); return f ? !!f.use[d.target] : !G.B.enemy[d.target].famOnly; });   // P3: la Tundra (ready:false) ya declara sus roles: el encargo de los Lobos existe, pero no se ofrece hasta abrirla (Yarlak, P4)
   };
@@ -147,10 +156,20 @@
   Q.onKill = function (type, e) {
     if (G.mode === 'practice') return;
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
-    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === type) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
+    var tk = d.kind === 'mini' ? (e && e.mini ? 'slot' + e.slot : type === 'mini_bulwark' ? 'slot1' : type === 'mini_hive' ? 'slot2' : type) : type;   // P4.5: los minijefes cuentan por SLOT
+    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === tk) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
     else if (d.kind === 'kills') inc(d);
     else if (d.kind === 'clean') Q.tick();
   };
+  // P4.5: parte de minijefe rota (Minis.breakPart) / cabeza cauterizada (Minis.cauterHit)
+  Q.onMiniPart = function (e) {
+    if (G.mode === 'practice') return;
+    var R = G.Loot.run; R.miniParts = (R.miniParts || 0) + 1;
+    var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
+    if (d.kind === 'minipart' && d.key === e.mid) inc(d);
+    else if (d.kind === 'miniparts') { S().prog[d.id] = Math.min(d.goal, Math.max(Q.progress(d.id), R.miniParts)); if (S().prog[d.id] >= d.goal) done(d); }
+  };
+  Q.onMiniCaut = function (e) { var d = Q.active(); if (d && d.kind === 'minicaut' && Q.progress(d.id) < d.goal && G.mode !== 'practice') inc(d); };
   // Hook para romper partes de jefes: lo llama Q.onRunEnd por cada parte rota de la expedición; el sistema de jefes puede llamarlo en vivo si prefiere
   Q.onBossPart = function (bossId, key) { var d = Q.active(); if (d && d.kind === 'part') inc(d); };
   // Racha sin daño en vivo (el HUD lo llama cada frame mientras hay run)
@@ -241,6 +260,10 @@
       lore: 'Letea se comía los recuerdos, ¿sabes? Por eso olvidé tantas cosas. Gracias por devolverme alguna.' },
     { id: 'yarlak', name: 'Fin del invierno', desc: 'Vence a Yarlak, el Coloso Gélido.', ok: function (s) { return (s.bossKills.yarlak || 0) > 0; },
       lore: 'Yarlak guardaba la última hoguera del norte. Si lo derribaste, el frío ya no tiene dueño. Abrígate igual.' },
+    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe.', ok: function (s) { return Object.keys(s.insignias || {}).length >= 3; },
+      lore: 'Tres insignias de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
+    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue las 8 Insignias (+1 Esencia rara, una vez).', ok: function (s) { return Object.keys(s.insignias || {}).length >= 8; }, give: { rare: 1 },
+      lore: 'Las ocho... Cada guardián tenía su historia y tú te las has quedado todas. Toma, una Esencia: me la guardaba para alguien así.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Activa 5 combos distintos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Activa los 12 combos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },
@@ -260,7 +283,7 @@
     A.DEFS.forEach(function (a) {
       if (s.ach[a.id]) return;
       var ok = false; try { ok = a.ok(s); } catch (e) { ok = false; }
-      if (ok) { s.ach[a.id] = s.runs + 1; out.push(a); A.fresh.push(a); }
+      if (ok) { s.ach[a.id] = s.runs + 1; out.push(a); A.fresh.push(a); if (a.give) for (var gk in a.give) s.parts[gk] = (s.parts[gk] || 0) + a.give[gk]; }
     });
     if (out.length) G.Save.save();
     return out;

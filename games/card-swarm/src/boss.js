@@ -915,7 +915,7 @@
     if (S.sigP > 0.01) Assets.drawBossVignette(c, W, H, 0.5 + 0.5 * S.sigP * (S.sigP > 0.8 ? 1 + 0.3 * Math.sin(G.time / 40) : 1) * 1.6, '255,30,20');
     if (S.flash > 0) { c.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, S.flash * 0.4) + ')'; c.fillRect(0, 0, W, H); }
     if (e && !e.dead && !e.dying) drawBar(c, e);
-    else { var gm = E.minis()[0]; if (gm && gm.spawnT <= 0 && !(e && S.active)) drawGuardBar(c, gm); }   // J3: los guardianes (Coloso, Colmena y variantes de bioma) usan una barra grande propia
+    else { var gm = E.minis()[0]; if (gm && gm.spawnT <= 0 && !(e && S.active)) { if (gm.mini) G.Minis.drawBar(c, gm); else drawGuardBar(c, gm); } }   // J3: los guardianes (Coloso, Colmena y variantes de bioma) usan una barra grande propia
     if (I) drawIntro(c, e, I);
   };
   // Barra grande de guardián (DESIGN 4.1: banner de 2 s y la barra grande, sin intro larga): 520 x 16, muesca del enrage al 50 % y medidor de la parte rompible

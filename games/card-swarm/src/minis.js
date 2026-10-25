@@ -294,6 +294,7 @@
     G.Hud.banner('¡' + P.name + ' ' + (/A$/.test(P.name.split(' ')[0]) ? 'ROTA' : 'ROTO') + '!', 1500, '#ffd27a');
     miniHeart(e); G.Loot.onMiniPart(e);
     M.dropInsignia(e);
+    try { G.Quests.onMiniPart(e); } catch (x) { /* meta opcional */ }
     if (De.onBreak) De.onBreak(e);
   };
 
@@ -316,7 +317,7 @@
 
   // ================================================================= MUERTE
   M.onDie = function (e, silent) {
-    if (e.isPod) return;
+    if (e.isPod) { if (!silent && e.rot == null) M.snd('weaver_pod_pop', 'hit', { vol: 0.5 }); return; }
     if (!silent) {
       M.deadAt = G.time;
       M.snd('mini_die', 'boss_roar', { pitch: 1.2, vol: 0.7 }); M.stg('stg_mini_die');

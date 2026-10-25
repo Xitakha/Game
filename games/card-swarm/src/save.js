@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v6 (P4.5, minijefes): insignias { id: n } (trofeo menor de cada minijefe) y elites por SLOT (mini_slot1 / mini_slot2 en vez de mini_bulwark / mini_hive). Migración v5 -> v6 con copia en swarmhand.save.v5.
    v5 (P4, Tundra + Yarlak): peligro.yarlak; la Tundra se abre al vencer a Letea (bossKills.letea). Migración v4 -> v5 con copia en swarmhand.save.v4; quien ya venció a Letea ve la Tundra abierta.
    v4 (Jefes J3): Peligro por jefe (peligro[id] = máximo desbloqueado, peligroSel[id] = elegido en el Portal), victorias por Peligro (pelWins), cacería (hunts[id][P] = { wins, tries, best }),
    intentos de práctica (practice[id]). Migración v3 -> v4 con copia de seguridad en swarmhand.save.v3: quien ya había vencido a un jefe parte con el Peligro II abierto.
@@ -11,7 +12,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 5;
+  var KEY = 'swarmhand.save', VERSION = 6;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -24,7 +25,8 @@
       nodes: {},                               // id -> { c: elección ('1' | 'A' | 'B'), free: 1 si es heredado/gratis, r: 1 si dio +1 rango }
       ever: {}, mile: 0,                       // nodos comprados alguna vez (hitos "Maestría de oficio") y hitos ya cobrados
       respecFree: 1,                           // el primer reespecializado es gratis
-      elites: {},                              // primer élite abatido de cada tipo (+1 PF)
+      elites: {},                              // primer élite abatido de cada SLOT (+1 PF; v6: mini_slot1 / mini_slot2)
+      insignias: {},                           // v6: Insignias de los minijefes (id -> veces)
       quest: { active: null, prog: {}, done: {} },
       shop: { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 }, pending: { tonic: 0, magnet: 0, dish: null },
       flags: {},
@@ -61,6 +63,11 @@
       d.v = 5; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.yarlak) d.peligro.yarlak = 1;
       d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated5 = 1;
     }
+    if (d.v === 5) {   // P4.5: elites por slot (mini_bulwark -> mini_slot1, mini_hive -> mini_slot2) e insignias
+      d.v = 6; var el = (d.elites && typeof d.elites === 'object') ? d.elites : {}; d.elites = {};
+      Object.keys(el).forEach(function (k) { d.elites[k === 'mini_bulwark' ? 'mini_slot1' : k === 'mini_hive' ? 'mini_slot2' : k] = el[k]; });
+      d.insignias = {}; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated6 = 1;
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -82,7 +89,7 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });

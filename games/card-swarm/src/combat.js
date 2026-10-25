@@ -132,9 +132,11 @@
       if (!e.shieldDown) { dmg *= (tag === 'fire' && tf.fundicion) ? 0.5 : 0.2; blocked = true; }   // Fundición: el escudo frontal frena la mitad
     }
     if (e.expT > 0) dmg *= e.expMul;   // ventana de exposición de los minijefes (x1,5 / x1,4) desde cualquier ángulo
+    if (e.dmgIn && e.dmgIn !== 1) dmg *= e.dmgIn;   // P4.5: herida abierta de la Hidra Joven (x1,3)
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
-    if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
+    if (e.mini) { /* P4.5: la parte la gasta Minis.onHit */ }
+    else if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
     else if (tag === 'fire' && e.variant === 'yeti') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // P3: la placa del Yeti Centinela se derrite con Fuego desde cualquier ángulo
     if (blocked) {
       var ba = e.fa + G.rnd(-0.4, 0.4), bx = e.x + Math.cos(ba) * (e.r + 2), by = e.y + Math.sin(ba) * (e.r + 2);
@@ -153,6 +155,7 @@
     if (o.stun) C.stun(e, o.stun);
     e.hp -= dmg; e.flash = 70; e.lastTag = tag; e.boomDepth = o.depth || 0;
     if (e.type === 'mini_hive') G.Enemies.sacHit(e, dmg);   // Saco de larvas: absorbe parte de todo el daño
+    else if (e.mini || e.isPod) G.Minis.onHit(e, dmg, pre * G.B.cardDmgMul, blocked, tag);   // P4.5: parte rompible genérica
     if (e.type === 'boss') G.Boss.afterHit(e);   // suelo de HP en los umbrales de fase
     C.num(e, dmg, tag, crit);
     if (!o.quiet && !o.zone) C.hitFx(e, tag, o.ang);
@@ -181,9 +184,11 @@
     if (e.mat) { e.mm = B.matMul(e, tag); n *= e.mm; }   // también los ticks de estados (A.8)
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     if (e.expT > 0) n *= e.expMul;
+    if (e.dmgIn && e.dmgIn !== 1) n *= e.dmgIn;
     e.hp -= n; e.lastTag = tag;
     if (e.type === 'mini_hive') G.Enemies.sacHit(e, n);
-    if (tag === 'fire') { if (e.plateHp > 0) G.Enemies.plateHit(e, n); else if (e.variant === 'yeti') G.Enemies.shieldHit(e, n); }   // P3: el quemado también derrite la placa de hielo
+    else if (e.mini || e.isPod) G.Minis.onHit(e, n, n, false, tag);
+    if (tag === 'fire' && !e.mini) { if (e.plateHp > 0) G.Enemies.plateHit(e, n); else if (e.variant === 'yeti') G.Enemies.shieldHit(e, n); }   // P3: el quemado también derrite la placa de hielo
     if (e.type === 'boss') G.Boss.afterHit(e);
     e.dotAcc += n;
     if (e.dotT <= 0 && e.dotAcc >= 3) {
@@ -370,6 +375,8 @@
       G.Snd.play('gem', 1);
     } else if (g.kind === 'part') {
       G.Loot.collect(g.part, g.trophy); G.Snd.play('gem', 1.8);
+    } else if (g.kind === 'insignia') {
+      G.Minis.collectInsignia(g); G.sfx('pickup');
     } else if (g.kind === 'ash') {
       p.ash += Math.max(1, Math.round(g.v * m.ashMul)); G.Snd.play('gem', 1.4);
     } else { G.Player.heal(p, g.v, 'gem'); G.sfx('pickup'); }
@@ -406,6 +413,10 @@
         c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.3 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = G.Loot.part(g.part).color;
         c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
         G.UI.part(c, g.part, x, y, 7);
+      } else if (g.kind === 'insignia') {   // Insignia de minijefe (trofeo menor)
+        c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35 + 0.15 * Math.sin(t * 6 + i); c.fillStyle = '#c8a0ff';
+        c.beginPath(); c.arc(x, y, 13, 0, 6.283); c.fill(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+        try { c.drawImage(Assets.sprite(g.ins, 0), x - 14, y - 14, 28, 28); } catch (e0) { c.fillStyle = '#e0c8ff'; c.fillRect(x - 5, y - 5, 10, 10); }
       } else if (g.kind === 'heart') {
         c.fillStyle = '#ff5a7a'; c.strokeStyle = '#3a0a18'; c.lineWidth = 2;
         c.beginPath(); c.moveTo(x, y + 5); c.bezierCurveTo(x - 9, y - 1, x - 5, y - 8, x, y - 3); c.bezierCurveTo(x + 5, y - 8, x + 9, y - 1, x, y + 5); c.fill(); c.stroke();

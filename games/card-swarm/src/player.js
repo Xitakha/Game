@@ -64,7 +64,7 @@
     src = src || '';
     if (/^(archer|fanner|moth|sower|proj|thorn|arrow|chainer)/.test(src)) return 'ranged';
     if (/^(bomb|scorcher|salamander)/.test(src)) return 'blast';
-    if (/^(boss|bulwark|hive)/.test(src)) return 'big';
+    if (/^(boss|bulwark|hive|mini_)/.test(src)) return 'big';
     return 'melee';
   };
 

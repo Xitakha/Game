@@ -376,7 +376,7 @@
     var ql = Q.statusLine();
     var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
     for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 236 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    var qt = Q.target(), qf = qt && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
+    var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
     if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 930, 222, 10, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right'); }
     U.panel(c, 650, 266, 290, 56);
     G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
