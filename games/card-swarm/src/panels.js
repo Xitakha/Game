@@ -90,13 +90,14 @@
   function huntFix() {
     var B = G.Save.BOSSES; st.hb = st.hb || 0; st.hph = st.hph || 1;
     if (!huntAvail(B[st.hb])) { var f = B.filter(huntAvail)[0]; st.hb = f ? B.indexOf(f) : 0; }
-    st.hp = G.clamp(st.hp || 1, 1, G.Save.pelMax(B[st.hb]));
+    st.hp = G.clamp(st.hp || 1, 1, G.Save.pelMax(B[st.hb])); st.hph = Math.min(st.hph, phN());
   }
   function tabRect(i) { return { x: 150 + i * 138, y: 2, w: 130, h: 48 }; }
   function hbRect(i) { return { x: 20 + i * 152, y: 56, w: 144, h: 52 }; }
   function hpRect(i) { return { x: 20 + i * 64, y: 116, w: 58, h: 38 }; }
   var R_HUNT = { x: 648, y: 168, w: 280, h: 62 }, R_PRAC = { x: 648, y: 396, w: 280, h: 56 };
-  function phRect(i) { return { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
+  function phN() { return G.Boss.DEFS[G.Save.BOSSES[st.hb || 0]].phases.length; }   // P4: Yarlak tiene 4 fases (Practicar elige la inicial)
+  function phRect(i) { return phN() > 3 ? { x: 648 + i * 71, y: 338, w: 68, h: 48 } : { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
   function startHunt(practice) {
     var id = G.Save.BOSSES[st.hb]; if (!huntAvail(id)) return;
     G.launchReq = { mode: practice ? 'practice' : 'hunt', boss: id, peligro: practice ? 1 : st.hp, phase: practice ? st.hph : 0 };
@@ -104,10 +105,10 @@
   }
   function updHunt() {
     var B = G.Save.BOSSES, i;
-    for (i = 0; i < 3; i++) if (onR(hbRect(i))) { if (huntAvail(B[i])) { st.hb = i; huntFix(); G.sfx('flip', { vol: 0.4 }); } else say('Aún no has derrotado a ' + G.Boss.DEFS[B[i]].name + ': véncelo en una expedición.'); }
+    for (i = 0; i < B.length; i++) if (onR(hbRect(i))) { if (huntAvail(B[i])) { st.hb = i; huntFix(); G.sfx('flip', { vol: 0.4 }); } else say('Aún no has derrotado a ' + G.Boss.DEFS[B[i]].name + ': véncelo en una expedición.'); }
     var id = B[st.hb];
     for (i = 0; i < 5; i++) if (onR(hpRect(i))) { if (i + 1 <= G.Save.pelMax(id)) { st.hp = i + 1; G.sfx('flip', { vol: 0.4 }); } else say('Peligro ' + G.Boss.ROMAN[i + 1] + ' bloqueado: véncelo antes en ' + G.Boss.ROMAN[i] + '.'); }
-    for (i = 0; i < 3; i++) if (onR(phRect(i))) { st.hph = i + 1; G.sfx('flip', { vol: 0.4 }); }
+    for (i = 0; i < phN(); i++) if (onR(phRect(i))) { st.hph = i + 1; G.sfx('flip', { vol: 0.4 }); }
     if (onR(R_HUNT) || inp.hit('KeyF')) startHunt(false);
     if (onR(R_PRAC) || inp.hit('KeyP')) startHunt(true);
     if (inp.hit('KeyQ')) { st.hp = Math.max(1, st.hp - 1); } if (inp.hit('KeyE')) { st.hp = Math.min(G.Save.pelMax(id), st.hp + 1); }
@@ -117,7 +118,7 @@
   function drawHunt(c) {
     var B = G.Save.BOSSES, S = SV(), Q = G.Quests, i;
     G.txt(c, '"Hay una bestia que merece la pena. ¿Vamos?"', 720, 135, 12, '#ffd0a0', 'center');
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < B.length; i++) {
       var D0 = G.Boss.DEFS[B[i]], av = huntAvail(B[i]);
       U.button(c, hbRect(i), av ? D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase() : '? ' + D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase(), { size: 15, off: !av, color: st.hb === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.hb === i ? '#bfeaff' : '#6a5a80', sub: av ? 'Peligro hasta ' + G.Boss.ROMAN[G.Save.pelMax(B[i])] : 'vence al jefe 1 vez' });
     }
@@ -151,7 +152,7 @@
     G.txt(c, 'Sin hordas: solo la bestia y sus adds,', 650, 252, 11, '#d8cfe8', 'left');
     G.txt(c, 'más 3 gusanos de limpieza cada 25 s.', 650, 267, 11, '#d8cfe8', 'left');
     G.txt(c, 'PRACTICAR  (sin riesgo, HP x0,5, sin Peligro)', 650, 318, 11, '#9dffb4', 'left');
-    for (i = 0; i < 3; i++) U.button(c, phRect(i), 'FASE ' + G.Boss.ROMAN[i + 1], { size: 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
+    for (i = 0; i < phN(); i++) U.button(c, phRect(i), 'FASE ' + G.Boss.ROMAN[i + 1], { size: 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
     G.txt(c, 'Empieza en la fase elegida. Reinicio rápido con R.', 650, 396 - 6, 10, '#9a8fb0', 'left');
     U.button(c, R_PRAC, 'PRACTICAR', { size: 20, sub: 'P  -  fase ' + G.Boss.ROMAN[st.hph] + ', intento ' + (pr.tries + 1), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
   }
@@ -300,8 +301,8 @@
   // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
     { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' },
-    // P3: la Tundra existe (hielo, Frío, ventisca y su familia) pero sigue BLOQUEADA hasta que llegue Yarlak (P4): '? TUNDRA'. Solo se prueba con ?biome=tundra
-    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'yarlak', needName: 'Yarlak', bid: 'yarlak', locked: true }];
+    // P4: la Tundra (Yarlak) se abre al vencer a Letea
+    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' }];
   function biomeRect(i) { return { x: 650 + i * 72, y: 336, w: 68, h: 42 }; }   // 4 destinos de 68 px (5 con el Panal)
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
@@ -309,6 +310,7 @@
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
     var S = SV(), id = S.biome || 'bosque';
     if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
+    if (id === 'tundra' && !S.bossKills.letea) id = S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
     return BIOMES.filter(function (b) { return b.id === id; })[0];
   }

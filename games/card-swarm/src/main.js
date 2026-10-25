@@ -272,12 +272,12 @@
     G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
     G.mode = rq ? rq.mode : 'run'; G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
-    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[rq.boss] || biome;
-    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo' })[G.bossUrl] || biome;
+    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra' })[rq.boss] || biome;
+    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra' })[G.bossUrl] || biome;
     else if (!G.biomeUrl) {
       if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
-      if (biome === 'tundra') biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P3: la Tundra sigue bloqueada (sin jefe hasta la P4): solo ?biome=tundra
+      if (biome === 'tundra' && !BK.letea) biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P4: la Tundra se abre al vencer a Letea
     }
     G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome('bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
@@ -322,7 +322,7 @@
     G.finalHand = G.Cards.snapshot();
     if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
     G.sfx(won ? 'boss_die' : 'game_over');
-    if (won) { try { G.Snd.play('win'); } catch (e) { /* audio */ } }
+    if (won) { try { G.Snd.play(G.bossId === 'yarlak' ? 'stg_yarlak_victory' : 'win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
     G.Tundra.end();   // apaga el viento de la ventisca
   };

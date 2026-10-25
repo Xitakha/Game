@@ -69,6 +69,7 @@
     { n: 4, hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, troph: 2, rare: 0.45, gmul: 1.75, pfx: 0, v3: true, mets: 9, derr: 0.8, regrow: 14000 },
     { n: 5, hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, troph: 2, rare: 0.60, gmul: 2.00, pfx: 1, v3: true, mets: 9, derr: 0.8, regrow: 14000, x2: true }];
   S.ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+  function nPh(e) { return e.def.phases.length; }   // P4: Yarlak tiene 4 fases (Pastor, Karceron y Letea 3)
   if (G.pelx) G.pelx.split(',').forEach(function (kv) {   // calibración: ?pelx=hp:1.1,dmg3:1.05 (sin sufijo: niveles II-V; con sufijo: solo ese nivel)
     var a = kv.split(':'), m = /^([a-z]+)(\d)?$/.exec(a[0]); if (!m) return;
     for (var i = 2; i <= 5; i++) if (!m[2] || +m[2] === i) PEL[i][m[1]] = parseFloat(a[1]);
@@ -80,7 +81,7 @@
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
   S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
-  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea' };   // el bioma del Portal decide el jefe
+  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
   // 250 ms de reacción + 1000 x salida / 190 + 100 ms de margen de decisión (DESIGN 1.2: "Peligro puede acortar la telegrafía como máximo -15 %"; aquí además se respeta la regla).
@@ -88,8 +89,9 @@
     k_martillo: 100, k_munon: 90, k_grilletes: 115, k_brasas: 65, k_aliento: 130, k_costillas: 20, k_erupcion: 140, k_marea: 218,
     l_mordisco: 35, l_acido: 60, l_aliento: 60, l_rayo: 55, l_coletazo: 75 };
   function teleMs(name) {
-    var d = ATKS[name], big = d.dmg >= 25, t = Math.max(d.tele * pel().tele, Math.min(d.tele, big ? 600 : 400));
-    if (EXIT[name] != null) t = Math.max(t, Math.min(d.tele, 250 + 1000 * EXIT[name] / 190 + 100));
+    var d = ATKS[name], big = d.dmg >= 25, t = Math.max(d.tele * pel().tele, Math.min(d.tele, big ? (d.ice ? 800 : 600) : 400));
+    // P4 (Tundra, B.1.2): los ataques de `ice:true` siguen la regla del hielo tele >= 250 + 220 + 1000 x salida / 190 (+220 ms de arrancar = tau) y los de >= 25 de daño nunca bajan de 800 ms
+    if (EXIT[name] != null) t = Math.max(t, Math.min(d.tele, d.ice ? 470 + 1000 * EXIT[name] / 190 : 250 + 1000 * EXIT[name] / 190 + 100));
     return Math.round(t);
   }
 
@@ -205,7 +207,7 @@
       if (last != null && G.time - last < 120) return 0;
       e.lastHit[key] = G.time;
     }
-    if (D.h && D.h.bodyHit && !(o && o.viaPart) && !(o && o.dot)) D.h.bodyHit(e, full, o);   // Karceron: el pecho abierto llena el medidor del Núcleo
+    if (D.h && D.h.bodyHit && !(o && o.viaPart) && !(o && o.dot)) D.h.bodyHit(e, full, o, tag);   // Karceron: el pecho abierto llena el medidor del Núcleo
     if (e.id === 'pastor' && !e.broken.vellon && !(o && o.viaPart) && !(o && o.dot)) {   // el Vellón (en el lomo, dentro del cuerpo) se desgasta con el daño al cuerpo: 22 % de cada golpe
       var vp = e.parts.vellon; vp.meter -= full * 0.22; vp.flash = 60;
       if (vp.meter <= 0 && !vp.dead) S.breakPart(e, vp);
@@ -235,10 +237,10 @@
     if (e.dying || e.mode === 'intro') return;
     if (!(e.hurtCd > 0)) { e.hurtT = 110; e.hurtCd = 380; }   // destello de daño del sprite como mucho cada 380 ms (si no, parpadea sin parar)
     var D = e.def, flo;
-    if (e.phase < 3 && e.mode !== 'gate') {
+    if (e.phase < nPh(e) && e.mode !== 'gate') {
       flo = D.phases[e.phase - 1].thr * e.maxHp;
       if (e.hp <= flo) { e.hp = flo; S.startGate(e); }
-    } else if (e.phase === 3 && e.despLeft > 0 && e.mode === 'fight') {
+    } else if (e.phase === nPh(e) && e.despLeft > 0 && e.mode === 'fight') {
       flo = (e.despDone ? 0.03 : D.despairAt) * e.maxHp;   // 8 % el primero; el segundo (Peligro V) a 3 %
       if (e.hp <= flo) { e.hp = flo; S.startDespair(e); }
     } else if (e.mode === 'despair' && e.despLeft > 0) {
@@ -252,7 +254,7 @@
     pe.dead = true; e.broken[pe.key] = true; e.partsBroken.push(pe.key);
     fx.part('fx_part_break', pe.x, pe.y, 0, 0, 420, { anim: true, sc: 1, add: true });
     fx.burst(pe.x, pe.y, 12, '#ffd27a', 240, 600, 4, { add: true }); fx.ember(pe.x, pe.y, 6, 14);
-    fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 }); S.stinger('part', e);
+    fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 }); if (D.h && D.h.partStinger) D.h.partStinger(e, pe); else S.stinger('part', e);
     G.Hud.banner('¡' + pd.name.toUpperCase() + (pd.fem ? ' ROTA!' : ' ROTO!'), 1500, '#ffd27a');
     // corazón + trofeo (cuenta como Esencia)
     G.Combat.dropGem(pe.x, pe.y, 'heart', B.player.heal);
@@ -286,9 +288,9 @@
     e.mode = 'gate'; e.gateT = 3000; e.immune = true; e.atk = null; e.bst = 'idle'; e.lift = 0; e.stagT = 0;
     e.phase++; e.exps.length = 0;
     clearHazards();
-    fx.shake(10, 600); sfx('boss_roar'); fx.ring(e.x, e.y, 20, 300, 600, '#ffffff', 6); fx.ring(e.x, e.y, 10, 200, 500, '#a060ff', 4); fx.flash && fx.flash(0.2);
+    fx.shake(10, 600); sfx(D.roarSfx || 'boss_roar'); fx.ring(e.x, e.y, 20, 300, 600, '#ffffff', 6); fx.ring(e.x, e.y, 10, 200, 500, '#a060ff', 4); fx.flash && fx.flash(0.2);
     S.flash = 0.25;
-    G.Hud.banner('FASE ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, e.phase === 2 ? '#c090ff' : '#ff9a3c'); S.stinger('p' + e.phase, e);
+    G.Hud.banner('FASE ' + S.ROMAN[e.phase] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, D.gateCol ? D.gateCol[e.phase - 1] : e.phase === 2 ? '#c090ff' : '#ff9a3c'); S.stinger('p' + e.phase, e);
     if (D.h && D.h.onGate) D.h.onGate(e);
     var p = PL();   // salvavidas: 2 corazones
     for (var i = 0; i < 2; i++) G.Combat.dropGem(p.x + (i ? 50 : -50), p.y + 20, 'heart', B.player.heal);
@@ -307,7 +309,7 @@
     e.mode = 'despair'; e.despDone = true; e.despT = 0; e.despN = 0; e.atk = null; e.bst = 'idle'; e.lift = 0; e.stagT = 0;
     clearHazards();
     for (var i = 0; i < G.enemies.length; i++) { var q = G.enemies[i]; if (!q.dead && q.bossAdd) E.kill(q, true); }
-    fx.shake(10, 700); sfx('boss_roar', { pitch: 0.8 }); fx.ring(e.x, e.y, 20, 260, 700, '#c060ff', 6);
+    fx.shake(10, 700); sfx(e.def.roarSfx || 'boss_roar', e.def.roarSfx ? undefined : { pitch: 0.8 }); fx.ring(e.x, e.y, 20, 260, 700, '#c060ff', 6);
     G.Hud.banner(second ? 'ÚLTIMO ALIENTO: ' + e.def.despair.toUpperCase() : e.def.despair.toUpperCase(), 2400, '#c060ff');
     S.stinger('despair', e);
     if (second) { var pl = PL(); for (var hi = 0; hi < 2; hi++) G.Combat.dropGem(pl.x + (hi ? 50 : -50), pl.y + 20, 'heart', B.player.heal); }   // Último aliento: 2 corazones (como en cada puerta de fase)
@@ -670,7 +672,7 @@
     if (e.roar > 0 && e.mode !== 'gate') e.roar = Math.max(0, e.roar - dt / 400);
     updWaves(dt); updArena(e, dt);
     if (hk(e, 'tick')) e.def.h.tick(e, dt);
-    if (e.mode === 'fight' && e.phase === 3 && e.despDone && e.despLeft > 0 && e.hp <= 0.0301 * e.maxHp) { e.hp = 0.03 * e.maxHp; S.startDespair(e); }
+    if (e.mode === 'fight' && e.phase === nPh(e) && e.despDone && e.despLeft > 0 && e.hp <= 0.0301 * e.maxHp) { e.hp = 0.03 * e.maxHp; S.startDespair(e); }
     if (e.mode === 'gate') {
       e.gateT -= dt; e.roar = e.gateT > 2100 ? Math.min(1, (3000 - e.gateT) / 200) : Math.max(0, (e.gateT - 1500) / 600);
       if (e.gateT <= 0) { e.mode = 'fight'; e.immune = false; e.cadT = 1300; e.roar = 0; G.Hud.banner('¡' + e.def.phases[e.phase - 1].n.toUpperCase() + '!', 1000, '#ffd27a'); }
@@ -748,7 +750,7 @@
       }
     }
     if (t >= 1800 && !I.roared) {
-      I.roared = true; fx.shake(10, 600); fx.hit(80); sfx('boss_roar'); S.flash = 0.5;
+      I.roared = true; fx.shake(10, 600); fx.hit(80); sfx(e.def.roarSfx || 'boss_roar'); S.flash = 0.5;
       fx.ring(e.x, e.y, 30, 420, 700, '#ffffff', 6); fx.ring(e.x, e.y, 10, 300, 600, '#ff9a2a', 4);
       cullHorde();
     }
@@ -759,7 +761,7 @@
       S.intro = null; e.mode = 'fight'; e.immune = false; e.lift = 0; e.alpha = 1; e.roar = 0; G.frozen = false; S.barFill = 1; e.cadT = 1200;
       if (!I.music) S.track(e);
       G.Save.data.bossSeen = G.Save.data.bossSeen || {}; G.Save.data.bossSeen[e.id] = 1; G.Save.save();
-      if (G.dbgPhase > 1) { e.hp = e.maxHp * (G.dbgPhase === 2 ? 0.65 : 0.30); for (var gi = 1; gi < G.dbgPhase; gi++) S.startGate(e); }
+      if (G.dbgPhase > 1) { e.hp = e.maxHp * e.def.phases[Math.min(G.dbgPhase, nPh(e)) - 2].thr; for (var gi = 1; gi < G.dbgPhase; gi++) S.startGate(e); }
       if (G.dbgHp) e.hp = e.maxHp * G.dbgHp;
     }
   }
@@ -798,6 +800,7 @@
     var D = S.dying; D.t += dt;
     if (D.hold > 0) { D.hold -= dt; return; }
     D.dt += dt;
+    if (DEFS[D.id].noFire) { if (S.flash > 0) S.flash -= dt / 500; if (Math.random() < 0.3) fx.burst(D.x + G.rnd(-60, 60), D.y + G.rnd(-20, 80), 1, '#e8f6ff', 60, 500, 3, { add: true }); return; }   // jefes de hielo: sin brasas
     if (D.dt < 1800 && Math.random() < 0.4) fx.ember(D.x, D.y, 1, 50);
     if (D.dt > 1800 && D.dt < 3200 && Math.random() < 0.7) { fx.ember(D.x, D.y, 2, 60); fx.flames(D.x, D.y + 20, 1, 50); }
     if (S.flash > 0) S.flash -= dt / 500;
@@ -834,14 +837,14 @@
     if (G.dbg && G.dbgHit) { for (var k2 in e.parts) { var q = e.parts[k2]; if (q.dead) continue; c.strokeStyle = '#0f0'; c.beginPath(); c.arc(q.x, q.y, q.r, 0, TAU); c.stroke(); } c.strokeStyle = '#f00'; c.beginPath(); c.arc(e.x, e.y, e.r, 0, TAU); c.stroke(); }
   };
   S.drawGhost = function (c) {
-    var D = S.dying; if (!D || D.dt >= 3200) return;
+    var D = S.dying; if (!D || D.dt >= (DEFS[D.id].deathMs || 3200)) return;
     var dh = DEFS[D.id].h;
     if (dh && dh.drawGhost) dh.drawGhost(c, D); else Assets.drawBoss('pastor', c, D.x, D.y, { t: G.time, facing: D.face, phase: D.phase, broken: D.broken, dying: true, dt: D.dt });
   };
   // elementos que se ordenan en profundidad con el resto (troncos, fantasma de la muerte)
   S.items = function (list) {
     for (var i = 0; i < S.obs.length; i++) { var o = S.obs[i]; if (!o.dead) list.push({ y: o.y + 8, ux: o.x, uy: o.y, draw: o.draw || drawLog, o: o }); }
-    if (S.dying && S.dying.dt < 3200) list.push({ y: S.dying.y + S.dying.gy, ux: S.dying.x, uy: S.dying.y, foot: S.dying.gy, draw: S.drawGhost });
+    if (S.dying && S.dying.dt < (DEFS[S.dying.id].deathMs || 3200)) list.push({ y: S.dying.y + S.dying.gy, ux: S.dying.x, uy: S.dying.y, foot: S.dying.gy, draw: S.drawGhost });
     if (S.e && S.e.def.h && S.e.def.h.items) S.e.def.h.items(list, S.e);
   };
   function drawLog(c, it) {
@@ -939,9 +942,9 @@
     var fill = S.barFill == null ? 1 : S.barFill; if (e.mode === 'intro' && !(S.intro && S.intro.roared)) return;
     var ph = D.phases[e.phase - 1];
     // nombre y fase
-    G.txt(c, D.name.toUpperCase(), bx, by - 11, 18, e.phase === 3 ? '#ff9a3c' : '#ffd27a', 'left');
+    G.txt(c, D.name.toUpperCase(), bx, by - 11, 18, e.phase === nPh(e) ? (D.nameCol || '#ff9a3c') : '#ffd27a', 'left');
     S.drawChips(c, bx + c.measureText(D.name.toUpperCase()).width + 10, by - 11);
-    G.txt(c, 'Fase ' + ['I', 'II', 'III'][e.phase - 1] + ' - ' + (e.mode === 'despair' ? D.despair : ph.n), bx + bw, by - 11, 14, e.mode === 'despair' ? '#d090ff' : '#c8b8e8', 'right');
+    G.txt(c, 'Fase ' + S.ROMAN[e.phase] + ' - ' + (e.mode === 'despair' ? D.despair : ph.n), bx + bw, by - 11, 14, e.mode === 'despair' ? '#d090ff' : '#c8b8e8', 'right');
     // marco + fondo
     c.fillStyle = '#07040c'; c.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
     c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
@@ -950,13 +953,15 @@
     if (e.mode === 'despair') col = '#9a40d0';
     // fantasma (daño reciente) y relleno
     c.fillStyle = '#ffe9d0'; c.fillRect(bx, by, bw * G.clamp(S.ghost, 0, 1) * fill, bh);
-    c.fillStyle = (ex.mul > 1) ? (Math.floor(t / 120) % 2 ? '#ffd24a' : '#ffb82a') : col; c.fillRect(bx, by, bw * fr * fill, bh);
+    c.fillStyle = (ex.mul > 1) ? (Math.floor(t / 120) % 2 ? (D.winCol ? D.winCol[0] : '#ffd24a') : (D.winCol ? D.winCol[1] : '#ffb82a')) : col; c.fillRect(bx, by, bw * fr * fill, bh);
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr * fill, 6);
     // muescas de fase (65 % / 30 % / 8 %)
-    var th = [D.phases[0].thr, D.phases[1].thr, D.despairAt], tc = ['#c8b8e8', '#ff9a3c', '#d090ff'];
+    var np = nPh(e), th = [], tc = [], i;
+    for (i = 0; i < np - 1; i++) { th.push(D.phases[i].thr); tc.push(['#c8b8e8', '#ff9a3c', '#ffd27a'][i]); }
+    th.push(D.despairAt); tc.push('#d090ff');
     if (pel().x2) { th.push(0.03); tc.push('#ff60c0'); }
-    for (var i = 0; i < th.length; i++) {
-      var passed = (i === 0 && e.phase > 1) || (i === 1 && e.phase > 2) || (i === 2 && e.despDone) || (i === 3 && e.despLeft <= 0 && e.despDone);
+    for (i = 0; i < th.length; i++) {
+      var passed = (i < np - 1 && e.phase > i + 1) || (i === np - 1 && e.despDone) || (i === np && e.despLeft <= 0 && e.despDone);
       c.fillStyle = passed ? 'rgba(80,70,90,0.9)' : tc[i]; c.fillRect(Math.round(bx + bw * th[i]) - 1, by - 3, 3, bh + 6);
     }
     c.strokeStyle = ex.mul > 1 ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
@@ -1059,5 +1064,5 @@
   // pruebas / capturas: fuerza un ataque o rompe una parte (G.Boss.force('salto'), G.Boss.breakKey('cuernos'))
   S.force = function (name, arg) { var e = S.e; if (!e) return false; if (hk(e, 'force')) return e.def.h.force(e, name, arg); if (e.mode !== 'fight' || e.atk) return false; startAttack(e, name); return true; };
   S.breakKey = function (k) { var e = S.e; if (e && e.parts[k] && !e.parts[k].dead) S.breakPart(e, e.parts[k]); };
-  S.gate = function () { var e = S.e; if (e && e.mode === 'fight' && e.phase < 3) { e.hp = e.def.phases[e.phase - 1].thr * e.maxHp; S.startGate(e); } };
+  S.gate = function () { var e = S.e; if (e && e.mode === 'fight' && e.phase < nPh(e)) { e.hp = e.def.phases[e.phase - 1].thr * e.maxHp; S.startGate(e); } };
 })();

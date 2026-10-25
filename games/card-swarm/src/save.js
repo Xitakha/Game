@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v5 (P4, Tundra + Yarlak): peligro.yarlak; la Tundra se abre al vencer a Letea (bossKills.letea). Migración v4 -> v5 con copia en swarmhand.save.v4; quien ya venció a Letea ve la Tundra abierta.
    v4 (Jefes J3): Peligro por jefe (peligro[id] = máximo desbloqueado, peligroSel[id] = elegido en el Portal), victorias por Peligro (pelWins), cacería (hunts[id][P] = { wins, tries, best }),
    intentos de práctica (practice[id]). Migración v3 -> v4 con copia de seguridad en swarmhand.save.v3: quien ya había vencido a un jefe parte con el Peligro II abierto.
    v3 (Aldea 2b): loadouts (3 slots de Ulalume), plato de Tía Castaña (pending.dish / shop.dish), logros (ach), combos vistos (combosSeen), racha de derrotas (lossStreak).
@@ -10,7 +11,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 4;
+  var KEY = 'swarmhand.save', VERSION = 5;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -30,7 +31,7 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   var warned = false;
@@ -55,6 +56,10 @@
       var bk = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {};
       ['pastor', 'karceron', 'letea'].forEach(function (id) { if ((bk[id] || 0) > 0) { d.peligro[id] = 2; d.pelWins[id] = { 1: bk[id] }; } });
       d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated4 = 1;
+    }
+    if (d.v === 4) {   // P4: Yarlak (Tundra). Solo se añade su Peligro; el desbloqueo de la Tundra sale de bossKills.letea
+      d.v = 5; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.yarlak) d.peligro.yarlak = 1;
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated5 = 1;
     }
     return d.v === VERSION ? d : null;
   }
@@ -81,6 +86,7 @@
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
+    if (!d.peligro.yarlak) d.peligro.yarlak = 1;
     if (typeof d.pending.dish === 'undefined') d.pending.dish = null;
     if (typeof d.shop.dish !== 'number') d.shop.dish = 0;
     if (typeof d.lossStreak !== 'number') d.lossStreak = 0;
@@ -120,7 +126,7 @@
   };
 
   // ---- Peligro (J3): máximo desbloqueado por jefe y nivel elegido en el Portal
-  S.BOSSES = ['pastor', 'karceron', 'letea'];
+  S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak'];
   S.pelMax = function (id) { return G.clamp(Math.round((S.data.peligro && S.data.peligro[id]) || 1), 1, 5); };
   S.pelSel = function (id) { return Math.min(S.pelMax(id), G.clamp(Math.round((S.data.peligroSel && S.data.peligroSel[id]) || 1), 1, 5)); };
   S.setPelSel = function (id, n) { S.data.peligroSel[id] = G.clamp(n, 1, S.pelMax(id)); S.save(); };
