@@ -101,7 +101,10 @@
     return byKey[key(rx, rz)] || null;
   }
   P.cells = cells; P.nests = nests; P.cellAt = cellAt;
-  buildCells();
+  // las celdas se construyen al terminar de cargar (assets_fam4.js se carga después de este script: así coinciden exactamente con Assets.PANAL)
+  var built = false; function ensureCells() { if (!built) { built = true; buildCells(); } }
+  P.ensure = ensureCells;
+  if (document.readyState === 'complete') ensureCells(); else window.addEventListener('load', ensureCells);
 
   // estados de celda: 0 cera | 1 aviso (tele) | 2 abierta sin efecto (arm) | 3 MIEL | 4 sellando (fundido) | 5 caramelo
   var ST_WAX = 0, ST_TELE = 1, ST_ARM = 2, ST_HONEY = 3, ST_SEAL = 4, ST_CARAMEL = 5;
