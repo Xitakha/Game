@@ -893,3 +893,70 @@ Notas para la logica:
 - Cabeza: en `severed` no hay cuello; `regrow` es un brote con base herida.
 - Las anims `*_np` solo existen para las partes rotas indicadas; ataques sin frame propio reutilizan `walk`/`idle`.
 - Vista previa: `tools/asset-preview/index.html?game=card-swarm` -> "Minijefes P4.5 (Bosque y Asfodelo)". Capturas en `studio/docs/capturas-p45/`. Pendiente fuera de arte: `sw.js` aun no precachea `assets_mini1.js`.
+
+
+---
+# Audio Panal P5 (src/sfx_fam4.js, tras sfx_minis.js; solo audio)
+Mismo patron y API que P1-P4: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})` (pitch final +-10 % max), <= 4 voces por nombre y separacion minima `min` (ms); `sfxNames()`, `renderSfx`, `exportSfxWav` los incluyen; `Assets.sfxFam4[nombre]` = `{kind, fam:'panal', min, dur}` (`dur` = duracion sintetizada; el sonido real queda por debajo de la telegrafia). Tipos: **tele** (zumbido/tono que SUBE y se sostiene, solo al INICIO del aviso, `vol` 0.8-1; ~6 dB menos que el golpe), **impact** (golpe), **move** (movimiento/ambiente, bajo y sutil). Timbres: insectos = sierra con tremolo rapido; cera = golpes sordos y crujidos; miel = chapoteo/gotas; polen = campanitas. Nada cambia en lo existente. Un unico rugido a la vez (`reinaj_roar` y `boss_roar_reina` se bloquean entre si).
+
+## Zumbido ambiente: `Assets.hum(intensity)`
+Bucle del enjambre (dos sierras de ~118/125 Hz que baten + sub + ruido, con tremolo). `intensity` 0..1 se llama cada frame o cuando cambie el nº de abejas vivas: **intensidad = min(1, abejas_vivas / 30)** aprox. (0 = apagado con fundido, ~0.15 = calma, ~0.5 = 15 abejas, 1 = enjambre). Sube a la vez volumen, brillo y rapidez del tremolo (5 -> 14 Hz). `Assets.hum(0)` al salir del Panal / en la aldea. `Assets.humLevel()` = ultimo valor. Sigue mute/volumen SFX/suspend; devuelve false si apagado o sin gesto.
+
+## Musica `panal`: `Assets.music.setTrack('panal')`
+Calida y resonante, 96 BPM, La dorico: bordon de dos sierras con tremolo, bajo redondo sincopado, marimba de cera con eco (desde intensidad ~0.1), rafagas de enjambre y pizzicato (desde ~0.4), bombo suave (desde ~0.65). Usar `Assets.music.setIntensity(v)` como en las demas pistas. `setTrack('normal'|'boss'|'tundra'|...)` vuelve y reanuda. `renderMusic({track:'panal', bars, intensity})` y `exportMusicWav` funcionan; `tracks()` la incluye.
+
+## SFX y cuando llamarlos
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `cell_tele` / `cell_open` / `cell_close` | tele / move / move | Celda que se abre o cierra: `cell_tele` al empezar el aviso de 1000-1200 ms (si hay varias celdas, UNA vez por evento, no por celda); `cell_open` (pop de cera) al abrirse (varias a la vez: vol 0.6); `cell_close` al sellarse con el fundido de 1 s |
+| `honey_squelch` | move | Pasos del jugador / terrestres sobre miel (cada ~280 ms, `pitch` 0.9-1.1) |
+| `honey_drip` | move | Goteo ambiente en celdas de miel / fin de un charco (esporadico, vol 0.6) |
+| `caramel_seal` | impact | Fuego carameliza y sella una celda de miel (max 2/s, ya limitado) |
+| `smoke_puff` / `smoke_hiss` | move / move | Nace una nube de humo (max 6) / insectos sedados dentro de ella (1 vez al entrar, vol 0.6) |
+| `swarm_pass` | move | Pasada de enjambre (packs Abejorros/Avispero, Llamada del enjambre) |
+| `worker_buzz` | move | Obrera: zumbido al aparecer o cada 1-2 s en pantalla (muy suave; en miel `pitch` 0.8) |
+| `bee_aim` / `bee_sting` / `stinger_hit` | tele / move / impact | Abeja aguijonera: `aim` 400 ms (inicio) / aguijon disparado (vel 230) / aguijon que alcanza al jugador (8) |
+| `larva_fuse` / `larva_burst` / `larva_hatch` | tele / impact / move | Larva: mecha 700 ms (inicio) / explosion r 55 (18) y charco / eclosion desde un nido o por invocacion (Nodriza, Panal abierto) |
+| `drone_wind` / `drone_charge` / `drone_crash` | tele / move / impact | Zangano: `wind` 600 ms / carga 360 px/s (inicio) / choque con pilar o muro (aturdido 1 s) |
+| `guard_shove_tele` / `wax_shield_hit` / `wax_shield_melt` / `wax_shield_break` | tele / impact / move / impact | Guardia de cera: empellon 500 ms / impacto en el escudo frontal x0,2 (vol 0.7 si hay muchos) / Fuego derrite el escudo (1 vez al empezar a recibir Fuego) / escudo destruido (40 de dano) |
+| `slug_crawl` / `honey_glob_tele` / `honey_spit` / `honey_splat` | move / tele / move / impact | Babosa: arrastre (cada ~0.5 s, vol 0.5) / circulo ambar de 500 ms / lanza el proyectil / aterriza y deja miel r 34 (charco de enemigo) |
+| `pollen_tele` / `pollen_chime` | tele / move | Polinizador: `pulse` 500 ms (inicio) / el pulso cura a los aliados en r 120 (suena una vez por pulso, no por aliado) |
+| `wasp_fade` / `wasp_zip` / `wasp_slash` | tele / move / impact | Avispa: `fade` 500 ms (borron, en la posicion de reaparicion) / reaparece / tajo 350 ms (14) |
+| `nurse_cast` | tele | Nodriza: `cast` 500 ms antes de invocar 2 Larvas (luego `larva_hatch` vol 0.6) |
+| `reinaj_roar` | tele | Reina Joven: entrada (rugido ~2 s) |
+| `reinaj_spit_tele` / `reinaj_honey_squelch` | tele / move | Reina Joven: Escupitajo (inicio del aviso) / el Acido de miel (charcos r 50) toca el suelo (reservado v6) |
+| `reinaj_swell` / `reinaj_burst` / `reinaj_hatch` | tele / impact / move | Reina Joven: el saco se hincha (aviso del Estallido, 1 vez) / estalla / larvas que eclosionan (Eclosion; reservado v6) |
+| `avispon_buzz` / `avispon_charge` / `avispon_sting` | tele / move / impact | Avispon Real: Picado de aguijon: `buzz` al empezar el aviso de 650 ms / durante el picado / al clavar (24); reservados v6 |
+| `avispon_sting_tele` | tele | Avispon: Estocada real (firma): aviso de 900 ms, inicio; el golpe es `avispon_sting` (+3 dB) |
+| `avispon_orbit_tele` / `avispon_orbit` | tele / move | Avispon: Zumbido envolvente: aviso 600 ms / durante la orbita de 2 s (una vez al empezar; luego usar `bee_sting` por aguijon, vol 0.5) |
+| `avispon_stun` | impact | Avispon choca con pilar/muro: aturdido 1 s |
+Notas de intensidad: el aviso (tele) siempre va a `vol` 0.8-1 y el golpe a 1; en grupos (> 6 del mismo tipo vivos) bajar `vol` a 0.6 y ampliar `min` a mano no es necesario: el `min` interno y el limite de 4 voces ya protegen. Las telegrafias no tienen transiente: nunca se confunden con `stinger_hit`, `larva_burst` ni `avispon_sting`.
+
+---
+# Audio Melaria P6 (src/sfx_melaria.js, tras sfx_fam4.js; solo audio)
+Mismo patron y API que P1-P5: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`, <= 4 voces/nombre, `min` (ms); `Assets.sfxMelaria[nombre]` = `{kind, fam:'melaria', min, dur}`. Cada ataque tiene su tele (SUBE y se sostiene, solo al inicio del aviso; aviso < telegrafia de B.5) distinguible de su impacto. Lo existente no cambia.
+
+## Musica `boss_melaria` (124 BPM, La frigio dominante, procedural)
+- `Assets.music.setTrack('boss_melaria')` al empezar la pelea (reinicia a F1 sin desesperado); `setTrack('normal'|'boss'|'panal'|'boss_yarlak'|...)` vuelve y reanuda. `tracks()` la incluye; `renderMusic({track:'boss_melaria', bars, phase:1..3, despair:bool})` y `exportMusicWav` funcionan.
+- Siempre: sierra detonada con tremolo (zumbido) + bajo sincopado + golpe de cera. **F1** ostinato de marimba de cera; **F2** + pizzicato de enjambre y rafagas de zumbido; **F3** + coro disonante, bombo a negras, caja y hats; **desesperado** = F3 + tritono, sirena ascendente y bombo a corcheas.
+- **Fase**: `Assets.music.setPhase(n)` (1..3, lo mas claro; entra en el siguiente 1/16) o `Assets.music.setIntensity(v)` (con la pista activa: v < 0.4 -> F1, < 0.7 -> F2, si no F3; usar 0.25 / 0.55 / 0.85). **Desesperado**: `Assets.music.setDespair(true)` a < 8 %; `false` al terminar. `Assets.music.getPhase()`. Con otra pista activa `setPhase/setDespair` delegan en la anterior (p. ej. `boss_yarlak` sigue funcionando).
+- Stingers por `G.Boss.stinger` sin tocar boss.js (se registran en `G.Snd.V`): `stg_melaria_<intro|p2|p3|despair>` (alias `stg_reina_<...>` del diseno B.5) y los extras `G.Snd.play('stg_melaria_<part_wings|part_stinger|part_crown|window|death|victory>')`: part_* al romperse Alas / Aguijon / Corona, `window` al abrirse una ventana de dano (aturdida, expuesta, hinchada), `death` al morir (parar antes la musica con `music.stop()`), `victory` en la pantalla de victoria. Tambien con `Assets.sfx('mel_stg_<k>')`.
+
+## SFX y cuando llamarlos
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `mel_hover_down` / `boss_roar_reina` | tele / tele | Entrada: techo se abre y desciende (700 ms) / la llamada final (~2,5 s; tambien al arrancar el desesperado). Un solo rugido a la vez; se acompana del stinger `intro` |
+| `mel_wing_buzz` | move | Zumbido de alas mientras vuela: llamar cada ~0,5 s (min 420) con `pitch` 1.0 / 1.08 / 1.16 (F1/F2/F3) y `vol` 0.6 -> 0.9; no mientras esta aterrizada |
+| `mel_land` | impact | Aterriza aturdida (Alas rotas, fin del Zumbido Mortal) |
+| `mel_stab_tele` / `mel_stab_dash` / `mel_stab` / `mel_exposed` | tele / move / impact / move | 1 Estocada real: aviso 900 ms / se echa atras 150 ms y se lanza / **aguijonazo** (26) / fallo: queda expuesta 1,0 s |
+| `mel_dive_tele` / `mel_dive` / `mel_trapped` / `mel_rise` | tele / impact / impact / move | 2 Zumbido en picado (firma, +3 dB): sube y la sombra crece, 1000 ms / aterriza (28) y onda de aire / aterriza sobre miel: atrapada 2,4 s (en lugar del sonido de `mel_rise`) / se eleva en 0,8 s |
+| `mel_stingrain_tele` / `mel_stingrain` | tele / move | 3 Lluvia de aguijones: cono 600 ms / salva de 9-13 aguijones (un solo sonido; luego `stinger_hit` al impactar, max 4 voces) |
+| `mel_call_tele` / `mel_call` | tele / move | 4 Llamada del enjambre: anillo morado 800 ms / aparecen los adds |
+| `mel_comb_tele` / `mel_comb_open` / `mel_comb_fall` | tele / move / impact | 5 Panal abierto: celdas y nidos 1200 ms (en lugar de N `cell_tele`) / las celdas se abren y llenan de miel / panal que cae sobre las celdas (bloque de cera + miel); nidos: `larva_hatch` a los 1,5 s |
+| `mel_whirl_tele` / `mel_whirl` / `mel_whirl_hit` | tele / move / impact | 6 Torbellino: rosquilla 1100 ms / gira y empuja (~1,2 s, una vez) / golpe de la rosquilla (18) |
+| `mel_jelly_channel` / `mel_jelly_heal` / `mel_jelly_break` | tele / move / impact | 7 Jalea real: canal 1600 ms (brillante y limpio, distinto del resto) / cura completada (+2,5 %) / canal interrumpido o Corona rota, aturdida 1 s |
+| `mel_hatch_tele` / `mel_hatch` | tele / impact | 8 Eclosion masiva: abdomen se hincha 1200 ms (latidos que aceleran) / suelta 4-6 larvas |
+| `mel_ring_tele` / `mel_ring` | tele / impact | Desesperado Zumbido Mortal: cada anillo se enciende 900 ms (1 por anillo, min 250) / hiere 200 ms (18) |
+| `mel_stg_<intro,p2,p3,despair,part_wings,part_stinger,part_crown,window,death,victory>` | stinger | Equivalentes a `stg_melaria_*` de arriba (preferir `G.Snd.play`) |
+Mapa de ataques: 1 Estocada, 2 Picado, 3 Lluvia, 4 Llamada, 5 Panal abierto, 6 Torbellino, 7 Jalea real, 8 Eclosion masiva. Con adds en pantalla: los tele de Melaria son mas graves y largos (>= 0,6 s, banda 80-700 Hz + zumbido) que los de la familia (agudos y cortos), asi se oyen aunque haya 20+ insectos; el golpe de firma (`mel_dive`) lleva +3 dB.
+Vista previa: `tools/asset-preview/index.html?game=card-swarm` (botones de SFX con borde amarillo = tele, azul = stinger; boton `hum (on/off)`; pistas `panal` y `boss_melaria` en el selector).

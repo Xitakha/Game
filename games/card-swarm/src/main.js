@@ -52,6 +52,9 @@
       headlet:    { hp: 30,  spd: 0,   dmg: 12, r: 14, cost: 5, from: 120000, w: 14, spr: 'enemy_asf_cabeza_menor', xp: 4, ash: 3, maxAlive: 5, famOnly: true },
       // P3 (Tundra, B.3): Lobo de escarcha (IA de manada: rodea a 200 px y ataca por turnos; ver enemies_tundra.js)
       frostwolf:  { hp: 20,  spd: 90,  dmg: 8, r: 11, cost: 3, from: 90000,  w: 22, spr: 'enemy_tun_lobo',        xp: 3, ash: 1, maxAlive: 9, famOnly: true },
+      // P5 (Panal, B.6): Babosa de miel (zonificador lento que deja miel) y Polinizador (curandero volador). Ver families.js / enemies_panal.js
+      honeyslug:  { hp: 36,  spd: 35,  dmg: 4, r: 14, cost: 5, from: 210000, w: 9,  spr: 'enemy_pan_babosa',      xp: 5, ash: 3, maxAlive: 4, famOnly: true },
+      pollinator: { hp: 24,  spd: 70,  dmg: 0, r: 12, cost: 6, from: 270000, w: 8,  spr: 'enemy_pan_polinizador', xp: 6, ash: 3, maxAlive: 2, famOnly: true },
       mini_bulwark: { hp: 2200, spd: 42, dmg: 22, r: 22, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_bulwark', xp: 30, ash: 20, elite: true, at: 210000, name: 'COLOSO ESCUDERO' },
       mini_hive:    { hp: 2800, spd: 38, dmg: 14, r: 24, cost: 0, from: Infinity, w: 0, spr: 'enemy_mini_hive',    xp: 40, ash: 25, elite: true, at: 330000, name: 'MADRE COLMENA' },
       // jefe: solo se usan spr/xp/ash; HP, tamaño y IA reales viven en boss.js (G.Boss, DESIGN-v4-jefes.md)
@@ -279,11 +282,14 @@
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
       if (biome === 'tundra' && !BK.letea) biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P4: la Tundra se abre al vencer a Letea
     }
+    if (biome === 'panal' && !G.biomeUrl) biome = BK.yarlak ? 'panal' : (BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque');   // P5: el Panal sigue BLOQUEADO (sin Melaria hasta la P6): solo se entra con ?biome=panal
+    if (biome === 'panal' && !G.biomeUrl && !(G.Boss.DEFS && G.Boss.DEFS.melaria)) biome = 'bosque';
     G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome('bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
+    G.Panal.begin(biome);    // P5: arena hexagonal, celdas de miel, humo y pilares de cera solo en el Panal
     G.B.mat.sync();   // debilidades por material (A.8): solo en biomas con familia activa (ready) salvo ?mat=
     G.Enemies.initPonds();   // P2 (A.5, M5): charcos fijos del Asfódelo (G.ponds), vacío en los demás biomas
-    if (G.groundBiome !== biome || biome === 'tundra') { G.ground = buildGround(biome); G.groundBiome = biome; }
+    if (G.groundBiome !== biome || biome === 'tundra' || biome === 'panal') { G.ground = buildGround(biome); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
     if (rq) G.bossId = rq.boss;
     else if (G.bossUrl) G.bossId = G.bossUrl;
@@ -325,6 +331,7 @@
     if (won) { try { G.Snd.play(G.bossId === 'yarlak' ? 'stg_yarlak_victory' : 'win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
     G.Tundra.end();   // apaga el viento de la ventisca
+    G.Panal.end();    // apaga el zumbido ambiente del Panal
   };
 
   // ---------------------------------------------------------------- Actualización
@@ -336,6 +343,7 @@
     G.Enemies.update(dt);
     G.Combat.update(dt);
     G.Tundra.update(dt);   // Frío, ventisca y hogueras (solo en la Tundra)
+    G.Panal.update(dt);    // celdas de miel, humo, charcos, pilares y cura (solo en el Panal)
     G.Waves.update(dt);
     G.Hud.update(dt);
     G.fx.update(dt);
@@ -382,6 +390,7 @@
   // ---------------------------------------------------------------- Render
   function buildGround(biome) {
     if (biome === 'tundra') { G.torches = []; G.ritual = null; return G.Tundra.buildGround(); }   // P3: suelo de hielo propio (parches de nieve firme, grietas)
+    if (biome === 'panal') { G.torches = []; G.ritual = null; return G.Panal.buildGround(); }   // P5: suelo hexagonal de cera con muros diagonales
     var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL });
     G.torches = A.torches; G.ritual = A.ritual;
     return A.canvas;
@@ -402,18 +411,20 @@
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
-    var zm = G.cam.zoom || 1, P = G.Proj, i, TN = G.Tundra.on;
+    var zm = G.cam.zoom || 1, P = G.Proj, i, TN = G.Tundra.on, PN = G.Panal.on;
     if (zm !== 1) { ctx.translate(G.W / 2, G.H / 2); ctx.scale(zm, zm); ctx.translate(-G.W / 2, -G.H / 2); }
     P.begin(ctx, G.ground, G.cam.x, G.cam.y, off.x, off.y);   // vista inclinada: suelo prerrenderizado aplastado y mundo con scale(1, isoK); plana: como siempre
     G.Combat.drawZones(ctx);
     G.Weapons.drawGround(ctx);
     if (TN) G.Tundra.drawGround(ctx);   // P3: hoguera (calor y luz), nieve firme animada, aviso de grietas
+    if (PN) G.Panal.drawGround(ctx);    // P5: miel (celdas y charcos), avisos de celdas, humo
     G.Enemies.drawGround(ctx, TN ? 1 : 0);   // Tundra: capa base (la bruma va encima; las telegrafías se dibujan después, por encima de ella)
     if (!TN) G.Boss.drawGround(ctx);
     G.fx.drawCorpses(ctx);
     G.Combat.drawGems(ctx);
     var items = G.enemies.filter(function (q) { return q.type !== 'bosspart'; }); items.push(G.player); G.Boss.items(items);
     if (TN) G.Tundra.items(items);   // estalagmitas y hogueras (ordenadas por y con el resto)
+    if (PN) G.Panal.items(items);    // pilares de cera (ordenados por y con el resto)
     items.sort(function (a, b) { return (a.sortY != null ? a.sortY : a.y) - (b.sortY != null ? b.sortY : b.y); });
     for (i = 0; i < items.length; i++) {
       var it = items[i];
@@ -422,6 +433,7 @@
       P.down(ctx);
     }
     G.Weapons.drawAir(ctx);
+    if (PN) G.Panal.drawAir(ctx);    // glóbulos de miel de la Babosa, pulsos del Polinizador
     G.Enemies.drawProjectiles(ctx, TN ? 1 : 0);
     G.fx.draw(ctx);
     var tt = performance.now();
@@ -434,8 +446,11 @@
       P.down(ctx);
     }
     var Q = G.Q;
+    if (PN) G.Panal.drawAmbient(ctx, tt);    // P5: polen, tinte ámbar y rayos de luz cálidos (en vez de luciérnagas y niebla)
+    else {
     if (Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
     if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
+    }
     ctx.restore();
     if (TN) {   // P3: bruma de la ventisca (pantalla) y, por encima de ella, telegrafías, proyectiles enemigos y jefe (B.1.3: nunca se tapan)
       G.Tundra.drawHaze(ctx);
@@ -478,7 +493,7 @@
     G.Tree.sync();
     var bq = /[?&]biome=(\w+)/.exec(location.search) || (G.Minis && G.Minis.urlBiome() ? [0, G.Minis.urlBiome()] : null); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
-    G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
+    G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
     if (G.bossUrl || G.huntUrl) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
