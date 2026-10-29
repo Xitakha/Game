@@ -43,7 +43,7 @@
       corazon:  { name: 'Corazón de Ceniza', phase: 7, pct: 0.04,  hz: 1.15, trophy: 'cz_cora', r: 30, derr: { mul: 1.5, ms: 5000 } }
     },
     weak: [], resist: [],   // se rellenan por fase (applyTable)
-    hpCal: 3.6, dmgK: 1.0, teleK: qn('ctele', 1.2), cadK: qn('ccadk', 1.2), pelHp: [null, 1.0, 1.1, 1.2, 1.3, 1.4], gateHearts: 3, sigHeart: qn('csh', 1) > 0,
+    hpCal: 4.1, dmgK: 1.0, teleK: qn('ctele', 1.2), cadK: qn('ccadk', 1.35), pelHp: [null, 1.0, 1.1, 1.2, 1.3, 1.4], gateHearts: 3, sigHeart: qn('csh', 1) > 0,
     geo: { zarpazo: 1, barra: 1, martillo: 0.7, coro: 1, invierno: 1, estocada: 1.4, zumbido: 1, chain: 1.3 },   // zonas de peligro (calibración con el bot; ?cgeo= las multiplica todas)
     brasas: 20, brasasPart: 5, pf: 2, pfFirst: 3,
     guaranteed: { plate: 2, wick: 2, thread: 2, static: 1, frost: 1, spine: 1, fang: 1 },

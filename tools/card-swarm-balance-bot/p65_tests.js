@@ -1,6 +1,6 @@
 // PRUEBAS P6.5 (Cenizar, el Incendio Primero; DESIGN-v7-jefe-final.md).
 // uso: node p65_tests.js data|tele|parts|mech|chain|phases|unlock|hunt|flow|all [base]   (base por defecto http://localhost:8801)
-//  data   : HP 36000 x 3,6 = 129 600 (pelHp 1,0-1,4), 7 fases (umbrales, cadencia, paso), desesperado 6 %, 6 partes, tabla de debilidades por fase (multiplicadores reales), guardado v8
+//  data   : HP 36000 x 4,1 = 147 600 (pelHp 1,0-1,4), 7 fases (umbrales, cadencia, paso), desesperado 6 %, 6 partes, tabla de debilidades por fase (multiplicadores reales), guardado v8
 //  tele   : regla de esquiva tele >= 250 + 1000 x salida / 190 (+100) en los 18 ataques y los 5 Peligros, eslabones de la cadena, telegrafías medidas
 //  parts  : Reliquias solo apuntables en su fase, efecto al romperse, trofeo, corazón, Corazón de Ceniza solo en la ventana
 //  mech   : Éxtasis (oleadas, inversión, carril), Réquiem (lava, islas, cobertura), Martillazo, Lluvia, Coro (Eco), Invierno (hogueras), Ventisca, Zumbido, Estocada, Llamadas
@@ -28,7 +28,7 @@ window.__clean = function () { G.enemies.forEach(function (q) { if (q.type !== '
 window.__run = function (name, ms, cb) { __prep(); G.Boss.e.atk = null; var ok = G.Boss.force(name); var S = G.Boss; return { ok: ok, t: __sim(ms, function (t) { G.Boss.e.cadT = 1e9; return cb ? cb(t) : (G.Boss.e.atk ? true : false); }) }; };
 `;
 const NAMES = ['c_zarpazo', 'c_cometas', 'c_barra', 'c_llamada', 'c_extasis', 'c_requiem', 'c_martillo', 'c_lluvia', 'c_coro', 'c_mordisco', 'c_coletazo', 'c_invierno', 'c_ventisca', 'c_cornada', 'c_zumbido', 'c_estocada', 'c_enjambre', 'c_chain'];
-const HP0 = 36000 * 3.6;
+const HP0 = 36000 * 4.1;   // hpCal 4,1 (doc 3,6): calibrado con el boss-bot para p50 ~10,5 min
 
 async function data(b) {
   console.log('--- datos de Cenizar');
@@ -50,8 +50,8 @@ async function data(b) {
     return out;
   });
   console.log(JSON.stringify(r));
-  ok(r.base === 36000 && r.cal === 3.6, 'base 36000 x hpCal 3,6 (' + r.base + ' x ' + r.cal + ')');
-  ok(r.hp1 === HP0 && r.maxHp === HP0, 'HP a 9 min Peligro I = 129 600 (' + r.hp1 + ', jefe ' + r.maxHp + ')');
+  ok(r.base === 36000 && r.cal === 4.1, 'base 36000 x hpCal 4,1 (doc 3,6; ver README) (' + r.base + ' x ' + r.cal + ')');
+  ok(r.hp1 === HP0 && r.maxHp === HP0, 'HP a 9 min Peligro I = 147 600 (' + r.hp1 + ', jefe ' + r.maxHp + ')');
   ok(r.hp[0] === HP0 * 0.75 && r.hp[2] === Math.round(HP0 * 1.1), 'HP 7 min x0,75 y 10 min x1,10 (' + r.hp + ')');
   ok(r.pelHp.join() === [1, 1.1, 1.2, 1.3, 1.4].map(m => Math.round(HP0 * m)).join(), 'HP por Peligro I-V = x1,0 / 1,1 / 1,2 / 1,3 / 1,4 (pelHp propio: ' + r.pelHp + ')');
   ok(r.phases.join() === '0.9/2600/40,0.76/2400/50,0.62/2200/60,0.47/2200/65,0.33/2000/70,0.18/1900/75,0/1600/85', '7 fases: umbrales 90/76/62/47/33/18, cadencia 2,6-1,6 s, paso 40-85 (' + r.phases + ')');
@@ -75,7 +75,7 @@ async function tele(b) {
     var S = G.Boss, out = {}; var names = Object.keys(S.ATKS).filter(n => S.ATKS[n].b === 'cenizar');
     names.forEach(n => { out[n] = [1, 2, 3, 4, 5].map(p => { G.peligro = p; return S.u.teleMs(n); }); }); G.peligro = 1;
     out.__exit = JSON.parse(JSON.stringify(S.EXIT)); out.__dmg = {}; names.forEach(n => out.__dmg[n] = S.ATKS[n].dmg);
-    out.__ev = {}; var T = S.cz.CHAIN_TBL; Object.keys(T).forEach(k => out.__ev[k] = [1, 2, 3, 4, 5].map(p => { G.peligro = p; return S.cz.evTele(T[k].tele, T[k].ex); })); G.peligro = 1; out.__tbl = {}; Object.keys(T).forEach(k => out.__tbl[k] = T[k].tele);
+    out.__ev = {}; var T = S.cz.CHAIN_TBL; Object.keys(T).forEach(k => out.__ev[k] = [1, 2, 3, 4, 5].map(p => { G.peligro = p; return S.cz.evTele(T[k].tele, T[k].ex, true); })); G.peligro = 1; out.__tbl = {}; Object.keys(T).forEach(k => out.__tbl[k] = T[k].tele);
     return out;
   });
   const RULE = ex => Math.round(250 + 1000 * ex / 190 + 100);
@@ -123,7 +123,7 @@ async function parts(b) {
     return o;
   });
   ok(eff.core0 === true && eff.coreOpen === true, 'Corazón de Ceniza: solo apuntable con la ventana abierta (coreT)');
-  ok(eff.coreBroken && eff.exp.mul === 1.5 && eff.exp.t > 4000 && Math.abs(eff.cadMul - 1.2) < 1e-6 && eff.coreT === 0, 'Corazón roto: derribo x1,5 5 s y +20 % de cadencia');
+  ok(eff.coreBroken && eff.exp.mul === 1.5 && eff.exp.t > 4000 && Math.abs(eff.cadMul - 1.2 / 1.35) < 1e-6 && eff.coreT === 0, 'Corazón roto: derribo x1,5 5 s y +20 % de cadencia (x1,2 sobre la cadencia calibrada)');
   ok(!pg.errs.length, '0 errores ' + pg.errs.slice(0, 2)); await pg.close();
 }
 
@@ -134,7 +134,7 @@ async function mech(b) {
   r = await pg.evaluate(() => {
     var out = {}, e = G.Boss.e; __prep(); var p = G.player; p.x = 520; p.y = 330; p.hp = p.maxHp; G.god = false;
     G.Boss.force('c_zarpazo'); var t = __sim(2000, null, false); out.zarpazo = 100 - p.hp;
-    __prep(); p.x = 1200; p.y = 700; p.hp = 100; G.Boss.force('c_cometas'); __sim(2600, null); out.ash = G.zones.filter(z => z.kind === 'ash').length;
+    __prep(); p.x = 1300; p.y = 405; p.hp = 100; G.Boss.force('c_cometas'); __sim(3600, null); out.ash = G.zones.filter(z => z.kind === 'ash').length;
     __prep(); G.Boss.force('c_barra'); var A0 = e.atk; out.barra = { sgn: A0 && A0.sgn, len: A0 && A0.len, sw: A0 && Math.round(A0.sw * 57.3) };
     __run('c_barra', 4000); out.barraDone = !e.atk;
     __prep(); out.addsBefore = G.Boss.addsAlive(); G.Boss.force('c_llamada'); __sim(1500, null); out.adds = G.Boss.addsAlive(); out.addTypes = G.enemies.filter(q => q.bossAdd && !q.dead).map(q => q.type);
@@ -171,7 +171,7 @@ async function mech(b) {
     out.lavaDmg = 100 - p.hp; out.minR = Math.round(minR); out.maxR = Math.round(maxR); out.cov = [150, 135, 120].map(r => Math.round(Z.islandCoverage(r)));
     // sobre isla: sin daño
     __prep(); var a = S.A; S.force('c_requiem'); p.hp = 100; var hp1;
-    __sim(2500, null); var is = Z.islands(a.lava); __sim(1000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; return true; }, false); hp1 = p.hp; __sim(3000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; return true; }, false);
+    __sim(2500, null); var is = Z.islands(a.lava); __sim(1000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; a.evs.length = 0; return true; }, false); hp1 = p.hp; __sim(3000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; a.evs.length = 0; return true; }, false);
     out.onIsland = hp1 - p.hp; out.onIslandHp = p.hp;
     __prep(); e.broken.nucleo = true; S.force('c_requiem'); __sim(2600, null); var l = a.lava, i0 = Z.islands(l).map(q => q.x + ',' + q.y).join(); __sim(6000, null); out.static = Z.islands(l).map(q => q.x + ',' + q.y).join() === i0; out.rBroken = Math.round(Z.islands(l)[0].r);
     return out;
@@ -276,7 +276,7 @@ async function chain(b) {
   ok(r.all === '123456' && r.noCay === '23456' && r.noNuc === '13456' && r.noOjo === '12456' && r.noCol === '12356' && r.noCor === '12346' && r.none === '6', `eslabones por Reliquia: ${r.all} / sin Cayado ${r.noCay} / sin Núcleo ${r.noNuc} / sin Ojo ${r.noOjo} / sin Colmillo ${r.noCol} / sin Corona ${r.noCor} / 5 rotas ${r.none} (el 6, Sol, siempre queda)`);
   ok(r.valid === true && r.maxProj <= 60 && r.chainDone, `cadena válida (ruta libre de daño; intentos ${r.tries}), <= 60 proyectiles (${r.maxProj}), termina`);
   ok(r.maxLethal <= 4, 'nunca más de 3-4 zonas activas a la vez (pico ' + r.maxLethal + ')');
-  ok(r.core >= 3900 || true, 'ventana del Sol: Corazón apuntable (coreT máx ' + Math.round(r.core) + ')');
+  ok(r.core >= 3900, 'ventana del Sol: Corazón apuntable (coreT máx ' + Math.round(r.core) + ')');
   console.log('   cronograma (impacto ms desde el inicio de la parte activa / telegrafía): ' + r.sched);
   // alcanzabilidad
   r = await pg.evaluate(() => { var S = G.Boss, e = S.e; __prep(); return { rand: S.chainReachable(200, { tries: 1 }), randR: S.chainReachable(200, {}), opt: S.chainReachable(60, { opt: true, tries: 1 }), fin: S.chainReachable(60, { final: true, tries: 1 }) }; });
