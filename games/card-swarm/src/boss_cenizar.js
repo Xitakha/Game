@@ -43,13 +43,14 @@
       corazon:  { name: 'Corazón de Ceniza', phase: 7, pct: 0.04,  hz: 1.15, trophy: 'cz_cora', r: 30, derr: { mul: 1.5, ms: 5000 } }
     },
     weak: [], resist: [],   // se rellenan por fase (applyTable)
-    hpCal: 3.6, dmgK: 1.3, pelHp: [null, 1.0, 1.1, 1.2, 1.3, 1.4], gateHearts: 3,
-    geo: { zarpazo: 1, barra: 1, martillo: 1, coro: 1, invierno: 1, estocada: 1.6, zumbido: 1, chain: 1 },   // zonas de peligro (calibración con el bot; ?cgeo= las multiplica todas)
+    hpCal: 3.6, dmgK: 1.0, teleK: qn('ctele', 1.2), cadK: qn('ccadk', 1.3), pelHp: [null, 1.0, 1.1, 1.2, 1.3, 1.4], gateHearts: 3, sigHeart: qn('csh', 1) > 0,
+    geo: { zarpazo: 1, barra: 1, martillo: 0.7, coro: 1, invierno: 1, estocada: 1.4, zumbido: 1, chain: 1.3 },   // zonas de peligro (calibración con el bot; ?cgeo= las multiplica todas)
     brasas: 20, brasasPart: 5, pf: 2, pfFirst: 3,
     guaranteed: { plate: 2, wick: 2, thread: 2, static: 1, frost: 1, spine: 1, fang: 1 },
     h: { camW: 0.4, noIntensity: true }
   };
   var D = S.DEFS.cenizar, H = D.h;
+  D.gateHearts = qn('cheart', D.gateHearts); D.hpCal = D.hpCal;
   Z.D = D; Z.H = H;
   function geo(k) { return (D.geo[k] || 1) * qn('cgeo', 1); }
   Z.geo = geo; Z.qn = qn;
@@ -83,7 +84,7 @@
   X.c_ventisca = 140; X.c_cornada = 80; X.c_estocada = 99; X.c_zumbido = 80;
   Z.EXIT = X;
   // telegrafía de un evento suelto (cadena / voces): misma fórmula que teleMs para que el Peligro no baje de la regla
-  Z.evTele = function (base, exit) { return Math.round(Math.max(base * pel().tele, Math.min(base, 250 + 1000 * exit / 190 + 100))); };
+  Z.evTele = function (base, exit, noK) { var t = Math.max(base * pel().tele, Math.min(base, 250 + 1000 * exit / 190 + 100)); return Math.round(noK ? t : t * (D.teleK || 1)); };
 
   function def(name, o) { o.b = 'cenizar'; ATKS[name] = o; }
   def('c_zarpazo',  { name: 'Zarpazo de Rescoldo',   tele: 850,  cd: 6000,  dmg: 24, phases: [1, 2] });
@@ -92,8 +93,8 @@
   def('c_llamada',  { name: 'Llamada de Cenizas',    tele: 800,  cd: 20000, dmg: 0,  phases: [1] });
   def('c_extasis',  { name: 'Éxtasis de Cenizas',    tele: 1200, cd: 30000, dmg: 10, phases: [2, 7], sig: true });
   def('c_requiem',  { name: 'Réquiem Abrasador',     tele: 2000, cd: 32000, dmg: 12, phases: [3, 7], sig: true });
-  def('c_martillo', { name: 'Martillazo de Cenizar', tele: 900,  cd: 6000,  dmg: 28, phases: [3] });
-  def('c_lluvia',   { name: 'Lluvia de brasas',      tele: 900,  cd: 7000,  dmg: 18, phases: [3] });
+  def('c_martillo', { name: 'Martillazo de Cenizar', tele: 900,  cd: 9000,  dmg: 28, phases: [3] });
+  def('c_lluvia',   { name: 'Lluvia de brasas',      tele: 900,  cd: 9000,  dmg: 18, phases: [3] });
   def('c_coro',     { name: 'Coro de los Tres Ríos', tele: 1000, cd: 28000, dmg: 14, phases: [4, 7], sig: true });
   def('c_mordisco', { name: 'Mordisco en picado',    tele: 700,  cd: 5000,  dmg: 22, phases: [4] });
   def('c_coletazo', { name: 'Coletazo',              tele: 800,  cd: 8000,  dmg: 24, phases: [4] });
@@ -103,7 +104,7 @@
   def('c_zumbido',  { name: 'Zumbido de Ceniza',     tele: 1000, cd: 30000, dmg: 18, phases: [6, 7], sig: true });
   def('c_estocada', { name: 'Estocada de Cenizar',   tele: 900,  cd: 6000,  dmg: 26, phases: [6] });
   def('c_enjambre', { name: 'Llamada del enjambre',  tele: 800,  cd: 20000, dmg: 0,  phases: [6] });
-  def('c_chain',    { name: 'Rosario del Incendio',  tele: 1500, cd: 16000, dmg: 24, phases: [7], sig: true });
+  def('c_chain',    { name: 'Rosario del Incendio',  tele: 1500, cd: 16000, dmg: 24, phases: [7], sig: true, noTeleK: true });
 
   // ---- utilidades
   function hurtC(e, base, src, o) { return U.hurt(e, Math.min(32, base * Z.dmgK()), src, o); }
@@ -117,7 +118,7 @@
   Z.clampX = clampX; Z.clampY = clampY;
   function addsCap(e) { return pel().cap; }
   function spawnAdd(type, x, y, spawnT) {
-    var ty = B.enemy[type] ? type : 'worm', ad = E.spawn(ty, clampX(x), clampY(y), { summoned: true, spawnT: spawnT });
+    var ty = B.enemy[type] && !B.enemy[type].famOnly ? type : 'worm', ad = E.spawn(ty, clampX(x), clampY(y), { summoned: true, spawnT: spawnT });
     ad.bossAdd = true; return ad;
   }
   Z.spawnAdd = spawnAdd;
@@ -160,7 +161,7 @@
     var p = PL(); if (p.dead || S.noHurt > 0 || ev.hit) return;
     if (Z.inside(ev, p.x, p.y, p.r)) {
       ev.hit = true;
-      if (hurtC(e, ev.dmg, ev.src, { kb: ev.kb == null ? 1 : ev.kb })) { if (ev.slow) G.Player.slow(p, ev.slow[0], ev.slow[1]); a_hurtN(); }
+      if (hurtC(e, ev.dmg, ev.src, { kb: ev.kb == null ? 1 : ev.kb })) { if (ev.slow) G.Player.slow(p, ev.slow[0], ev.slow[1]); a_hurtN(); if (ev.link) A().chainHurts = (A().chainHurts || 0) + 1; }
     }
   }
   function a_hurtN() { var a = A(); a.hurts = (a.hurts || 0) + 1; }
@@ -285,7 +286,7 @@
     var a = A();
     a.clk = 0; a.evs = []; a.phT = 0; a.lastCT = 0; a.noFury = false; a.coreT = 0; a.hurts = 0; a.orbs = []; a.bands = []; a.rr = {};
     a.lava = null; a.fires = null; a.coro = null; a.rain = []; a.winT = -1e9; a.ch = null; a.des = null; a.sol = 0; a.hover = 0; a.glow = {};
-    e.cadMul = qn('ccad', 1); e.rise = 1; e.foot = D.gy; e.fly = true;
+    e.cadMul = 1 / qn('ccad', D.cadK || 1); e.rise = 1; e.foot = D.gy; e.fly = true;
     S.obs.length = 0;
     PILLARS.forEach(function (l) { S.obs.push({ x: l[0], y: l[1], r: 28, dead: false, shake: 0, sortY: l[1] + 6, kind: 'ash', draw: drawPillar, rebuild: 0 }); });
     applyTable(1);
@@ -295,7 +296,9 @@
   };
   H.move = function (e, dt) {
     var p = PL(), PH = D.phases[e.phase - 1], d = G.dist(e.x, e.y, p.x, p.y), spd = PH.spd * (e.slowT > 0 ? 1 - e.slowPct : 1);
-    if (!p.dead && d > 240) { U.moveToward(e, p.x, p.y, spd, dt); e.moveAmt = 1; e.curSpd = spd; } else e.moveAmt = 0;
+    // el jefe se queda cerca del centro de la cráter (el jugador lo rodea): así no arrincona al jugador contra el muro (calibración con el bot)
+    var tx = 720 + (p.x - 720) * 0.3, ty = 360 + (p.y - 405) * 0.3, dc = G.dist(e.x, e.y, tx, ty);
+    if (!p.dead && dc > 30) { U.moveToward(e, tx, ty, spd, dt); e.moveAmt = 1; e.curSpd = spd; } else e.moveAmt = 0;
     if (!p.dead && Math.abs(p.x - e.x) > 4) e.face = p.x >= e.x ? 1 : -1;
   };
   H.okNow = function (e, name, d) {
@@ -340,8 +343,9 @@
     else if (k === 'ojo') G.Hud.banner('EL CORO YA NO TIENE ECO', 1600, '#7fe0d0');
     else if (k === 'colmillo') G.Hud.banner('EL INVIERNO PIERDE SU FILO', 1600, '#bfeaff');
     else if (k === 'corona') G.Hud.banner('EL ENJAMBRE CALLA', 1600, '#ffc440');
-    else if (k === 'corazon') { G.Hud.banner('¡EL CORAZÓN SE APAGA!', 1800, '#fff2b0'); e.cadMul = qn('ccad', 1) * 1.2; a.coreT = 0; }
+    else if (k === 'corazon') { G.Hud.banner('¡EL CORAZÓN SE APAGA!', 1800, '#fff2b0'); e.cadMul = 1 / qn('ccad', D.cadK || 1) * 1.2; a.coreT = 0; }
     var R = G.Loot.run; if (R) R.relics = (R.relics || 0) + (k === 'corazon' ? 0 : 1);
+    if (k !== 'corazon' && R && R.relics >= 5 && G.mode !== 'practice') { G.Save.data.flags.all_relics = 1; G.Save.save(); }
     S.cz.win();
   };
   H.partStinger = function (e, pe) { snd('stg_cenizar_part'); };
@@ -452,10 +456,11 @@
   };
   ATK.c_barra = {   // rectángulo 60 x 520 que gira 100 grados en 1,4 s desde el jefe
     start: function (e, A0) {
-      A0.aim = angTo(e, PL()); A0.sgn = Math.random() < 0.5 ? -1 : 1; A0.sw = 100 * DEG; A0.len = 520 * geo('barra'); A0.w = 60 * geo('barra'); A0.fixAt = A0.tele * 0.7; A0.actMs = 1400; A0.rec = 600; A0.pose = 'barra'; A0.hit = false; A0.ashN = 0; A0.drawAct = true; faceTo(e, A0.aim);
+      A0.aim = angTo(e, PL()); A0.sgn = Math.random() < 0.5 ? -1 : 1; A0.sw = 100 * DEG; A0.len = 520 * geo('barra'); A0.w = 60 * geo('barra'); A0.fixAt = A0.tele * 0.5; A0.actMs = 1400; A0.rec = 600; A0.pose = 'barra'; A0.hit = false; A0.ashN = 0; A0.drawAct = true; faceTo(e, A0.aim);
     },
     tele: function (e, A0) { if (A0.t < A0.fixAt) { A0.aim = angTo(e, PL()); faceTo(e, A0.aim); } },
-    cur: function (A0, t) { return A0.aim - A0.sgn * A0.sw / 2 + A0.sgn * A0.sw * G.clamp(t / A0.actMs, 0, 1); },
+    cur: function (A0, t) { return A0.aim + A0.sgn * A0.sw * G.clamp(t / A0.actMs, 0, 1); },   // la barra EMPIEZA donde estaba el jugador al fijarse y barre 100 grados en el sentido de la flecha: retroceder (contra el giro) la esquiva; seguir el giro no
+    mid: function (A0) { return A0.aim + A0.sgn * A0.sw / 2; },
     go: function (e, A0) { sfx('lane_charge', { vol: 0.7 }); fx.shake(4, 150); },
     act: function (e, A0) {
       var p = PL(), g = gnd(e), an = ATK.c_barra.cur(A0, A0.t), ca = Math.cos(an), sa = Math.sin(an), dx = p.x - g.x, dy = p.y - g.y, al = dx * ca + dy * sa, la = -dx * sa + dy * ca;
@@ -467,14 +472,15 @@
     draw: function (c, e, A0) {
       var g = gnd(e);
       if (A0.step === 'tele') {
-        Assets.drawBossTele(c, 'arc', g.x, g.y, { r: A0.len, inner: 0, arc: A0.sw + 12 * DEG, a: A0.aim, p: A0.t / A0.tele, fix: A0.t >= A0.fixAt, color: 'orange', t: G.time });
-        Assets.drawBossTele(c, 'lane', g.x, g.y, { w: A0.w, len: A0.len, a: A0.aim - A0.sgn * A0.sw / 2, p: 1, fix: true, color: 'red', t: G.time });
+        Assets.drawBossTele(c, 'arc', g.x, g.y, { r: A0.len, inner: 0, arc: A0.sw + 12 * DEG, a: ATK.c_barra.mid(A0), p: A0.t / A0.tele, fix: A0.t >= A0.fixAt, color: 'orange', t: G.time });
+        Assets.drawBossTele(c, 'lane', g.x, g.y, { w: A0.w, len: A0.len, a: A0.aim, p: 1, fix: true, color: 'red', t: G.time });
+        var ea = A0.aim + A0.sgn * A0.sw * 0.6; c.save(); c.fillStyle = 'rgba(255,230,160,0.9)'; c.beginPath(); c.moveTo(g.x + Math.cos(ea) * 200 + Math.cos(ea + A0.sgn * 1.57) * 16, g.y + Math.sin(ea) * 200 + Math.sin(ea + A0.sgn * 1.57) * 16); c.lineTo(g.x + Math.cos(ea) * 200 - Math.cos(ea + A0.sgn * 1.57) * 8 + Math.cos(ea) * 10, g.y + Math.sin(ea) * 200 - Math.sin(ea + A0.sgn * 1.57) * 8 + Math.sin(ea) * 10); c.lineTo(g.x + Math.cos(ea) * 200 - Math.cos(ea) * 10 - Math.cos(ea + A0.sgn * 1.57) * 8, g.y + Math.sin(ea) * 200 - Math.sin(ea) * 10 - Math.sin(ea + A0.sgn * 1.57) * 8); c.closePath(); c.fill(); c.restore();
       } else Assets.drawBossTele(c, 'lane', g.x, g.y, { w: A0.w, len: A0.len, a: ATK.c_barra.cur(A0, A0.t), p: 1, fix: true, sig: true, color: 'red', t: G.time });
     },
     haz: function (e, A0, out) {
       var g = gnd(e);
-      if (A0.step === 'tele') out.push({ k: 'arc', x: g.x, y: g.y, r: A0.len, inner: 0, a: A0.aim, arc: A0.sw + 12 * DEG, t0: A0.tele - A0.t, t1: A0.tele - A0.t + A0.actMs });
-      else if (A0.step === 'act') out.push({ k: 'arc', x: g.x, y: g.y, r: A0.len, inner: 0, a: A0.aim, arc: A0.sw + 12 * DEG, t0: 0, t1: A0.actMs - A0.t });
+      if (A0.step === 'tele') out.push({ k: 'arc', x: g.x, y: g.y, r: A0.len, inner: 0, a: ATK.c_barra.mid(A0), arc: A0.sw + 12 * DEG, t0: A0.tele - A0.t, t1: A0.tele - A0.t + A0.actMs });
+      else if (A0.step === 'act') out.push({ k: 'arc', x: g.x, y: g.y, r: A0.len, inner: 0, a: ATK.c_barra.mid(A0), arc: A0.sw + 12 * DEG, t0: 0, t1: A0.actMs - A0.t });
     }
   };
   ATK.c_llamada = {
@@ -496,12 +502,12 @@
 
   // ---- F2: Éxtasis de Cenizas (firma). 7 oleadas de anillos de espinas (v 170, 2 huecos de 45 grados, 1,3 s); giro +20 grados x3 y luego -35 (se avisa con la flecha de los faros);
   //      entre la 4.a y la 5.a cruza un carril 90 x 1440 (tele 900). Jefe quieto y expuesto x1,25. Cayado roto: 6 s, 5 oleadas, sin carril. Peligro III: carril doble. En F7 (cita) dura 5 oleadas.
-  function waveAng(A0, k) { var s = A0.a0, i; for (i = 1; i <= k; i++) s += (i <= 3 ? 20 : -35) * DEG; return s; }
+  function waveAng(A0, k) { var s = A0.a0, i; for (i = 1; i <= k; i++) s += (i <= 2 ? 20 : -35) * DEG; return s; }
   ATK.c_extasis = {
     start: function (e, A0) {
       var br = e.broken.cayado;
       A0.n = br ? 5 : (e.phase === 7 ? 5 : 7); A0.lane = !br; A0.a0 = Math.random() * TAU; A0.wi = 0; A0.pose = 'extasis'; A0.drawAct = true; A0.lanes = 0;
-      A0.t1 = 700; A0.actMs = 700 + (A0.n - 1) * 1300 + 1300; A0.rec = 1400; A0.fixAt = A0.tele * 0.7;
+      A0.t1 = 700; A0.actMs = 700 + (A0.n - 1) * 1300 + 1300; A0.rec = 2600; A0.fixAt = A0.tele * 0.7;
       A0.cx = e.x; A0.cy = e.y + 30; faceTo(e, angTo(e, PL())); sfx('lane_charge', { vol: 0.5 });
     },
     tele: function () { },
@@ -545,7 +551,11 @@
       c.restore();
       if (A0.step === 'tele') Assets.drawBossTele(c, 'ring', gx, gy, { r: 260, th: 22, gap: 45 * DEG, a: an, p: A0.t / A0.tele, fix: A0.t >= A0.fixAt, color: 'purple', sig: true, t: G.time });
     },
-    haz: function () { }
+    haz: function (e, A0, out) {   // los faros avisan la próxima oleada (y la inversión): se ofrece como oleada que aún no ha salido
+      var k = A0.step === 'tele' ? 0 : A0.wi; if (k >= A0.n) return;
+      var an = waveAng(A0, k), t0 = A0.step === 'tele' ? A0.tele - A0.t + 700 : 700 + k * 1300 - A0.t;
+      out.push({ k: 'wave', x: A0.cx, y: A0.cy, r: 60, v: 170, th: 22, gaps: [{ a: an, w: 45 * DEG }, { a: an + Math.PI, w: 45 * DEG }], t0: Math.max(0, t0), t1: Math.max(0, t0) + 5200, live: false });
+    }
   };
   Z.waveAng = waveAng;
 
@@ -563,6 +573,7 @@
     for (var i = G.zones.length - 1; i >= 0; i--) if (G.zones[i].team === 'e') G.zones.splice(i, 1);
     try { Assets.music.setDespair(false); Assets.music.stop(); } catch (x) { /* audio */ }
     snd('stg_cenizar_death');
+    if (G.mode !== 'practice' && (a.chainHurts || 0) === 0) G.Save.data.flags.no_chain_hit = 1;
     G.cenizarFinal = { t: G.time, first: (G.Save.data.bossKills.cenizar || 0) === 0 && G.mode !== 'practice' };
   };
   function artState(e) {

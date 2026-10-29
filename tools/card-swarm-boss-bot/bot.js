@@ -25,7 +25,7 @@ window.installBot = function (opts) {
         var bx = h.x + h.dir * h.v * Math.max(0, tau - h.t0) / 1000;
         if (Math.abs(x - bx) < h.w / 2 + pr + 10) { var inGap = false; for (var gi = 0; gi < h.gaps.length; gi++) if (Math.abs(y - h.gaps[gi]) <= 44 - pr * 0.3) inGap = true; if (!inGap) d += 10; }
       } else if (h.k === 'flood') {   // Marea / Réquiem de Karceron: peligroso todo salvo el radio h.R alrededor de cada isla
-        var safe = false; for (var ii = 0; ii < h.islands.length; ii++) if (Math.hypot(x - h.islands[ii][0], y - h.islands[ii][1]) <= h.R - 6) safe = true;
+        var safe = false; for (var ii = 0; ii < h.islands.length; ii++) if (Math.hypot(x - h.islands[ii][0], y - h.islands[ii][1]) <= h.R - 6 - (opts.burst ? 26 : 0)) safe = true;
         if (!safe) d += 10;
       } else if (h.k === 'frame') {   // borde de lava (F2 de Karceron)
         if (x < h.m + 4 || x > G.AW - h.m - 4 || y < h.m + 4 || y > G.AH - h.m - 4) d += 4;
@@ -55,14 +55,15 @@ window.installBot = function (opts) {
     var hz = blind ? [] : B.hazards().map(function (h) { h.vis = react(h.ref || h); return h; });   // la reacción cuenta desde que se ve la telegrafía
     var zs = blind ? [] : G.zones.filter(function (z) { return z.team === 'e'; }).map(function (z) { return { x: z.x, y: z.y, r: z.r, arm: z.arm > 0 ? z.arm : 0 }; });
     var pj = blind ? [] : G.projectiles.filter(function (q) { return q.team === 'e'; });
-    var best = null, bestC = 1e9, cand = [{ x: 0, y: 0 }], k, i;
+    var best = null, bestC = 1e9, cand = [{ x: 0, y: 0 }], k, i, hasWave = false; for (i = 0; i < hz.length; i++) if (hz[i].k === 'wave' && hz[i].t0 < 2600) hasWave = true;
     for (k = 0; k < 16; k++) cand.push({ x: Math.cos(k * Math.PI / 8), y: Math.sin(k * Math.PI / 8) });
+    if (opts.burst) for (k = 0; k < 16; k++) { cand.push({ x: Math.cos(k * Math.PI / 8), y: Math.sin(k * Math.PI / 8), b: 300 }); cand.push({ x: Math.cos(k * Math.PI / 8), y: Math.sin(k * Math.PI / 8), b: 600 }); }   // P6.5: mover y PARAR (esquivar dentro de una isla / entre anillos); el humano también para
     var hearts = G.gems.filter(function (g) { return g.kind === 'heart' || g.kind === 'part'; });
     for (i = 0; i < cand.length; i++) {
       var c = cand[i], cost = 0, dmax = 0;
       var ice = G.Tundra && G.Tundra.on && G.Tundra.params, ip = ice ? G.Tundra.params() : null, svx = p.vx || 0, svy = p.vy || 0, sx = p.x, sy = p.y, f6x = p.x, f6y = p.y;   // P4: modelo de movimiento con inercia (tau / lambda) para planificar la esquiva con derrape
       for (var tau = 0; tau <= opts.horizon; tau += 100) {
-        var x = p.x + c.x * spd * tau / 1000, y = p.y + c.y * spd * tau / 1000;
+        var tm = c.b ? Math.min(tau, c.b) : tau, x = p.x + c.x * spd * tm / 1000, y = p.y + c.y * spd * tm / 1000;
         if (ice) {
           if (tau > 0) {
             var sf = G.Tundra.slipAt(sx, sy), il = Math.hypot(c.x, c.y), tc = ip.tau * sf;
@@ -78,12 +79,12 @@ window.installBot = function (opts) {
         if (B.obs) for (var o = 0; o < B.obs.length; o++) if (!B.obs[o].dead && Math.hypot(x - B.obs[o].x, y - B.obs[o].y) < B.obs[o].r + pr) cost += 1.5;
         if (e) for (var kk = 0; kk < B.briers.length; kk++) if (Math.hypot(x - B.briers[kk].x, y - B.briers[kk].y) < B.briers[kk].r) cost += 0.6;
       }
-      var fx = ice ? f6x : p.x + c.x * spd * 0.6, fy = ice ? f6y : p.y + c.y * spd * 0.6;
+      var tf = c.b ? Math.min(600, c.b) / 1000 : 0.6, fx = ice ? f6x : p.x + c.x * spd * tf, fy = ice ? f6y : p.y + c.y * spd * tf;
       if (B.insetOn) { var mi = G.WALL + B.inset + 22; if (fx < mi || fx > G.AW - mi || fy < mi || fy > G.AH - mi) cost += 2; }
       // posicionamiento: orbitar al jefe a ~opts.dist (las cartas de proyectil alcanzan 440)
       if (e && !e.dead) {
         var db = Math.hypot(fx - e.x, fy - e.y);
-        cost += Math.abs(db - opts.dist) / 120;
+        if (opts.burst && hasWave) cost += Math.abs(db - 190) / 28; else cost += Math.abs(db - opts.dist) / 120;   // P6.5: con oleadas de anillos se juega pegado al jefe (las oleadas seguidas cierran el hueco lejos)
         if (db < 90) cost += 1.2;
       }
       // enemigos normales: no pegarse
@@ -92,9 +93,11 @@ window.installBot = function (opts) {
       if (hearts.length && p.hp < p.maxHp) { var hb = 1e9; hearts.forEach(function (g) { hb = Math.min(hb, Math.hypot(fx - g.x, fy - g.y)); }); cost += hb / 400 * (p.hp < p.maxHp * 0.7 ? 1.5 : 0.6); }
       else { var tr = G.gems.filter(function (g) { return g.trophy; }); if (tr.length) { var tb = 1e9; tr.forEach(function (g) { tb = Math.min(tb, Math.hypot(fx - g.x, fy - g.y)); }); cost += tb / 500; } }
       if (c.x === 0 && c.y === 0) cost += 0.25;
+      if (c.b) cost += 0.12;
       if (cost < bestC) { bestC = cost; best = c; }
     }
     if (rng() < opts.mistakes && bestC < 5) { best = cand[1 + Math.floor(rng() * 16)]; }
+    if (opts.horizon > 0 && false) { /* reservado */ }
     dir = best;
   }
   var lastP = 0;

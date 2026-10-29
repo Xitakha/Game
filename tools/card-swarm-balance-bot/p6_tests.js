@@ -1,6 +1,6 @@
 // PRUEBAS P6 (Melaria, la Reina Abeja; DESIGN-v5-biomas.md B.0, B.4, B.5, B.7, C.2).
 // uso: node p6_tests.js data|tele|parts|mech|phases|unlock|flow|hunt|all [base]   (base por defecto http://localhost:8793)
-//  data   : HP (hpCal final), fases, partes, debilidades y resistencias (Veneno inmune a estados), recompensas, tope de celdas 12 / 24 / 36, guardado v7, 5 jefes
+//  data   : HP (hpCal final), fases, partes, debilidades y resistencias (Veneno inmune a estados), recompensas, tope de celdas 12 / 24 / 36, guardado v8 (P6.5), 6 jefes
 //  tele   : regla de esquiva tele >= 250 + 1000 x salida / 190 en los 9 ataques y los 5 Peligros (>= 800 ms los de >= 25 de daño) y telegrafías medidas en el juego
 //  parts  : Alas / Aguijón / Corona: efecto, trofeo y ataques que se pierden
 //  mech   : Estocada, Picado (miel = atrapada), Llamada, Panal abierto (invariantes), Torbellino (zona segura), Jalea real (interrupción), Eclosión (hinchada), Fuego carameliza, Polinizador cura
@@ -57,7 +57,7 @@ async function data(b) {
   ok(r.resist.indexOf('"tag":"poison","mul":0.5') > 0 && r.resist.indexOf('"tag":"lightning","mul":0.8') > 0, 'resistencias Veneno x0,5 directo y Rayo x0,8 (' + r.resist + ')');
   ok(r.rew[0] === 14 && r.rew[1] === 4 && r.rew[2] === 2 && r.rew[3] === 3 && r.rew[4] === '{"wick":2,"frost":2,"thread":2}', 'recompensa 14 Brasas + 4 por parte, PF 2 (3), garantizados wick 2, frost 2, thread 2');
   ok(r.trophies.join() === 'Ala de Reina,Aguijón Real,Jalea Real' && r.spr.every(x => x), '3 trofeos con arte: ' + r.trophies);
-  ok(r.bb === 'melaria' && r.fam === true && r.save === 7 && r.bosses === 'pastor,karceron,letea,yarlak,melaria', 'Panal -> melaria, familia lista, guardado v7, 5 jefes (' + [r.bb, r.fam, r.save, r.bosses] + ')');
+  ok(r.bb === 'melaria' && r.fam === true && r.save === 8 && r.bosses === 'pastor,karceron,letea,yarlak,melaria,cenizar', 'Panal -> melaria, familia lista, guardado v8 (P6.5), 6 jefes (' + [r.bb, r.fam, r.save, r.bosses] + ')');
   ok(r.fury === '150000/120000' && r.caps[0] === 4 && r.caps[1] === 6, 'Furia a 150 s (120 s en IV-V), tope de adds 4 (6 en Peligro V)');
   ok(r.ids.indexOf('melaria') > 0 && r.alias, 'arte: Assets.bossIds incluye melaria y el alias reina funciona');
   // resistencias reales (daño directo): Veneno x0,5, Rayo x0,8, Fuego x1,25, Hielo x1,25 solo en F2-F3; Veneno nunca deja estado
@@ -376,7 +376,7 @@ async function unlock(b) {
   const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), pg = await ctx.newPage(); pg.errs = [];
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
   await pg.goto(`${base}/index.html?dbg=1&reset=1`); await pg.waitForTimeout(500);
-  const chip = { x: 650 + 4 * 58 + 28, y: 357 };
+  const chip = { x: 650 + 4 * 48 + 23, y: 357 };   // P6.5: 6 chips de 46 px
   async function portal(kills) {
     await pg.evaluate(k => { G.Save.data.bossKills = k; G.Save.data.biome = 'bosque'; G.Save.save(); }, kills);
     await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(600);
@@ -400,7 +400,7 @@ async function unlock(b) {
   await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(600);
   const m = await p2.evaluate(() => ({ v: G.Save.data.v, mel: G.Save.data.peligro.melaria, bk: JSON.stringify(G.Save.data.bossKills), br: G.Save.data.brasas, pf: G.Save.data.pf.earned, pel: JSON.stringify(G.Save.data.peligro), bak: !!localStorage.getItem('swarmhand.save.v6'), mig: G.Save.data.flags.migrated7, qb: G.Quests.unlockedBiomes().join(','), feas: G.Quests.feasible(G.Quests.def('pollinators')), ins: JSON.stringify(G.Save.data.insignias), hunt: G.Panels && 0 }));
   console.log(JSON.stringify(m));
-  ok(m.v === 7 && m.mel === 1 && m.bak && m.mig === 1, 'migración v6 -> v7: versión 7, peligro.melaria = 1, copia en swarmhand.save.v6');
+  ok(m.v === 8 && m.mel === 1 && m.bak && m.mig === 1, 'migración v6 -> v8 (P6.5; pasa por v7): versión 8, peligro.melaria = 1, copia en swarmhand.save.v6');
   ok(m.br === 321 && m.pf === 9 && m.bk === '{"pastor":2,"karceron":1,"letea":1,"yarlak":1}' && /"yarlak":2/.test(m.pel) && m.ins === '{"carnero":1}', 'sin pérdidas (Brasas, PF, victorias, Peligro, Insignias)');
   ok(m.qb.indexOf('panal') > 0 && m.feas, 'quien ya venció a Yarlak ve el Panal abierto y el encargo de los Polinizadores se activa (' + m.qb + ')');
   // quien no venció a Yarlak: el Panal sigue cerrado y el encargo no se ofrece
@@ -408,7 +408,7 @@ async function unlock(b) {
   const m2 = await p2.evaluate(() => ({ qb: G.Quests.unlockedBiomes().join(','), feas: G.Quests.feasible(G.Quests.def('pollinators')) }));
   ok(m2.qb.indexOf('panal') < 0 && !m2.feas, 'sin Yarlak vencido el Panal y el encargo de los Polinizadores siguen dormidos');
   await p2.evaluate(() => { localStorage.setItem('swarmhand.save', '{"v":6,"parts":null'); }); await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(500);
-  ok(await p2.evaluate(() => G.Save.data.v === 7 && G.Save.data.peligro.melaria === 1), 'guardado corrupto cae a valores por defecto v7');
+  ok(await p2.evaluate(() => G.Save.data.v === 8 && G.Save.data.peligro.melaria === 1), 'guardado corrupto cae a valores por defecto v8');
   ok(!p2.errs.length, '0 errores: ' + p2.errs.slice(0, 2)); await c2.close();
 }
 

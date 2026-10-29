@@ -92,6 +92,7 @@
     var d = ATKS[name], big = d.dmg >= 25, t = Math.max(d.tele * pel().tele, Math.min(d.tele, big ? (d.ice ? 800 : 600) : 400));
     // P4 (Tundra, B.1.2): los ataques de `ice:true` siguen la regla del hielo tele >= 250 + 220 + 1000 x salida / 190 (+220 ms de arrancar = tau) y los de >= 25 de daño nunca bajan de 800 ms
     if (EXIT[name] != null) t = Math.max(t, Math.min(d.tele, d.ice ? 470 + 1000 * EXIT[name] / 190 : 250 + 1000 * EXIT[name] / 190 + 100));
+    var tk = d.b && DEFS[d.b] && DEFS[d.b].teleK; if (tk && !d.noTeleK) t *= tk;   // P6.5: calibración por jefe (Cenizar +20 %)
     return Math.round(t);
   }
 

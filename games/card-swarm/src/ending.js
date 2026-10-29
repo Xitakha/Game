@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var G = window.G, En = G.Ending = {}, TAU = Math.PI * 2;
-  var T_LIGHT = 3500, T_DIAL = 6000, DIAL_MS = 3500, T_DAWN = 25000, T_CRED = 30000, T_END = 56000;
+  var T_LIGHT = 5000, T_DIAL = 16500, DIAL_MS = 2600, T_DAWN = 25200, T_CRED = 33000, T_END = 58000, T_SCENE = 36000;   // cinemática ~33 s + créditos ~25 s (el arte usa p = t / 36000)
   var LINES = [
     ['LANUDO', '#e8dcb0', 'El fuego se ha apagado... y las cenizas, al fin, descansan.'],
     ['VESPER', '#ffb08a', 'Sabía que no me equivocaba contigo. La apuesta la he perdido encantado.'],
@@ -61,7 +61,26 @@
   }
   En.draw = function (c) {
     if (!st) return;
-    var W = G.W, H = G.H, t = st.t, dawn = Math.max(0, Math.min(1, (t - T_DAWN) / 5000)), i;
+    var W = G.W, H = G.H, t = st.t, dawn = Math.max(0, Math.min(1, (t - T_DAWN) / 5000)), i, art = typeof Assets.drawEndingScene === 'function';
+    if (art) {   // escena del arte (assets_boss5.js): brasa, hogar que se recompone, amigos y amanecer; el diálogo, los créditos y las marcas van encima
+      try { Assets.drawEndingScene(c, W, H, Math.min(1, t / T_SCENE), { t: t }); } catch (e0) { art = false; }
+    }
+    if (art) {
+      var di0 = Math.floor((t - T_DIAL) / DIAL_MS), cur0 = (t >= T_DIAL && di0 >= 0 && di0 < LINES.length && t < T_DAWN) ? di0 : -1;
+      if (cur0 >= 0) {
+        var u0 = (t - T_DIAL - di0 * DIAL_MS) / DIAL_MS, al0 = Math.min(1, u0 * 6, (1 - u0) * 6);
+        c.save(); c.globalAlpha = Math.max(0, al0); c.fillStyle = 'rgba(8,4,14,0.85)'; c.fillRect(80, 440, 800, 70); c.strokeStyle = LINES[cur0][1]; c.lineWidth = 2; c.strokeRect(80, 440, 800, 70);
+        G.txt(c, LINES[cur0][0], 100, 458, 15, LINES[cur0][1], 'left'); G.txt(c, LINES[cur0][2], 100, 484, 14, '#f0e8d8', 'left'); c.restore();
+      }
+      if (t < 3000) { c.fillStyle = 'rgba(0,0,0,' + (1 - t / 3000) + ')'; c.fillRect(0, 0, W, H); G.txt(c, 'Cenizar se apaga...', W / 2, 270, 22, 'rgba(255,200,140,' + Math.min(1, t / 800) + ')', 'center'); }
+      if (t >= T_DAWN && t < T_CRED) G.txt(c, 'Amanece en Rescoldo.', W / 2, 90, 26, 'rgba(255,240,200,' + Math.min(1, (t - T_DAWN) / 1200) + ')', 'center');
+      if (t >= T_CRED) {
+        c.fillStyle = 'rgba(6,3,12,' + Math.min(0.8, (t - T_CRED) / 1500) + ')'; c.fillRect(0, 0, W, H);
+        var done = false; try { done = Assets.drawCredits(c, W, H, t - T_CRED, CREDITS, { speed: 32 }); } catch (e1) { done = false; }
+      }
+      if (t > 1500 && t < T_END) G.txt(c, 'Espacio / toque: ' + (t < T_CRED ? 'saltar a los créditos' : 'continuar'), W - 16, H - 12, 10, 'rgba(200,190,220,0.6)', 'right');
+      return;
+    }
     var sky = c.createLinearGradient(0, 0, 0, H * 0.7);
     sky.addColorStop(0, 'rgb(' + mix(6, 70, dawn) + ',' + mix(4, 60, dawn) + ',' + mix(14, 110, dawn) + ')'); sky.addColorStop(1, 'rgb(' + mix(22, 255, dawn) + ',' + mix(12, 170, dawn) + ',' + mix(30, 110, dawn) + ')');
     c.fillStyle = sky; c.fillRect(0, 0, W, H);

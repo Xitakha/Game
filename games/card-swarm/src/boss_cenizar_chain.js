@@ -53,7 +53,7 @@
   function genGeo(e, keys, P0, final) {
     var g = gnd(e), sh = timeline(keys), out = [], waves = [], k;
     var aP = Math.atan2(P0.y - g.y, P0.x - g.x), gm = geo('chain');
-    function add(id, spec) { var T = TBL[id]; spec.id = id; spec.link = T.link; spec.atRel = T.at + sh[id]; spec.tele = Z.evTele(T.tele, T.ex); out.push(spec); }
+    function add(id, spec) { var T = TBL[id]; spec.id = id; spec.link = T.link; spec.atRel = T.at + sh[id]; spec.tele = Z.evTele(T.tele, T.ex, true); out.push(spec); }
     var a1 = aP + rv(-0.4, 0.4), a1b = a1 + rsg() * rv(0.5, 1.1);
     if (keys.indexOf('1a') >= 0) { add('1a', { k: 'lane', x: g.x, y: g.y, a: a1, w: 100 * gm, len: 560, dmg: 24, kb: 1.6 }); add('1b', { k: 'lane', x: g.x, y: g.y, a: a1b, w: 100 * gm, len: 560, dmg: 24, kb: 1.6 }); }
     if (keys.indexOf('2a') >= 0) {
@@ -64,7 +64,7 @@
     var cb = aP + rv(0, TAU / 3);
     if (keys.indexOf('3') >= 0) add('3', { k: 'cones', x: g.x, y: g.y, angs: [cb, cb + TAU / 3, cb + 2 * TAU / 3], half: 20 * DEG, reach: 420 * gm, dmg: 14, slow: [0.35, 2000], kb: 1 });
     var wdir = rsg(), wy1 = G.clamp(P0.y + rv(-170, 170), 190, G.AH - 190), wy2 = G.clamp(wy1 + rv(-150, 150), 190, G.AH - 190);
-    if (keys.indexOf('4a') >= 0) { waves.push({ id: '4a', link: 4, atRel: TBL['4a'].at + sh['4a'], tele: Z.evTele(TBL['4a'].tele, 140), dir: wdir, gap: wy1 }); waves.push({ id: '4b', link: 4, atRel: TBL['4b'].at + sh['4b'], tele: Z.evTele(TBL['4b'].tele, 140), dir: wdir, gap: wy2 }); }
+    if (keys.indexOf('4a') >= 0) { waves.push({ id: '4a', link: 4, atRel: TBL['4a'].at + sh['4a'], tele: Z.evTele(TBL['4a'].tele, 140, true), dir: wdir, gap: wy1 }); waves.push({ id: '4b', link: 4, atRel: TBL['4b'].at + sh['4b'], tele: Z.evTele(TBL['4b'].tele, 140, true), dir: wdir, gap: wy2 }); }
     if (keys.indexOf('5a') >= 0) {
       var rc = { x: Z.clampX(P0.x + rv(-160, 160), 120), y: Z.clampY(P0.y + rv(-120, 120), 120) }, ks = Math.random() < 0.6 ? [3, 2, 1] : [1, 2, 3], gg = Math.random() * TAU, ids5 = ['5a', '5b', '5c'];
       ids5.forEach(function (id, i) {
@@ -78,7 +78,7 @@
       var endT = 0; out.forEach(function (s) { endT = Math.max(endT, s.atRel); });
       ['1a', '1b'].forEach(function (id, i) {
         var s0 = out.filter(function (s) { return s.id === id; })[0]; if (!s0) return;
-        out.push({ id: 'E' + id, link: 7, k: 'lane', x: G.AW - g.x, y: g.y, a: Math.PI - s0.a, w: s0.w, len: 560, dmg: 24, kb: 1.6, atRel: endT + 1500 + i * 900, tele: Z.evTele(TBL[id].tele, 55) });
+        out.push({ id: 'E' + id, link: 7, k: 'lane', x: G.AW - g.x, y: g.y, a: Math.PI - s0.a, w: s0.w, len: 560, dmg: 24, kb: 1.6, atRel: endT + 1500 + i * 900, tele: Z.evTele(TBL[id].tele, 55, true) });
       });
     }
     return { items: out, waves: waves, sh: sh };

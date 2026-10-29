@@ -357,10 +357,10 @@ async function data(b) {
   await p3.goto(`${base}/index.html?reset=1&nosw=1&len=7`); await p3.waitForTimeout(500);
   await p3.evaluate(() => { G.Save.data.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; G.Save.data.biome = 'tundra'; G.Save.save(); });
   await p3.keyboard.press('Tab'); await p3.waitForTimeout(900); await p3.keyboard.press('KeyE'); await p3.waitForTimeout(700);
-  await p3.mouse.click(650 + 4 * 58 + 28, 357); await p3.waitForTimeout(400);
+  await p3.mouse.click(650 + 4 * 48 + 23, 357); await p3.waitForTimeout(400);
   const bio = await p3.evaluate(() => G.Save.data.biome); ok(bio === 'panal', 'P6: el chip PANAL se elige con Yarlak vencido (' + bio + ')');
   await p3.screenshot({ path: process.env.SHOT || '/tmp/p5_portal.png' });
-  await p3.mouse.click(650 + 3 * 58 + 28, 357); await p3.waitForTimeout(300); ok((await p3.evaluate(() => G.Save.data.biome)) === 'tundra', 'el chip TUNDRA (4.º de 5, 56 px) sigue eligiéndose');
+  await p3.mouse.click(650 + 3 * 48 + 23, 357); await p3.waitForTimeout(300); ok((await p3.evaluate(() => G.Save.data.biome)) === 'tundra', 'el chip TUNDRA (4.º de 5, 56 px) sigue eligiéndose');
   ok(!pg.errs.length && !p2.errs.length && !p3.errs.length, 'datos: 0 errores de consola ' + [].concat(pg.errs, p2.errs, p3.errs).slice(0, 3).join(' | '));
 }
 

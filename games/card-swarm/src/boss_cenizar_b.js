@@ -17,7 +17,7 @@
   var ANCH = [[270, 410], [720, 400], [1170, 410]], ORB = 30, ORB_V = 25;
   Z.ISLANDS = ANCH;
   Z.islands = function (l) {
-    var a = A(), out = [], t = l.t, br = (S.e && S.e.broken.nucleo), r = br ? 110 : 130 - 30 * G.clamp(t / 8000, 0, 1);
+    var a = A(), out = [], t = l.t, br = (S.e && S.e.broken.nucleo), r = br ? 130 : 150 - 30 * G.clamp(t / 8000, 0, 1);
     for (var i = 0; i < 3; i++) {
       var w = ORB_V / ORB, ph = i * 2.1 + l.ph, ox = br ? 0 : Math.cos(w * t / 1000 + ph) * ORB, oy = br ? 0 : Math.sin(w * t / 1000 + ph) * ORB;
       out.push({ x: ANCH[i][0] + ox, y: ANCH[i][1] + oy, r: r });
@@ -48,10 +48,10 @@
       if ((l.snd = (l.snd || 0) - dt) <= 0) { l.snd = 1200; if (!(e.broken.nucleo)) sfx('island_rotate', { vol: 0.5 }); }
       // brasas: r 50 cada 1 s con 900 ms de aviso sobre las islas
       A0.mt += dt;
-      while (A0.mt >= 1000 && A0.t < A0.dur - 900) {
-        A0.mt -= 1000;
+      while (A0.mt >= 1300 && A0.t < A0.dur - 900) {
+        A0.mt -= 1300;
         var is = Z.islands(l), tgt, onI = Z.onIsland(p.x, p.y, p.r) && !p.dead;
-        if (onI && Math.random() < 0.65) tgt = { x: p.x + G.rnd(-50, 50), y: p.y + G.rnd(-50, 50) };
+        if (onI && Math.random() < 0.4) tgt = { x: p.x + G.rnd(-50, 50), y: p.y + G.rnd(-50, 50) };
         else { var k = is[Math.floor(Math.random() * 3)], an = Math.random() * TAU, rr = Math.random() * (k.r - 40); tgt = { x: k.x + Math.cos(an) * rr, y: k.y + Math.sin(an) * rr }; }
         Z.add({ k: 'circle', x: tgt.x, y: tgt.y, r: 50, tele: Z.evTele(900, 50), dmg: 18, src: 'boss_brasa', col: 'orange', ghost: false, fixAt: 0, silent: true, onGo: function (v) { fx.burst(v.x, v.y, 10, '#ff9a3c', 200, 450, 4, { add: true }); fx.shake(3, 100); sfx('ash_fall', { vol: 0.5 }); } });
       }
@@ -61,6 +61,7 @@
     haz: function () { }
   };
   H.afterAtk = function (e, A0) {
+    if (D.sigHeart && ATKS[A0.name] && ATKS[A0.name].sig && A0.name !== 'c_chain' && !G.player.dead) { var pl = PL(); G.Combat.dropGem(pl.x + G.rnd(-60, 60), pl.y + G.rnd(10, 50), 'heart', B.player.heal); }   // palanca de calibración (DESIGN 9.2: gotas por ventana): cada firma superada suelta un corazón
     if (A0.name === 'c_requiem') { var a = A(); if (a.lava) { a.lava.state = 'fade'; a.lava.fade = 0; } }
     if (A0.name === 'c_invierno') { var a2 = A(); if (a2.fires) a2.fires.fade = 0.001; }
     if (A0.name === 'c_extasis') A().noFury = false;
@@ -115,8 +116,8 @@
       }
     } else if (type === 1) {   // cono helado 40 grados, alcance 420, ralentiza 35 % 2 s
       var aim = Math.atan2(p.y - m.y, p.x - m.x);
-      Z.add({ k: 'cones', x: m.x, y: m.y, angs: [aim], half: 20 * DEG, reach: 420 * geo('coro'), tele: tele, dmg: 14, slow: [0.35, 2000], src: 'boss_hielo', col: 'blue', fixAt: 0, silent: true, onGo: function (v) { sfx('ice_creak', { vol: 0.6 }); } });
-      if (eco) { var mq2 = mirror(e, m.x, m.y); Z.add({ k: 'cones', x: mq2.x, y: mq2.y, angs: [aim + Math.PI], half: 20 * DEG, reach: 420 * geo('coro'), delay: echoMs - tele, tele: tele, dmg: 14, slow: [0.35, 2000], src: 'boss_hielo', ghost: true, echo: true, col: 'blue', fixAt: 0, silent: true }); }
+      Z.add({ k: 'cones', x: m.x, y: m.y, angs: [aim], half: 15 * DEG, reach: 420 * geo('coro'), tele: tele, dmg: 14, slow: [0.35, 2000], src: 'boss_hielo', col: 'blue', fixAt: 0, silent: true, onGo: function (v) { sfx('ice_creak', { vol: 0.6 }); } });
+      if (eco) { var mq2 = mirror(e, m.x, m.y); Z.add({ k: 'cones', x: mq2.x, y: mq2.y, angs: [aim + Math.PI], half: 15 * DEG, reach: 420 * geo('coro'), delay: echoMs - tele, tele: tele, dmg: 14, slow: [0.35, 2000], src: 'boss_hielo', ghost: true, echo: true, col: 'blue', fixAt: 0, silent: true }); }
     } else {   // rayos: 4 círculos r 58 secuenciales
       for (i = 0; i < 4; i++) {
         x = Z.clampX(p.x + G.rnd(-130, 130)); y = Z.clampY(p.y + G.rnd(-110, 110)); if (i === 0) { x = p.x; y = p.y; }
@@ -253,7 +254,7 @@
   ATK.c_estocada = {   // carril 168 x 420 desde el cuerpo, fijo los últimos 300 ms; si falla, ventana de 1 s x1,25
     start: function (e, A0) {
       var g = gnd(e), p = PL(); A0.pose = 'estocada'; A0.actMs = 300; A0.rec = 700; faceTo(e, angTo(e, p));
-      Z.add({ k: 'lane', x: g.x, y: g.y, a: Math.atan2(p.y - g.y, p.x - g.x), w: 105 * geo('estocada'), len: 420, tele: A0.tele, dmg: 26, src: 'boss_estocada', col: 'amber', sig: true, fixAt: Math.max(0, A0.tele - 300), kb: 1.6,
+      Z.add({ k: 'lane', x: g.x, y: g.y, a: Math.atan2(p.y - g.y, p.x - g.x), w: 105 * geo('estocada'), len: 420, tele: A0.tele, dmg: 26, src: 'boss_estocada', col: 'amber', sig: true, fixAt: Math.max(0, A0.tele - 520), kb: 1.6,
         upd: function (v) { var pp = PL(), gg = gnd(S.e); v.x = gg.x; v.y = gg.y; v.a = Math.atan2(pp.y - v.y, pp.x - v.x); },
         onGo: function (v) { Z.breakPillarsLane(v); fx.shake(6, 160); sfx('hit_heavy', { vol: 0.9 }); A0.fired = v; },
         onEnd: function (v) { if (!v.hit && S.e && S.e.mode === 'fight') { expose(S.e, 1.25, 1000, 'window'); Z.win(); } } });
@@ -265,7 +266,7 @@
     avail: function (e) { return !e.broken.corona; },
     start: function (e, A0) {
       var P = pel(), room = pel().cap - nowAdds(), p = PL(), list = ['blinker', 'blinker'], i; for (i = 0; i < P.adds; i++) list.push('blinker');
-      if (B.enemy.pollinator && !G.enemies.some(function (q) { return !q.dead && q.type === 'pollinator' && q.bossAdd; })) list.push('pollinator');
+      if (e.phase >= 6) list.push('boar');   // sin Polinizador: es de la familia del Panal y fuera de él no tiene IA
       list = list.slice(0, Math.max(0, room)); A0.pose = 'enjambre'; A0.actMs = 300; A0.rec = 600;
       list.forEach(function (ty, k) {
         var cx, cy, tries = 0, an = Math.random() * TAU + k * 1.3;
@@ -286,7 +287,7 @@
     if (l) {
       if (l.state === 'on') {
         l.tk = (l.tk || 0) - dt;
-        if (l.tk <= 0) { l.tk = 400; if (!p.dead && !Z.onIsland(p.x, p.y, p.r)) hurtC(e, 12, 'boss_lava', { soft: true }); }
+        if (l.tk <= 0) { l.tk = 500; if (!p.dead && !Z.onIsland(p.x, p.y, p.r)) hurtC(e, 10, 'boss_lava', { soft: true }); }
         if (Math.random() < 0.3) { var is = Z.islands(l); }
       } else if (l.state === 'fade') { l.fade += dt; if (l.fade > 700) a.lava = null; }
     }

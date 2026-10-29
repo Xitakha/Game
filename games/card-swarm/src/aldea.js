@@ -100,7 +100,9 @@
     };
     X.vesper.yarlak = 'Yarlak cayó. Nadie apostaba por el mamut. Yo sí, pero no se lo digas a nadie.'; X.grum.yarlak = 'Ese marfil helado... pásame un colmillo y te hago algo que no se derrita.'; X.castana.yarlak = 'Con tanto frío, un caldo de brasa es lo mínimo, cielo.';
     X.vesper.melaria = 'Melaria cayó. La Reina, de rodillas. Y yo con la apuesta ganada otra vez.'; X.grum.melaria = 'Esa ala translúcida... y ese aguijón. Con eso sí que puedo trabajar, chaval.'; X.castana.melaria = 'Jalea real, cielo. Con eso se cura hasta el mal de amores.';
-    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
+    X.lanudo.cenizar = 'Cenizar... el fuego primero, apagado. Ya no tengo miedo de dormir junto al hogar.'; X.vesper.cenizar = 'Apagaste hasta el Incendio Primero. Cierro mi libro de apuestas: contigo no hay cuota que valga.'; X.grum.cenizar = 'Esa Reliquia... ni yo sé forjar algo así. Pero algún día lo intento, chaval.'; X.castana.cenizar = 'Caldo del Hogar para ti, cielo. Hoy invita la casa, y el hogar.'; X.ulalume.cenizar = 'Las cartas ya no susurran: cantan. Y todas dicen tu nombre.'; X.rufo.cenizar = 'Una Reliquia de Cenizar... Dime que no la vendes. Dime que sí. No, no me lo digas.';
+    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar'].forEach(function (b) { if (k[b] && X[id][b]) out.push(X[id][b]); });
+    if (k.melaria && !k.cenizar && (id === 'lanudo' || id === 'vesper')) out.push('Queda el fuego que los encendió a todos. Mira el brasero de la plaza: arde de nuevo.');
     if (id === 'ulalume') {
       var seen = S.combosSeen || {};
       if (seen.vapor) out.push('Fuego y Hielo... qué vapor tan dramático.');
@@ -133,6 +135,7 @@
     else if (!k.karceron) out.push('Con el Pastor vencido se abre la Cripta. Karceron es un coloso casi inmóvil: Hielo y Rayo lo parten; el Fuego y el Veneno apenas le hacen cosquillas.');
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
     if (k.letea && !k.yarlak) out.push('Con Letea vencida se abre la Tundra: hielo que resbala, ventisca y un Frío que sube. Yarlak, el mamut, odia el Fuego y el Rayo. Quédate cerca de las hogueras.');
+    if (S.bossKills.melaria && !S.bossKills.cenizar && k.pastor && k.karceron && k.letea && k.yarlak && k.melaria) out.push('Con los cinco caídos se abre el Cráter del Hogar Quemado en el Portal: allí arde Cenizar, el Incendio Primero. Siete fases, sin checkpoints. Cada Reliquia que rompas acorta su Rosario final.');
     if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
     try { G.Minis.IDS.forEach(function (mid) {   // P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
@@ -153,7 +156,7 @@
   function talkLanudo(it) {
     var S = G.Save.data, w = who(it), A_ = G.Ach, bye = { label: 'Adiós', fn: function () {} };
     var pre = [];
-    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].forEach(function (b) {
+    ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar'].forEach(function (b) {
       if (S.bossKills[b] && !S.flags['told_' + b]) {
         S.flags['told_' + b] = 1;
         pre = pre.concat({
@@ -161,7 +164,8 @@
           karceron: ['Las cadenas de Karceron ya no suenan. La cripta respira por fin.', 'Queda el Asfodelo: allí vive Letea, la que se come los recuerdos.'],
           letea: ['Letea ha caído... y me acuerdo de mi propio nombre. Me llamo Lanudo, ¿lo sabías?', 'Ya no queda nadie que nos robe el pasado. Ve y cuéntalo.', 'Al norte se ha abierto la Tundra. Allí el invierno camina.'],
           yarlak: ['Yarlak... guardaba la última hoguera del norte. Gracias por devolverle el descanso.', 'Ahora el hielo respira un poco más cálido.', 'Y al otro lado se oye un zumbido: se ha abierto el Panal.'],
-          melaria: ['Melaria... devoró la jalea de sus hermanas y el panal creció a su alrededor como una jaula.', 'Gracias por abrirla, chaval. El zumbido por fin se ha callado.']
+          melaria: ['Melaria... devoró la jalea de sus hermanas y el panal creció a su alrededor como una jaula.', 'Gracias por abrirla, chaval. El zumbido por fin se ha callado.', 'Pero queda el fuego que los encendió a todos. Se ha abierto el Cráter del Hogar Quemado.'],
+          cenizar: ['Cenizar... era la brasa de la que nacieron los otros cinco. Y la has apagado.', 'Rescoldo vuelve a tener hogar, chaval. Gracias.']
         }[b]);
       }
     });
@@ -366,6 +370,17 @@
     return o;
   }
 
+  // P6.5: brasero de la plaza. Al vencer a Melaria arde (es el punto de entrada provisional al Cráter, que está en el Portal); tras vencer a Cenizar queda la estatua 'Brasa Primera'
+  function drawBrasero(c, now) {
+    var k = G.Save.data.bossKills; if (!k.melaria) return;
+    var x = 790, y = 505, fl = Math.sin(now / 90) * 3, done = (k.cenizar || 0) > 0;
+    c.save(); c.strokeStyle = '#1b1124'; c.lineWidth = 3; c.fillStyle = '#4a4352';
+    c.beginPath(); c.moveTo(x - 22, y - 14); c.lineTo(x + 22, y - 14); c.lineTo(x + 14, y + 4); c.lineTo(x - 14, y + 4); c.closePath(); c.fill(); c.stroke(); c.fillRect(x - 4, y + 4, 8, 14); c.strokeRect(x - 4, y + 4, 8, 14);
+    var g = c.createRadialGradient(x, y - 22, 4, x, y - 22, done ? 120 : 80); g.addColorStop(0, 'rgba(255,190,90,0.45)'); g.addColorStop(1, 'rgba(255,106,26,0)'); c.fillStyle = g; c.fillRect(x - 130, y - 150, 260, 220);
+    c.fillStyle = done ? '#fff2b0' : '#ff6a1a'; var h = done ? 46 : 34; c.beginPath(); c.moveTo(x - 15, y - 14); c.quadraticCurveTo(x - 6, y - 14 - h - fl, x, y - 22 - h - fl); c.quadraticCurveTo(x + 7, y - 14 - h * 0.6, x + 15, y - 14); c.closePath(); c.fill(); c.stroke();
+    if (done) { c.fillStyle = '#ffd24a'; c.beginPath(); c.arc(x + 46, y - 20, 9 + Math.sin(now / 200), 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#6a6078'; c.fillRect(x + 38, y - 10, 16, 12); c.strokeRect(x + 38, y - 10, 16, 12); }
+    c.restore();
+  }
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;
@@ -377,6 +392,7 @@
       catch (e) { haveArt = false; }
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
+    drawBrasero(c, now);
     drawMarks(c, now, tg);
     drawEmotes(c, now); drawBark(c);
     if (mode !== 'panel') drawTopHud(c);
