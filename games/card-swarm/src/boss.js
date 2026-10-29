@@ -68,7 +68,7 @@
     { n: 3, hp: 1.30, dmg: 1.20, tele: 0.90, adds: 1, cap: 4, fury: 150000, part: 1.0, brasas: 1.50, troph: 1, rare: 0.30, gmul: 1.50, pfx: 1, v3: true, mets: 9 },
     { n: 4, hp: 1.50, dmg: 1.30, tele: 0.90, adds: 1, cap: 4, fury: 120000, part: 1.3, brasas: 1.75, troph: 2, rare: 0.45, gmul: 1.75, pfx: 0, v3: true, mets: 9, derr: 0.8, regrow: 14000 },
     { n: 5, hp: 1.75, dmg: 1.40, tele: 0.90, adds: 1, cap: 6, fury: 120000, part: 1.3, brasas: 2.00, troph: 2, rare: 0.60, gmul: 2.00, pfx: 1, v3: true, mets: 9, derr: 0.8, regrow: 14000, x2: true }];
-  S.ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+  S.ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   function nPh(e) { return e.def.phases.length; }   // P4: Yarlak tiene 4 fases (Pastor, Karceron y Letea 3)
   if (G.pelx) G.pelx.split(',').forEach(function (kv) {   // calibración: ?pelx=hp:1.1,dmg3:1.05 (sin sufijo: niveles II-V; con sufijo: solo ese nivel)
     var a = kv.split(':'), m = /^([a-z]+)(\d)?$/.exec(a[0]); if (!m) return;
@@ -80,8 +80,8 @@
     if (m <= 7) return 0.75; if (m >= 10) return 1.1;
     return m <= 9 ? 0.75 + 0.25 * (m - 7) / 2 : 1 + 0.1 * (m - 9);
   };
-  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * pel().hp * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
-  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak', panal: 'melaria' };   // el bioma del Portal decide el jefe
+  S.bossHp = function (id) { return Math.round(DEFS[id].hp * (G.dbgHpCal || (G.B.famOf && G.B.famOf() && DEFS[id].hpCalFam) || DEFS[id].hpCal || 1) * S.durMul() * G.Loot.dur().bossHp * (DEFS[id].pelHp ? DEFS[id].pelHp[pel().n] : pel().hp) * (G.huntHpMul || 1)); };   // cacería x0,75, práctica x0,5 (DESIGN 4.2)
+  S.BIOME_BOSS = { bosque: 'pastor', cripta: 'karceron', asfodelo: 'letea', tundra: 'yarlak', panal: 'melaria', crater: 'cenizar' };   // el bioma del Portal decide el jefe
   S.bossFor = function (biome) { var id = S.BIOME_BOSS[biome] || 'pastor'; return DEFS[id] ? id : 'pastor'; };
   // Salida (px) que el jugador necesita para librarse de cada ataque (README: tablas por jefe). Peligro acorta la telegrafía, pero nunca por debajo de la regla de esquiva
   // 250 ms de reacción + 1000 x salida / 190 + 100 ms de margen de decisión (DESIGN 1.2: "Peligro puede acortar la telegrafía como máximo -15 %"; aquí además se respeta la regla).
@@ -277,6 +277,7 @@
     for (var k in e.parts) {
       var pe = e.parts[k]; if (pe.flash > 0) pe.flash -= 16.7; if (pe.expT > 0) pe.expT -= 16.7;
       if (pe.dead) continue;
+      if (hk(e, 'partActive')) pe.untarget = !e.def.h.partActive(e, k);
       var an = a[k]; if (!an) continue;
       pe.x = e.x + an.x; pe.y = e.y + an.y; pe.r = an.r || D.parts[k].r;
     }
@@ -293,8 +294,8 @@
     G.Hud.banner('FASE ' + S.ROMAN[e.phase] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, D.gateCol ? D.gateCol[e.phase - 1] : e.phase === 2 ? '#c090ff' : '#ff9a3c'); S.stinger('p' + e.phase, e);
     if (D.h && D.h.onGate) D.h.onGate(e);
     var p = PL();   // salvavidas: 2 corazones
-    for (var i = 0; i < 2; i++) G.Combat.dropGem(p.x + (i ? 50 : -50), p.y + 20, 'heart', B.player.heal);
-    try { Assets.music.setIntensity(D.phases[e.phase - 1].music); } catch (x) { /* audio */ }
+    var nh = D.gateHearts || 2; for (var i = 0; i < nh; i++) G.Combat.dropGem(p.x + (i === 0 ? -50 : i === 1 ? 50 : 0), p.y + 20, 'heart', B.player.heal);
+    try { if (!(D.h && D.h.noIntensity)) Assets.music.setIntensity(D.phases[e.phase - 1].music); } catch (x) { /* audio */ }
     if (e.id === 'pastor' && e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: Math.random() * 3000 }); }); }
     if (e.id === 'pastor' && e.phase === 3) { S.insetOn = true; S.insetT = 0; }
     for (var j = 0; j < G.enemies.length; j++) { var q = G.enemies[j]; if (!q.dead && q.type !== 'boss' && q.type !== 'bosspart' && !q.bossAdd) { q.noSpawnAdd = true; } }
@@ -315,7 +316,7 @@
     if (second) { var pl = PL(); for (var hi = 0; hi < 2; hi++) G.Combat.dropGem(pl.x + (hi ? 50 : -50), pl.y + 20, 'heart', B.player.heal); }   // Último aliento: 2 corazones (como en cada puerta de fase)
     if (hk(e, 'onDespair')) e.def.h.onDespair(e); else expose(e, 1.25, 9500, 'despair');
     e.despAng = Math.random() * TAU;
-    try { Assets.music.setIntensity(1); } catch (x) { /* audio */ }
+    try { if (!(e.def.h && e.def.h.noIntensity)) Assets.music.setIntensity(1); } catch (x) { /* audio */ }
   };
 
   // ================================================================= ATAQUES
@@ -644,6 +645,7 @@
 
   // ================================================================= CICLO PRINCIPAL
   function furyUpdate(e) {
+    if (hk(e, 'furyCalc')) { e.def.h.furyCalc(e); return; }   // P6.5: Cenizar tiene Furia por fase
     var P = pel(), t = S.combatT, f = 1;
     if (t >= P.fury) f = Math.min(2, 1.25 + 0.1 * Math.floor((t - P.fury) / 15000));
     if (f > S.fury) {
@@ -916,6 +918,7 @@
     if (S.flash > 0) { c.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, S.flash * 0.4) + ')'; c.fillRect(0, 0, W, H); }
     if (e && !e.dead && !e.dying) drawBar(c, e);
     else { var gm = E.minis()[0]; if (gm && gm.spawnT <= 0 && !(e && S.active)) { if (gm.mini) G.Minis.drawBar(c, gm); else drawGuardBar(c, gm); } }   // J3: los guardianes (Coloso, Colmena y variantes de bioma) usan una barra grande propia
+    if (e && !e.dead && !e.dying && e.def.h && e.def.h.hud) e.def.h.hud(c, e);
     if (I) drawIntro(c, e, I);
   };
   // Barra grande de guardián (DESIGN 4.1: banner de 2 s y la barra grande, sin intro larga): 520 x 16, muesca del enrage al 50 % y medidor de la parte rompible
@@ -957,7 +960,7 @@
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr * fill, 6);
     // muescas de fase (65 % / 30 % / 8 %)
     var np = nPh(e), th = [], tc = [], i;
-    for (i = 0; i < np - 1; i++) { th.push(D.phases[i].thr); tc.push(['#c8b8e8', '#ff9a3c', '#ffd27a'][i]); }
+    for (i = 0; i < np - 1; i++) { th.push(D.phases[i].thr); tc.push(['#c8b8e8', '#ff9a3c', '#ffd27a', '#7fe0d0', '#bfeaff', '#ffc440', '#ffffff'][i]); }
     th.push(D.despairAt); tc.push('#d090ff');
     if (pel().x2) { th.push(0.03); tc.push('#ff60c0'); }
     for (i = 0; i < th.length; i++) {
