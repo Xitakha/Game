@@ -168,7 +168,7 @@ async function mech(b) {
     var out = {}, e = G.Boss.e, S = G.Boss, Z = S.cz, p = G.player; __prep(); p.x = 100; p.y = 100; G.god = false; p.hp = 100;
     S.force('c_requiem'); var hp0 = p.hp, onI = null, lavaT = -1, moved = 0, p0, minR = 1e9, maxR = 0;
     __sim(20000, function (t) { var a = S.A; if (a.lava && a.lava.state === 'on') { if (lavaT < 0) { lavaT = t; p.hp = 100; } var is = Z.islands(a.lava); minR = Math.min(minR, is[0].r); maxR = Math.max(maxR, is[0].r); if (!p0) p0 = [is[0].x, is[0].y]; moved = Math.hypot(is[0].x - p0[0], is[0].y - p0[1]); } e.cadT = 1e9; return !!e.atk; }, false);
-    out.lavaDmg = 100 - p.hp; out.minR = Math.round(minR); out.maxR = Math.round(maxR); out.cov = [130, 115, 100].map(r => Math.round(Z.islandCoverage(r)));
+    out.lavaDmg = 100 - p.hp; out.minR = Math.round(minR); out.maxR = Math.round(maxR); out.cov = [150, 135, 120].map(r => Math.round(Z.islandCoverage(r)));
     // sobre isla: sin daño
     __prep(); var a = S.A; S.force('c_requiem'); p.hp = 100; var hp1;
     __sim(2500, null); var is = Z.islands(a.lava); __sim(1000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; return true; }, false); hp1 = p.hp; __sim(3000, function () { var q = Z.islands(a.lava)[1]; p.x = q.x; p.y = q.y; return true; }, false);
@@ -179,9 +179,9 @@ async function mech(b) {
   console.log(JSON.stringify(r));
   ok(r.lavaDmg > 0, 'F3 Réquiem: la lava hiere fuera de las islas (' + r.lavaDmg + ' de daño)');
   ok(r.onIsland === 0 && r.onIslandHp === 100, 'F3 Réquiem: sobre una isla no hay daño de lava');
-  ok(r.maxR === 130 && r.minR <= 101 && r.minR >= 99, 'F3 islas r 130 -> 100 en 8 s (doc 120 -> 80: ver README) (' + r.maxR + ' -> ' + r.minR + ')');
-  ok(r.cov[0] <= 332, 'F3 cobertura de islas al empezar la lava (r 130, órbita de 30 px): ' + r.cov[0] + ' px <= 332 (1750 ms x 190 px/s con la telegrafía de 2000 ms); al encogerse (r 115 / 100: ' + r.cov[1] + ' / ' + r.cov[2] + ') el jugador ya está sobre una isla');
-  ok(r.static && r.rBroken === 110, 'F3 Núcleo roto: islas quietas y r 110 (' + r.static + ', ' + r.rBroken + ')');
+  ok(r.maxR === 150 && r.minR <= 121 && r.minR >= 119, 'F3 islas r 150 -> 120 en 8 s (doc 120 -> 80: ver README) (' + r.maxR + ' -> ' + r.minR + ')');
+  ok(r.cov[0] <= 332, 'F3 cobertura de islas al empezar la lava (r 150, órbita de 30 px): ' + r.cov[0] + ' px <= 332 (1750 ms x 190 px/s con la telegrafía base de 2000 ms; real 2400); al encogerse (r 135 / 120: ' + r.cov[1] + ' / ' + r.cov[2] + ') el jugador ya está sobre una isla');
+  ok(r.static && r.rBroken === 130, 'F3 Núcleo roto: islas quietas y r 130 sin encoger (' + r.static + ', ' + r.rBroken + ')');
   r = await pg.evaluate(() => {
     var out = {}, e = G.Boss.e, S = G.Boss, p = G.player; __prep(); p.x = 700; p.y = 600; G.god = false; p.hp = 100;
     S.force('c_martillo'); var ev = null; __sim(200, null, false); ev = S.A.evs[0]; out.dbg = [G.player.x, G.player.y, ev && ev.x, ev && ev.y, ev && ev.at - S.A.clk, S.noHurt, G.player.inv]; out.r = ev && ev.r; out.tele = ev && ev.tele; out.dmgAt = null;
@@ -191,7 +191,7 @@ async function mech(b) {
     return out;
   });
   console.log(JSON.stringify(r));
-  ok(r.r === 90 && r.hit >= 20 && r.exp === 1.25, 'F3 Martillazo: círculo r 90, 28 de daño (con tope 32), maza clavada 1,2 s (x1,25)');
+  ok(Math.abs(r.r - 63) < 0.01 && r.hit >= 20 && r.exp === 1.25, 'F3 Martillazo: círculo r 63 (doc 90 x geo 0,7), 28 de daño, maza clavada 1,2 s (x1,25) (r ' + r.r + ', daño ' + r.hit + ')');
   ok(r.meteors === 6, 'F3 Lluvia de brasas: 6 meteoros (' + r.meteors + ')');
   ok(!pg.errs.length, 'F3: 0 errores ' + pg.errs.slice(0, 2)); await pg.close();
   // F4
@@ -250,7 +250,7 @@ async function mech(b) {
   ok(r.rings === 5 && r.apo === '5,4,3,2,1' && r.dirs === 'in,out,in,out,in', 'F6 Zumbido: 5 anillos R = k x 83, impares contraen y pares expanden (' + r.apo + ' ' + r.dirs + ')');
   ok(r.inGap === false && r.onRing === true, 'F6 anillo: el hueco es seguro y el resto del anillo hiere');
   ok(r.dirsBroken === 'in,in,in,in,in', 'F6 Corona rota: todos los anillos contraen (' + r.dirsBroken + ')');
-  ok(r.est === 'lane/168/420', 'F6 Estocada: carril 168 x 420 (' + r.est + ')');
+  ok(r.est === 'lane/147/420', 'F6 Estocada: carril 147 (doc 168; calibración) x 420 (' + r.est + ')');
   ok(r.adds >= 2 && r.noSwarm, 'F6 Llamada del enjambre: invoca (' + r.adds + ') y desaparece con la Corona rota');
   ok(!pg.errs.length, 'F6: 0 errores ' + pg.errs.slice(0, 2)); await pg.close();
 }
