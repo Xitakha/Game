@@ -628,6 +628,7 @@
     var a = A(), i; if (!a.evs) return;
     for (i = 0; i < a.evs.length; i++) Z.hazEv(a.evs[i], out);
     if (Z.hazB) Z.hazB(e, out);
+    if (Z.hazChain) Z.hazChain(e, out);
   };
   H.force = function (e, name) { if (e.mode !== 'fight' || e.atk) return false; U.startAttack(e, name); return true; };
   H.hud = function (c, e) {
@@ -637,6 +638,38 @@
     G.txt(c, tx, bx + bw, by - 29, 10, S.fury > 1 ? '#ff5a4a' : left < 30000 ? '#ffb070' : '#7a7086', 'right');
     if (Z.hudChain) Z.hudChain(c, e, bx, by, bw);
   };
+
+  // ================================================================= SUELO DEL CRÁTER (procedural; si el arte registra el bioma 'crater' con arena propia se usa esa)
+  Z.buildGround = function () {
+    try { if (Assets.getBiome && Assets.getBiome() === 'crater' && Assets.arena) { var AR = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL }); if (AR && AR.canvas) { G.torches = AR.torches || []; G.ritual = AR.ritual || null; return AR.canvas; } } } catch (x0) { /* reserva por código */ }
+    var cv = document.createElement('canvas'); cv.width = G.AW; cv.height = G.AH; var c = cv.getContext('2d'), i, j, seed = 4242;
+    function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+    c.fillStyle = '#17121d'; c.fillRect(0, 0, G.AW, G.AH);
+    for (i = 0; i < 2600; i++) { var shade = rnd(); c.fillStyle = shade < 0.5 ? 'rgba(42,34,52,0.55)' : 'rgba(10,6,14,0.5)'; c.fillRect(rnd() * G.AW, rnd() * G.AH, 2 + rnd() * 10, 2 + rnd() * 6); }
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (i = 0; i < 46; i++) {   // vetas de brasa en el vidrio volcánico
+      var x = rnd() * G.AW, y = rnd() * G.AH, an = rnd() * 6.283, pts = [[x, y]], n = 6 + Math.floor(rnd() * 8);
+      for (j = 0; j < n; j++) { an += (rnd() - 0.5) * 1.1; x += Math.cos(an) * (24 + rnd() * 36); y += Math.sin(an) * (24 + rnd() * 36); pts.push([x, y]); }
+      [[7, 'rgba(255,106,26,0.10)'], [3, 'rgba(255,106,26,0.35)'], [1.2, 'rgba(255,200,110,0.7)']].forEach(function (st) { c.lineWidth = st[0]; c.strokeStyle = st[1]; c.beginPath(); pts.forEach(function (q, k) { if (k) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.stroke(); });
+    }
+    // ruinas del hogar (decorado sin colisión): chimenea, mesa y silla quemadas
+    var cx = 720, cy = 405;
+    c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(cx, cy + 40, 150, 40, 0, 0, 6.283); c.fill();
+    c.strokeStyle = OUT; c.lineWidth = 3;
+    c.fillStyle = '#2a2230'; c.fillRect(cx - 38, cy - 70, 76, 100); c.strokeRect(cx - 38, cy - 70, 76, 100);
+    c.fillStyle = '#0c0810'; c.fillRect(cx - 22, cy - 20, 44, 50); c.fillStyle = 'rgba(255,106,26,0.5)'; c.fillRect(cx - 14, cy + 8, 28, 22);
+    c.fillStyle = '#1e1824'; for (i = 0; i < 5; i++) c.fillRect(cx - 38 + (i % 2) * 6, cy - 66 + i * 18, 70, 3);
+    c.fillStyle = '#2a2024'; c.fillRect(cx + 70, cy + 4, 70, 12); c.fillRect(cx + 74, cy + 16, 6, 24); c.fillRect(cx + 130, cy + 16, 6, 24); c.strokeRect(cx + 70, cy + 4, 70, 12);
+    c.fillRect(cx - 120, cy + 14, 28, 8); c.fillRect(cx - 118, cy + 22, 5, 16); c.fillRect(cx - 98, cy + 22, 5, 16);
+    var g = c.createRadialGradient(cx, cy, 20, cx, cy, 320); g.addColorStop(0, 'rgba(255,106,26,0.14)'); g.addColorStop(1, 'rgba(255,106,26,0)'); c.fillStyle = g; c.fillRect(0, 0, G.AW, G.AH);
+    // borde: muro de roca negra
+    var W = G.WALL;
+    c.fillStyle = '#0b080f'; c.fillRect(0, 0, G.AW, W); c.fillRect(0, G.AH - W, G.AW, W); c.fillRect(0, 0, W, G.AH); c.fillRect(G.AW - W, 0, W, G.AH);
+    for (i = 0; i < 90; i++) { c.fillStyle = '#1a1420'; var bx = rnd() * G.AW; c.beginPath(); c.arc(bx, W - 2 + rnd() * 6, 6 + rnd() * 10, 0, 6.283); c.fill(); c.beginPath(); c.arc(bx, G.AH - W + 2 - rnd() * 6, 6 + rnd() * 10, 0, 6.283); c.fill(); }
+    var vg = c.createLinearGradient(0, W, 0, W + 70); vg.addColorStop(0, 'rgba(0,0,0,0.5)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = vg; c.fillRect(W, W, G.AW - 2 * W, 70);
+    return cv;
+  };
+
   S.cenizarInfo = function () { var a = A(), e = S.e; return { clk: a.clk, evs: a.evs ? a.evs.length : 0, phT: a.phT, fury: S.fury, coreT: a.coreT, hurts: a.hurts, drawMs: a.drawMs, drawMax: a.drawMax, ch: a.ch ? { n: a.ch.n, t: a.ch.t, end: a.ch.end } : null, lava: a.lava ? a.lava.state : null }; };
   S.cenizarTable = TABLE;
 })();

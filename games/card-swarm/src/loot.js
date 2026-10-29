@@ -231,14 +231,16 @@
         var kn = S.bossKills[bs.id] || 0; S.bossKills[bs.id] = kn + 1;
         var pw = S.pelWins[bs.id] = S.pelWins[bs.id] || {}; firstP = !(pw[P] > 0); pw[P] = (pw[P] || 0) + 1;
         // PF: run normal = 2 (3 la 1.a vez que vences al jefe) + extra la 1.a vez en Peligro III y V; cacería = solo la 1.a victoria de ese jefe en ese Peligro (sin farmeo)
-        var basePF = hunt ? (firstP ? BD.pf : 0) : (kn === 0 ? BD.pfFirst : BD.pf);
+        var basePF = (hunt && !G.final) ? (firstP ? BD.pf : 0) : (kn === 0 ? BD.pfFirst : BD.pf);   // el Asalto al Cráter paga como una expedición (3 PF la 1.a vez, 2 después)
         bpf = G.Tree.addPF(Math.round((basePF + (firstP ? PD.pfx : 0)) * DU.pf)); R.pf = (R.pf || 0) + bpf;   // duración: Rápida x1,4 (2 -> 3, 3 -> 4)
         if (P < 5 && G.Save.pelMax(bs.id) <= P) { S.peligro[bs.id] = P + 1; unlocked = P + 1; }   // vencer el Peligro N abre el N+1
-        if (hunt) { var hr = G.Save.hunt(bs.id, P); hr.wins++; var tm = Math.round((bs.time || G.Boss.combatT) / 1000); if (!hr.best || tm < hr.best) hr.best = tm; }
+        if (hunt && !G.final) { var hr = G.Save.hunt(bs.id, P); hr.wins++; var tm = Math.round((bs.time || G.Boss.combatT) / 1000); if (!hr.best || tm < hr.best) hr.best = tm; }
       }
       brasas += bb;
+      if (bs.id === 'cenizar' && bs.won && !(S.insignias.brasa_primera > 0)) { S.insignias.brasa_primera = 1; S.flags.title_apagafuegos = 1; }   // Insignia 11 'Brasa Primera' y título
+      if (bs.id === 'cenizar' && bs.won && !(R.relics > 0)) S.flags.title_cenizas = 1;   // desafío: vencerlo sin romper ninguna Reliquia
       R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; });
-      binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && !hunt && kn === 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
+      binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && (!hunt || G.final) && kn === 0, final: !!G.final, relics: R.relics || 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
     }
     S.brasas += brasas; S.runs++; if (won && !hunt) S.wins++;
     S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);

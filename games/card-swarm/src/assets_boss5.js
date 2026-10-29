@@ -424,7 +424,7 @@
   function wrapDo(fn) { for (var ox = -32; ox <= 32; ox += 32) for (var oy = -32; oy <= 32; oy += 32) fn(ox, oy); }
   function tileDraw(k) {
     return function (v) {
-      var x = v.ctx, i, r = H.rrand(1400 + k), nF = [2, 5, 7, 4, 6, 5][k], nV = [0, 0, 1, 2, 2, 3][k];
+      var x = v.ctx, i, r = H.rrand(1400 + k), nF = [2, 5, 7, 4, 6, 5][k], nV = [0, 0, 0, 1, 1, 2][k];
       x.fillStyle = C.glass; x.fillRect(0, 0, 32, 32);
       for (i = 0; i < nF; i++) {   // facetas de vidrio (envueltas)
         var cx = r() * 32, cy = r() * 32, rr = 5 + r() * 9, a0 = r() * TAU, shade = r() < 0.5 ? C.glassH : C.glassS;
@@ -1059,7 +1059,7 @@
     o = o || {}; var sx = w / 1440, sy = h / 810, rr = H.rrand(o.seed || 909), c = mkc(w, h), x = c.getContext('2d'), i, j;
     function R(a, b) { return a + rr() * (b - a); }
     x.imageSmoothingEnabled = true; x.fillStyle = C.glassS; x.fillRect(0, 0, w, h);
-    var tw = 64 * Math.min(sx, sy), th = tw; for (j = 0; j * th < h + th; j++) for (i = 0; i * tw < w + tw; i++) { var r0 = rr(), ti = r0 < 0.55 ? 0 : (r0 < 0.7 ? 1 : (r0 < 0.8 ? 2 : (r0 < 0.88 ? 3 : (r0 < 0.95 ? 4 : 5)))); x.drawImage(A.sprite('tile_crater', ti), i * tw, j * th, tw + 1, th + 1); }
+    var tw = 64 * Math.min(sx, sy), th = tw; for (j = 0; j * th < h + th; j++) for (i = 0; i * tw < w + tw; i++) { var r0 = rr(), ti = r0 < 0.6 ? 0 : (r0 < 0.78 ? 1 : (r0 < 0.9 ? 2 : (r0 < 0.95 ? 3 : (r0 < 0.98 ? 4 : 5)))); x.drawImage(A.sprite('tile_crater', ti), i * tw, j * th, tw + 1, th + 1); }
     // grandes grietas de brasa que irradian del hogar
     x.lineCap = 'round'; x.lineJoin = 'round';
     for (i = 0; i < 9; i++) {

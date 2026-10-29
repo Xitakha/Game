@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v8 (P6.5, Cenizar): peligro.cenizar, endingSeen (cinemática final vista), trofeos de Cenizar; el Cráter se abre al vencer a los 5 jefes. Migración v7 -> v8 con copia en swarmhand.save.v7.
    v7 (P6, Panal + Melaria): peligro.melaria; el Panal se abre al vencer a Yarlak (bossKills.yarlak). Migración v6 -> v7 con copia en swarmhand.save.v6; quien ya venció a Yarlak ve el Panal abierto.
    v6 (P4.5, minijefes): insignias { id: n } (trofeo menor de cada minijefe) y elites por SLOT (mini_slot1 / mini_slot2 en vez de mini_bulwark / mini_hive). Migración v5 -> v6 con copia en swarmhand.save.v5.
    v5 (P4, Tundra + Yarlak): peligro.yarlak; la Tundra se abre al vencer a Letea (bossKills.letea). Migración v4 -> v5 con copia en swarmhand.save.v4; quien ya venció a Letea ve la Tundra abierta.
@@ -13,7 +14,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 7;
+  var KEY = 'swarmhand.save', VERSION = 8;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -34,7 +35,7 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   var warned = false;
@@ -73,6 +74,10 @@
       d.v = 7; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.melaria) d.peligro.melaria = 1;
       d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated7 = 1;
     }
+    if (d.v === 7) {   // P6.5: Cenizar (Cráter). Solo se añade su Peligro y la marca de final visto; el desbloqueo del Cráter sale de los 5 bossKills
+      d.v = 8; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.cenizar) d.peligro.cenizar = 1; if (d.endingSeen == null) d.endingSeen = false;
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated8 = 1;
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -100,6 +105,8 @@
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
     if (!d.peligro.yarlak) d.peligro.yarlak = 1;
     if (!d.peligro.melaria) d.peligro.melaria = 1;
+    if (!d.peligro.cenizar) d.peligro.cenizar = 1;
+    d.endingSeen = !!d.endingSeen;
     if (typeof d.pending.dish === 'undefined') d.pending.dish = null;
     if (typeof d.shop.dish !== 'number') d.shop.dish = 0;
     if (typeof d.lossStreak !== 'number') d.lossStreak = 0;
@@ -139,7 +146,9 @@
   };
 
   // ---- Peligro (J3): máximo desbloqueado por jefe y nivel elegido en el Portal
-  S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'];
+  S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar'];
+  S.FIVE = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'];
+  S.craterOpen = function () { var k = (S.data && S.data.bossKills) || {}; return S.FIVE.every(function (b) { return (k[b] || 0) > 0; }) || /[?&](biome|boss|hunt)=(crater|cenizar)/.test(location.search); };   // P6.5: se abre al vencer a los 5 jefes
   S.pelMax = function (id) { return G.clamp(Math.round((S.data.peligro && S.data.peligro[id]) || 1), 1, 5); };
   S.pelSel = function (id) { return Math.min(S.pelMax(id), G.clamp(Math.round((S.data.peligroSel && S.data.peligroSel[id]) || 1), 1, 5)); };
   S.setPelSel = function (id, n) { S.data.peligroSel[id] = G.clamp(n, 1, S.pelMax(id)); S.save(); };

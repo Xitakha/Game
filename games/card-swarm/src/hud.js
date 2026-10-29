@@ -97,7 +97,7 @@
     // tiempo y jefe
     var boss = G.Enemies.boss();
     if (G.mode !== 'run') {   // cacería / práctica: sin reloj de run
-      G.txt(c, G.mode === 'practice' ? 'PRÁCTICA  -  intento ' + (G.practiceTries || 1) : 'CACERÍA  -  Peligro ' + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)], G.W / 2, 20, 18, G.mode === 'practice' ? '#9dffb4' : '#6ac8ff', 'center');
+      G.txt(c, G.mode === 'practice' ? 'PRÁCTICA  -  intento ' + (G.practiceTries || 1) : (G.final ? 'ASALTO AL CRÁTER  -  Peligro ' : 'CACERÍA  -  Peligro ') + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)], G.W / 2, 20, 18, G.mode === 'practice' ? '#9dffb4' : '#6ac8ff', 'center');
       if (G.mode === 'practice') G.txt(c, G.Sys.isTouch() ? 'sin recompensas  -  pausa y REINICIAR' : 'sin recompensas  -  P y luego R: reiniciar', 16, 47, 10, '#9a8fb0', 'left');
     } else {
     G.txt(c, G.fmtTime(G.runT), G.W / 2, 20, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // el reloj de la run se congela con el jefe vivo

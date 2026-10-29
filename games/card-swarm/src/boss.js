@@ -1012,7 +1012,7 @@
     var out = [];
     if (G.mode === 'practice') out.push(['PRÁCTICA', '#9dffb4']);
     else {
-      if (G.mode === 'hunt') out.push(['CACERÍA', '#6ac8ff']);
+      if (G.mode === 'hunt') out.push([G.final ? 'ASALTO' : 'CACERÍA', G.final ? '#ff9a3c' : '#6ac8ff']);
       var n = Math.round(G.peligro || 1); out.push(['PELIGRO ' + S.ROMAN[G.clamp(n, 1, 5)], PELCOL[G.clamp(n, 1, 5)]]);
     }
     return out;
