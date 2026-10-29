@@ -85,7 +85,7 @@
     else { Q.accept(d.id); say(d.target ? 'Encargo aceptado: ' + d.label + ' aparece antes y más a menudo.' : 'Encargo aceptado: ' + d.name + '.'); G.sfx('card_select', { vol: 0.7 }); }
   }
   // ---- CACERÍA (J3, DESIGN 4.2): encargo de Vesper por jefe y Peligro desbloqueado; PRACTICAR = sin riesgo ni recompensas, con HP x0,5
-  function huntAvail(id) { return (SV().bossKills[id] || 0) > 0; }
+  function huntAvail(id) { return (SV().bossKills[id] || 0) > 0 || (id === 'cenizar' && G.Save.craterOpen()); }   // Cenizar: práctica y cacería desde que se abre el Cráter
   P.huntAvailable = function () { return G.Save.BOSSES.some(huntAvail); };
   function huntFix() {
     var B = G.Save.BOSSES; st.hb = st.hb || 0; st.hph = st.hph || 1;
@@ -97,7 +97,7 @@
   function hpRect(i) { return { x: 20 + i * 64, y: 116, w: 58, h: 38 }; }
   var R_HUNT = { x: 648, y: 168, w: 280, h: 62 }, R_PRAC = { x: 648, y: 396, w: 280, h: 56 };
   function phN() { return G.Boss.DEFS[G.Save.BOSSES[st.hb || 0]].phases.length; }   // P4: Yarlak tiene 4 fases (Practicar elige la inicial)
-  function phRect(i) { return phN() > 3 ? { x: 648 + i * 71, y: 338, w: 68, h: 48 } : { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
+  function phRect(i) { return phN() > 4 ? { x: 648 + i * 41, y: 338, w: 39, h: 48 } : phN() > 3 ? { x: 648 + i * 71, y: 338, w: 68, h: 48 } : { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
   function startHunt(practice) {
     var id = G.Save.BOSSES[st.hb]; if (!huntAvail(id)) return;
     G.launchReq = { mode: practice ? 'practice' : 'hunt', boss: id, peligro: practice ? 1 : st.hp, phase: practice ? st.hph : 0 };
@@ -132,13 +132,14 @@
     G.txt(c, 'Duración ' + L.dur(SV().len).name + ' (' + SV().len + ' min, la del Portal): HP jefe x' + (G.Boss.durMul(SV().len) * L.dur(SV().len).bossHp).toFixed(2).replace('.', ',') + ', PF x' + String(L.dur(SV().len).pf).replace('.', ','), 36, 220, 11, '#9dffb4', 'left');
     G.txt(c, 'DEBILIDADES', 36, 236, 11, '#9a8fb0', 'left');
     var x = 36;
-    D.weak.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, TAGC[w.tag] || '#9dffb4', 'left'); x += (t.length + 6) * 8.2 + 14; });
-    D.resist.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, '#8a8a98', 'left'); x += (t.length + 6) * 8.2 + 14; });
+    var WV = (G.Boss.weakView && G.Boss.weakView(id)) || { weak: D.weak, resist: D.resist };
+    WV.weak.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, TAGC[w.tag] || '#9dffb4', 'left'); x += (t.length + 6) * 8.2 + 14; });
+    WV.resist.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, '#8a8a98', 'left'); x += (t.length + 6) * 8.2 + 14; });
     G.txt(c, 'PARTES ROMPIBLES  (cada una suelta su trofeo' + (PD.troph > 1 ? ' x2' : '') + ')', 36, 276, 11, '#9a8fb0', 'left');
     Object.keys(D.parts).forEach(function (k, j) {
-      var pd = D.parts[k], tr = G.Boss.TROPHY[pd.trophy], y = 298 + j * 24;
-      try { c.drawImage(Assets.sprite(G.hasSpr(tr.spr) ? tr.spr : 'trophy_pastor_horn', 0), 36, y - 10, 20, 20); } catch (e0) { /* sin icono */ }
-      G.txt(c, pd.name + '  ->  ' + tr.name + '  (' + Math.round(pd.pct * 100) + ' % de la vida)', 64, y, 12, '#ffe9a0', 'left');
+      var np6 = Object.keys(D.parts).length > 3, pd = D.parts[k], tr = G.Boss.TROPHY[pd.trophy], y = np6 ? 292 + j * 16 : 298 + j * 24;
+      try { c.drawImage(Assets.sprite(G.hasSpr(tr.spr) ? tr.spr : 'trophy_pastor_horn', 0), 36, y - (np6 ? 7 : 10), np6 ? 14 : 20, np6 ? 14 : 20); } catch (e0) { /* sin icono */ }
+      G.txt(c, pd.name + '  ->  ' + tr.name + '  (' + (pd.pct * 100).toFixed(pd.pct * 100 % 1 ? 1 : 0).replace('.', ',') + ' % de la vida' + (pd.phase ? ', fase ' + G.Boss.ROMAN[pd.phase] : '') + ')', np6 ? 58 : 64, y, np6 ? 11 : 12, '#ffe9a0', 'left');
     });
     var bmin = Math.round(D.brasas * PD.brasas), bmax = Math.round((D.brasas + D.brasasPart * 3) * PD.brasas), pw = (S.pelWins[id] || {})[st.hp] || 0, hr = (S.hunts[id] || {})[st.hp] || { wins: 0, tries: 0, best: 0 }, pr = S.practice[id] || { tries: 0, wins: 0 };
     G.txt(c, 'RECOMPENSA', 36, 380, 11, '#9a8fb0', 'left');
@@ -152,7 +153,7 @@
     G.txt(c, 'Sin hordas: solo la bestia y sus adds,', 650, 252, 11, '#d8cfe8', 'left');
     G.txt(c, 'más 3 gusanos de limpieza cada 25 s.', 650, 267, 11, '#d8cfe8', 'left');
     G.txt(c, 'PRACTICAR  (sin riesgo, HP x0,5, sin Peligro)', 650, 318, 11, '#9dffb4', 'left');
-    for (i = 0; i < phN(); i++) U.button(c, phRect(i), 'FASE ' + G.Boss.ROMAN[i + 1], { size: 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
+    for (i = 0; i < phN(); i++) U.button(c, phRect(i), phN() > 4 ? 'F' + (i + 1) : 'FASE ' + G.Boss.ROMAN[i + 1], { size: phN() > 4 ? 12 : 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
     G.txt(c, 'Empieza en la fase elegida. Reinicio rápido con R.', 650, 396 - 6, 10, '#9a8fb0', 'left');
     U.button(c, R_PRAC, 'PRACTICAR', { size: 20, sub: 'P  -  fase ' + G.Boss.ROMAN[st.hph] + ', intento ' + (pr.tries + 1), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
   }
@@ -304,8 +305,10 @@
     // P4: la Tundra (Yarlak) se abre al vencer a Letea
     { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' },
     // P6: el Panal (Melaria) se abre al vencer a Yarlak
-    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', bid: 'melaria' }];
-  function biomeRect(i) { return { x: 650 + i * 58, y: 336, w: 56, h: 42 }; }   // 5 destinos de 56 px (650 + 4 x 58 + 56 = 938 <= 940)
+    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', bid: 'melaria' },
+    // P6.5: el Cráter (Cenizar, Asalto) se abre al vencer a los cinco jefes (provisional hasta el Portal de la P7)
+    { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes (apaga las cinco llamas)', bid: 'cenizar' }];
+  function biomeRect(i) { return { x: 650 + i * 48, y: 336, w: 46, h: 42 }; }   // 5 destinos de 56 px (650 + 4 x 58 + 56 = 938 <= 940)
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
   function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
@@ -314,10 +317,11 @@
     if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'tundra' && !S.bossKills.letea) id = S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'panal' && !S.bossKills.yarlak) id = S.bossKills.letea ? 'tundra' : S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
+    if (id === 'crater' && !G.Save.craterOpen()) id = S.bossKills.yarlak ? 'panal' : S.bossKills.letea ? 'tundra' : S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
     if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
     return BIOMES.filter(function (b) { return b.id === id; })[0];
   }
-  function biomeOpen(b) { return !b.locked && (!b.need || (SV().bossKills[b.need] || 0) > 0); }
+  function biomeOpen(b) { return !b.locked && (!b.need || (b.need === '*' ? G.Save.craterOpen() : (SV().bossKills[b.need] || 0) > 0)); }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
     var S = SV(), a = S.anchors, i = a.indexOf(id);
@@ -386,7 +390,7 @@
     var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 309, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
     G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 293, 12, '#ffe9a0', 'left');
     if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 293, 12, '#8a7f96', 'left');
-    var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel];
+    var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
       var open = biomeOpen(b), on = cb.id === b.id;
@@ -406,7 +410,7 @@
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
       U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 16, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
     }
-    var pl1 = 'HP jefe x' + PD.hp.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : '');
+    var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : '');
     G.txt(c, pl1, 650, 453, 10, '#ffe9a0', 'left');
     U.wrap(c, PEL_TXT[psel] + (psel >= 4 ? ' Recomendado: DPS >= 110.' : ''), 290, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 650, 466 + k * 12, 10, '#c8b8e8', 'left'); });
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';

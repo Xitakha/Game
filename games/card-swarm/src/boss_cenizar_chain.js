@@ -218,7 +218,7 @@
 
   // ---- dibujo: glifos sobre el jefe (los eslabones que existen), vista de bandas fantasma
   Z.drawOverBoss = function (c, e) {
-    var a = A(), ch = a.ch; if (!ch) return;
+    var a = A(), ch = a.ch; if (!ch || (typeof Assets.drawBoss === 'function' && Assets.bossIds().indexOf('cenizar') >= 0 && G.hasSpr('boss_cenizar_torso'))) return;   // con arte, el propio drawBoss pinta los glifos (state.chain)
     var y = e.y - 200, x0 = e.x - (ch.links.length - 1) * 17, ph = G.clamp((ch.t + ANN) / ANN, 0, 1);
     c.save();
     ch.links.forEach(function (l, i) {

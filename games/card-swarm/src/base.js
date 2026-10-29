@@ -11,14 +11,15 @@
   // Reintentar la misma salida: normal, cacería (misma bestia y Peligro) o práctica (misma mano; la fase de inicio puede cambiarse con 1-3)
   Bs.retry = function () { G.launchReq = G.lastReq ? { mode: G.lastReq.mode, boss: G.lastReq.boss, peligro: G.lastReq.peligro, phase: G.lastReq.phase, final: G.lastReq.final } : null; Bs.launch(); };
   Bs.retryPractice = function () { if (G.mode === 'practice') Bs.retry(); };
-  var PH_BTN = function (i) { return { x: 516 + i * 140, y: 328, w: 130, h: 48 }; };
+  function phCount() { var d = G.Boss.DEFS[G.bossId]; return d ? d.phases.length : 3; }
+  var PH_BTN = function (i) { return phCount() > 4 ? { x: 516 + i * 60, y: 328, w: 56, h: 48 } : { x: 516 + i * 140, y: 328, w: 130, h: 48 }; };
   Bs.open = function (fromRun) { G.Aldea.open(!!fromRun); };
 
   // ------------------------------------------------------------- Pantalla de fin / botín
   Bs.updateEnd = function () {
     var m = inp.mouse;
     if (G.mode === 'practice') {   // elegir la fase de inicio de la práctica: 1-3 (o los botones) y se reinicia al momento
-      for (var pi = 0; pi < 3; pi++) if (inp.hit('Digit' + (pi + 1)) || (inp.hit('Mouse0') && U.inR(PH_BTN(pi), m))) { G.lastReq = G.lastReq || { mode: 'practice', boss: G.bossId }; G.lastReq.phase = pi + 1; Bs.retry(); return; }
+      for (var pi = 0; pi < phCount(); pi++) if (inp.hit('Digit' + (pi + 1)) || (inp.hit('Mouse0') && U.inR(PH_BTN(pi), m))) { G.lastReq = G.lastReq || { mode: 'practice', boss: G.bossId }; G.lastReq.phase = pi + 1; Bs.retry(); return; }
     }
     if (inp.hit('KeyR', 'Enter') || (inp.hit('Mouse0') && U.inR(END_RETRY, m))) { Bs.retry(); return; }
     if (inp.hit('KeyB', 'Escape') || (inp.hit('Mouse0') && U.inR(END_BASE, m))) { Bs.open(true); }
@@ -101,9 +102,9 @@
     U.panel(c, 500, 96, 440, 336, { border: '#4a8a6a' });
     G.txt(c, 'PRÁCTICA', 516, 114, 18, '#9dffb4', 'left');
     var ls = ['Sin recompensas, sin pérdida de progreso y sin Peligro.', 'El jefe tiene la mitad de vida; úsalo para aprender los patrones.', '', 'Intento ' + (bi.tries || 1) + '   -   victorias de práctica ' + (bi.wins || 0),
-      'Duración del intento: ' + G.fmtTime(bi.time || 0) + '   -   fase alcanzada: ' + ['I', 'II', 'III'][(bi.phase || 1) - 1], 'Partes rotas: ' + ((bi.parts && bi.parts.length) || 0) + '/3'];
+      'Duración del intento: ' + G.fmtTime(bi.time || 0) + '   -   fase alcanzada: ' + G.Boss.ROMAN[bi.phase || 1], 'Partes rotas: ' + ((bi.parts && bi.parts.length) || 0) + '/' + Object.keys((G.Boss.DEFS[G.bossId] || { parts: {} }).parts).length];
     ls.forEach(function (t, k) { G.txt(c, t, 516, 146 + k * 22, 13, k < 2 ? '#d8cfe8' : '#ffe9a0', 'left'); });
-    G.txt(c, 'EMPEZAR EN LA FASE...  (teclas 1-3 reinician al momento)', 516, 312, 12, '#9a8fb0', 'left');
-    for (var i = 0; i < 3; i++) U.button(c, PH_BTN(i), 'FASE ' + ['I', 'II', 'III'][i], { size: 15, color: (G.lastReq && (G.lastReq.phase || 1) === i + 1) ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
+    G.txt(c, 'EMPEZAR EN LA FASE...  (teclas 1-' + phCount() + ' reinician al momento)', 516, 312, 12, '#9a8fb0', 'left');
+    for (var i = 0; i < phCount(); i++) U.button(c, PH_BTN(i), (phCount() > 4 ? 'F' + (i + 1) : 'FASE ' + G.Boss.ROMAN[i + 1]), { size: 15, color: (G.lastReq && (G.lastReq.phase || 1) === i + 1) ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
   }
 })();

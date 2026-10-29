@@ -261,7 +261,7 @@
   var PILLARS = [[470, 300], [970, 300], [330, 520], [1110, 520], [590, 640], [850, 640]];
   function drawPillar(c, it) {
     var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
-    if (G.hasSpr('obs_ash_pillar')) { var cv = Assets.sprite('obs_ash_pillar', 0), w = cv.width, h = cv.height; c.drawImage(cv, Math.round(o.x - w / 2 + sh), Math.round(o.y - h + 14)); return; }
+    if (typeof Assets.drawAshPillar === 'function' && G.hasSpr('obs_ash_pillar')) { Assets.drawAshPillar(c, Math.round(o.x + sh), Math.round(o.y), { hp: 1, struck: o.shake > 0 }); return; }
     c.save(); c.translate(Math.round(o.x + sh), Math.round(o.y)); c.lineJoin = 'round'; c.strokeStyle = OUT; c.lineWidth = 3;
     c.fillStyle = '#3a3440'; c.beginPath(); c.moveTo(-20, 10); c.lineTo(-16, -40); c.lineTo(-6, -50); c.lineTo(10, -42); c.lineTo(20, 10); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = '#5c5468'; c.fillRect(-12, -34, 6, 38);
@@ -569,8 +569,11 @@
     var A0 = e.atk, ex = S.expo(e), a = A(), br = e.broken, st = {
       t: G.time, id: 'cenizar', facing: e.face || 1, phase: e.phase, hurt: e.hurtT > 0 ? 0.6 : 0, enraged: S.fury > 1, desperate: e.mode === 'despair',
       exposed: ex.mul > 1 && ex.kind !== 'stun' && ex.kind !== 'derribo', stun: ex.kind === 'derribo' || e.stagT > 0, immune: e.immune && e.mode !== 'intro' && !e.dying,
-      noFx: G.Q && G.Q.level === 'baja', roar: e.roar || 0, alpha: e.alpha == null ? 1 : e.alpha, broken: br, lift: e.lift || 0, open: a.coreT > 0, chain: a.ch ? a.ch.n : 0
+      noFx: G.Q && G.Q.level === 'baja', roar: e.roar || 0, alpha: e.alpha == null ? 1 : e.alpha, lift: e.lift || 0, open: a.coreT > 0 ? 1 : 0,
+      broken: { cayado: !!br.cayado, nucleo: !!br.nucleo, ojo: !!br.ojo, colmillo: !!br.colmillo, corona: !!br.corona, core: !!br.corazon }
     };
+    if (a.ch) st.chain = { links: a.ch.links, done: Math.max(0, a.ch.n), announce: G.clamp((a.ch.t + 1500) / 1400, 0, 1) };
+    if (a.coro) st.voice = ((A0 && A0.vi != null ? Math.max(0, A0.vi - 1) : 0)) % 3;
     if (A0) {
       if (A0.step === 'tele') { st.windup = A0.pose; st.wp = G.clamp(A0.t / A0.tele, 0, 0.999); }
       else if (A0.step === 'act') { st.strike = A0.pose; st.sp = G.clamp(A0.t / (A0.actMs || 400), 0, 0.999); }
@@ -608,7 +611,7 @@
   H.draw = function (c, e) {
     var a = A(), t0 = performance.now();
     if (ART()) Assets.drawBoss('cenizar', c, e.x, e.y, artState(e)); else drawFallback(c, e);
-    if (a.shards && Assets.drawCenizarShatter) for (var i = 0; i < a.shards.length; i++) { var s = a.shards[i]; try { Assets.drawCenizarShatter(c, s.x, s.y, G.clamp((G.time - s.t0) / 800, 0, 1), { n: G.Q && G.Q.level === 'baja' ? 4 : 8 }); } catch (x) { /* arte opcional */ } }
+    if (a.shards && Assets.drawCenizarShards) for (var i = 0; i < a.shards.length; i++) { var s = a.shards[i]; try { Assets.drawCenizarShards(c, s.x, s.y, G.clamp((G.time - s.t0) / 800, 0, 1), { kind: s.k === 'corazon' ? 'core' : s.k, n: G.Q && G.Q.level === 'baja' ? 4 : 8 }); } catch (x) { /* arte opcional */ } }
     else if (a.shards) for (var j = 0; j < a.shards.length; j++) { var sh = a.shards[j], u = G.clamp((G.time - sh.t0) / 800, 0, 1); c.save(); c.globalAlpha = 1 - u; c.strokeStyle = '#ffd27a'; c.lineWidth = 3; c.beginPath(); c.arc(sh.x, sh.y, 10 + 40 * u, 0, TAU); c.stroke(); c.restore(); }
     if (Z.drawOverBoss) Z.drawOverBoss(c, e);
     var dm = performance.now() - t0; a.drawMs = a.drawMs == null ? dm : a.drawMs * 0.97 + dm * 0.03; if (dm > (a.drawMax || 0)) a.drawMax = dm; a.drawN = (a.drawN || 0) + 1;
@@ -672,4 +675,5 @@
 
   S.cenizarInfo = function () { var a = A(), e = S.e; return { clk: a.clk, evs: a.evs ? a.evs.length : 0, phT: a.phT, fury: S.fury, coreT: a.coreT, hurts: a.hurts, drawMs: a.drawMs, drawMax: a.drawMax, ch: a.ch ? { n: a.ch.n, t: a.ch.t, end: a.ch.end } : null, lava: a.lava ? a.lava.state : null }; };
   S.cenizarTable = TABLE;
+  S.weakView = function (id) { if (id !== 'cenizar') return null; var t = TABLE[0]; return { weak: t.w.map(function (x) { return { tag: x[0], mul: x[1] }; }), resist: t.r.map(function (x) { return { tag: x[0], mul: x[1] }; }) }; };   // tarjeta de Cacería: tabla de la F1 (cambia en cada fase)
 })();
