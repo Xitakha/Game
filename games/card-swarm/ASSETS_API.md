@@ -1142,3 +1142,58 @@ Contraste: la miel (#c97a14, borde oscuro, burbujas claras) es muy distinta del 
 - `Assets.drawWaxPillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawIcePillar` (entero hp>0,5, agrietado >0, escombro 0; con hp 0 y `rebuild`>0 aro de aviso + fantasma). Ordenar por y+12.
 Calidad Baja: motas 0, humo 1 capa estatica, sin parpadeo de luces. Coste medido (Chromium headless sin GPU, 960x540, mediana, incluyendo volcado): drawCells(36) ~0,3-0,5 ms, polen Alta ~0,17 ms, Baja ~0,02 ms; un blit del arena entero ~2,3 ms de referencia en este entorno (el humo ambiental ~1,5x un blit, mucho menos con GPU).
 Notas: `sw.js` aun no precachea `assets_fam4.js`. La Reina Joven y el Avispon usan los nombres `enemy_mini_reina_joven` / `enemy_mini_avispon`; insignias `trophy_mini_*` siguen pendientes (P6).
+
+---
+# Audio Cenizar P6.5 (src/sfx_cenizar.js, tras sfx_melaria.js; solo audio; el programador anade el `<script>` en index.html y sw.js)
+Mismo patron y API que P1-P6: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`, <= 4 voces/nombre, `min` (ms), un solo rugido a la vez (comparte `_roarUntil`); `Assets.sfxCenizar[nombre]` = `{kind, fam:'cenizar', min, dur}`. Los tele SUBEN y se sostienen (los firmas llevan ademas un aviso 400 -> 1200 Hz) y nunca suenan en el impacto. Lo existente no cambia.
+
+## Musica `boss_cenizar` (96 BPM; 132 BPM en F7; Mi frigio; procedural, 4 capas)
+- `Assets.music.setTrack('boss_cenizar')` al empezar la pelea (reinicia a F1, sin desesperado y cadena 0); `setTrack('normal'|'boss'|'boss_melaria'|...)` vuelve y reanuda. `tracks()` la incluye; `renderMusic({track:'boss_cenizar', bars, phase:1..7, despair:bool, chain:0..6})` y `exportMusicWav` funcionan.
+- **Fase**: `Assets.music.setPhase(n)` (1..7, lo mas claro; entra en el siguiente 1/16). `Assets.music.getPhase()`. Capas acumulativas, siempre bordon grave + tambor de guerra + cuerda frotada + tema del fuego (Mi-Sol-La-Do, 4 notas cada 4 compases): **F1** solo eso; **F2** + zampona disonante (Pastor) y tambor en negras; **F3** + yunque, cadenas y sirena (Karceron); **F4** + arpegio acuatico con eco (Letea); **F5** + viento, campana y cuerdas heladas (Yarlak); **F6** + enjambre sintetizado (Melaria); **F7** collage de los cinco motivos con el tema en cada compas, caja y hats, a **132 BPM**.
+- `Assets.music.setIntensity(v)` tambien funciona con la pista activa (fase = floor(v*7)+1, tope 7). Preferir `setPhase`; si hace falta intensidad, valores libres (sin usar 0.55 / 0.78 / 1.0 reservados): 0.07 / 0.21 / 0.36 / 0.50 / 0.64 / 0.79 / 0.93 = F1..F7.
+- **Desesperado (Cadena Final)**: `Assets.music.setDespair(true)` a < 6 %; `false` al terminar: tema a pleno, tritono, bombo a corcheas, coro sintetico y sirena.
+- **`Assets.music.setChain(n)`** (n = 0..6; `getChain()`): marca el ritmo del Rosario de F7. Cada eslabon sube un tono (escala 0,3,5,7,10,12 semitonos sobre la tonica) y suma un tambor: n>=1 bombo en negras, 2 contratiempos, 3 toms en semicorcheas impares, 4 caja, 5 hats, 6 rampa de bajo ascendente. Al subir `n` suena de inmediato `chain_tick` (pitch segun eslabon). Llamar con el numero del eslabon que se telegrafia/ejecuta y `setChain(0)` al acabar la cadena (tambien se pone a 0 solo al llamar `setPhase(<7)` o `setTrack`). Solo actua con `boss_cenizar` activa.
+- Con otra pista activa `setPhase/setDespair` delegan en la anterior (`boss_melaria`, `boss_yarlak` siguen funcionando).
+
+## Cinematica final y creditos (pistas en bucle, 2 mas)
+- `Assets.music.setTrack('cenizar_ending')` (66 BPM, el tema del fuego en MAYOR sobre bordon calido, chasquidos de lena, campana) para la cinematica de 40-60 s; `Assets.music.setTrack('cenizar_credits')` (84 BPM, mas alegre: latido suave, escobillas, arpegio y campana con el tema) para los creditos. Ambas en `tracks()` y `renderMusic({track, bars})`. Volver a la aldea con `setTrack('normal')` (o la pista de aldea).
+- Jingles de un solo disparo: `stg_cenizar_win` (fanfarria de 4 compases + silencio + brasa; en la pantalla de victoria, tras `music.stop()`), `stg_cenizar_ending` (~9 s, acordes calidos y campanas; al arrancar la cinematica, antes/sobre `cenizar_ending`) y el SFX `ending_hearth` (~5 s, el brasero vuelve a arder).
+
+## Stingers (en `G.Snd.V`; los dispara `G.Boss.stinger` sin tocar boss.js, o `G.Snd.play('stg_cenizar_<k>')`; tambien `Assets.sfx('cen_stg_<k>')`)
+| Nombre | Cuando |
+|---|---|
+| `stg_cenizar_intro` | Intro de 3,5 s: 5 chispas = 5 notas, la 5.a es el tema (con `cenizar_roar` al final) |
+| `stg_cenizar_p2` / `p3` / `p4` / `p5` / `p6` / `p7` | Puerta de fase a F2 (zampona+tambor) / F3 (yunque+sirena) / F4 (arpegio con eco) / F5 (viento+campana) / F6 (enjambre) / F7 (collage + tema); junto con `setPhase(n)` y `gate_thud` |
+| `stg_cenizar_chain` | Inicio del Rosario (tras el Anuncio, 6 golpes ascendentes) |
+| `stg_cenizar_despair` | Arranca la Cadena Final (< 6 %), junto con `setDespair(true)` |
+| `stg_cenizar_win` | Pantalla de victoria (parar antes la musica con `music.stop()`) |
+| `stg_cenizar_part` | Reliquia rota (junto con `relic_break`) |
+| `stg_cenizar_window` | Se abre una ventana de dano (derribo, Corazon de Ceniza, Sol agotado) |
+| `stg_cenizar_death` | Muerte de Cenizar (~6 s; parar antes la musica) |
+| `stg_cenizar_ending` | Cinematica final (ver arriba) |
+
+## SFX y cuando llamarlos (22 + `chain_tick`)
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `cenizar_roar` | tele | Rugido de intro (shake 10/600) y al arrancar el desesperado (~2,4 s; uno a la vez) |
+| `cenizar_hover` | move | Flota a ras: cada ~0,6 s (min 450), `pitch` 1.0 -> 1.12 segun fase, `vol` 0.5 |
+| `relic_glow` | tele | La Reliquia de la fase se enciende / pasa a apuntable |
+| `relic_break` | impact | Reliquia rota (con `stg_cenizar_part`) |
+| `ash_fall` / `ash_puddle` | move / move | F1: cae ceniza de Cometas o Barra / charco de Ceniza viva (5 s) |
+| `ember_wave` | move | F2 y F5: oleada de anillos o ráfaga de brasas (cada ~1,3-1,4 s) |
+| `spike_ring` | impact | F2: aparece cada anillo de espinas (7 oleadas) |
+| `lane_charge` | tele | F2 / eslabon 1: carril de embestida (firma, aviso 400 -> 1200 Hz, 900 ms) |
+| `island_rotate` | move | F3: islas girando, cada ~1,2 s |
+| `lava_rise` | move | F3: al empezar el Requiem (sube la lava) |
+| `echo_ping` | tele | F4: la voz suena y se enciende su Eco (contorno punteado; otra vez al disparar el eco) |
+| `ice_creak` | move | F5: hoguera crece / la ceniza blanquea el suelo |
+| `ember_flare` | impact | F5: la hoguera se enciende en brasa (cada 2,8 s, 16 de dano) |
+| `hex_ring_in` / `hex_ring_out` | move / move | F6 y eslabon 5: anillo hexagonal que contrae (baja) / expande (sube) |
+| `chain_announce` | tele | Anuncio de 1500 ms con los glifos 1-6 (firma: aviso ascendente + 6 pings) |
+| `chain_tick` | move | Marca de eslabon (la dispara `setChain`; tambien a mano, pitch 1.0 -> 1.5) |
+| `chain_hit` | impact | Cada eslabon ejecuta su impacto |
+| `sol_charge` / `sol_pulse` | tele / impact | Eslabon 6 Sol de Cenizar: 1300 ms de carga / onda de rosquilla (r 330) |
+| `gate_thud` | impact | Puerta de fase (inmune 3 s, shake 10/600) |
+| `ending_hearth` | move | Cinematica final: el brasero vuelve a arder |
+| `cen_stg_<intro,p2..p7,chain,despair,win,part,window,death,ending>` | stinger | Equivalentes a `stg_cenizar_*` (preferir `G.Snd.play`) |
+Reglas heredadas: pitch +-10 %, <= 4 voces por nombre. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (el `<script>` de `sfx_cenizar.js` va despues de `sfx_melaria.js` en index.html y sw.js). Validado en Chromium headless: carga sin errores, los 37 sonidos renderizan con `renderSfx` y las 3 pistas con `renderMusic`.
