@@ -1091,6 +1091,7 @@
 
   function drawZone(c, z, i) {
     var t = G.time / 1000;
+    if (z.draw) { c.save(); z.draw(c, z, i); c.restore(); return; }   // P6.5: zonas con dibujo propio (Cenizar)
     c.save();
     if (z.kind === 'fire' && z.arm > 0) {   // charco de lava armándose (Salamandra): círculo naranja punteado, sin daño
       var ua = 1 - z.arm / z.armMax;
