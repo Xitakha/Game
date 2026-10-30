@@ -53,7 +53,7 @@
         var is = Z.islands(l), tgt, onI = Z.onIsland(p.x, p.y, p.r) && !p.dead;
         if (onI && Math.random() < 0.4) tgt = { x: p.x + G.rnd(-50, 50), y: p.y + G.rnd(-50, 50) };
         else { var k = is[Math.floor(Math.random() * 3)], an = Math.random() * TAU, rr = Math.random() * (k.r - 40); tgt = { x: k.x + Math.cos(an) * rr, y: k.y + Math.sin(an) * rr }; }
-        Z.add({ k: 'circle', x: tgt.x, y: tgt.y, r: 50, tele: Z.evTele(900, 50), dmg: 18, src: 'boss_brasa', col: 'orange', ghost: false, fixAt: 0, silent: true, onGo: function (v) { fx.burst(v.x, v.y, 10, '#ff9a3c', 200, 450, 4, { add: true }); fx.shake(3, 100); sfx('ash_fall', { vol: 0.5 }); } });
+        Z.add({ k: 'circle', x: tgt.x, y: tgt.y, r: 50, tele: Z.evTele(900, 50), dmg: 14, src: 'boss_brasa', col: 'orange', ghost: false, fixAt: 0, silent: true, onGo: function (v) { fx.burst(v.x, v.y, 10, '#ff9a3c', 200, 450, 4, { add: true }); fx.shake(3, 100); sfx('ash_fall', { vol: 0.5 }); } });
       }
       return A0.t >= A0.dur;
     },
@@ -72,12 +72,12 @@
   ATK.c_martillo = {
     start: function (e, A0) {
       var p = PL(); A0.pose = 'martillo'; A0.r = 90 * geo('martillo'); A0.actMs = 400; A0.rec = 700; A0.k = 0; A0.n = pel().v3 ? 3 : 1; A0.drawAct = false; faceTo(e, angTo(e, p));
-      Z.add({ k: 'circle', x: p.x, y: p.y, r: A0.r, tele: A0.tele, dmg: 28, src: 'boss_martillo', col: 'orange', sig: true, fixAt: 0, kb: 1.5, onGo: function (v) { fx.shake(8, 220); fx.shockwave(v.x, v.y, 220); sfx('hit_heavy', { pitch: 0.7, vol: 0.9 }); expose(S.e, 1.25, 1200, 'window'); Z.win(); } });
+      Z.add({ k: 'circle', x: p.x, y: p.y, r: A0.r, tele: A0.tele, dmg: 22, src: 'boss_martillo', col: 'orange', sig: true, fixAt: 0, kb: 1.5, onGo: function (v) { fx.shake(8, 220); fx.shockwave(v.x, v.y, 220); sfx('hit_heavy', { pitch: 0.7, vol: 0.9 }); expose(S.e, 1.25, 1200, 'window'); Z.win(); } });
       A0.k = 1;
     },
     go: function () { },
     act: function (e, A0) {
-      if (A0.k < A0.n && A0.t >= 450 * (A0.k - 0)) { var p = PL(); A0.k++; Z.add({ k: 'circle', x: p.x, y: p.y, r: A0.r, tele: A0.tele, dmg: 28, src: 'boss_martillo', col: 'orange', sig: true, fixAt: 0, kb: 1.5, onGo: function (v) { fx.shake(8, 220); fx.shockwave(v.x, v.y, 220); sfx('hit_heavy', { pitch: 0.7, vol: 0.9 }); } }); A0.actMs = 450 * (A0.n - 1) + A0.tele + 300; }
+      if (A0.k < A0.n && A0.t >= 450 * (A0.k - 0)) { var p = PL(); A0.k++; Z.add({ k: 'circle', x: p.x, y: p.y, r: A0.r, tele: A0.tele, dmg: 22, src: 'boss_martillo', col: 'orange', sig: true, fixAt: 0, kb: 1.5, onGo: function (v) { fx.shake(8, 220); fx.shockwave(v.x, v.y, 220); sfx('hit_heavy', { pitch: 0.7, vol: 0.9 }); } }); A0.actMs = 450 * (A0.n - 1) + A0.tele + 300; }
       return A0.t >= A0.actMs;
     },
     draw: function () { }, haz: function () { }
@@ -88,7 +88,7 @@
       var p = PL(); A0.pose = 'lluvia'; A0.actMs = 6 * 250 + 400; A0.rec = 600; faceTo(e, angTo(e, p));
       for (var i = 0; i < 6; i++) {
         var an = Math.random() * TAU, d = i === 0 ? 0 : G.rnd(60, 230);
-        Z.add({ k: 'circle', x: Z.clampX(p.x + Math.cos(an) * d, 40), y: Z.clampY(p.y + Math.sin(an) * d, 40), r: 55, delay: i * 250, tele: A0.tele, dmg: 18, src: 'boss_meteoro', col: 'orange', fixAt: 0, ghost: i > 0 && false, silent: true,
+        Z.add({ k: 'circle', x: Z.clampX(p.x + Math.cos(an) * d, 40), y: Z.clampY(p.y + Math.sin(an) * d, 40), r: 55, delay: i * 250, tele: A0.tele, dmg: 14, src: 'boss_meteoro', col: 'orange', fixAt: 0, ghost: i > 0 && false, silent: true,
           onGo: function (v) { fx.burst(v.x, v.y, 8, '#ff9a3c', 180, 400, 4, { add: true }); fx.shake(2, 80); sfx('ash_fall', { vol: 0.4 }); } });
       }
       sfx('ash_fall', { vol: 0.6 });
@@ -287,7 +287,7 @@
     if (l) {
       if (l.state === 'on') {
         l.tk = (l.tk || 0) - dt;
-        if (l.tk <= 0) { l.tk = 500; if (!p.dead && !Z.onIsland(p.x, p.y, p.r)) hurtC(e, 10, 'boss_lava', { soft: true }); }
+        if (l.tk <= 0) { l.tk = 500; if (!p.dead && !Z.onIsland(p.x, p.y, p.r)) hurtC(e, 8, 'boss_lava', { soft: true }); }
         if (Math.random() < 0.3) { var is = Z.islands(l); }
       } else if (l.state === 'fade') { l.fade += dt; if (l.fade > 700) a.lava = null; }
     }

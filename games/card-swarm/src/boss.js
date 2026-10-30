@@ -74,7 +74,11 @@
     var a = kv.split(':'), m = /^([a-z]+)(\d)?$/.exec(a[0]); if (!m) return;
     for (var i = 2; i <= 5; i++) if (!m[2] || +m[2] === i) PEL[i][m[1]] = parseFloat(a[1]);
   });
-  function pel() { return PEL[G.clamp(Math.round(G.peligro || 1), 1, 5)]; }
+  function pel() {
+    var P = PEL[G.clamp(Math.round(G.peligro || 1), 1, 5)], D = S.e && S.e.def, o = D && D.pelOver && D.pelOver[P.n];   // P6.5: un jefe puede suavizar la tabla común (Cenizar: daño y telegrafía de II-V)
+    if (!o) return P;
+    return o.__m || (o.__m = Object.assign({}, P, o));
+  }
   S.durMul = function (min) {
     var m = min == null ? G.RUN_LEN / 60000 : min;
     if (m <= 7) return 0.75; if (m >= 10) return 1.1;

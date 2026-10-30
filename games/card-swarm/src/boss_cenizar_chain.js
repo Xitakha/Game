@@ -169,7 +169,7 @@
       fx.shockwave(v.x, v.y, 700); fx.ring(v.x, v.y, 40, 330, 600, '#fff2b0', 8); fx.ring(v.x, v.y, 20, 250, 500, '#ff6a1a', 5);
       ch.solDone = true;
       if (!ch.final) {
-        var a = A(); a.coreT = 4000; expose(S.e, 1.5, 4000, 'window'); Z.win(); G.Hud.banner('¡CENIZAR AGOTADO!', 1500, '#fff2b0'); sfx('stg_cenizar_window'.replace('stg_', 'relic_glow'), { vol: 0.8 });
+        var a = A(); a.coreT = 4000; expose(S.e, 1.5, 4000, 'window'); if (D.sigHeart) { var pl = PL(); for (var hi = 0; hi < 2; hi++) G.Combat.dropGem(pl.x + (hi ? 40 : -40), pl.y + 30, 'heart', G.B.player.heal); }   // ventana del Sol: 2 corazones (palanca de calibración) Z.win(); G.Hud.banner('¡CENIZAR AGOTADO!', 1500, '#fff2b0'); sfx('stg_cenizar_window'.replace('stg_', 'relic_glow'), { vol: 0.8 });
       }
     }
   }
