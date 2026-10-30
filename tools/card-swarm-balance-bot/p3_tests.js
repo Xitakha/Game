@@ -389,7 +389,7 @@ async function flow(b) {
   await pg.goto(`${base}/index.html?reset=1&dbg=1&god=1&len=7&speed=20`); await pg.waitForTimeout(500);
   await pg.evaluate(() => { G.Save.data.bossKills = { pastor: 1, karceron: 1, letea: 1 }; G.Save.data.biome = 'asfodelo'; G.Save.save(); });
   await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(700);
-  const chip = { x: 650 + 3 * 58 + 28, y: 357 };
+  const chip = { x: 650 + 3 * 48 + 23, y: 357 };
   await pg.mouse.click(chip.x, chip.y); await pg.waitForTimeout(400);
   const bio = await pg.evaluate(() => G.Save.data.biome); ok(bio === 'tundra', 'P4: con Letea vencida el chip TUNDRA se abre (' + bio + ')');
   await pg.screenshot({ path: process.env.SHOT || '/tmp/p3_portal.png' });

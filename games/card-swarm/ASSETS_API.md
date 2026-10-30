@@ -1142,3 +1142,201 @@ Contraste: la miel (#c97a14, borde oscuro, burbujas claras) es muy distinta del 
 - `Assets.drawWaxPillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawIcePillar` (entero hp>0,5, agrietado >0, escombro 0; con hp 0 y `rebuild`>0 aro de aviso + fantasma). Ordenar por y+12.
 Calidad Baja: motas 0, humo 1 capa estatica, sin parpadeo de luces. Coste medido (Chromium headless sin GPU, 960x540, mediana, incluyendo volcado): drawCells(36) ~0,3-0,5 ms, polen Alta ~0,17 ms, Baja ~0,02 ms; un blit del arena entero ~2,3 ms de referencia en este entorno (el humo ambiental ~1,5x un blit, mucho menos con GPU).
 Notas: `sw.js` aun no precachea `assets_fam4.js`. La Reina Joven y el Avispon usan los nombres `enemy_mini_reina_joven` / `enemy_mini_avispon`; insignias `trophy_mini_*` siguen pendientes (P6).
+
+---
+# Audio Cenizar P6.5 (src/sfx_cenizar.js, tras sfx_melaria.js; solo audio; el programador anade el `<script>` en index.html y sw.js)
+Mismo patron y API que P1-P6: `Assets.sfx('nombre', {pitch=1, vol=1, vary=0.1})`, <= 4 voces/nombre, `min` (ms), un solo rugido a la vez (comparte `_roarUntil`); `Assets.sfxCenizar[nombre]` = `{kind, fam:'cenizar', min, dur}`. Los tele SUBEN y se sostienen (los firmas llevan ademas un aviso 400 -> 1200 Hz) y nunca suenan en el impacto. Lo existente no cambia.
+
+## Musica `boss_cenizar` (96 BPM; 132 BPM en F7; Mi frigio; procedural, 4 capas)
+- `Assets.music.setTrack('boss_cenizar')` al empezar la pelea (reinicia a F1, sin desesperado y cadena 0); `setTrack('normal'|'boss'|'boss_melaria'|...)` vuelve y reanuda. `tracks()` la incluye; `renderMusic({track:'boss_cenizar', bars, phase:1..7, despair:bool, chain:0..6})` y `exportMusicWav` funcionan.
+- **Fase**: `Assets.music.setPhase(n)` (1..7, lo mas claro; entra en el siguiente 1/16). `Assets.music.getPhase()`. Capas acumulativas, siempre bordon grave + tambor de guerra + cuerda frotada + tema del fuego (Mi-Sol-La-Do, 4 notas cada 4 compases): **F1** solo eso; **F2** + zampona disonante (Pastor) y tambor en negras; **F3** + yunque, cadenas y sirena (Karceron); **F4** + arpegio acuatico con eco (Letea); **F5** + viento, campana y cuerdas heladas (Yarlak); **F6** + enjambre sintetizado (Melaria); **F7** collage de los cinco motivos con el tema en cada compas, caja y hats, a **132 BPM**.
+- `Assets.music.setIntensity(v)` tambien funciona con la pista activa (fase = floor(v*7)+1, tope 7). Preferir `setPhase`; si hace falta intensidad, valores libres (sin usar 0.55 / 0.78 / 1.0 reservados): 0.07 / 0.21 / 0.36 / 0.50 / 0.64 / 0.79 / 0.93 = F1..F7.
+- **Desesperado (Cadena Final)**: `Assets.music.setDespair(true)` a < 6 %; `false` al terminar: tema a pleno, tritono, bombo a corcheas, coro sintetico y sirena.
+- **`Assets.music.setChain(n)`** (n = 0..6; `getChain()`): marca el ritmo del Rosario de F7. Cada eslabon sube un tono (escala 0,3,5,7,10,12 semitonos sobre la tonica) y suma un tambor: n>=1 bombo en negras, 2 contratiempos, 3 toms en semicorcheas impares, 4 caja, 5 hats, 6 rampa de bajo ascendente. Al subir `n` suena de inmediato `chain_tick` (pitch segun eslabon). Llamar con el numero del eslabon que se telegrafia/ejecuta y `setChain(0)` al acabar la cadena (tambien se pone a 0 solo al llamar `setPhase(<7)` o `setTrack`). Solo actua con `boss_cenizar` activa.
+- Con otra pista activa `setPhase/setDespair` delegan en la anterior (`boss_melaria`, `boss_yarlak` siguen funcionando).
+
+## Cinematica final y creditos (pistas en bucle, 2 mas)
+- `Assets.music.setTrack('cenizar_ending')` (66 BPM, el tema del fuego en MAYOR sobre bordon calido, chasquidos de lena, campana) para la cinematica de 40-60 s; `Assets.music.setTrack('cenizar_credits')` (84 BPM, mas alegre: latido suave, escobillas, arpegio y campana con el tema) para los creditos. Ambas en `tracks()` y `renderMusic({track, bars})`. Volver a la aldea con `setTrack('normal')` (o la pista de aldea).
+- Jingles de un solo disparo: `stg_cenizar_win` (fanfarria de 4 compases + silencio + brasa; en la pantalla de victoria, tras `music.stop()`), `stg_cenizar_ending` (~9 s, acordes calidos y campanas; al arrancar la cinematica, antes/sobre `cenizar_ending`) y el SFX `ending_hearth` (~5 s, el brasero vuelve a arder).
+
+## Stingers (en `G.Snd.V`; los dispara `G.Boss.stinger` sin tocar boss.js, o `G.Snd.play('stg_cenizar_<k>')`; tambien `Assets.sfx('cen_stg_<k>')`)
+| Nombre | Cuando |
+|---|---|
+| `stg_cenizar_intro` | Intro de 3,5 s: 5 chispas = 5 notas, la 5.a es el tema (con `cenizar_roar` al final) |
+| `stg_cenizar_p2` / `p3` / `p4` / `p5` / `p6` / `p7` | Puerta de fase a F2 (zampona+tambor) / F3 (yunque+sirena) / F4 (arpegio con eco) / F5 (viento+campana) / F6 (enjambre) / F7 (collage + tema); junto con `setPhase(n)` y `gate_thud` |
+| `stg_cenizar_chain` | Inicio del Rosario (tras el Anuncio, 6 golpes ascendentes) |
+| `stg_cenizar_despair` | Arranca la Cadena Final (< 6 %), junto con `setDespair(true)` |
+| `stg_cenizar_win` | Pantalla de victoria (parar antes la musica con `music.stop()`) |
+| `stg_cenizar_part` | Reliquia rota (junto con `relic_break`) |
+| `stg_cenizar_window` | Se abre una ventana de dano (derribo, Corazon de Ceniza, Sol agotado) |
+| `stg_cenizar_death` | Muerte de Cenizar (~6 s; parar antes la musica) |
+| `stg_cenizar_ending` | Cinematica final (ver arriba) |
+
+## SFX y cuando llamarlos (22 + `chain_tick`)
+| Nombre | Tipo | Cuando llamarlo |
+|---|---|---|
+| `cenizar_roar` | tele | Rugido de intro (shake 10/600) y al arrancar el desesperado (~2,4 s; uno a la vez) |
+| `cenizar_hover` | move | Flota a ras: cada ~0,6 s (min 450), `pitch` 1.0 -> 1.12 segun fase, `vol` 0.5 |
+| `relic_glow` | tele | La Reliquia de la fase se enciende / pasa a apuntable |
+| `relic_break` | impact | Reliquia rota (con `stg_cenizar_part`) |
+| `ash_fall` / `ash_puddle` | move / move | F1: cae ceniza de Cometas o Barra / charco de Ceniza viva (5 s) |
+| `ember_wave` | move | F2 y F5: oleada de anillos o ráfaga de brasas (cada ~1,3-1,4 s) |
+| `spike_ring` | impact | F2: aparece cada anillo de espinas (7 oleadas) |
+| `lane_charge` | tele | F2 / eslabon 1: carril de embestida (firma, aviso 400 -> 1200 Hz, 900 ms) |
+| `island_rotate` | move | F3: islas girando, cada ~1,2 s |
+| `lava_rise` | move | F3: al empezar el Requiem (sube la lava) |
+| `echo_ping` | tele | F4: la voz suena y se enciende su Eco (contorno punteado; otra vez al disparar el eco) |
+| `ice_creak` | move | F5: hoguera crece / la ceniza blanquea el suelo |
+| `ember_flare` | impact | F5: la hoguera se enciende en brasa (cada 2,8 s, 16 de dano) |
+| `hex_ring_in` / `hex_ring_out` | move / move | F6 y eslabon 5: anillo hexagonal que contrae (baja) / expande (sube) |
+| `chain_announce` | tele | Anuncio de 1500 ms con los glifos 1-6 (firma: aviso ascendente + 6 pings) |
+| `chain_tick` | move | Marca de eslabon (la dispara `setChain`; tambien a mano, pitch 1.0 -> 1.5) |
+| `chain_hit` | impact | Cada eslabon ejecuta su impacto |
+| `sol_charge` / `sol_pulse` | tele / impact | Eslabon 6 Sol de Cenizar: 1300 ms de carga / onda de rosquilla (r 330) |
+| `gate_thud` | impact | Puerta de fase (inmune 3 s, shake 10/600) |
+| `ending_hearth` | move | Cinematica final: el brasero vuelve a arder |
+| `cen_stg_<intro,p2..p7,chain,despair,win,part,window,death,ending>` | stinger | Equivalentes a `stg_cenizar_*` (preferir `G.Snd.play`) |
+Reglas heredadas: pitch +-10 %, <= 4 voces por nombre. Vista previa: `tools/asset-preview/index.html?game=card-swarm` (el `<script>` de `sfx_cenizar.js` va despues de `sfx_melaria.js` en index.html y sw.js). Validado en Chromium headless: carga sin errores, los 37 sonidos renderizan con `renderSfx` y las 3 pistas con `renderMusic`.
+
+
+---
+
+# Jefe final v7 (P6.5: Cenizar, el Incendio Primero) (src/assets_boss5.js; solo arte, sin logica)
+Misma API que Pastor/.../Melaria: `Assets.drawBoss('cenizar', ctx, x, y, state)`, `renderBoss`, `bossAnchors`, `drawBossShadow(ctx,x,y,{id:'cenizar',...})`, `drawBossPortrait('cenizar'|'incendio', ctx, x, y, {size:96, mood})`, `bossPoseNames('cenizar')`, `Assets.BOSS.cenizar`, `bossIds()` (ahora termina en `cenizar`). **Alias `'incendio'`** (no sale en `bossIds()`). Diseno: `DESIGN-v7-jefe-final.md` (sec. 1, 3, 6-8, 13). Capturas: `studio/docs/capturas-p65-arte/`.
+**Orden de carga**: `<script src="src/assets_boss5.js">` DESPUES de `assets_boss4.js` **y de `assets_fam4.js`** (envuelve `setBiome/arena/sprite/...` del Panal para el bioma `crater`; si falta `Assets.drawBoss` imprime un error y no registra nada). Tambien va en `sw.js` (precache).
+Coste medido (Chromium headless sin GPU, mezcla de poses/fases): ~5 ms por `drawBoss` (1,1x Melaria); un canvas compartido 760x720 con rect sucio, ~20 `drawImage`, sin `shadowBlur`. Convencion de tamanos: **final** = px reales del canvas (base x2).
+
+| dato | valor |
+|---|---|
+| `Assets.BOSS.cenizar` | `{id, name:'Cenizar', title:'El Incendio Primero', r:96, gy:112, w:300, h:310, deathMs:4000, hover:30, windups (20), phases:[7 nombres], despair:'Cadena Final', parts:{cayado:22, nucleo:20, ojo:16, colmillo:18, corona:22, corazon:18}, windowColor:'#dff4ff', speeds:[40,50,60,65,70,75,85], eyes:[7 colores], weak:[['ice',1.25],['steel',1.1]], resist:[['fire',0.8]], relics, relicPhase, relicLink, linkColors}` (weak/resist = F1; la logica los cambia por fase) |
+| (x,y) | centro del cuerpo (circulo de colision `r` 96). Vuela a ras: se pinta **`hover` px (30)** por encima; sombra en el suelo `y + 116`; pies/suelo `y + 112` (`gy`): ordenar por profundidad con `y + 112`. Las anclas ya incluyen la altura |
+| tamano visual | ~300 x 310: x -150..+150 (brazos abiertos hasta +-190), y -206 (Corona de cera) .. +128 (capa), todo restando `hover`. Mira a la DERECHA; `facing:-1` refleja jefe, anclas y efectos |
+| ojos por fase | F1 brasa, F2 violeta, F3 naranja, F4 turquesa, F5 azul hielo, F6 ambar, F7 blanco-amarillo (**nunca rojo**). Aura/ambiente de cada fase del mismo color (F2 espinas violetas, F3 chispas, F4 burbujas, F5 nieve, F6 hexagonos, F7 cinco motas de los colores de los jefes) |
+| corona de cinco puntas | gemas de los colores de los 5 jefes (morado, naranja, turquesa, azul-blanco, ambar). `crownLit` 0..5 las enciende una a una (intro: 5 chispas = 5 notas; `drawBoss` no dibuja la chispa, usar `anchors.tips[i]` + `drawCenizarGlyph`/`fx_cenizar_shatter`) |
+
+## state (todo opcional salvo `t`; mismos nombres que los otros jefes)
+`t` ms | `facing` 1/-1 | `phase` 1-7 (cambia ojos, aura, ambiente y estado de las Reliquias) | `hurt` 0..1 | `enraged` (tinte brasa) | `desperate` (= `windup:'cadena'`) | `exposed` (ventana: tinte blanco azulado + aro blanco azulado `#dff4ff` en el suelo; en F7 abre el pecho y muestra el Corazon grande) | `open` 0..1 (pecho abierto manual; >0,5 = abierto) | `stun` (agotado tras el Sol: baja al suelo, cabeza gacha, pecho abierto en F7, estrellas) | `immune` (puerta de fase 3 s: cupula de brasas + tinte) | `roar` 0..1 (intro/puerta: brazos arriba, boca abierta, ondas) | `windup`+`wp`, `strike`+`sp` (sin `wp`/`sp` hacen bucle: solo preview; `strike` manda) | `aim` rad (mundo; lo usan `barra` y `estocada`) | `dying`+`dt` | `alpha` | `noShadow`/`noFx` | `lift` px extra de altura (negativo = posado).
+**Especificos de Cenizar**: `broken:{cayado, nucleo, ojo, colmillo, corona, core}` bool (Reliquia rota = frame roto; `cayado`/`colmillo` rotos dejan el brazo apagado; `core` = hueco con una brasa) | `relics:{id:'active'|'off'|'burning'|'broken'}` fuerza el aspecto (por defecto sale de `phase`/`broken`, ver tabla) | `crownLit` 0..5 gemas encendidas (por defecto 5) | `voice` 0|1|2 (voz activa del Coro: acido verde / helado azul / rayo amarillo; por defecto cicla) | `chain:{links:[1,2,3,5,6], done:k, announce:0..1}` (glifos de la cadena sobre la cabeza: `links` = eslabones que existen en F7, `done` = ejecutados (apagados), `announce` = aparicion uno a uno del Anuncio; ademas orbitan cuentas del Rosario) | `linkNums:false` apaga los numeros pequenos sobre las Reliquias que siguen ardiendo en F7.
+`drawBoss` pinta: sombra, aura de fase, cuerpo (capa de humo, brazos, torso con costillas de brasa, Nucleo, Corazon (F7), Colmillo, cabeza con corona/ojos, Ojo, Corona de cera, brazo con el Cayado), brillos aditivos, ceniza viva ambiente, efectos de ataque, glifos/cuentas de cadena, aro de ventana, cupula inmune, estrellas del derribo y la muerte.
+
+## Reliquias: estado visible (`relicSt`, tambien `Assets.cenizarRelicState(state, id)`)
+| Reliquia | fase propia | eslabon de F7 | antes de su fase | en su fase | despues (si no se rompio) | rota |
+|---|---|---|---|---|---|---|
+| `cayado` | F2 | 1 Doble Embestida | `off` (gris, invulnerable) | `active` (brillo fuerte + pulso) | `burning` (brillo suave; en F7 con numero) | frame roto |
+| `nucleo` | F3 | 2 Doble Martillazo | idem | idem | idem | idem |
+| `ojo` | F4 | 3 Coro de tres conos | idem | idem | idem | idem |
+| `colmillo` | F5 | 4 Ventisca doble | idem | idem | idem | idem |
+| `corona` | F6 | 5 Zumbido en espiral | idem | idem | idem | idem |
+| `core` (Corazon de Ceniza) | F7 | (el 6, Sol, siempre queda) | oculto (solo zocalo) | latido; `exposed`/pecho abierto = frame expuesto | - | hueco |
+Anclas de las Reliquias en la tabla de abajo; todas siguen la pose (el Cayado va en la mano derecha, el Ojo/Corona con la cabeza). Dibujar un medidor de rotura: `Assets.drawRelic(ctx, id, x, y, {state, hp 0..1})`.
+
+## Ataques (`Assets.bossPoseNames('cenizar')` = `zarpazo cometas barra llamada extasis embestida requiem martillazo lluvia coro mordisco coletazo invierno ventisca cornada zumbido estocada sol rosario cadena`)
+Cada uno acepta `windup`+`wp` (telegrafia) y `strike`+`sp`. Atajo por fase (el numero de eslabon de la cadena entre parentesis; los eslabones reutilizan estas poses):
+| fase | poses (wp 0->1 / sp 0->1) |
+|---|---|
+| F1 | `zarpazo` (brazo atras -> tajo con arco), `cometas` (ambas manos con orbes), `barra` (brazo hacia `aim`; golpe = rayo desde la mano `hand_r`, 560 px), `llamada` (anillo morado en el suelo, ascuas) |
+| F2 | `extasis` (posa, clava el Cayado en el suelo, anillos violetas desde el cayado; `anchors.staffTip` = punto del cayado clavado = centro de los huecos), `embestida` (inclinado, lineas de velocidad; eslabon 1) |
+| F3 | `requiem` (brazos en cruz, pecho/Nucleo al maximo, ondas naranjas), `martillazo` (punos arriba -> golpe, onda y polvo; eslabon 2), `lluvia` (manos arriba, brasas cayendo) |
+| F4 | `coro` (cabeza atras, boca abierta, ondas de color por `voice`; eslabon 3), `mordisco` (cabeza en picado, `anchors.head`), `coletazo` (la capa de humo barre) |
+| F5 | `invierno` (escarcha y copos, tinte frio), `ventisca` (empuja con ambas manos, rafagas), `cornada` (cabeza baja, lineas de cono) |
+| F6 | `zumbido` (pose fija: brazos abiertos, tres hexagonos de ambar en el suelo; eslabon 5), `estocada` (brazo a `aim`, estela ambar desde `hand_r`) |
+| F7 | `sol` (brazos arriba y sol sobre la cabeza `fx_sol_pulse`; golpe = anillo que se expande por `sp` de 60 a 340 px; luego `stun`), `rosario` (cuentas de los 6 colores orbitando, glifos), `cadena` (= `desperate`: igual con aura y ojos F7) |
+La cadena usa `chain` + las poses de cada eslabon. El golpe del `sol` usa `sp` para el anillo: pasar `sp` siempre.
+
+## Anclas (`Assets.bossAnchors('cenizar'|'incendio', state)`, `{x,y,r}` relativos a (x,y), con `facing`, `hover`/`lift` y pose aplicados; MISMO state que `drawBoss`)
+| clave | que es | r | reposo (facing 1, hover 30) |
+|---|---|---|---|
+| `body` / `torso` | hurtbox de contacto (circulo logico, elevado) / centro del torso | 96 / 70 | (0,-30) |
+| `head` / `eyes` / `mouth` | cabeza (para `mordisco`/`cornada`) / ojos / boca (ondas del Coro) | 34 / 8 / 10 | (22,-110) / (26,-106) / (34,-78) |
+| `crown` | corona de cinco puntas (decorativa) | 22 | (22,-152) |
+| `tips[0..4]` | las cinco puntas (colores: morado, naranja, turquesa, azul-blanco, ambar) | 6 | (-14,-144) .. (58,-144) |
+| `corona` | **Reliquia Corona de cera** (parte rompible F6) | 22 | (24,-182) |
+| `ojo` | **Reliquia Ojo del Olvido** (frente, F4) | 16 | (24,-130) |
+| `nucleo` (= `origin`) | **Reliquia Nucleo** (pecho, F3; origen de Requiem/Sol) | 20 | (40,-46) |
+| `core` / `corazon` | **Corazon de Ceniza** (F7, solo en la ventana) | 18 | (-12,2) |
+| `colmillo` | **Reliquia Colmillo glacial** (hombro izquierdo, F5) | 18 | (-96,-128) |
+| `cayado` | **Reliquia Cayado** (cabeza curva del baculo en la mano derecha, F2) | 22 | (101,-19) |
+| `staffTip` | pie del baculo (clavado en `extasis`: centro del Exodo de Cenizas) | 8 | (102,39) |
+| `hand_r` / `hand_l` | manos (origen de `cometas`, `barra`, `estocada`, rayo y orbes) | 14 | (100,13) / (-96,14) |
+| `aim` | `{x,y} = hand_r, a = aim del state normalizado 0..2pi` (direccion de barra/estocada) | 0 | - |
+| `glyphs` | centro de la fila de glifos del Anuncio (sobre la cabeza) | 0 | (22,-230) |
+| `feet` / `groundShadow` / `hover` | suelo bajo el cuerpo / sombra / `{x:0,y:-hover,h:hover}` | 0 / 150 | (0,112) / (0,116) / h 30 |
+Cambian con la pose (brazos, cabeza, inclinacion): llamar cada frame. Todas las Reliquias se apuntan con su ancla (`r` = radio de acierto sugerido).
+
+## Telegrafias nuevas: `Assets.drawBossTele(ctx, kind, x, y, o)` (mismas `o`: `p` 0..1, `a`, `color`, `fix` (por defecto p>=0,7), `sig`, `t`; alfa maximo ~0,4)
+| kind | parametros | uso en DESIGN-v7 |
+|---|---|---|
+| `barrido` | `w:60, len:520, sweep:1.745 (100 grados), a` (angulo inicial), `sp` 0..1 (progreso del giro del golpe) | Barra de Rescoldo F1: sector rojo + barra inicial/final + barra actual con flecha de sentido |
+| `faros` | `r:360, gaps:[rad..], dir:+1/-1, inv:0..1` (centro (x,y) = cayado clavado) | Exodo de Cenizas F2: anillo guia con faros blancos en los huecos y flecha del giro; con `inv>0` las flechas se invierten parpadeando (avisar 700 ms antes de la inversion). Sin relleno |
+| `islas` | `pts:[{x,y,r}]` (islas SEGURAS, blanco azulado) | Requiem Abrasador F3: islas pulsantes con check; el resto es lava (lo pinta el mundo) |
+| `eco` | `r` (circulo) o `arc`+`a` (cono) | Eco del Coro F4: contorno punteado + aspa en la posicion espejo (dibujar desde que suena la voz con `p`=0; `p` sube hasta el aviso lleno de 900 ms) |
+| `sol` | `r:330, inner:120` | Sol de Cenizar: rosquilla letal con la zona segura central blanco azulada y rayos |
+| `brasa` | `r:120` | brasa sobre hoguera F5 (naranja, no rojo: es dano pero distinto del carril rojo) |
+Para los demas eslabones sirven los viejos (`lane`/`rect` carril 100x560, `circle` martillazo r90, `cone` 40 grados alcance 420, `donut`) y las funciones de abajo. **Cualquier telegrafia acepta `link:1..6`**: dibuja el glifo numerado encima (en `gx,gy` o en (x,y)).
+
+## VFX en funciones (dibujan en `ctx`, coordenadas de juego)
+- `Assets.drawChainGhost(ctx, link, shape, x, y, o)`: contorno fantasma de un eslabon (alpha 0,25 por defecto; `solid:true` y `alpha` 0,9 en el ultimo 30 %) con el color del jefe original (`Assets.CENIZAR_LINK_COLORS` = morado Pastor, naranja Karceron, turquesa Letea, azul-blanco Yarlak, ambar Melaria, blanco Cenizar) y el numero. `shape`: `'lane'|'wave'` `{w,len,a}`, `'circle'` `{r}`, `'cone'` `{r,arc,a}`, `'donut'` `{r,inner}`, `'hexring'` `{R,th,gaps,gapHalf}`; `o.num:false` sin numero, `o.gx/gy` posicion del numero. Es la vista previa de toda la cadena y el contorno del eslabon activo (relleno rojo = la telegrafia normal).
+- `Assets.drawCenizarGlyph(ctx, x, y, n, {state:'active'|'done', size:40, alpha, pulse, t})`: glifo 1-6 (usa `fx_cenizar_glyph`).
+- `Assets.drawRelic(ctx, id, x, y, {state:'active'|'off'|'burning'|'broken', scale:1 (1 = tamano del sprite final), hp:0..1 (anillo de medidor), link (numero si burning), alpha, t})`: Reliquia suelta para el HUD (marcas de la barra) y el mundo.
+- `Assets.drawCenizarShards(ctx, x, y, p, {kind:'cayado'|'nucleo'|'ojo'|'colmillo'|'corona'|'core', n})`: rotura de Reliquia (~800 ms, p 0..1) en el ancla; usa `fx_cenizar_shatter` + esquirlas `fx_cenizar_chip`.
+- `Assets.drawEmberRing(ctx, x, y, R, {state:'idle'|'warn'|'hit', p, gaps:[rad..], gapHalf:0.39 (45 grados), th:22, style:'spine'|'ice'|'ember', alpha, t})`: oleada circular con huecos (anillos de espinas del Exodo F2 y de hielo/brasa F5), mismo contrato que `drawMelariaRing`; marcas blancas en los bordes de cada hueco; `warn` rojo que se llena con `p` (ultimo 30 % solido).
+- `Assets.drawAshPuddle(ctx, x, y, {r:40, age:0..1 (de 5 s), ignite:0..1, alpha, t})`: Ceniza viva de F1 (charco gris = peligro de suelo; con `ignite` el Fuego la limpia: destello + humo, sin dano).
+- `Assets.drawAshPillar(ctx, x, y, {hp 0..1, rebuild 0..1, struck, alpha})`: igual que `drawWaxPillar` (entero hp>0,5, agrietado >0, escombro 0; en 0 con `rebuild` aro de aviso + fantasma). Ancla de colision (final) (28,82): se dibuja en (x-28, y-82). Ordenar por y+12.
+- `Assets.drawCraterSeals(ctx, {cx:720, cy:405, R:300, ry:0.6, lit:[1,1,1,1,1], t, alpha})`: los cinco sellos de F7 en el suelo (pentagrama por jefe, del color de cada jefe; apagado = gris).
+- `Assets.drawAshFall(ctx, w, h, t, {count:30, quality:'alta'|'media'|'baja', intensity})`: ceniza y brasas que suben, de pantalla (= `drawFireflies` en el bioma crater); Alta 30, Media 15, Baja 0.
+- Iconos: `drawWeakIcon` ya sirve; Cenizar usa Hielo x1,25/Acero x1,1 en F1 (la logica cambia `weak/resist` por fase).
+
+## Sprites (nombre, final px, frames, notas)
+| sprite | final | frames | notas |
+|---|---|---|---|
+| `boss_cenizar_torso` | 224x192 | 4: 0 idle, 1 rugido (costillas al blanco), 2 ventana abierta (cavidad con luz), 3 dano | centro (112,96); zocalos del Nucleo (152,80) y del Corazon (100,128) |
+| `boss_cenizar_head` | 96x96 | 4: 0 neutra, 1 rugido (mandibula abierta), 2 herida, 3 abatida | corona de 5 puntas SIN gemas (las pone el compuesto: `A.CENIZAR_TIPS` = coordenadas finales de las 5 puntas); visor oscuro para `boss_cenizar_eyes` |
+| `boss_cenizar_eyes` | 48x20 | 7 (`phase1`..`phase7`) | dos ojos oblicuos; encima del visor en (2,4) desde el centro de la cabeza |
+| `boss_cenizar_arm_l` / `_arm_r` | 80x128 | 3 c/u: `rest`, `attack` (mano abierta con garras), `broken` (agrietado/apagado) | pivote del hombro (40,16); mano en (40,112); el brazo derecho porta el Cayado |
+| `boss_cenizar_cloak` | 192x128 | 4 (`sway` 5 fps) | capa de humo detras del cuerpo; arrastra a la izquierda |
+| `reliq_cayado` | 40x72 | 3: `active`, `off`, `broken` | punto de agarre (20,44); cabeza curva arriba |
+| `reliq_nucleo` | 56x56 | 3 | esfera de brasas con nucleo blanco-amarillo |
+| `reliq_ojo` | 40x32 | 3 | ojo turquesa de hendidura vertical |
+| `reliq_colmillo` | 40x64 | 3 | colmillo glacial apuntando arriba |
+| `reliq_corona` | 64x48 | 3 | corona de cera con gemas ambar y llamas |
+| `boss_cenizar_core` | 56x56 | 3: `beat`, `exposed` (blanco, grande), `broken` | Corazon de Ceniza (solo F7) |
+| `boss_cenizar_portrait` (= `boss_incendio_portrait`) | 96x96 | 3: neutro, furia, herido | `drawBossPortrait('cenizar'|'incendio', ctx, x, y, {size:96, mood})` |
+| `trophy_cenizar_cayado` / `_nucleo` / `_ojo` / `_colmillo` / `_corona` / `_corazon` | 32x32 | 2 c/u: 0 normal, 1 ROTO/sin conseguir (gris, aspa roja) | trofeos (Cayado de Ceniza, Nucleo Ceniciento, Ojo Anegado, Colmillo de Ceniza, Corona de Ceniza, Corazon de Ceniza) |
+| `insignia_brasa_primera` | 32x32 | 2: `won`, `locked` | Insignia 11 "Brasa Primera" |
+| `fx_cenizar_glyph` | 64x64 | 12: 0-5 activos (1-6), 6-11 ejecutados; anims `g1..g6`, `d1..d6` | anillo del color del jefe original + numero |
+| `fx_chain_ghost` | 128x128 | 1 | anillo punteado generico (para escalar; el contorno real de eslabon es `drawChainGhost`) |
+| `fx_ash_puddle` | 72x72 | 3: `fresh`, `settled`, `fade` | disco r ~31 final: escalar a r 40 |
+| `fx_ember_ring` | 256x256 | 4: `idle`, `warn`, `hit`, `fade` | anillo de espinas de brasa, radio ~112 final |
+| `fx_sol_pulse` | 256x256 | 4: `charge` (0-1 sol pequeno/grande), `pulse` (2-3 anillo, radio ~104 final) | |
+| `fx_cenizar_shatter` | 128x128 | 5 (`burst` 14 fps sin ciclo) | rotura de Reliquia |
+| `fx_cenizar_chip` | 32x32 | 6: ceniza, brasa, cera, hielo, astilla de baculo, fragmento de ojo | esquirlas |
+| `obs_ash_pillar` | 56x104 | 3: `whole`, `cracked`, `rubble` | pilar r 28, ancla (28,82) |
+| `tile_crater` | 64x64 | 6 variantes SIN costuras (0-1 lisas, 2 facetas, 3-5 con vetas de brasa) | suelo de vidrio volcanico (ground0..9 del bioma = estas a 32x32) |
+| `decor_crater` | 64x64 | 6: pila de brasas, esquirla de vidrio, tablon, cuenco, piedra agrietada, tizon | ancla base-centro (32,56) |
+| `decor_hearth` | 192x160 | 3: `chimney`, `table`, `chair` | ruinas del Hogar (sin colision), ancla base-centro (96,152) |
+Presupuesto real: **38 sprites / ~113 frames** (la arena reutiliza fx_hex_ring de Melaria, `proj_icicle`, `fx_lava_tile`, `obs_ice_pillar`, `fx_fire_cell` y la hoguera, sin arte nuevo).
+Reusa: `fx_part_break` (alternativa), `drawBossWave`, `drawBossVignette`, `icon_weak`/`icon_resist`, `drawMelariaRing` (anillos hexagonales de F6 bidireccionales: R = k*83, 2 huecos), `drawWaxPillar`/`drawIcePillar` (pilares de cristal de F4).
+
+## Bioma `crater` (`Assets.setBiome('crater')`) y arena
+- `Assets.biomes()` incluye `'crater'`; `getBiome()` -> `'crater'`; `biomeInfo('crater')`. Mismo mecanismo que `panal`/`tundra`: `ground0..9` = vidrio volcanico (32x32 final), `rock/grass/bush/bones/stump/column/torch/fog` = versiones del Crater, `vignette()` por defecto con tinte `44,10,4`, `drawFireflies()` = `drawAshFall`, `drawRitualGlow()` nada, `decorate()` nada (el decorado va horneado). `setBiome('otro')` lo desactiva. Pasa por `addToPhaser` (`name@crater:i`).
+- `Assets.arena(w,h,{seed})` en crater -> `{canvas, torches:[], ritual:null, pillars:[{x,y,r:28}x6], seals:[{x,y}x5], hearth:{x,y}, lights:[{x,y,r}]}` (coordenadas escaladas por `w/1440`, `h/810`). El canvas lleva horneados: suelo de vidrio con 9 grietas de brasa que irradian del hogar, resplandor, ~26 piezas de decorado (fuera del centro), borde de roca oscura y viñeta; en el centro las ruinas del Hogar (chimenea, mesa y silla quemadas, sin colision).
+- `Assets.CRATER` (geometria base 1440x810, **sugerida**; la logica manda): `{W,H,center:[720,405], hearth:[720,392], pillars:[6 x [x,y]] (hexagono 430x240 alrededor del centro), pillarR:28, seals:[5 x [x,y]] (pentagono 300x180)}`. Los sellos solo se pintan en F7 con `drawCraterSeals`; los pilares se pintan dinamicamente con `drawAshPillar` (no van horneados).
+- Mutaciones por fase (lava de F3, charcos de F4, hielo de F5, anillos de F6): las pinta el mundo con los sistemas ya hechos; el arena base no cambia.
+
+## Cinematica final y creditos (arte simple, procedural; sin dependencias del mundo)
+- `Assets.ENDING = {duration:50000, stages:[[0,0.14,'ruinas: solo queda una brasa'],[0.14,0.45,'la brasa prende el hogar'],[0.45,0.7,'la casa se recompone, llegan los amigos'],[0.7,0.9,'amanece'],[0.9,1,'fundido calido a creditos']]}`.
+- `Assets.drawEndingScene(ctx, w, h, p, {t})`: escena a pantalla completa (w x h), `p` 0..1 = progreso de la cinematica (recomendado `elapsed/duration`); `t` ms opcional para el parpadeo (por defecto `p*duration`). Habitacion del Hogar de noche con la chimenea y una sola brasa; el fuego prende y crece (luz calida, chispas); la mesa y la silla quemadas se reparan; aparecen cinco siluetas con luz de borde en este orden: Lanudo, Vesper, Castana, Grum, Ulalume (marcadores: nube de lana, orejas puntiagudas, delantal, anchos hombros, capucha: **placeholders** hasta tener el arte de los NPC de `assets_village.js`; si se quieren los sprites reales, dibujarlos encima en las posiciones `hx + xs[i]`); la ventana pasa de noche a amanecer; fundido a oscuro calido al final para empezar los creditos. Coste: ~40 trazados, sin offscreen.
+- `Assets.drawCredits(ctx, w, h, tMs, lines, {speed:38 px/s, size, color, y0})`: creditos que suben; `lines` = array de strings (`''` = espacio) u objetos `{h:'Titulo'}`; devuelve `true` cuando la ultima linea ya salio. Dibujar sobre el fundido de `drawEndingScene(p=1)` o un fondo oscuro. Los textos los pone la logica.
+- Las 3 mejoras visuales de la aldea reconstruida (sec. 11 del diseno) las integra el programador con el arte de la aldea (el brasero ya existe: campfire).
+
+## Muerte (`dying:true, dt:ms`; `deathMs` 4000)
+0-150 ms flash blanco; 0-900 tambalea (parpadeos, temblor, baja del vuelo a tierra); **200-1000 las cinco gemas de la corona se apagan una a una (de la ultima a la primera) con destello del color de cada jefe**; **500: las Reliquias que no se rompieron salen despedidas, rebotan y se apagan** (las rotas ya no estan); 600-1800 se desploma (cabeza gacha, pecho abierto, costillas que se apagan, ojos apagados desde 1500); 1800-3300 el cuerpo se **deshace de arriba abajo en ceniza** (cuadrados grises que caen) y **brasas que suben**, y se amontona un charco gris; **la ultima brasa queda en el pecho, parpadea, cae al suelo y se apaga hasta 4000** (la brasa que no se apagaba); 3000-4000 humo gris; a 4000 no pinta nada (quitar la entidad). Recomendado: `fx.shake(12, 900)`, hit-stop 120 ms, congelar 400 ms si muere durante la Cadena Final (no avanzar `dt`).
+
+## Notas para la logica / HUD
+- No tapa a Marlo: telegrafias <= 0,4 de alfa; jefe ordenado por `y + 112`; aro de ventana, anillos y sellos van en el suelo. Zona segura = blanco azulado (islas, interior del Sol, huecos de anillo); dano = rojo; brasa/hoguera = naranja; ceniza viva = gris.
+- Entrada (3,5 s): `roar` 0->1 con `crownLit` 0->5 (una gema cada ~400 ms) y `shake(10, 600)`; retrato en la tarjeta: `drawBossPortrait('cenizar', ctx, x, y, {size:96, mood:0})`.
+- Puerta de fase: `immune:true` 3 s (cupula de brasas) + `roar`; la mutacion de arena la hace la logica. `phase` cambia ojos/aura al instante.
+- Reliquias: al romper una poner `broken.<id> = true` y lanzar `drawCenizarShards(ctx, ancla.x, ancla.y, p, {kind:id})` (+ derribo: `stun:true`). Con el Cayado roto, `extasis` sigue usando el baculo (roto = sin brillo): la logica es quien acorta el patron.
+- Cadena F7: Anuncio = `chain:{links, done:0, announce:0->1 en 1500 ms}` + `windup:'rosario'` + `drawChainGhost` de todos los eslabones (alpha 0,25); cada eslabon: su pose (`embestida`, `martillazo`, `coro`, `ventisca`, `zumbido`, `sol`), `chain.done` sube al ejecutarse, y telegrafia normal con `link:n`. Tras el Sol: `stun:true` 4 s + `exposed:true` (ventana, Corazon x2).
+- Cadena Final (desesperado): `desperate:true`, mismos `chain` pero con los 6 eslabones y `exposed` entre eslabones.
+- HUD: marcas de Reliquia con `drawRelic` (`state` por reliquia, `hp` en la fase propia); glifos 1-6 con `drawCenizarGlyph`; trofeos `trophy_cenizar_*`; insignia `insignia_brasa_primera`.

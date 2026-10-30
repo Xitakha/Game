@@ -1,7 +1,7 @@
 // uso: (jefes: "boss":"pastor|karceron|letea", "port":8765) node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
-const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765 }, JSON.parse(process.argv[2] || '{}'));
+const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, burst: null, horizon: 1600, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765 }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/bot.js', 'utf8');
 async function one(b, i) {
   const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
@@ -24,7 +24,7 @@ async function one(b, i) {
     await pg.evaluate(() => { G.startGame(); });
   }
   await pg.evaluate(botSrc);
-  await pg.evaluate((o) => { window.installBot(o); }, { react: cfg.react, mistakes: cfg.mistakes, dist: cfg.dist, every: cfg.every, godUntilBoss: true, noLevel: cfg.noLevel, inattn: cfg.inattn, hp0: cfg.hp0 });
+  await pg.evaluate((o) => { window.installBot(o); }, { react: cfg.react, mistakes: cfg.mistakes, dist: cfg.dist, every: cfg.every, godUntilBoss: true, noLevel: cfg.noLevel, inattn: cfg.inattn, hp0: cfg.hp0, burst: cfg.burst != null ? !!cfg.burst : cfg.boss === 'cenizar', horizon: cfg.horizon || (cfg.boss === 'cenizar' ? 2800 : 1600) });
   const ph = []; let last = null, res = null; const t0 = Date.now();
   const frames = [];
   while (Date.now() - t0 < 600000) {

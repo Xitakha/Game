@@ -275,20 +275,25 @@
     G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
     G.mode = rq ? rq.mode : 'run'; G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
-    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal' })[rq.boss] || biome;
-    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal' })[G.bossUrl] || biome;
+    G.final = false;
+    if (!rq && !G.biomeUrl && !G.bossUrl && biome === 'crater' && G.Save.craterOpen()) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.Save.pelSel('cenizar'), phase: 0, final: true };   // P6.5: el Cráter es el Asalto (estilo cacería, HP completo)
+    if (!rq && /[?&]assault=1/.test(location.search)) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.peligroUrl ? qnum('peligro', 1) : 1, phase: 0, final: true };
+    if (rq && rq.final) { G.final = true; G.mode = 'hunt'; G.huntHpMul = 1; G.lastReq = { mode: 'hunt', boss: 'cenizar', peligro: rq.peligro, phase: 0, final: true }; }
+    if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[rq.boss] || biome;
+    else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[G.bossUrl] || biome;
     else if (!G.biomeUrl) {
       if (biome === 'asfodelo' && !BK.karceron) biome = BK.pastor ? 'cripta' : 'bosque';
       if (biome === 'cripta' && !BK.pastor) biome = 'bosque';
       if (biome === 'tundra' && !BK.letea) biome = BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P4: la Tundra se abre al vencer a Letea
+      if (biome === 'crater' && !G.Save.craterOpen()) biome = BK.yarlak ? 'panal' : BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P6.5: el Cráter se abre al vencer a los 5 jefes
       if (biome === 'panal' && !BK.yarlak) biome = BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P6: el Panal se abre al vencer a Yarlak
     }
-    G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome('bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
+    G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome(biome === 'crater' ? 'cripta' : 'bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
     G.Panal.begin(biome);    // P5: arena hexagonal, celdas de miel, humo y pilares de cera solo en el Panal
     G.B.mat.sync();   // debilidades por material (A.8): solo en biomas con familia activa (ready) salvo ?mat=
     G.Enemies.initPonds();   // P2 (A.5, M5): charcos fijos del Asfódelo (G.ponds), vacío en los demás biomas
-    if (G.groundBiome !== biome || biome === 'tundra' || biome === 'panal') { G.ground = buildGround(biome); G.groundBiome = biome; }
+    if (G.groundBiome !== biome || biome === 'tundra' || biome === 'panal' || biome === 'crater') { G.ground = buildGround(biome); G.groundBiome = biome; }
     G.bossId = G.Boss.bossFor(biome);
     if (rq) G.bossId = rq.boss;
     else if (G.bossUrl) G.bossId = G.bossUrl;
@@ -302,7 +307,7 @@
     if (G.mode !== 'run') {   // cacería / práctica: arena solo con el jefe; 6 ofertas de preparación (la práctica reutiliza la mano del primer intento)
       var sv = G.Save.data, rec = sv.practice[G.bossId] = sv.practice[G.bossId] || { tries: 0, wins: 0 };
       if (G.mode === 'practice') { rec.tries++; G.practiceTries = rec.tries; }
-      else G.Save.hunt(G.bossId, Math.round(G.peligro)).tries++;
+      else if (!G.final) G.Save.hunt(G.bossId, Math.round(G.peligro)).tries++;
       G.Save.save();
       G.nointro = G.nointroUrl || (G.mode === 'practice' && rec.tries > 1);
     }
@@ -327,10 +332,11 @@
     G.finalHand = G.Cards.snapshot();
     if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
     G.sfx(won ? 'boss_die' : 'game_over');
-    if (won) { try { G.Snd.play(G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
+    if (won) { try { G.Snd.play(G.bossId === 'cenizar' ? 'stg_cenizar_win' : G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
     G.Tundra.end();   // apaga el viento de la ventisca
     G.Panal.end();    // apaga el zumbido ambiente del Panal
+    if (won && G.bossId === 'cenizar' && G.mode !== 'practice' && G.cenizarFinal && G.cenizarFinal.first && G.Ending) G.Ending.begin();   // P6.5: cinemática final + créditos la 1.a vez
   };
 
   // ---------------------------------------------------------------- Actualización
@@ -378,6 +384,9 @@
         G.fx.updateShake(dt);
         G.Cards.update(dt);
         break;
+      case 'ending':
+        G.Ending.update(dt);
+        break;
       case 'gameover':
         G.fx.update(dt);
         G.Base.updateEnd();
@@ -389,7 +398,8 @@
   // ---------------------------------------------------------------- Render
   function buildGround(biome) {
     if (biome === 'tundra') { G.torches = []; G.ritual = null; return G.Tundra.buildGround(); }   // P3: suelo de hielo propio (parches de nieve firme, grietas)
-    if (biome === 'panal') { G.torches = []; G.ritual = null; return G.Panal.buildGround(); }   // P5: suelo hexagonal de cera con muros diagonales
+    if (biome === 'panal') { G.torches = []; G.ritual = null; return G.Panal.buildGround(); }
+    if (biome === 'crater') { G.torches = []; G.ritual = null; return G.Boss.cz.buildGround(); }   // P6.5: vidrio volcánico y ruinas del hogar   // P5: suelo hexagonal de cera con muros diagonales
     var A = Assets.arena(G.AW, G.AH, { seed: 777, wall: G.WALL });
     G.torches = A.torches; G.ritual = A.ritual;
     return A.canvas;
@@ -407,6 +417,7 @@
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
     if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
+    if (G.state === 'ending') { G.Ending.draw(ctx); G.Sys.drawBar(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
     ctx.save();
@@ -495,7 +506,7 @@
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
-    if (G.bossUrl || G.huntUrl) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
+    if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();
