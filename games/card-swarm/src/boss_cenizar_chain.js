@@ -212,6 +212,7 @@
       e.exps = e.exps.filter(function (x) { return x.kind !== 'despair'; });
       try { Assets.music.setDespair(false); Assets.music.setChain(0); } catch (x) { /* audio */ }
       G.Hud.banner('La cadena se rompe...', 1300, '#fff2b0');
+      if (D.sigHeart) { var pl2 = PL(); G.Combat.dropGem(pl2.x, pl2.y + 30, 'heart', G.B.player.heal); }   // un corazón al romper la Cadena Final
     }
   };
   // F7: el boss se queda quieto durante todo el Rosario; la geometría se calculó con su posición actual (gnd) y no se mueve
