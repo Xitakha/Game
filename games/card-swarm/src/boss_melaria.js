@@ -36,7 +36,7 @@
     weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2, 3] }, { tag: 'ice', mul: 1.25, phases: [2, 3] }],
     resist: [{ tag: 'poison', mul: 0.5, immune: true }, { tag: 'lightning', mul: 0.8 }],   // Veneno: inmune a los estados (Combat.poison) y x0,5 directo
     noPoison: true,
-    hpCal: 3.6, dmgK: 1.3, geo: { estocada: 2.4, picado: 1.4, lluvia: 1, torbellino: 1.75 },   // calibración con el bot (README, Melaria P6)
+    hpCal: 3.6, dmgK: 1.45, cadK: 1.15, gateHearts: 1, geo: { estocada: 2.4, picado: 1.4, lluvia: 1, torbellino: 1.75 },   // calibración con el bot (README, Melaria P6); P8: dmgK 1,3 -> 1,45, cadencia x1,15 y 1 corazón por puerta (bot 77 % -> ~60 %)
     brasas: 14, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { wick: 2, frost: 2, thread: 2 },
     h: { camW: 0.4 }
