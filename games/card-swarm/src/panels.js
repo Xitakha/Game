@@ -32,7 +32,7 @@
     if (name === 'rufo') st.rt = 0;
     if (name === 'portal') st.pv = null;
     if (name === 'vesper') { G.Quests.seen(); st.vt = st.vt || 0; huntFix(); }
-    if (name === 'logros') { st.lsel = 0; G.Ach.markSeen(); }
+    if (name === 'logros') { st.lsel = 0; st.lscroll = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
   };
   P.closeAll = function () { cur = null; };
@@ -570,10 +570,10 @@
       if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
       if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 14, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 7, 10, '#2a1a00', 'center', '#ffd24a'); }
     }
-    // P4.5: Insignias de minijefe (trofeo menor; 3 = logro, 8/8 = logro + 1 Esencia)
-    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/8', 614, 42, 10, '#c8a0ff', 'left');
-    G.Minis.IDS.forEach(function (mid, k) {
-      var have = (S.insignias || {})[mid], ix = 688 + k * 32;
+    // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
+    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 42, 10, '#c8a0ff', 'left');
+    G.Minis.ALL.forEach(function (mid, k) {
+      var have = (S.insignias || {})[mid], ix = 686 + k * 26;
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
     // detalle de la carta
@@ -652,13 +652,24 @@
     { id: 'caldo', name: 'Caldo de placa', icon: 'plate', short: 'Caldo', desc: '-20 % de daño cuerpo a cuerpo (gusanos, jabalíes, escuderos, espectros).', parts: { plate: 5 }, brasas: 30, fx: { res: { melee: 0.2 } } },
     { id: 'asado', name: 'Asado de colmillo', icon: 'fang', short: 'Asado', desc: '-15 % de daño de élites, minijefes y jefes.', parts: { fang: 4 }, brasas: 30, fx: { res: { big: 0.15 } } }
   ];
+  // P7: platos de bioma (página 2 de la cocina). Se abren al vencer al jefe del bioma: Caldo de brasa (-35 % de ganancia de Frío) y Tundra con Letea (la Tundra se abre al vencerla),
+  // Tostada de miel (la miel ralentiza la mitad) y Té de humo (humo +50 % de duración) con Yarlak (se abre el Panal), Caldo del Hogar Reencendido con Cenizar (+12 HP máximo y +1 corazón en cada puerta de fase).
+  Cook.DISHES = Cook.DISHES.concat([
+    { id: 'caldobrasa', page: 1, need: 'letea', needName: 'Letea (abre la Tundra)', name: 'Caldo de brasa', icon: 'wick', short: 'Brasa', desc: 'Tundra: -35 % de ganancia de Frío durante toda la expedición.', parts: { wick: 5 }, brasas: 50, fx: { cold: 0.35 } },
+    { id: 'tostada', page: 1, need: 'yarlak', needName: 'Yarlak (abre el Panal)', name: 'Tostada de miel', icon: 'thread', short: 'Tostada', desc: 'Panal: la miel te ralentiza la mitad (-50 %).', parts: { thread: 5 }, brasas: 40, fx: { honey: 0.5 } },
+    { id: 'tehumo', page: 1, need: 'yarlak', needName: 'Yarlak (abre el Panal)', name: 'Té de humo', icon: 'spine', short: 'Té humo', desc: 'Panal: el humo sedante dura un 50 % más (no se suma al Ahumador).', parts: { spine: 5 }, brasas: 60, fx: { smoke: 0.5 } },
+    { id: 'hogar', page: 1, need: 'cenizar', needName: 'Cenizar (el Cráter)', name: 'Caldo del Hogar Reencendido', icon: 'fang', short: 'Hogar', desc: '+12 HP máximos y +1 corazón extra en cada puerta de fase de los jefes.', parts: { fang: 4, plate: 4, wick: 4 }, brasas: 100, fx: { hp: 12, gate: 1 } }
+  ]);
+  Cook.PAGES = [{ name: 'COMUNES', page: 0 }, { name: 'DE BIOMA', page: 1 }];
+  Cook.unlocked = function (d) { return !d.need || ((SV().bossKills[d.need] || 0) > 0); };
   Cook.def = function (id) { return Cook.DISHES.filter(function (d) { return d.id === id; })[0] || null; };
   Cook.pending = function () { var id = SV().pending.dish; return id ? Cook.def(id) : null; };
-  Cook.afford = function (d) { var S = SV(); if (S.brasas < d.brasas) return false; for (var k in d.parts) if ((S.parts[k] || 0) < d.parts[k]) return false; return true; };
+  Cook.afford = function (d) { var S = SV(); if (!Cook.unlocked(d) || S.brasas < d.brasas) return false; for (var k in d.parts) if ((S.parts[k] || 0) < d.parts[k]) return false; return true; };
   Cook.can = function () { var S = SV(); return !S.pending.dish && !S.shop.dish; };
   Cook.anyAffordable = function () { return Cook.can() && Cook.DISHES.some(Cook.afford); };
   Cook.cook = function (id) {
     var S = SV(), d = Cook.def(id); if (!d) return { ok: false, msg: '' };
+    if (!Cook.unlocked(d)) return { ok: false, msg: 'Receta cerrada: vence a ' + d.needName + '.' };
     if (S.pending.dish) return { ok: false, msg: 'Ya llevas un plato: ' + Cook.def(S.pending.dish).name + '.' };
     if (S.shop.dish) return { ok: false, msg: 'Ya comiste en esta salida. Vuelve tras otra expedición.' };
     if (!Cook.afford(d)) return { ok: false, msg: 'Faltan ingredientes o Brasas.' };
@@ -679,48 +690,66 @@
   };
   function dRow(i) { return { x: 14, y: 70 + i * 63, w: 932, h: 57 }; }
   function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 4, w: 156, h: 48 }; }
+  function dPage() { return Cook.DISHES.filter(function (d) { return (d.page || 0) === (st.cpage || 0); }); }
+  function cpRect(i) { return { x: 690 + i * 100, y: 6, w: 96, h: 40 }; }
   function updCook() {
-    for (var i = 0; i < Cook.DISHES.length; i++) if (onR(dBtn(i)) || inp.hit('Digit' + (i + 1))) {
-      var r = Cook.cook(Cook.DISHES[i].id); say(r.msg); if (r.ok) { G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } if (G.Aldea.onCooked) G.Aldea.onCooked(); } else G.sfx('discard', { vol: 0.5 });
+    for (var t = 0; t < 2; t++) if (onR(cpRect(t))) { st.cpage = t; G.sfx('flip', { vol: 0.4 }); }
+    if (inp.hit('KeyQ') || inp.hit('KeyE')) { st.cpage = st.cpage ? 0 : 1; G.sfx('flip', { vol: 0.4 }); }
+    var pg = dPage();
+    for (var i = 0; i < pg.length; i++) if (onR(dBtn(i)) || inp.hit('Digit' + (i + 1))) {
+      var r = Cook.cook(pg[i].id); say(r.msg); if (r.ok) { G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } if (G.Aldea.onCooked) G.Aldea.onCooked(); } else G.sfx('discard', { vol: 0.5 });
     }
     return false;
   }
   function drawCook(c) {
-    var S = SV(), cur = Cook.pending();
-    bg(c, 'COCINA  -  Tía Castaña'); header(c, 560);
+    var S = SV(), cur = Cook.pending(), pg = dPage();
+    bg(c, 'COCINA  -  Tía Castaña'); header(c, 440);
+    Cook.PAGES.forEach(function (p, t) {
+      var anyOk = Cook.DISHES.some(function (d) { return (d.page || 0) === t && Cook.afford(d) && Cook.can(); });
+      U.button(c, cpRect(t), p.name, { size: 13, color: (st.cpage || 0) === t ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: (st.cpage || 0) === t ? '#bfeaff' : '#6a5a80', sub: anyOk ? 'hay platos' : null });
+    });
     G.txt(c, cur ? 'Preparado: ' + cur.name : S.shop.dish ? 'Hoy ya comiste. Vuelve tras otra expedición.' : 'Un plato por expedición. Se come solo al salir.', 14, 56, 12, cur ? '#9dffb4' : '#9a8fb0', 'left');
-    Cook.DISHES.forEach(function (d, i) {
-      var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id;
+    pg.forEach(function (d, i) {
+      var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id, lk = !Cook.unlocked(d);
       U.panel(c, r.x, r.y, r.w, r.h, { border: isCur ? '#7dff9a' : ok ? '#8a6a4a' : '#3a2f48' });
       U.part(c, d.icon, r.x + 28, r.y + 29, 14);
-      G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 58, r.y + 18, 16, '#ffd27a', 'left');
-      G.txt(c, d.desc, r.x + 58, r.y + 40, 11, '#d8cfe8', 'left');
+      G.txt(c, '[' + (i + 1) + '] ' + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 18, 16, lk ? '#7a6f88' : '#ffd27a', 'left');
+      G.txt(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, r.x + 58, r.y + 40, 11, lk ? '#ff9a8a' : '#d8cfe8', 'left');
       var x = r.x + 560, k;
       for (k in d.parts) { var have = S.parts[k] || 0; U.part(c, k, x + 8, r.y + 28, 9); G.txt(c, have + '/' + d.parts[k], x + 22, r.y + 29, 12, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 74; }
       U.part(c, 'brasa', x + 8, r.y + 28, 9); G.txt(c, S.brasas + '/' + d.brasas, x + 22, r.y + 29, 12, S.brasas >= d.brasas ? '#9dffb4' : '#ff8a8a', 'left');
-      U.button(c, dBtn(i), isCur ? 'LISTO' : 'COCINAR', { size: 15, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+      U.button(c, dBtn(i), isCur ? 'LISTO' : lk ? 'CERRADA' : 'COCINAR', { size: 15, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     });
-    G.txt(c, '1-7: cocinar  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
+    G.txt(c, '1-' + pg.length + ': cocinar  -  Q / E: cambiar de página  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
   }
 
   // ============================================================= LOGROS (Abuelo Lanudo)
-  function lRow(i) { return { x: 14, y: 64 + i * 40, w: 560, h: 36 }; }
+  // P7: con 24 logros la lista ya no cabe (11 filas visibles): se desplaza con las flechas, los botones ANTERIORES / SIGUIENTES o al elegir una fila fuera de pantalla
+  var LROWS = 11;
+  function lRow(i) { return { x: 14, y: 64 + (i - (st.lscroll || 0)) * 40, w: 560, h: 36 }; }
+  function lVis(i) { var k = i - (st.lscroll || 0); return k >= 0 && k < LROWS; }
+  var R_LUP = { x: 590, y: 374, w: 172, h: 46 }, R_LDN = { x: 774, y: 374, w: 172, h: 46 };
+  function lFix() { var n = G.Ach.DEFS.length; st.lsel = G.clamp(st.lsel || 0, 0, n - 1); st.lscroll = G.clamp(st.lscroll || 0, 0, Math.max(0, n - LROWS)); if (st.lsel < st.lscroll) st.lscroll = st.lsel; if (st.lsel >= st.lscroll + LROWS) st.lscroll = st.lsel - LROWS + 1; }
   function updLogros() {
     var n = G.Ach.DEFS.length, i;
     if (inp.hit('ArrowDown', 'KeyS')) st.lsel = Math.min(n - 1, (st.lsel || 0) + 1);
     if (inp.hit('ArrowUp', 'KeyW')) st.lsel = Math.max(0, (st.lsel || 0) - 1);
-    for (i = 0; i < n; i++) if (onR(lRow(i))) { st.lsel = i; G.sfx('flip', { vol: 0.3 }); }
+    for (i = 0; i < n; i++) if (lVis(i) && onR(lRow(i))) { st.lsel = i; G.sfx('flip', { vol: 0.3 }); }
+    if (onR(R_LUP)) { st.lscroll = Math.max(0, (st.lscroll || 0) - LROWS); st.lsel = st.lscroll; G.sfx('flip', { vol: 0.3 }); }
+    if (onR(R_LDN)) { st.lscroll = Math.min(Math.max(0, n - LROWS), (st.lscroll || 0) + LROWS); st.lsel = Math.max(st.lsel || 0, st.lscroll); G.sfx('flip', { vol: 0.3 }); }
+    lFix();
     return false;
   }
   function drawLogros(c) {
-    var A = G.Ach, S = SV(), sel = A.DEFS[st.lsel || 0];
+    var A = G.Ach, S = SV(), sel = A.DEFS[st.lsel || 0]; lFix();
     bg(c, 'MEMORIAS  -  Abuelo Lanudo'); G.txt(c, A.count() + '/' + A.DEFS.length + ' logros', 400, 24, 14, '#ffd24a', 'left');
     A.DEFS.forEach(function (a, i) {
+      if (!lVis(i)) return;
       var r = lRow(i), got = !!S.ach[a.id], on = i === (st.lsel || 0);
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = got ? '#ffd24a' : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       c.fillStyle = got ? '#ffd24a' : '#3a2f48'; c.beginPath(); c.arc(r.x + 20, r.y + 18, 9, 0, 6.283); c.fill();
       if (got) G.txt(c, 'v', r.x + 20, r.y + 19, 12, '#3a2410', 'center', 'rgba(0,0,0,0)');
-      G.txt(c, a.name, r.x + 40, r.y + 12, 13, got ? '#fff' : '#8a7f96', 'left'); G.txt(c, a.desc, r.x + 40, r.y + 27, 10, got ? '#bdb2d0' : '#6a5f78', 'left');
+      G.txt(c, a.name, r.x + 40, r.y + 12, 13, got ? '#fff' : '#8a7f96', 'left'); G.txt(c, a.desc.length > 84 ? a.desc.slice(0, 83) + '.' : a.desc, r.x + 40, r.y + 27, 10, got ? '#bdb2d0' : '#6a5f78', 'left');
     });
     U.panel(c, 590, 64, 356, 300, { border: '#b8a878' });
     if (sel) {
@@ -728,6 +757,10 @@
       var got2 = !!S.ach[sel.id], ls = U.wrap(c, got2 ? '"' + sel.lore + '"' : 'Aún no lo has conseguido. ' + sel.desc, 330, 12);
       for (var k = 0; k < ls.length && k < 10; k++) G.txt(c, ls[k], 604, 114 + k * 17, 12, got2 ? '#e8dcb0' : '#8a7f96', 'left');
     }
+    var n = A.DEFS.length, sc = st.lscroll || 0;
+    U.button(c, R_LUP, 'ANTERIORES', { size: 13, off: sc <= 0, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
+    U.button(c, R_LDN, 'SIGUIENTES', { size: 13, off: sc >= n - LROWS, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
+    G.txt(c, (sc + 1) + '-' + Math.min(n, sc + LROWS) + ' de ' + n, 768, 434, 11, '#9a8fb0', 'center');
     G.txt(c, 'Flechas: elegir  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
   }
 

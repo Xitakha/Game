@@ -42,6 +42,27 @@
     // P5 (Panal): encargo de la familia. Solo avanza en el Panal (rol `pollinator`); el Panal sigue cerrado hasta Melaria (P6), así que el Tablón no lo ofrece (?quests=pollinators lo fuerza)
     { id: 'pollinators', cat: 'C', tier: 3, kind: 'hunt', name: 'Apaga a los Polinizadores', target: 'pollinator', goal: 10, label: 'Polinizadores',
       desc: 'Abate 10 Polinizadores (Panal). Curan a los suyos cada 3,5 s: acaba con ellos primero (o sedalos con humo).', rewardParts: { spine: 8 }, brasas: 140, pf: 1, pfRepeat: 1 },
+    // P7 (Integración): encargos de Tundra, Panal y Cráter. `biome` = solo avanzan / solo se ofrecen con ese destino abierto (el Cráter con los cinco jefes vencidos).
+    { id: 'yetis', cat: 'C', tier: 2, kind: 'hunt', biome: 'tundra', name: 'Rompe-yetis', target: 'shield', goal: 12, label: 'Yetis',
+      desc: 'Derriba 12 Yetis en la Tundra. Su guardia frontal aguanta casi todo: rodéalos o usa Fuego y Sangre.', rewardParts: { plate: 8 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'coldwin', cat: 'C', tier: 3, kind: 'coldwin', biome: 'tundra', name: 'Sin escalofríos', goal: 1, label: 'Frío <= 70 %', rare: 1,
+      desc: 'Vence a Yarlak sin que el Frío pase del 70 % en toda la expedición. Cuenta como pasarse la Escarcha: quédate cerca de las hogueras.', rewardParts: { wick: 9 }, brasas: 170, pf: 2, pfRepeat: 1 },
+    { id: 'noram', cat: 'C', tier: 3, kind: 'noram', biome: 'tundra', name: 'Sin Embestida', goal: 1, label: 'Sin Embestida', rare: 1,
+      desc: 'Vence a Yarlak sin que te alcance su Embestida glaciar: avisa 1,2 s y derrapa 220 px al final.', rewardParts: { frost: 8 }, brasas: 170, pf: 2, pfRepeat: 1 },
+    { id: 'guards', cat: 'C', tier: 2, kind: 'hunt', biome: 'panal', name: 'Rompe-cera', target: 'shield', goal: 20, label: 'Guardias de cera',
+      desc: 'Derriba 20 Guardias de cera en el Panal. Su escudo se funde con Fuego.', rewardParts: { wick: 6 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'wasps', cat: 'C', tier: 2, kind: 'hunt', biome: 'panal', name: 'Avispero', target: 'blinker', goal: 15, label: 'Avispas',
+      desc: 'Abate 15 Avispas en el Panal. Se desvanecen y pican por la espalda: ten el humo a mano.', rewardParts: { spine: 7 }, brasas: 110, pf: 1, pfRepeat: 1 },
+    { id: 'sting', cat: 'C', tier: 2, kind: 'partkey', key: 'aguijon', biome: 'panal', name: 'Rompe el Aguijón', goal: 1, label: 'Aguijón de la Reina',
+      desc: 'Rompe el Aguijón de Melaria (aunque pierdas, cuenta): sin él no hay Estocada ni Lluvia de aguijones.', rewardParts: { static: 6 }, brasas: 120, pf: 1, pfRepeat: 1 },
+    { id: 'reinafuego', cat: 'C', tier: 3, kind: 'wintag', tag: 'fire', boss: 'melaria', biome: 'panal', name: 'La Reina en llamas', goal: 1, label: 'Reina con Fuego', rare: 1,
+      desc: 'Vence a Melaria con 3 o más cartas de FUEGO en tu mano final: caramelizan su miel y derriten su cera.', rewardParts: { wick: 8 }, brasas: 170, pf: 2, pfRepeat: 1 },
+    { id: 'nohoney', cat: 'C', tier: 3, kind: 'nohoney', biome: 'panal', name: 'Pies limpios', goal: 60, label: 'Sin miel', unit: ' s', rare: 1,
+      desc: 'Sobrevive 60 segundos seguidos sin pisar miel en el Panal. Las celdas abiertas y las Babosas la esparcen.', rewardParts: { thread: 10 }, brasas: 160, pf: 2, pfRepeat: 1 },
+    { id: 'cpart', cat: 'C', tier: 3, kind: 'cpart', biome: 'crater', name: 'Rompe-reliquias', goal: 3, label: 'Reliquias de Cenizar', rare: 1,
+      desc: 'Rompe 3 Reliquias de Cenizar en el Cráter (suman entre Asaltos, aunque caigas): cada una suelta su trofeo y acorta el Rosario.', rewardParts: { plate: 8, wick: 6 }, brasas: 200, pf: 2, pfRepeat: 1 },
+    { id: 'czwin', cat: 'C', tier: 3, kind: 'czwin', biome: 'crater', name: 'Segundo aliento', goal: 1, label: 'Cenizar en Peligro II+', rare: 1,
+      desc: 'Apaga a Cenizar en Peligro II o superior (Asalto al Cráter).', rewardParts: { fang: 6, plate: 6, wick: 6 }, brasas: 240, pf: 2, pfRepeat: 1 },
     { id: 'scorchers', cat: 'B', tier: 3, kind: 'hunt', name: 'Apaga las Ascuas', target: 'scorcher', goal: 12, label: 'Ascuas',
       desc: 'Apaga 12 Ascuas. Cargan con rastro de fuego: no te quedes en su línea.', rewardParts: { wick: 9 }, brasas: 150, pf: 2, pfRepeat: 1 },
     { id: 'colossus', cat: 'B', tier: 2, kind: 'mini', name: 'Derriba al guardián del primer aviso', target: 'slot1', goal: 1, label: 'Guardián 1.er aviso', elite: true,
@@ -87,6 +108,7 @@
   // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
   Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'];
   Q.biomesOf = function (d) {
+    if (d.biome) return [d.biome];   // P7: encargos de destino (Tundra, Panal, Cráter)
     if (d.kind === 'partkey' || d.kind === 'nojump') return ['bosque'];
     if (d.kind === 'minipart') return [G.Minis ? G.Minis.BIOME_OF[d.key] : 'bosque'];
     if (d.kind === 'minicaut') return ['asfodelo'];   // Cuernos y Salto aplastante son del Pastor
@@ -95,7 +117,7 @@
   };
   Q.unlockedBiomes = function (kills) {
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
-    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0) || (b === 'panal' && kills.yarlak > 0); });   // P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
+    return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0) || (b === 'panal' && kills.yarlak > 0); }).concat(['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(function (b) { return kills[b] > 0; }) ? ['crater'] : []);   // P7: el Cráter cuenta como destino abierto con los cinco jefes vencidos. P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
   };
   Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
@@ -160,7 +182,7 @@
     if (G.mode === 'practice') return;
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
     var tk = d.kind === 'mini' ? (e && e.mini ? 'slot' + e.slot : type === 'mini_bulwark' ? 'slot1' : type === 'mini_hive' ? 'slot2' : type) : type;   // P4.5: los minijefes cuentan por SLOT
-    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === tk) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
+    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === tk && (!d.biome || G.curBiome === d.biome)) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
     else if (d.kind === 'kills') inc(d);
     else if (d.kind === 'clean') Q.tick();
   };
@@ -177,7 +199,13 @@
   Q.onBossPart = function (bossId, key) { var d = Q.active(); if (d && d.kind === 'part') inc(d); };
   // Racha sin daño en vivo (el HUD lo llama cada frame mientras hay run)
   Q.tick = function () {
-    var d = Q.active(); if (!d || d.kind !== 'clean' || Q.progress(d.id) >= d.goal) return;
+    var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
+    if (d.kind === 'nohoney') {   // P7: racha sin pisar miel (solo cuenta en el Panal, mientras se juega)
+      if (G.curBiome !== 'panal' || G.mode === 'practice' || G.state !== 'play') return;
+      var hs = Math.floor(G.Loot.honeySecs()); if (hs > Q.progress(d.id)) { S().prog[d.id] = Math.min(d.goal, hs); if (hs >= d.goal) done(d); }
+      return;
+    }
+    if (d.kind !== 'clean') return;
     var s = Math.floor(G.Loot.cleanSecs());
     if (s > Q.progress(d.id)) { S().prog[d.id] = Math.min(d.goal, s); if (s >= d.goal) done(d); }
   };
@@ -189,9 +217,13 @@
     else if (d.kind === 'partkey') { if ((info.parts || []).indexOf(d.key) >= 0) S().prog[d.id] = 1; }
     else if (d.kind === 'nojump') { if (info.won && info.bossId === 'pastor' && !((info.hitBy || {}).boss_salto > 0)) S().prog[d.id] = 1; }
     else if (d.kind === 'win7') { if (info.won && info.lenMin === (d.len || 7)) S().prog[d.id] = 1; }
+    else if (d.kind === 'cpart') { if (info.bossId === 'cenizar' && (info.parts || []).length) inc(d, info.parts.length); }   // P7: Reliquias de Cenizar (suman entre Asaltos)
+    else if (d.kind === 'czwin') { if (info.bossWon && info.bossId === 'cenizar' && (info.peligro || 1) >= 2) S().prog[d.id] = 1; }
+    else if (d.kind === 'coldwin') { if (info.won && info.bossId === 'yarlak' && (info.coldPeak || 0) <= 70) S().prog[d.id] = 1; }
+    else if (d.kind === 'noram') { if (info.won && info.bossId === 'yarlak' && !((info.hitBy || {}).boss_embestida > 0)) S().prog[d.id] = 1; }
     else if (d.kind === 'wintag') {
       var n = (info.hand || []).filter(function (id) { var c = G.Cards.def(id); return c && c.tag === d.tag; }).length;
-      if (info.won && n >= 3) S().prog[d.id] = 1;
+      if (info.won && n >= 3 && (!d.boss || info.bossId === d.boss)) S().prog[d.id] = 1;
     }
     G.Save.save();
     return Q.isReady() ? d : null;
@@ -212,24 +244,27 @@
     return { text: partsText(rp) + ', ' + br + ' Brasas' + (got ? ', +' + got + ' PF' : ' (PF al tope)'), first: first };
   };
 
+  var BOOLK = ['wintag', 'win7', 'partkey', 'nojump', 'coldwin', 'noram', 'czwin'];   // encargos de sí / no (sin contador)
   Q.hudText = function () {
     var d = Q.active(); if (!d) return null;
     if (d.kind === 'clean') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.cleanSecs()))) + '/' + d.goal + ' s';
     if (d.kind === 'wintag') return d.label + ' ' + Math.min(3, (G.Cards.mods.tagN || {})[d.tag] || 0) + '/3';
+    if (d.kind === 'coldwin') return d.label + (G.cold ? ' (pico ' + Math.round(Math.max(G.cold.runPeak || 0, G.cold.peak || 0)) + ' %)' : '');
+    if (d.kind === 'nohoney') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.honeySecs()))) + '/' + d.goal + ' s';
     if (d.kind === 'win7') return d.label + (G.RUN_LEN === (d.len || 7) * 60000 ? '' : ' (elige ' + (d.len || 7) + ' min)');
     if (d.kind === 'nojump') return d.label + (G.Boss.active ? ' - ¡cuidado!' : '');
     return d.label + ' ' + Math.min(d.goal, Q.progress(d.id)) + '/' + d.goal;
   };
   Q.progText = function (d) {
     var p = Q.progress(d.id);
-    if (d.kind === 'clean') return 'mejor racha ' + p + '/' + d.goal + ' s';
-    if (d.kind === 'wintag' || d.kind === 'win7' || d.kind === 'partkey' || d.kind === 'nojump') return p >= d.goal ? 'cumplido' : 'por cumplir';
+    if (d.kind === 'clean' || d.kind === 'nohoney') return 'mejor racha ' + p + '/' + d.goal + ' s';
+    if (BOOLK.indexOf(d.kind) >= 0) return p >= d.goal ? 'cumplido' : 'por cumplir';
     return p + '/' + d.goal + ' ' + d.label;
   };
   Q.statusLine = function () {
     var d = Q.active(); if (!d) return null;
     var p = Math.min(d.goal, Q.progress(d.id));
-    return d.name + ': ' + (d.kind === 'wintag' || d.kind === 'win7' || d.kind === 'partkey' || d.kind === 'nojump' ? (p >= d.goal ? 'cumplido' : 'sin cumplir') : p + '/' + d.goal + (d.unit || '')) + (Q.isReady() ? '  (¡entrégalo a Vesper!)' : '');
+    return d.name + ': ' + (BOOLK.indexOf(d.kind) >= 0 ? (p >= d.goal ? 'cumplido' : 'sin cumplir') : p + '/' + d.goal + (d.unit || '')) + (Q.isReady() ? '  (¡entrégalo a Vesper!)' : '');
   };
   // Marca "!" sobre Vesper: 'ready' (verde: entregable), 'new' (dorado: Tablón rotado desde la última visita y sin encargo activo) o null
   Q.seen = function () { G.Save.data.flags.qseen = Q.boardKey(); G.Save.save(); };
@@ -250,6 +285,7 @@
   // =============================================================== LOGROS (Abuelo Lanudo)
   // Cada logro desbloquea un recuerdo que Lanudo cuenta. Sin recompensa material (la economía no cambia).
   var A = G.Ach = {};
+  function insN(s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
   A.DEFS = [
     { id: 'first', name: 'Primera salida', desc: 'Termina tu primera expedición.', ok: function (s) { return s.runs >= 1; },
       lore: 'Tu primera salida... Yo volví de la mía sin la mitad del bigote. Tú pareces entero.' },
@@ -263,10 +299,14 @@
       lore: 'Letea se comía los recuerdos, ¿sabes? Por eso olvidé tantas cosas. Gracias por devolverme alguna.' },
     { id: 'yarlak', name: 'Fin del invierno', desc: 'Vence a Yarlak, el Coloso Gélido.', ok: function (s) { return (s.bossKills.yarlak || 0) > 0; },
       lore: 'Yarlak guardaba la última hoguera del norte. Si lo derribaste, el frío ya no tiene dueño. Abrígate igual.' },
-    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe.', ok: function (s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.IDS.indexOf(k) >= 0; }).length >= 3; },
+    // P7: las Insignias del Avispón Real y la Reina Joven (Panal) cuentan igual que las otras ocho. 3 y 8 de las 10 (ya concedidos no se quitan; quien tenía 7 + 1 del Panal ahora cumple 8);
+    // 'Colección completa' pide las 10. La Insignia 11 'Brasa Primera' (Cenizar) es de jefe final: va aparte, con su título.
+    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe (de las 10).', ok: function (s) { return insN(s) >= 3; },
       lore: 'Tres insignias de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
-    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue las 8 Insignias (+1 Esencia rara, una vez).', ok: function (s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.IDS.indexOf(k) >= 0; }).length >= 8; }, give: { rare: 1 },
-      lore: 'Las ocho... Cada guardián tenía su historia y tú te las has quedado todas. Toma, una Esencia: me la guardaba para alguien así.' },
+    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue 8 Insignias de minijefe (de las 10; +1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 8; }, give: { rare: 1 },
+      lore: 'Ocho... Cada guardián tenía su historia y tú te las has quedado casi todas. Toma, una Esencia: me la guardaba para alguien así.' },
+    { id: 'insig10', name: 'Colección completa', desc: 'Consigue las 10 Insignias de minijefe, con las del Avispón Real y la Reina Joven (+1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 10; }, give: { rare: 1 },
+      lore: 'Diez insignias, hasta las de la colmena. Hasta los zánganos hablan de ti. Toma otra Esencia: ya no sé dónde guardarlas.' },
     { id: 'melaria', name: 'La reina destronada', desc: 'Vence a Melaria, la Reina Abeja.', ok: function (s) { return (s.bossKills.melaria || 0) > 0; },
       lore: 'Melaria se comió la jalea de todas sus hermanas. Tú te has comido su corona. Me parece justo.' },
     { id: 'cenizar', name: 'Apagafuegos', desc: 'Vence a Cenizar, el Incendio Primero (Asalto al Cráter).', ok: function (s) { return (s.bossKills.cenizar || 0) > 0; },
@@ -275,6 +315,17 @@
       lore: 'Cinco Reliquias rotas en una sola pelea. Hasta el fuego se preguntó quién eras.' },
     { id: 'sinchispa', name: 'Sin una chispa', desc: 'Vence a Cenizar sin que te alcance ninguna cadena del Rosario.', ok: function (s) { return !!(s.flags && s.flags.no_chain_hit); },
       lore: 'Ni una chispa del Rosario te rozó. Eso no es esquivar, es bailar.' },
+    // P7: logros de Tundra, Panal y Ruta
+    { id: 'calido', name: 'Cálido corazón', desc: 'Vence a Yarlak con el Frío por debajo del 50 % durante toda la pelea.', ok: function (s) { return !!(s.flags && s.flags.warm_heart); },
+      lore: 'Ni un escalofrío contra el Coloso. Debes de llevar una hoguera por dentro, chaval.' },
+    { id: 'nigota', name: 'Ni una gota', desc: 'Vence a Melaria sin pisar su miel ni una vez.', ok: function (s) { return !!(s.flags && s.flags.no_honey); },
+      lore: 'Ni una gota en las botas. Yo me quedé pegado tres días a la jalea de la vieja Melaria.' },
+    { id: 'peligro5', name: 'Último aliento', desc: 'Vence a cualquier jefe en Peligro V.', ok: function (s) { return Object.keys(s.pelWins || {}).some(function (b) { return ((s.pelWins[b] || {})[5] || 0) > 0; }); },
+      lore: 'Peligro V... Los jefes también tienen un último aliento, y tú te lo has quedado.' },
+    { id: 'ruta', name: 'Hecho para el camino', desc: 'Forja los 6 refuerzos de Ruta (Tundra y Panal).', ok: function () { return G.Tree.NODES.filter(function (n) { return n.ruta && n.id !== 'RT7'; }).every(function (n) { return G.Tree.owned(n.id); }); },
+      lore: 'Crampones, humo, guantes... Cada bioma pide su abrigo. Tú ya los llevas todos.' },
+    { id: 'aliento', name: 'Aliento del Cráter', desc: 'Reúne los 6 trofeos de Cenizar y forja el Aliento del Cráter.', ok: function () { return G.Tree.owned('RT7'); },
+      lore: 'Seis trofeos de un incendio. Ahora el Cráter respira contigo, no contra ti.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Activa 5 combos distintos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Activa los 12 combos.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

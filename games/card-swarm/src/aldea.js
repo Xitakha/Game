@@ -141,7 +141,7 @@
     if (S.bossKills.melaria && !S.bossKills.cenizar && k.pastor && k.karceron && k.letea && k.yarlak && k.melaria) out.push('Con los cinco caídos se abre el Cráter del Hogar Quemado en el Portal: allí arde Cenizar, el Incendio Primero. Siete fases, sin checkpoints. Cada Reliquia que rompas acorta su Rosario final.');
     if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
-    try { G.Minis.IDS.forEach(function (mid) {   // P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
+    try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
       if ((S.insignias || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
     }); } catch (eI) { /* sin minijefes */ }
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });

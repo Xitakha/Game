@@ -376,7 +376,7 @@ async function unlock(b) {
   const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), pg = await ctx.newPage(); pg.errs = [];
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
   await pg.goto(`${base}/index.html?dbg=1&reset=1`); await pg.waitForTimeout(500);
-  const chip = { x: 650 + 4 * 48 + 23, y: 357 };   // P6.5: 6 chips de 46 px
+  const chip = { x: 491, y: 213 };   // P6.5: 6 chips de 46 px
   async function portal(kills) {
     await pg.evaluate(k => { G.Save.data.bossKills = k; G.Save.data.biome = 'bosque'; G.Save.save(); }, kills);
     await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(600);

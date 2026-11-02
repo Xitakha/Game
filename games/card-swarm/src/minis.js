@@ -321,7 +321,7 @@
     try { G.Snd.play('gem', 2.2); G.Hud.banner('INSIGNIA: ' + De.ins.name.toUpperCase() + (first ? '  (¡NUEVA!)' : ''), 1800, '#e0c8ff'); } catch (x2) { /* hud */ }
     G.Save.save(); try { G.Ach.check(); } catch (x3) { /* logros */ }
   };
-  M.insigniaCount = function () { var S = G.Save.data.insignias || {}, n = 0; M.IDS.forEach(function (k) { if (S[k]) n++; }); return n; };
+  M.insigniaCount = function () { var S = G.Save.data.insignias || {}, n = 0; M.ALL.forEach(function (k) { if (S[k]) n++; }); return n; };   // P7: las 10 (8 + Avispón Real y Reina Joven)
 
   // ================================================================= MUERTE
   M.onDie = function (e, silent) {

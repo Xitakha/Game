@@ -21,9 +21,9 @@ let fails = 0; const ok = (c, m) => { if (!c) fails++; console.log((c ? 'OK     
   await tap(898, 478); await pg.waitForTimeout(700);    // boton HABLAR / PORTAL (96 px) junto al arco
   const open = await pg.evaluate(() => ({ s: G.state, p: G.Panels && G.Panels.current ? G.Panels.current() : null }));
   ok(open.p === 'portal', 'toques: PORTAL -> boton del arco abre el Portal (' + JSON.stringify(open) + ')');
-  // destino: chips de 92x42 en y 336, x = 650 + i*98 (bosque, cripta, asfodelo)
-  const idx = { bosque: 0, cripta: 1, asfodelo: 2 }[biome];
-  await tap(650 + idx * 98 + 46, 357); await pg.waitForTimeout(500);
+  // destino (P7): chips de 94x42 en 2 columnas x 3 filas desde (444, 102): bosque, cripta / asfodelo, tundra / panal, crater
+  const idx = { bosque: 0, cripta: 1, asfodelo: 2, tundra: 3, panal: 4, crater: 5 }[biome];
+  await tap(491 + (idx % 2) * 98, 123 + Math.floor(idx / 2) * 45); await pg.waitForTimeout(500);
   if (OUT) await pg.screenshot({ path: OUT + `m1_portal_${biome}.jpg`, type: 'jpeg', quality: 62 });
   ok((await pg.evaluate(() => G.Save.data.biome)) === biome, 'destino ' + biome + ' elegido con un toque');
   await tap(795, 508); await pg.waitForTimeout(900);   // SALIR A LA EXPEDICION

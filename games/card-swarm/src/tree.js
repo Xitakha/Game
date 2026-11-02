@@ -175,12 +175,29 @@
       desc: 'Pasivo: empiezas cada expedición con +20 de Ceniza.' },
     { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Tercera ancla', col: 2, row: 2, icon: '3', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
       desc: 'Llevas 3 cartas ancla ya en la mano al salir, en vez de 2.' },
-    { id: 'N1', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Pezuñas veloces', col: 1, row: 4, icon: 'boots', card: 'hooves',
+    { id: 'N1', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Pezuñas veloces', col: 1, row: 3, icon: 'boots', card: 'hooves',
       desc: 'Desbloquea la pasiva Pezuñas veloces: +12 % de velocidad de movimiento.' },
-    { id: 'N2', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Imán de brasas', col: 2, row: 4, icon: 'magnet', card: 'magnet',
+    { id: 'N2', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Imán de brasas', col: 2, row: 3, icon: 'magnet', card: 'magnet',
       desc: 'Desbloquea la pasiva Imán de brasas: radio de recogida x2 y +20 % de XP.' },
-    { id: 'N3', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Alforja de ceniza', col: 3, row: 4, icon: 'bag', card: 'satchel',
-      desc: 'Desbloquea la pasiva Alforja de ceniza: +50 % de Ceniza y rerolls 5 más baratos.' }
+    { id: 'N3', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Alforja de ceniza', col: 3, row: 3, icon: 'bag', card: 'satchel',
+      desc: 'Desbloquea la pasiva Alforja de ceniza: +50 % de Ceniza y rerolls 5 más baratos.' },
+    // ---- Rama 'Ruta' del Tronco (P7, DESIGN-v5 B.7): refuerzos situacionales de cada bioma. NO cuestan PF; piden haber obtenido el trofeo del jefe (no se consume: queda en Save.data.trophies)
+    // y cuestan partes + Brasas. Costes base (x L.COST_MUL.node: partes x0,8 redondeado arriba, Brasas x5) = Crampones 8 Placa + 300, Abrigo 8 Hebra + 300, Brasa 6 Mecha + 450,
+    // Ahumador 6 Mecha + 300, Guantes 8 Hebra + 300, Jalea 8 Pluma + 450. 'Aliento del Cráter' (P6.5): los 6 trofeos de Cenizar; 10 Mecha + 10 Placa + 2 Esencias + 800 Brasas.
+    { id: 'RT1', tree: 'trunk', tag: 'ice', type: 'P', ruta: true, name: 'Crampones', px: 50, py: 442, icon: 'boots', fx: 'crampones', trophies: ['ytusk'], cost: { pf: 0, parts: { plate: 10 }, brasas: 60 },
+      desc: 'Ruta de la Tundra. El hielo te frena antes de lo normal (de 220 a 140 ms de inercia) y el retroceso es x1,2: menos derrape, más control.' },
+    { id: 'RT2', tree: 'trunk', tag: 'ice', type: 'P', ruta: true, name: 'Abrigo de escarcha', px: 138, py: 442, icon: 'snow', fx: 'abrigo', trophies: ['yplate'], cost: { pf: 0, parts: { thread: 10 }, brasas: 60 },
+      desc: 'Ruta de la Tundra. La ganancia de Frío baja un 30 % (x0,7): tardas más en helarte en el hielo y la ventisca.' },
+    { id: 'RT3', tree: 'trunk', tag: 'ice', type: 'P', ruta: true, name: 'Brasa en el pecho', px: 226, py: 442, icon: 'flame', fx: 'brasaPecho', trophies: ['yheart'], cost: { pf: 0, parts: { wick: 7 }, brasas: 90 },
+      desc: 'Ruta de la Tundra. Las hogueras llegan un 30 % más lejos y cada carta de Fuego de tu mano baja el Frío 0,5 %/s (en vez de 0,35).' },
+    { id: 'RT4', tree: 'trunk', tag: 'lightning', type: 'P', ruta: true, name: 'Ahumador', px: 330, py: 442, icon: 'cloud', fx: 'ahumador', trophies: ['msting'], cost: { pf: 0, parts: { wick: 7 }, brasas: 60 },
+      desc: 'Ruta del Panal. El humo sedante dura un 40 % más (2,5 s) y su radio sube de 36 a 50: las abejas duermen más tiempo.' },
+    { id: 'RT5', tree: 'trunk', tag: 'lightning', type: 'P', ruta: true, name: 'Guantes de apicultor', px: 418, py: 442, icon: 'shield', fx: 'guantes', trophies: ['mwing'], cost: { pf: 0, parts: { thread: 10 }, brasas: 60 },
+      desc: 'Ruta del Panal. La miel te ralentiza un 25 % en lugar de un 45 %.' },
+    { id: 'RT6', tree: 'trunk', tag: 'lightning', type: 'P', ruta: true, name: 'Jalea de reserva', px: 506, py: 442, icon: 'heart', fx: 'jalea', trophies: ['mjelly'], cost: { pf: 0, parts: { feather: 10 }, brasas: 90 },
+      desc: 'Ruta del Panal. +10 de vida máxima en todas tus expediciones.' },
+    { id: 'RT7', tree: 'trunk', tag: 'fire', type: 'Ma', ruta: true, name: 'Aliento del Cráter', px: 604, py: 442, icon: 'burst', fx: 'alientoCrater', trophies: ['cz_cay', 'cz_nuc', 'cz_ojo', 'cz_col', 'cz_cor', 'cz_cora'], cost: { pf: 0, parts: { wick: 12, plate: 12, rare: 2 }, brasas: 160 },
+      desc: 'Ruta del Cráter. Colección completa de los 6 trofeos de Cenizar: +10 % de daño contra jefes. Sin Puntos de Forja.' }
   ];
   var BY = {}; NODES.forEach(function (n) { BY[n.id] = n; });
   T.NODES = NODES; T.node = function (id) { return BY[id]; };
@@ -190,6 +207,7 @@
     { id: 'trunk', name: 'TRONCO', color: '#c8b8e8' }];
   T.tabOf = function (id) { return T.TABS.filter(function (t) { return t.id === id; })[0]; };
   var TYPE_NAME = { root: 'RAÍZ', C: 'CARTA', M: 'MEJORA A / B', P: 'PASIVO', X: 'RAMA EXCLUYENTE', S: 'SET', Ma: 'MAESTRÍA', R: 'RANGO DE FORJA' };
+  function typeName(n) { return n.ruta ? 'RUTA  -  SIN PF' : TYPE_NAME[n.type] || ''; }
 
   // ------------------------------------------------------------- Estado y reglas
   function SV() { return G.Save.data; }
@@ -250,14 +268,19 @@
       var names = (n.req.all || n.req.any).map(function (i) { return BY[i].name; });
       return 'Requiere ' + names.join(n.req.all ? ' y ' : ' o ') + '.';
     }
+    if (!trophyOK(n)) return n.trophies.length > 1 ? 'Requiere los ' + n.trophies.length + ' trofeos de Cenizar (' + T.trophiesHave(n) + '/' + n.trophies.length + ').' : 'Requiere el trofeo: ' + T.trophyNames(n)[0] + '.';
     if (!tierOK(n)) return 'Requiere ' + (n.tier === 'T2' ? 'Rango de forja II (Tronco)' : 'Rango de forja III (Tronco)') + '.';
     return '';
   };
+  // P7 (rama 'Ruta'): trofeos de jefe necesarios (se guardan en Save.data.trophies al soltarse; no se consumen)
+  T.trophiesHave = function (n) { var t = SV().trophies || {}; return (n.trophies || []).filter(function (k) { return t[k] > 0; }).length; };
+  function trophyOK(n) { return !n.trophies || T.trophiesHave(n) >= n.trophies.length; }
+  T.trophyNames = function (n) { return (n.trophies || []).map(function (k) { return (G.Boss.TROPHY[k] || { name: k }).name; }); };
   // 'owned' | 'excluded' | 'locked' | 'avail'
   T.status = function (n) {
     if (T.owned(n.id)) return 'owned';
     if (n.xor && T.owned(n.xor)) return 'excluded';
-    if (!reqOK(n) || !tierOK(n)) return 'locked';
+    if (!reqOK(n) || !tierOK(n) || !trophyOK(n)) return 'locked';
     return 'avail';
   };
   // ¿Se puede pagar? Devuelve '' si sí, o el texto de lo que falta
@@ -289,7 +312,7 @@
     }
     S.nodes[id] = o;
     var msg = n.type === 'M' ? n.name + ': ' + n.ch[choice].name : n.name;
-    if (!S.ever[id]) {   // hito "Maestría de oficio": cada 4 nodos distintos forjados, +1 PF
+    if (!S.ever[id] && !n.ruta) {   // (la rama Ruta no cuenta: no da PF por hitos) hito "Maestría de oficio": cada 4 nodos distintos forjados, +1 PF
       S.ever[id] = 1;
       var m = Math.floor(Object.keys(S.ever).length / L.PF_SOURCES.milestoneEvery);
       if (m > S.mile) { S.mile = m; if (T.addPF(1)) msg += '  -  Maestría de oficio: +1 PF'; }
@@ -385,7 +408,7 @@
   var R_CH = [{ x: 654, y: 470, w: 140, h: 52 }, { x: 800, y: 470, w: 140, h: 52 }];
   var R_UNDO = { x: 754, y: 416, w: 186, h: 48 };
   var NX = 72, NY = 138, SX = 100, SY = 65, NR = 28;
-  function pos(n) { return { x: NX + n.col * SX, y: NY + n.row * SY }; }
+  function pos(n) { return n.px != null ? { x: n.px, y: n.py } : { x: NX + n.col * SX, y: NY + n.row * SY }; }
   function say(t) { ui.msg = t; ui.msgT = 3200; }
   function tabNodes() { return NODES.filter(function (n) { return n.tree === ui.tab; }); }
 
@@ -491,7 +514,7 @@
     if (window.Assets && Assets.drawTreeNode) {   // marco con el arte del árbol (assets_tree.js): el icono lo pongo yo (glifo de la carta o icono de tipo)
       Assets.drawTreeNode(c, p.x, p.y, { type: n.type, tag: n.tag, state: st, choice: T.choice(n.id), sel: selected, t: Date.now(), r: NR });
       var ik = owned ? '#1a1024' : col;
-      if (TYPE_ICON[n.type] && n.icon !== 'II' && n.icon !== 'III' && n.icon !== '3' && Assets.drawTreeIcon) Assets.drawTreeIcon(c, TYPE_ICON[n.type], p.x, p.y, 14, { color: ik, dim: dim });
+      if (TYPE_ICON[n.type] && !n.ruta && n.icon !== 'II' && n.icon !== 'III' && n.icon !== '3' && Assets.drawTreeIcon) Assets.drawTreeIcon(c, TYPE_ICON[n.type], p.x, p.y, 14, { color: ik, dim: dim });
       else { c.save(); if (dim) c.globalAlpha = 0.4;
         if (n.icon === 'II' || n.icon === 'III' || n.icon === '3') G.txt(c, n.icon, p.x, p.y + 1, n.icon.length > 1 ? 16 : 22, owned ? '#1a1024' : '#fff', 'center');
         else G.Cards.glyph(c, n.icon, p.x, p.y + (n.type === 'M' ? 2 : 0), n.type === 'M' ? 11 : 15, ik);
@@ -577,9 +600,17 @@
         G.txt(c, 'O', (q1.x + q2.x) / 2, q1.y, 12, '#ff8a8a', 'center');
       }
     });
-    if (ui.tab === 'trunk') G.txt(c, 'CARTAS NEUTRAS', NX + 2 * SX, NY + 3 * SY + 10, 12, '#9a8fb0', 'center');
+    if (ui.tab === 'trunk') {
+      G.txt(c, 'CARTAS', NX, NY + 3 * SY - 6, 11, '#9a8fb0', 'center'); G.txt(c, 'NEUTRAS', NX, NY + 3 * SY + 8, 11, '#9a8fb0', 'center');
+      G.txt(c, 'RUTA  -  refuerzos por bioma, sin PF; se abren con el trofeo del jefe', 14, 394, 11, '#c8b8e8', 'left');
+      G.txt(c, 'TUNDRA', 138, 411, 10, '#6ac8ff', 'center'); G.txt(c, 'PANAL', 418, 411, 10, '#ffe45a', 'center'); G.txt(c, 'CRÁTER', 604, 411, 10, '#ff9a3c', 'center');
+    }
     nodes.forEach(function (nd) { drawNodeShape(c, nd, T.status(nd), pos(nd), nd.id === ui.sel, t); });
-    if (ART) nodes.forEach(function (nd) { var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded'; G.txt(c, nd.name.length > 17 ? nd.name.slice(0, 16) + '.' : nd.name, q.x, q.y + NR + 9, 10, dm ? '#7a6f8a' : '#e8dff8', 'center'); });
+    if (ART) nodes.forEach(function (nd) {
+      var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded', col = dm ? '#7a6f8a' : '#e8dff8';
+      if (nd.ruta) { var wl = U.wrap(c, nd.name, 84, 10); wl.slice(0, 2).forEach(function (l, k) { G.txt(c, l, q.x, q.y + NR + 9 + k * 11, 10, col, 'center'); }); return; }
+      G.txt(c, nd.name.length > 17 ? nd.name.slice(0, 16) + '.' : nd.name, q.x, q.y + NR + 9, 10, col, 'center');
+    });
     if (ui.flashT > 0 && BY[ui.flash]) {
       var fp = pos(BY[ui.flash]), u = 1 - ui.flashT / 800;
       if (ART && Assets.drawTreeBurst) Assets.drawTreeBurst(c, fp.x, fp.y, u, (G.TAGS[BY[ui.flash].tag] || G.TAGS.neutral).color);
@@ -595,7 +626,7 @@
     var S = SV(), st = T.status(n), tag = G.TAGS[n.tag] || G.TAGS.neutral, i, y;
     U.panel(c, DET.x, DET.y, DET.w, DET.h, { border: tag.color });
     G.txt(c, n.name, DET.x + 14, DET.y + 22, 18, '#ffd27a', 'left');
-    G.txt(c, (TYPE_NAME[n.type] || '') + (n.tier ? '  -  ' + n.tier : '') + '  -  ' + (n.tree === 'trunk' ? 'TRONCO' : tag.name), DET.x + 14, DET.y + 44, 11, tag.color, 'left');
+    G.txt(c, typeName(n) + (n.tier ? '  -  ' + n.tier : '') + '  -  ' + (n.tree === 'trunk' ? 'TRONCO' : tag.name), DET.x + 14, DET.y + 44, 11, tag.color, 'left');
     var stTxt = st === 'owned' ? (n.type === 'root' ? 'INICIAL' : 'COMPRADO' + (n.type === 'M' ? ': ' + n.ch[T.choice(n.id)].name : '') + (S.nodes[n.id] && S.nodes[n.id].free ? ' (heredado)' : '')) :
       st === 'avail' ? 'DISPONIBLE' : T.reason(n);
     G.txt(c, stTxt, DET.x + 14, DET.y + 64, 12, st === 'owned' ? '#9dffb4' : st === 'avail' ? '#ffe9a0' : '#ff8a8a', 'left');
@@ -612,6 +643,14 @@
       });
     }
     if (n.type === 'root') return;
+    if (n.trophies) {   // P7: trofeos necesarios (iluminados si ya los tienes)
+      G.txt(c, 'TROFEOS  ' + T.trophiesHave(n) + '/' + n.trophies.length, DET.x + 14, 330, 11, '#9a8fb0', 'left');
+      n.trophies.forEach(function (k, j) {
+        var tr = G.Boss.TROPHY[k], have = (S.trophies[k] || 0) > 0, tx = DET.x + 14 + j * 46;
+        try { c.save(); c.globalAlpha = have ? 1 : 0.3; c.drawImage(Assets.sprite(tr.spr, 0), tx, 340, 40, 40); c.restore(); } catch (e0) { c.restore(); }
+        if (n.trophies.length === 1) G.txt(c, tr.name + (have ? '' : '  (aún no lo tienes)'), tx + 50, 360, 11, have ? '#9dffb4' : '#ff8a8a', 'left');
+      });
+    }
     var cost = T.cost(n);
     if (st !== 'owned') {
       G.txt(c, 'COSTE', DET.x + 14, 392, 11, '#9a8fb0', 'left');
