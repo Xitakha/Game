@@ -138,6 +138,7 @@
   function launch(e, final) {
     var a = A(), p = PL(), spec = Z.genChain(e, final, { x: p.x, y: p.y }, final ? 10 : 8), ch;
     ch = a.ch = { final: !!final, spec: spec, t: -ANN, n: 0, links: spec.links, waves: [], end: 0, solDone: false, ghosts: [], hits0: a.hurts || 0 };
+    var late = !final && pel().n >= 4, lateEvs = [];   // P7 (doc 10, Peligro IV-V): 2.º Anuncio fantasma recortado a 1000 ms a mitad de cadena
     spec.items.forEach(function (s) {
       var tele = s.tele, ev = Z.add(Object.assign({}, s, { delay: ANN + s.atRel - tele, tele: tele, ghost: true, glyph: s.link === 7 ? null : s.link, col: s.link === 7 ? 'purple' : LCOL[s.link], sig: s.link === 6, silent: true, dur: s.k === 'hex' ? 200 : 160 }));
       ev.fixAt = ev.t0 + (s.k === 'lane' ? Math.max(0, tele - 300) : Math.round(tele * 0.7));
@@ -147,10 +148,15 @@
       else if (s.k === 'hex') { ev.gx = s.x + Math.cos(s.gaps[0]) * s.apo / 0.8660254 * 0.97; ev.gy = s.y + Math.sin(s.gaps[0]) * s.apo / 0.8660254 * 0.97; }
       else if (s.k === 'donut') { ev.gx = s.x; ev.gy = s.y - 225; }
       ev.onGo = function (v) { chainHit(e, v); };
+      if (late && (s.link >= 4 || s.id === '1c')) lateEvs.push(ev);
       ch.ghosts.push(ev);
       if (s.id === '6') ch.sol = ev;
       ch.end = Math.max(ch.end, s.atRel);
     });
+    if (lateEvs.length) {   // los eslabones 4-6 (y el Eco) solo aparecen en la vista previa 1000 ms antes de que empiece a telegrafiarse el primero de ellos
+      var tAnn = Math.max(Math.min.apply(null, lateEvs.map(function (v) { return v.t0; })) - 1000, a.clk + ANN);
+      lateEvs.forEach(function (v) { v.ghostAt = tAnn; }); ch.ann2 = tAnn;
+    }
     spec.waves.forEach(function (w) { ch.waves.push({ id: w.id, link: w.link, launchRel: w.atRel, dir: w.dir, gap: w.gap, tele: w.tele, done: false, x0: w.dir > 0 ? G.WALL - 60 : G.AW - G.WALL + 60 }); ch.end = Math.max(ch.end, w.atRel + 1500); });
     ch.end += ch.final ? 800 : ch.sol ? 4200 : 900;
     ch.keys = spec.items.length;
@@ -177,6 +183,7 @@
     var a = A(), ch = a.ch; if (!ch) return;
     var t0 = ch.t; ch.t += dt;
     if (ch.t >= 0 && t0 < 0) { snd(); }
+    if (ch.ann2 != null && !ch.ann2Done && a.clk >= ch.ann2) { ch.ann2Done = true; sfx('chain_announce', { vol: 0.55 }); G.Hud.banner('SEGUNDO AVISO', 1000, '#fff2b0'); }
     ch.waves.forEach(function (w) {
       if (!w.done && ch.t >= w.launchRel) { w.done = true; Z.addBand({ x: w.x0, dir: w.dir, gap: w.gap, dmg: 14, col: '#bfeaff', src: 'boss_ventisca2', glyph: null }); }
     });
@@ -249,7 +256,7 @@
   Z.hudChain = function (c, e, bx, by, bw) { var ch = A().ch; if (ch && ch.t > -ANN) G.txt(c, (ch.final ? 'CADENA FINAL' : 'ROSARIO') + '  ' + Math.max(0, ch.n) + '/' + ch.links.length, bx + bw / 2, by + 52, 11, '#fff2b0', 'center'); };
 
   // ---- pruebas / calibración
-  S.chainInfo = function () { var ch = A().ch; return ch ? { t: ch.t, n: ch.n, links: ch.links, valid: ch.spec.valid, tries: ch.spec.tries, events: ch.keys, end: ch.end, final: ch.final } : null; };
+  S.chainInfo = function () { var ch = A().ch; return ch ? { ann2: ch.ann2 == null ? null : ch.ann2 - A().clk, t: ch.t, n: ch.n, links: ch.links, valid: ch.spec.valid, tries: ch.spec.tries, events: ch.keys, end: ch.end, final: ch.final } : null; };
   S.chainReachable = function (n, o) {   // % de cadenas sin ruta libre de daño desde N posiciones de partida aleatorias del jugador (DESIGN 8.3 regla 2)
     var e = S.e, p = PL(), ok = 0, first = 0, tries = 0, i; n = n || 200; o = o || {};
     if (!e) return null;

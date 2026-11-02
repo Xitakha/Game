@@ -210,10 +210,16 @@
 
   // ================================================================= HUMO (B.4.3)
   var clouds = [];
+  // ralentización de la miel sobre el jugador: 45 %; 'Guantes de apicultor' (Ruta, P7) 25 %; 'Tostada de miel' (P7) la mitad
+  P.honeyPct = function () {
+    var pct = (G.Tree && G.Tree.fx && G.Tree.fx.guantes) ? 0.25 : D.honey.player;
+    if (G.runBuff && G.runBuff.fx && G.runBuff.fx.honey) pct *= 1 - G.runBuff.fx.honey;
+    return pct;
+  };
   P.clouds = clouds;
   P.smoke = function (x, y) {
     if (!P.on) return;
-    var S = D.smoke, tf = G.Tree && G.Tree.fx || {}, life = S.life * (tf.ahumador ? 1.4 : 1), r = S.r * (tf.ahumador ? 50 / 36 : 1), i, q;
+    var S = D.smoke, tf = G.Tree && G.Tree.fx || {}, life = S.life * Math.max(tf.ahumador ? 1.4 : 1, G.runBuff && G.runBuff.fx && G.runBuff.fx.smoke ? 1.5 : 1),   /* P7: 'Té de humo' +50 % (no se suma al Ahumador) */ r = S.r * (tf.ahumador ? 50 / 36 : 1), i, q;
     for (i = 0; i < clouds.length; i++) { q = clouds[i]; if (Math.hypot(q.x - x, q.y - y) < 22) { q.life = life; q.max = life; return; } }   // un impacto sobre una nube existente la refresca (no se apila)
     if (clouds.length >= S.max) clouds.shift();
     clouds.push({ x: x, y: y, r: r, life: life, max: life, ph: Math.random() * 6 });
@@ -359,10 +365,10 @@
     // jugador sobre miel: ralentiza 45 % (no apila: Player.slow se queda con el mayor)
     if (p.honeyT > 0) p.honeyT -= dt;
     if (!p.dead && honeyOn && P.honeyAt(p.x, p.y)) {
-      var pct = (G.Tree && G.Tree.fx && G.Tree.fx.guantes) ? 0.25 : D.honey.player;   // 'Guantes de apicultor' (Ruta, P7): 25 %
-      if (G.runBuff && G.runBuff.fx && G.runBuff.fx.honey) pct *= 1 - G.runBuff.fx.honey;   // 'Tostada de miel' (P7): -50 %
+      var pct = P.honeyPct();
       if (!(p.honeyT > 0)) pSfx('honey_squelch', null, { vol: 0.35 });
       G.Player.slow(p, pct, 140); p.honeyT = 140;
+      try { var HR = G.Loot.run; HR.honeyAt = G.time; if (G.Boss.active) HR.honeyBoss = true; } catch (x) { /* P7: encargo 'Sin pisar miel' y logro 'Ni una gota' */ }
     }
     for (i = 0; i < G.enemies.length; i++) { e = G.enemies[i]; if (e.hot) tickHot(e, dt); }
     // celdas del entorno (B.4.2: "la Reina y el entorno abren y cierran celdas")

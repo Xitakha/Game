@@ -168,6 +168,7 @@
   // Racha sin recibir daño (encargos "Intocable"): player.js llama a noteHit() en cada golpe real; cleanSecs() es la racha actual en segundos
   L.noteHit = function (src) { var R = L.run; if (!R) return; if (src) { R.hitBy = R.hitBy || {}; R.hitBy[src] = (R.hitBy[src] || 0) + 1; }   // J3: qué ataques te alcanzaron (encargo 'sin Salto aplastante')
      var now = G.time; R.clean = Math.max(R.clean || 0, now - (R.lastHit == null ? G.t0 : R.lastHit)); R.lastHit = now; };
+  L.honeySecs = function () { var R = L.run; if (!R) return 0; return Math.max(0, (G.time - (R.honeyAt == null ? G.t0 : R.honeyAt)) / 1000); };   // P7: racha sin pisar miel (encargo del Panal)
   L.cleanSecs = function () { var R = L.run; if (!R) return 0; return Math.max(0, (G.time - (R.lastHit == null ? G.t0 : R.lastHit)) / 1000); };
   L.resetRun();
 
@@ -238,6 +239,8 @@
       }
       brasas += bb;
       if (bs.id === 'cenizar' && bs.won && !(S.insignias.brasa_primera > 0)) { S.insignias.brasa_primera = 1; S.flags.title_apagafuegos = 1; }   // Insignia 11 'Brasa Primera' y título
+      if (bs.id === 'yarlak' && bs.won && G.cold && (G.cold.bossPeak || 0) < 50) S.flags.warm_heart = 1;   // P7: logro 'Cálido corazón' (Frío < 50 % durante toda la pelea)
+      if (bs.id === 'melaria' && bs.won && !R.honeyBoss) S.flags.no_honey = 1;                              // P7: logro 'Ni una gota' (sin pisar miel contra la Reina)
       if (bs.id === 'cenizar' && bs.won && !(R.relics > 0)) S.flags.title_cenizas = 1;   // desafío: vencerlo sin romper ninguna Reliquia
       R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; });
       binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && (!hunt || G.final) && kn === 0, final: !!G.final, relics: R.relics || 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
@@ -247,8 +250,8 @@
     S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 };   // cupos de Rufo y plato de Castaña: se reinician al volver de una salida
     S.lossStreak = won ? 0 : (S.lossStreak || 0) + 1;                 // racha de derrotas (la aldea pasa a "noche" a partir de 3)
     R.clean = Math.max(R.clean || 0, G.time - (R.lastHit == null ? G.t0 : R.lastHit));
-    var qdone = null;
-    try { qdone = G.Quests.onRunEnd({ won: won && !hunt, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000), hitBy: R.hitBy || {} }); } catch (x) { /* encargos opcionales */ }
+    var qdone = null, P0 = G.clamp(Math.round(G.peligro || 1), 1, 5);
+    try { qdone = G.Quests.onRunEnd({ won: won && !hunt, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000), hitBy: R.hitBy || {}, peligro: P0, biome: G.curBiome, coldPeak: G.cold ? Math.max(G.cold.runPeak || 0, G.cold.peak || 0) : 0, coldBoss: G.cold ? G.cold.bossPeak || 0 : 0, honeyBoss: !!R.honeyBoss, honeyBest: R.honeyBest || 0 }); } catch (x) { /* encargos opcionales */ }
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);

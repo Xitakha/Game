@@ -299,7 +299,7 @@
     G.Hud.banner('FASE ' + S.ROMAN[e.phase] + ' - ' + D.phases[e.phase - 1].n.toUpperCase(), 2200, D.gateCol ? D.gateCol[e.phase - 1] : e.phase === 2 ? '#c090ff' : '#ff9a3c'); S.stinger('p' + e.phase, e);
     if (D.h && D.h.onGate) D.h.onGate(e);
     var p = PL();   // salvavidas: 2 corazones
-    var nh = D.gateHearts || 2; for (var i = 0; i < nh; i++) G.Combat.dropGem(p.x + (i === 0 ? -50 : i === 1 ? 50 : 0), p.y + 20, 'heart', B.player.heal);
+    var nh = (D.gateHearts || 2) + ((G.runBuff && G.runBuff.fx && G.runBuff.fx.gate) || 0); /* P7: 'Caldo del Hogar Reencendido' +1 corazón */ for (var i = 0; i < nh; i++) G.Combat.dropGem(p.x + (i === 0 ? -50 : i === 1 ? 50 : 0), p.y + (i > 2 ? 20 + 28 * (i - 2) : 20), 'heart', B.player.heal);
     try { if (!(D.h && D.h.noIntensity)) Assets.music.setIntensity(D.phases[e.phase - 1].music); } catch (x) { /* audio */ }
     if (e.id === 'pastor' && e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: Math.random() * 3000 }); }); }
     if (e.id === 'pastor' && e.phase === 3) { S.insetOn = true; S.insetT = 0; }

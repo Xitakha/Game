@@ -213,7 +213,7 @@
   }
   Z.drawEv = function (c, ev, clk) {
     var tt = G.time, p, col = COL[ev.col] || COL.red, mode, fix;
-    if (clk < ev.t0) { if (!ev.ghost) return; mode = 'ghost'; p = 0; }
+    if (clk < ev.t0) { if (!ev.ghost || (ev.ghostAt != null && clk < ev.ghostAt)) return; mode = 'ghost'; p = 0; }   // P7: ghostAt = 2.º Anuncio de Peligro IV-V (los eslabones 4-6 y el Eco no se ven hasta entonces)
     else if (clk < ev.at) { mode = 'tele'; p = G.clamp((clk - ev.t0) / ev.tele, 0, 1); }
     else if (clk < ev.at + ev.dur) { mode = 'hit'; p = 1; }
     else if (clk < ev.at + ev.dur + 260) { mode = 'fade'; p = 1; }

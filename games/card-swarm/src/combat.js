@@ -94,8 +94,9 @@
     if (e.mat) { e.mm = B.matMul(e, tag); dmg *= e.mm; }   // debilidad / resistencia por material (A.8), antes de resonancia y talentos; e.mat solo existe con G.B.mat.on. e.mm = último multiplicador (lo lee C.num)
     if (tag === 'fire') {
       dmg *= m.fireDmg;
-      if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;   // Fundición (F7): +15 % a élites y jefe
+      if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;
     }
+    if (tf.alientoCrater && e.type === 'boss') dmg *= 1.1;   // P7: 'Aliento del Cráter' (Ruta, 6 trofeos de Cenizar): +10 % de daño contra jefes (cualquier etiqueta)
     if (m.tagMul[tag]) dmg *= m.tagMul[tag];   // Hielo / Rayo / Veneno / Sangre: pasivo del árbol y Resonancia (set)
     if (tag === 'steel') {
       dmg *= m.steelDmg;

@@ -67,7 +67,7 @@
     T.nobos = qnum('nobos', 0) > 0 || (!G.bossUrl && !(G.Boss.DEFS && G.Boss.DEFS.yarlak));   // sin jefe hasta la P4
     T.dormant.length = 0; pillars.length = 0; D.pillars.forEach(function (q, i) { pillars.push({ x: q[0], y: q[1], r: D.pillarR, hp: D.pillarHp, max: D.pillarHp, dead: false, t: 0, shake: 0, i: i }); });
     fires.length = 0; D.patches.forEach(function (q, i) { fires.push({ x: q[0], y: q[1], i: i }); });
-    var c = G.cold; c.v = 0; c.frozenT = 0; c.immuneT = 0; c.rate = 0; c.warned = false; c.kWin = 0; c.kT = 0; c.frozenN = 0; c.peak = 0; c.tIce = c.tFirm = c.tHeat = 0;
+    var c = G.cold; c.v = 0; c.frozenT = 0; c.immuneT = 0; c.rate = 0; c.warned = false; c.kWin = 0; c.kT = 0; c.frozenN = 0; c.peak = 0; c.bossPeak = 0; c.runPeak = 0; c.tIce = c.tFirm = c.tHeat = 0;
     BZS.t = 0; BZS.gust = false; BZS.a = BZS.force ? BZ.gustA : BZ.calmA; BZS.k = 0; BZS.windT = 0; BZS.boss = 0;
     hand.t = 0; hand.fire = hand.blood = hand.ice = 0;
     sfxT.step = sfxT.slide = sfxT.fire = 0;
@@ -226,7 +226,7 @@
     G.Hud.banner('¡ESCARCHA!', 1600, '#bfeaff'); G.sfx('cold_freeze', { vol: 0.9 }); G.sfx('cold_slow', { vol: 0.6 }); G.fx.shake(4, 160);
     G.fx.burst(G.player.x, G.player.y, 16, '#e8f6ff', 200, 700, 4, { add: true });
   }
-  T.onBoss = function () { if (T.on) G.cold.v = CD.bossStart; };   // al aparecer el jefe el medidor pasa a 20 %
+  T.onBoss = function () { if (T.on) { G.cold.v = CD.bossStart; G.cold.bossPeak = CD.bossStart; } };   // al aparecer el jefe el medidor pasa a 20 %
   T.state = function () { var c = G.cold; return c.frozenT > 0 ? 'escarcha' : c.v >= CD.helado ? 'helado' : c.v >= CD.warn ? 'frio' : 'ok'; };
 
   function nearHeat(p) {
@@ -262,6 +262,8 @@
     if (c.v < 0) c.v = 0;
     if (c.v >= 100) freeze();
     if (c.v > c.peak) c.peak = c.v;
+    if (G.Boss.active && (c.frozenT > 0 || c.v > c.bossPeak)) c.bossPeak = c.frozenT > 0 ? 100 : c.v;   // P7: pico de Frío durante la pelea (logro 'Cálido corazón')
+    if (c.frozenT > 0) c.runPeak = 100; else if (c.v > (c.runPeak || 0)) c.runPeak = c.v;   // P7: pico de Frío de toda la expedición, contando la Escarcha como 100 % (encargo 'Sin escalofríos')
     if (c.v > 85 && G.time - sfxT.heart > 1000) { sfxT.heart = G.time; G.sfx('heart_beat', { vol: 0.6 }); }   // latido con el Frío > 85 %
     if (c.v >= CD.helado && !c.warned) { c.warned = true; G.sfx('cold_warn', { vol: 0.8 }); }
     else if (c.v < CD.helado - 10) c.warned = false;

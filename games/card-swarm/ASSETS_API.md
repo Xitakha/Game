@@ -1340,3 +1340,10 @@ Reusa: `fx_part_break` (alternativa), `drawBossWave`, `drawBossVignette`, `icon_
 - Cadena F7: Anuncio = `chain:{links, done:0, announce:0->1 en 1500 ms}` + `windup:'rosario'` + `drawChainGhost` de todos los eslabones (alpha 0,25); cada eslabon: su pose (`embestida`, `martillazo`, `coro`, `ventisca`, `zumbido`, `sol`), `chain.done` sube al ejecutarse, y telegrafia normal con `link:n`. Tras el Sol: `stun:true` 4 s + `exposed:true` (ventana, Corazon x2).
 - Cadena Final (desesperado): `desperate:true`, mismos `chain` pero con los 6 eslabones y `exposed` entre eslabones.
 - HUD: marcas de Reliquia con `drawRelic` (`state` por reliquia, `hp` en la fase propia); glifos 1-6 con `drawCenizarGlyph`; trofeos `trophy_cenizar_*`; insignia `insignia_brasa_primera`.
+
+---
+
+## P7 (Integración): `src/assets_p7.js`
+Arte procedural mínimo, mismo estilo que la aldea (contorno `#1b1124`, color plano). Se carga tras `assets_tree.js`; sin él el Portal y la plaza usan su dibujo de reserva.
+- `Assets.drawDestIcon(ctx, id, cx, cy, size, o)` -> `true` si existe el icono. `id`: `'bosque'` (abeto), `'cripta'` (lápida), `'asfodelo'` (flor), `'tundra'` (copo), `'panal'` (hexágono con miel), `'crater'` (llama sobre brasa). Base 32 x 32 escalada a `size`; `o.dim` = destino cerrado (alfa 0,35).
+- `Assets.drawHearthStatue(ctx, x, y, t, o)`: estatua del Hogar con los pies en (x, y), ~110 x 120 px y resplandor. `t` = ms (parpadeo de las llamas); `o.lit` = cuencos encendidos (0-5, uno por jefe vencido), `o.final` = Brasa Primera dorada (Cenizar vencido).

@@ -59,7 +59,7 @@ async function data(b) {
   ok(r.parts.join() === 'cayado:0.035:2,nucleo:0.035:3,ojo:0.035:4,colmillo:0.035:5,corona:0.035:6,corazon:0.04:7', '5 Reliquias de 3,5 % (F2-F6) + Corazón de Ceniza 4 % (F7)');
   ok(r.rew[0] === 20 && r.rew[1] === 5 && r.rew[2] === 2 && r.rew[3] === 3, 'recompensa 20 Brasas + 5 por Reliquia, PF 2 (3 la 1.a vez)');
   ok(r.trophies.join() === 'Cayado de Ceniza,Núcleo Ceniciento,Ojo Anegado,Colmillo de Ceniza,Corona de Ceniza,Corazón de Ceniza' && r.spr.every(x => x), '6 trofeos con arte: ' + r.trophies);
-  ok(r.bb === 'cenizar' && r.save === 8 && r.bosses === 'pastor,karceron,letea,yarlak,melaria,cenizar' && r.ids.split(',').pop() === 'cenizar', 'crater -> cenizar, guardado v8, 6 jefes (' + [r.bb, r.save, r.bosses] + ')');
+  ok(r.bb === 'cenizar' && r.save === 9 && r.bosses === 'pastor,karceron,letea,yarlak,melaria,cenizar' && r.ids.split(',').pop() === 'cenizar', 'crater -> cenizar, guardado v9, 6 jefes (' + [r.bb, r.save, r.bosses] + ')');
   // tag order: fire,ice,steel,poison,blood,lightning
   const EXP = ['0.8,1.25,1.1,1,1,1', '1,1.1,1.25,0.8,1,1', '0.6,1.25,1,1,1,1.25', '1,0.8,1,1.25,1.25,1.1', '1.25,0.6,1,1,1,1.25', '1.25,1.25,1,0.5,1,0.8', '0.8,1.1,1.1,1.1,1.1,1.1'];
   r.mul.forEach((m, i) => ok(m === EXP[i], `F${i + 1} multiplicadores (fuego,hielo,acero,veneno,sangre,rayo) = ${EXP[i]} (${m})`));
@@ -354,7 +354,7 @@ async function unlock(b) {
   const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), pg = await ctx.newPage(); pg.errs = [];
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
   await pg.goto(`${base}/index.html?dbg=1&reset=1`); await pg.waitForTimeout(500);
-  const chip = { x: 650 + 5 * 48 + 23, y: 357 };
+  const chip = { x: 589, y: 223 };
   async function portal(kills) {
     await pg.evaluate(k => { G.Save.data.bossKills = k; G.Save.data.biome = 'bosque'; G.Save.save(); }, kills);
     await pg.keyboard.press('Tab'); await pg.waitForTimeout(900); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(600);
@@ -377,13 +377,13 @@ async function unlock(b) {
   await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(600);
   const m = await p2.evaluate(() => ({ v: G.Save.data.v, cen: G.Save.data.peligro.cenizar, bk: JSON.stringify(G.Save.data.bossKills), br: G.Save.data.brasas, pf: G.Save.data.pf.earned, pel: JSON.stringify(G.Save.data.peligro), bak: !!localStorage.getItem('swarmhand.save.v7'), mig: G.Save.data.flags.migrated8, es: G.Save.data.endingSeen, open: G.Save.craterOpen(), ins: JSON.stringify(G.Save.data.insignias) }));
   console.log(JSON.stringify(m));
-  ok(m.v === 8 && m.cen === 1 && m.bak && m.mig === 1 && m.es === false, 'migración v7 -> v8: versión 8, peligro.cenizar = 1, endingSeen, copia en swarmhand.save.v7');
+  ok(m.v === 9 && m.cen === 1 && m.bak && m.mig === 1 && m.es === false, 'migración v7 -> v9 (pasa por v8): versión 9, peligro.cenizar = 1, endingSeen, copia en swarmhand.save.v7');
   ok(m.br === 321 && m.pf === 9 && /"melaria":1/.test(m.bk) && /"melaria":2/.test(m.pel) && m.ins === '{"carnero":1}', 'sin pérdidas (Brasas, PF, victorias, Peligro, Insignias)');
   ok(m.open === true, 'quien ya venció a los cinco ve el Cráter abierto sin más');
   await p2.evaluate(() => { var o = JSON.parse(localStorage.getItem('swarmhand.save')); o.v = 7; o.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; localStorage.setItem('swarmhand.save', JSON.stringify(o)); }); await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(500);
   ok(await p2.evaluate(() => !G.Save.craterOpen()), 'sin Melaria vencida el Cráter sigue cerrado');
   await p2.evaluate(() => { localStorage.setItem('swarmhand.save', '{"v":7,"parts":null'); }); await p2.goto(`${base}/index.html?dbg=1&nosw=1`); await p2.waitForTimeout(500);
-  ok(await p2.evaluate(() => G.Save.data.v === 8 && G.Save.data.peligro.cenizar === 1), 'guardado corrupto cae a valores por defecto v8');
+  ok(await p2.evaluate(() => G.Save.data.v === 9 && G.Save.data.peligro.cenizar === 1), 'guardado corrupto cae a valores por defecto v9');
   ok(!p2.errs.length, '0 errores: ' + p2.errs.slice(0, 2)); await c2.close();
 }
 
