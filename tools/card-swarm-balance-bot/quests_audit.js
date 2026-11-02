@@ -1,7 +1,7 @@
 // AUDITORIA DE ENCARGOS (v5 P2): cada encargo de Vesper debe ser cumplible en al menos un bioma desbloqueado, de forma coherente con el orden Bosque -> Cripta -> Asfodelo.
 // uso: node quests_audit.js [base=http://localhost:8793] [--census=a.json,b.json ...]   (los JSON son los de census.js; opcional: calcula cuantas runs hacen falta por encargo de caza)
 // Reglas comprobadas:
-//   1. >= 21 encargos y todos con al menos un bioma donde avanzan (Q.biomesOf).
+//   1. >= 36 encargos (P7: +10 de Tundra, Panal y Cráter con `biome`, solo ofrecidos con ese destino abierto) y todos con al menos un bioma donde avanzan (Q.biomesOf).
 //   2. Coherencia con el orden: cat A (faciles, incl. el tutorial) -> cumplibles en el BOSQUE; cat B -> en Bosque o Cripta; cat C -> en cualquiera.
 //   3. El tutorial (id 'bombs') apunta a un rol que existe en el Bosque y se ofrece siempre a la cuenta nueva.
 //   4. El Tablon (Q.offers, 400 rotaciones por estado de desbloqueo: ningun jefe / Pastor / Pastor+Karceron) solo ofrece encargos cumplibles en un bioma desbloqueado.
@@ -22,8 +22,8 @@ let fails = 0; const ok = (c, msg) => { if (!c) fails++; console.log((c ? 'OK   
       from: d.kind === 'hunt' ? Math.min.apply(null, bs.map(b => { const f = B.famOf(b); return f ? f.use[d.target].from != null ? f.use[d.target].from : B.enemy[d.target].from : B.enemy[d.target].from; })) : null }); });
     out.tutorial = Q.def('bombs');
     out.tutorialInBosque = Q.biomesOf(Q.def('bombs')).indexOf('bosque') >= 0;
-    [[{}, 'ninguno'], [{ pastor: 1 }, 'pastor'], [{ pastor: 1, karceron: 1 }, 'pastor+karceron']].forEach(([kills, name]) => {
-      G.Save.data.bossKills = Object.assign({ pastor: 0, karceron: 0, letea: 0 }, kills); G.Save.data.quest.done = {};
+    [[{}, 'ninguno'], [{ pastor: 1 }, 'pastor'], [{ pastor: 1, karceron: 1 }, 'pastor+karceron'], [{ pastor: 1, karceron: 1, letea: 1 }, '+letea (Tundra)'], [{ pastor: 1, karceron: 1, letea: 1, yarlak: 1 }, '+yarlak (Panal)'], [{ pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 }, 'los cinco (Cráter)']].forEach(([kills, name]) => {
+      G.Save.data.bossKills = Object.assign({ pastor: 0, karceron: 0, letea: 0, yarlak: 0, melaria: 0 }, kills); G.Save.data.quest.done = {};
       const un = Q.unlockedBiomes(), bad = {}, seen = {}; let nBad = 0, first = [];
       for (let i = 0; i < 400; i++) { G.Save.data.runs = i * 7 + 3; const of = Q.offers().slice(); if (i === 0) first = of.map(d => d.id); of.forEach(d => { seen[d.id] = 1; if (!Q.feasible(d)) { bad[d.id] = 1; nBad++; } }); }
       out.boards[name] = { unlocked: un, bad: Object.keys(bad), seen: Object.keys(seen).length, nBad, first };
@@ -34,7 +34,7 @@ let fails = 0; const ok = (c, msg) => { if (!c) fails++; console.log((c ? 'OK   
   console.log('--- encargos: ' + R.rows.length);
   console.log('id'.padEnd(13) + 'cat t  tipo    objetivo   meta  entrada  biomas');
   R.rows.forEach(r => console.log(r.id.padEnd(13) + r.cat + '   ' + r.tier + '  ' + r.kind.padEnd(8) + (r.target || '-').padEnd(11) + String(r.goal).padStart(4) + '  ' + (r.from == null ? '   -  ' : (r.from / 60000).toFixed(2).padStart(6)) + '   ' + r.biomes.join(',')));
-  ok(R.rows.length >= 21, R.rows.length + ' encargos (>= 21)');
+  ok(R.rows.length >= 36, R.rows.length + ' encargos (>= 36)');
   ok(R.rows.every(r => r.biomes.length > 0), 'todos los encargos avanzan en al menos un bioma');
   const A = R.rows.filter(r => r.cat === 'A'), Bq = R.rows.filter(r => r.cat === 'B');
   ok(A.every(r => r.biomes.indexOf('bosque') >= 0), 'cat A (faciles) cumplibles en el Bosque: ' + A.map(r => r.id).join(','));
@@ -42,6 +42,8 @@ let fails = 0; const ok = (c, msg) => { if (!c) fails++; console.log((c ? 'OK   
   ok(R.tutorialInBosque && R.tutorial.target === 'fanner', 'tutorial (Huele a chamusquina) -> ' + R.tutorial.target + ' existe en el Bosque');
   ok(R.rows.filter(r => r.kind === 'hunt').every(r => r.from < 450000), 'los objetivos de caza entran antes del jefe (7:30)');
   for (const k in R.boards) { const x = R.boards[k]; ok(x.nBad === 0, `Tablon con jefes vencidos = ${k}: desbloqueados ${x.unlocked.join(',')}; ${x.seen} encargos distintos ofrecidos, ${x.nBad} no cumplibles ${x.bad.join(',')}; primer tablon ${x.first.join(',')}`); }
+  ok(R.rows.filter(r => /^(tundra|panal|crater)$/.test(r.biomes[0]) && r.biomes.length === 1).length >= 10, 'P7: >= 10 encargos de destino (Tundra, Panal, Cráter) solo cumplibles en su bioma');
+  ok(R.boards['los cinco (Cráter)'].unlocked.indexOf('crater') >= 0 && R.boards['+yarlak (Panal)'].unlocked.indexOf('crater') < 0, 'el Cráter cuenta como destino abierto solo con los cinco jefes vencidos');
   ok(R.boards.ninguno.first[0] === 'bombs', 'la cuenta nueva ve el tutorial primero');
   // runs necesarias (opcional): altas por run de cada rol en cada bioma medido con el bot
   if (cen.length) {

@@ -38,6 +38,7 @@
   P.closeAll = function () { cur = null; };
   P.vesperTab = function (n) { st.vt = n; huntFix(); };   // 0 = Tablón, 1 = Cacería (lo usa el diálogo de Vesper)
   P.current = function () { return cur; };
+  P.lastMsg = function () { return msg; };   // último aviso en pantalla (pruebas)
 
   P.update = function (dt) {
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
@@ -303,14 +304,14 @@
   // Destino (bioma): decide el jefe. Orden de desbloqueo en cadena (P7): Cripta con el Pastor, Asfódelo con Karceron, Tundra con Letea, Panal con Yarlak, Cráter con los cinco.
   // hint = pista del Portal ('Lleva Fuego' en Tundra y Panal); lock = requisito en texto corto (chip) y largo (panel de destino).
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor', hint: 'Sin requisitos. El Pastor sufre más con Fuego y Acero.' },
-    { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor Corrupto', short: 'Pastor', bid: 'karceron', hint: 'Karceron y los huesos del Carcelero: Hielo y Rayo les pegan más.' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', short: 'Karceron', bid: 'letea', hint: 'Letea odia el Veneno y la Sangre. Cauteriza las cabezas con Fuego.' },
-    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', short: 'Letea', bid: 'yarlak', fire: true, hint: 'LLEVA FUEGO: sin él el Frío te paraliza. Fuego, Sangre y Hielo lo frenan; busca las hogueras.' },
-    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', short: 'Yarlak', bid: 'melaria', fire: true, hint: 'LLEVA FUEGO: derrite la cera y carameliza la miel; el humo sedante duerme a las abejas.' },
+    { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor Corrupto', lockMsg: 'Bloqueado: vence al Pastor Corrupto para abrir la Cripta.', short: 'Pastor', bid: 'karceron', hint: 'Karceron y los huesos del Carcelero: Hielo y Rayo les pegan más.' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', lockMsg: 'Bloqueado: vence a Karceron, el Carcelero, para abrir el Asfódelo.', short: 'Karceron', bid: 'letea', hint: 'Letea odia el Veneno y la Sangre. Cauteriza las cabezas con Fuego.' },
+    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', lockMsg: 'Bloqueado: vence a Letea, la Hidra, para abrir la Tundra.', short: 'Letea', bid: 'yarlak', fire: true, hint: 'LLEVA FUEGO: sin él el Frío te paraliza. Fuego, Sangre y Hielo lo frenan; busca las hogueras.' },
+    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', lockMsg: 'Bloqueado: vence a Yarlak, el Coloso Gélido, para abrir el Panal.', short: 'Yarlak', bid: 'melaria', fire: true, hint: 'LLEVA FUEGO: derrite la cera y carameliza la miel; el humo sedante duerme a las abejas.' },
     { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes', short: 'los 5', bid: 'cenizar', hint: 'ASALTO: 6 ofertas de carta, sin horda ni checkpoints. Cada fase cambia la debilidad: lleva de todo.' }];
   var BIOME_GRID = [0, 1, 2, 3, 4, 5];   // orden de lectura: 2 columnas x 3 filas
-  var DEST = { x: 440, y: 84, w: 200, h: 152 };
-  function biomeRect(i) { return { x: DEST.x + 4 + (i % 2) * 98, y: DEST.y + 18 + Math.floor(i / 2) * 45, w: 94, h: 42 }; }   // 6 destinos de 94 x 42 (antes 46 x 42 en una fila)
+  var DEST = { x: 440, y: 84, w: 200, h: 168 };
+  function biomeRect(i) { return { x: DEST.x + 4 + (i % 2) * 98, y: DEST.y + 18 + Math.floor(i / 2) * 49, w: 94, h: 46 }; }   // 6 destinos de 94 x 46 (antes 46 x 42 en una fila)
   P.biomeRect = biomeRect; P.BIOMES = BIOMES;
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
@@ -337,7 +338,7 @@
   function lockText(b) {
     var S = SV(), k = S.bossKills;
     if (b.need === '*') { var n = G.Save.FIVE.filter(function (x) { return (k[x] || 0) > 0; }).length; return 'Bloqueado: vence a los cinco jefes (' + n + '/5) y se abre el Cráter de Cenizar.'; }
-    return 'Bloqueado: vence a ' + b.needName + ' para abrir ' + b.name.charAt(0) + b.name.slice(1).toLowerCase() + '.';
+    return b.lockMsg;
   }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
@@ -413,7 +414,7 @@
     if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 293, 12, '#8a7f96', 'left');
     var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
-    // P7: panel de destinos (2 x 3 chips de 94 x 42, con icono, Peligro elegido, requisito y marca NUEVO); al lado de la mano, que deja libre ese hueco
+    // P7: panel de destinos (2 x 3 chips de 94 x 46, con icono, Peligro elegido, requisito y marca NUEVO); al lado de la mano, que deja libre ese hueco
     U.panel(c, DEST.x, DEST.y, DEST.w, DEST.h, { border: '#4a5a8a' });
     G.txt(c, 'DESTINO  (toca uno)', DEST.x + 10, DEST.y + 11, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
@@ -421,11 +422,11 @@
       c.fillStyle = on ? '#2a6aa8' : open ? (hov ? '#3a3050' : '#2c2438') : (pv ? '#2a1e32' : '#1a1422'); c.fillRect(r.x, r.y, r.w, r.h);
       c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(r.x, r.y, r.w, 8);
       c.strokeStyle = on ? '#bfeaff' : pv ? '#c0a060' : open ? '#6a5a80' : '#3a3046'; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3);
-      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 18, r.y + 18, 24, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 8, 20, 20); }
-      G.txt(c, b.name, r.x + 34, r.y + 15, 11, open ? '#fff' : '#7a7086', 'left');
-      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 6, r.y + 33, 10, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
+      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 18, r.y + 20, 24, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 8, 20, 20); }
+      G.txt(c, b.name, r.x + 34, r.y + 16, 11, open ? '#fff' : '#7a7086', 'left');
+      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 6, r.y + 35, 10, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
       if (on && !SV().portalSeen[b.id]) { SV().portalSeen[b.id] = 1; G.Save.save(); }
-      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 32, r.y + 26, 29, 12); G.txt(c, 'NUEVO', r.x + r.w - 17.5, r.y + 32.5, 9, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
+      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 32, r.y + 28, 29, 12); G.txt(c, 'NUEVO', r.x + r.w - 17.5, r.y + 34.5, 9, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
       else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 10, r.y + 10, { size: 12 });   // pista: 'Lleva Fuego'
       if (!open) { c.fillStyle = '#7a7086'; c.fillRect(r.x + r.w - 14, r.y + 8, 8, 6); c.strokeStyle = '#7a7086'; c.lineWidth = 2; c.strokeRect(r.x + r.w - 13, r.y + 3, 6, 6); }
     });
