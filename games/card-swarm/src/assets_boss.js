@@ -842,10 +842,19 @@
   A.bossIds = function () { return Object.keys(BOSSES); };
   A.bossInfo = function (id) { return BOSSES[id] || null; };
 
+  // P8: el cuerpo de cada jefe se repinta en su lienzo (render) en cada fotograma: 3-5 ms en Chromium sin GPU. A.rthr lo repinta como mucho cada 24 ms (a 60 fps = a 30 Hz; por debajo de ~42 fps
+  // cada fotograma) y reutiliza el resultado anterior entre medias; la posicion, la sombra y los efectos se siguen dibujando a pleno ritmo. `?thr=0` lo desactiva (comparaciones y regresion).
+  var RT = {}, RTOFF = /[?&]thr=0/.test(location.search);
+  A.rthr = function (id, s, fn) {
+    if (RTOFF || s.dying) return fn(s);
+    var now = performance.now(), e = RT[id];
+    if (e && now >= e.t && now - e.t < 24 && e.ph === s.phase) return e.R;
+    var R = fn(s); RT[id] = { t: now, R: R, ph: s.phase }; return R;
+  };
   // dibuja el jefe compuesto. (x,y) = posicion logica de la entidad (centro del circulo de colision r=BOSS.pastor.r). s = state (ver ASSETS_API.md)
   A.drawBoss = function (id, ctx, x, y, s) {
     var B = BOSSES[id]; if (!B) return null; s = s || {};
-    var R = B.render(s), P = R.pose;
+    var R = A.rthr(id, s, B.render), P = R.pose;
     if (!s.noShadow) shadow(ctx, x, y, s);
     if (P && !s.noFx) aura(ctx, x, y, s, P);
     if (!(s.dying && (s.dt || s.deathT || 0) >= DEATH_MS)) {

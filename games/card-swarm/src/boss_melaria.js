@@ -36,12 +36,13 @@
     weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2, 3] }, { tag: 'ice', mul: 1.25, phases: [2, 3] }],
     resist: [{ tag: 'poison', mul: 0.5, immune: true }, { tag: 'lightning', mul: 0.8 }],   // Veneno: inmune a los estados (Combat.poison) y x0,5 directo
     noPoison: true,
-    hpCal: 3.6, dmgK: 1.3, geo: { estocada: 2.4, picado: 1.4, lluvia: 1, torbellino: 1.75 },   // calibración con el bot (README, Melaria P6)
+    hpCal: 3.6, dmgK: 1.45, cadK: 1.0, gateHearts: 1, geo: { estocada: 2.4, picado: 1.4, lluvia: 1, torbellino: 1.75 },   // calibración con el bot (README, Melaria P6); P8: dmgK 1,3 -> 1,45 y 1 corazón por puerta (bot 77 % -> ~60 %; la cadencia x1,15 lo dejaba en 53 %)
     brasas: 14, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { wick: 2, frost: 2, thread: 2 },
     h: { camW: 0.4 }
   };
   var D = S.DEFS.melaria, H = D.h;
+  D.gateHearts = qn('mheart', D.gateHearts);   // P8: calibración, corazones por puerta
   // Geometría de calibración (README, Melaria P6): factor sobre las zonas del doc (carril 70, picado r 100, cono 80 grados, rosquilla 100-260). El doc deja mucha holgura en la regla de esquiva
   // (Estocada 900 ms frente a 513; Picado 1000 frente a 776...), así que se agrandan las zonas SIN tocar la telegrafía; la regla se sigue cumpliendo con la salida nueva (S.EXIT se recalcula aquí).
   function geo(k) { return (D.geo[k] || 1) * qn('mgeo', 1); }

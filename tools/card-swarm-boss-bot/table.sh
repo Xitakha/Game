@@ -10,7 +10,7 @@ for pel in $pels; do
   res=""; w=0; durs=""
   for b in "p25|spark:2,dart:2,shard:1,hourglass:1,fang:1|0.25" "p50|spark:3,dart:2,shard:2,dagger:2,fang:1|0.5" "p75|spark:3,dart:3,shard:3,dagger:3,fang:3|0.25"; do
     n=${b%%|*}; r=${b#*|}; h=${r%%|*}; wt=${r##*|}
-    out=$(node fight.js "{\"hand\":\"$h\",\"runs\":$runs,\"speed\":12,\"par\":4,\"noLevel\":true,\"react\":250,\"every\":100,\"mistakes\":0.1,\"inattn\":${INATTN:-0.1},\"hp0\":\"100\",\"boss\":\"$boss\",\"port\":$port,\"hpcal\":$hpcal,\"peligro\":$pel,\"extra\":\"$extra&cmul=${FL[$((pel-1))]}\"}" 2>&1)
+    out=$(node fight.js "{\"hand\":\"$h\",\"runs\":$runs,\"speed\":12,\"par\":4,\"noLevel\":true,\"react\":250,\"every\":100,\"mistakes\":0.1,\"inattn\":${INATTN:-0.1},\"hp0\":\"100\",\"boss\":\"$boss\",\"port\":$port,\"hpcal\":$hpcal,\"maxSim\":${MAXSIM:-420},\"peligro\":$pel,\"extra\":\"$extra&cmul=${FL[$((pel-1))]}\"}" 2>&1)
     line=$(echo "$out" | grep RESUMEN)
     v=$(echo "$line" | sed 's/.* victorias \([0-9]*\/[0-9]*\) dur victorias.*/\1/'); a=${v%%/*}; t=${v##*/}
     d=$(echo "$line" | sed 's/.*dur victorias \([0-9,]*\) dur todas.*/\1/')

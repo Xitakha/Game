@@ -56,6 +56,7 @@
   // Medidor de fps (media móvil de los últimos 45 fotogramas). Auto: si la media es < 45 fps durante 3 s seguidos, baja un nivel (con 4 s de enfriamiento).
   var ring = [], ringN = 45, lowT = 0, cool = 4000, fpsShow = q('fps') === '1';
   Sys.frame = function (raw) {
+    if (rotate && rotate.style.display === 'flex' && G.state === 'play') autoPause();   // P8: con el aviso 'gira el teléfono' visible la partida nunca corre (también si empezó después de girar)
     if (!(raw > 0) || raw > 250 || document.hidden || Sys.paused) { lowT = 0; return; }
     ring.push(raw); if (ring.length > ringN) ring.shift();
     if (ring.length < 20) return;

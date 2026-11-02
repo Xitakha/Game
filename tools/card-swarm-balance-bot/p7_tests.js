@@ -130,7 +130,8 @@ async function peligro(b) {
       ok(!pg.errs.length, `${id} P${n}: 0 errores ${pg.errs.slice(0, 2)}`);
       await close(pg);
     }
-    const H1 = rows[0].hp, M = id === 'cenizar' ? CMULT : MULT, DM = id === 'cenizar' ? [1, 1.05, 1.1, 1.15, 1.2] : [1, 1.1, 1.2, 1.3, 1.4];
+    const KL = id === 'karceron' || id === 'letea';   // P8: Karceron y Letea suavizan II-III (pelHp 1,08 / 1,18; daño +5 / +10 %)
+    const H1 = rows[0].hp, M = id === 'cenizar' ? CMULT : KL ? [1, 1.08, 1.18, 1.5, 1.75] : MULT, DM = id === 'cenizar' ? [1, 1.05, 1.1, 1.15, 1.2] : KL ? [1, 1.05, 1.1, 1.3, 1.4] : [1, 1.1, 1.2, 1.3, 1.4];
     ok(rows.every((r, i) => Math.abs(r.hp - Math.round(H1 * M[i])) <= 1 && r.n === i + 1), `${id}: HP por Peligro I-V = x${M.join(' / x')} (${rows.map(r => r.hp).join(', ')})`);
     ok(rows.every((r, i) => Math.abs(r.dmg - DM[i]) < 1e-9), `${id}: daño ${DM.map(x => '+' + Math.round((x - 1) * 100) + ' %').join(' / ')}`);
     ok(rows.every((r, i) => r.fury === (i >= 3 ? 120000 : 150000) && r.cap === (i === 4 ? 6 : 4) && r.desp === (i === 4 ? 2 : 1) && r.troph === (i >= 3 ? 2 : 1) && r.trophies === (i >= 3 ? 2 : 1)), `${id}: Furia 150 s (120 s en IV-V), tope de adds 4 (6 en V), 2 desesperados en V, trofeos x2 en IV-V (medido al romper una parte: ${rows.map(r => r.trophies).join('')})`);

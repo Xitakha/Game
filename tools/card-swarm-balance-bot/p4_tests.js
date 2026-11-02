@@ -1,6 +1,6 @@
 // PRUEBAS P4 (Yarlak, el Coloso Gélido; DESIGN-v5-biomas.md B.2, B.7, C.2).
 // uso: node p4_tests.js data|tele|parts|phases|flow|unlock|all [base]   (base por defecto http://localhost:8793)
-//  data   : HP (29 750 a 9 min con hpCal 3,5), fases, partes, debilidades, recompensas, cobertura de nieve firme (<= 260) y de hogueras (<= 215), L.DUR.cold, Peligro
+//  data   : HP (38 250 a 9 min con hpCal 4,5 (P8)), fases, partes, debilidades, recompensas, cobertura de nieve firme (<= 260) y de hogueras (<= 215), L.DUR.cold, Peligro
 //  tele   : regla del hielo tele >= 250 + 220 + 1000 x salida / 190 en los 8 ataques y los 5 Peligros (>= 800 ms los de >= 25 de daño) y telegrafías medidas en el juego
 //  parts  : cada parte rota cambia el comportamiento, suelta su trofeo y Corazón solo apuntable con la ventana abierta
 //  phases : 4 fases con puerta inmune de 3 s, nieve firme 110 / 90 / 70, desesperado de 10 s (hogueras r 120, carámbanos), topes de adds (4) y proyectiles (60), Peligro V (2 desesperados)
@@ -39,7 +39,7 @@ async function data(b) {
     return out;
   });
   console.log(JSON.stringify(r));
-  const H0 = 8500 * 3.5; ok(r.hp1 === Math.round(H0), 'HP a 9 min Peligro I = 8500 x hpCal 3,5 = 29 750 (' + r.hp1 + ')'); ok(r.hp[0] === Math.round(H0 * 0.75) && r.hp[2] === Math.round(H0 * 1.1), 'HP 7 min x0,75 y 10 min x1,10 (' + r.hp + ')');
+  const H0 = 8500 * 4.5; ok(r.hp1 === Math.round(H0), 'HP a 9 min Peligro I = 8500 x hpCal 4,5 = 38 250 (' + r.hp1 + ')'); ok(r.hp[0] === Math.round(H0 * 0.75) && r.hp[2] === Math.round(H0 * 1.1), 'HP 7 min x0,75 y 10 min x1,10 (' + r.hp + ')');
   ok(r.pelHp.join() === [1, 1.15, 1.3, 1.5, 1.75].map(m => Math.round(H0 * m)).join(), 'HP por Peligro I-V = hp x 1 / 1,15 / 1,30 / 1,50 / 1,75 (' + r.pelHp + ')');
   ok(r.phases.join() === '0.7/3000/55,0.45/2600/65,0.2/2200/75,0/1900/85', '4 fases: umbrales 70 / 45 / 20, cadencia 3,0 / 2,6 / 2,2 / 1,9 s, velocidad 55-85 (' + r.phases + ')');
   ok(r.parts.join() === 'colmillos:0.09,armadura:0.11,corazon:0.08', 'partes Colmillos 9 % / Armadura 11 % / Corazón 8 %');
@@ -116,7 +116,7 @@ async function parts(b) {
   console.log(JSON.stringify(w));
   ok(w.open && w.corUp && w.expo === 1.35 && w.kind === 'window', 'el Latido abre el pecho: ventana x1,35 al cuerpo y Corazón apuntable (' + w.expo + ')');
   ok(w.heartDmg > 0 && Math.abs(w.heartDmg / w.bodyDmg - 2 / 1.35) < 0.15, 'Corazón recibe x2,0 / cuerpo x1,35 (' + w.heartDmg + ' vs ' + w.bodyDmg + ')');
-  ok(w.heartBroken && w.cadMul === 1.2 && w.der === 1.5 && w.trophies.indexOf('yheart') >= 0 && !w.openAfter, 'Corazón roto: trofeo, derribo x1,5, Invierno profundo +20 % cadencia, pecho cerrado');
+  ok(w.heartBroken && Math.abs(w.cadMul - 1.3 * 1.2) < 1e-9 && w.der === 1.5 && w.trophies.indexOf('yheart') >= 0 && !w.openAfter, 'Corazón roto: trofeo, derribo x1,5, Invierno profundo +20 % cadencia (sobre el x1,3 de P8), pecho cerrado');
   ok(!pg.errs.length, '0 errores: ' + pg.errs.slice(0, 2)); await pg.close();
 }
 
@@ -136,7 +136,7 @@ async function phases(b) {
       return o;
     });
     log.push(g); console.log(JSON.stringify(g));
-    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 2 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 2 corazones, vuelve a combate (HP ${g.hp} %)`);
+    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 1 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 1 corazón (P8; antes 2), vuelve a combate (HP ${g.hp} %)`);
   }
   const patch = await pg.evaluate(() => { var cov = []; return { c: G.Tundra.iceCoverage(null, 20).max }; });
   ok(log[1].cov > log[0].cov - 1 && log[2].cov >= log[1].cov - 1 && log[2].cov <= 260, 'la cobertura de nieve firme crece al encogerse los parches pero se mantiene <= 260 (' + log.map(l => l.cov) + ')');
@@ -215,7 +215,7 @@ async function flow(b) {
     await pg.goto(`${base}/index.html?reset=1&dbg=1&god=1&speed=10&prep=0${q}`); await pg.waitForTimeout(1500);
     for (let i = 0; i < 40; i++) { if (await pg.evaluate(() => G.Boss.e && G.Boss.e.mode === 'fight')) break; await pg.waitForTimeout(300); }
     const r = await pg.evaluate(() => ({ mode: G.mode, id: G.Boss.e && G.Boss.e.id, hp: G.Boss.e && Math.round(G.Boss.e.maxHp), biome: G.curBiome, n: G.enemies.filter(e => !e.dead && e.type !== 'boss' && e.type !== 'bosspart').length }));
-    const want = q.indexOf('practice') > 0 ? Math.round(29750 * 0.5) : Math.round(29750 * 0.75);
+    const want = q.indexOf('practice') > 0 ? Math.round(38250 * 0.5) : Math.round(38250 * 0.75);
     ok(r.id === 'yarlak' && r.biome === 'tundra' && r.hp === want, `${q}: modo ${r.mode}, HP ${r.hp} (esperado ${want}), normales ${r.n}`);
     ok(!pg.errs.length, `${q}: 0 errores ${pg.errs.slice(0, 2)}`); await pg.close();
   }

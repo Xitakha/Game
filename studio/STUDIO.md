@@ -36,3 +36,6 @@ Dueño (usuario)
 - **Todo recurso externo se registra** en `studio/assets/ASSETS.md` (nombre, URL, autor, licencia, juego que lo usa).
 - Los agentes no hacen commit/push; lo hace el CEO al cerrar un hito.
 - El CEO resume al dueño de forma breve; los detalles viven en los documentos.
+
+## Estado de los juegos
+- **Swarm Hand** (`games/card-swarm/`): v5.6 estable. 5 biomas, 6 jefes, Portal, Ruta, Peligro I-V, PWA. Herramientas de balance y pruebas en `tools/card-swarm-boss-bot/` (peleas de jefe con bot esquivador, `table.sh`) y `tools/card-swarm-balance-bot/` (`p0`-`p8_tests.js`, bots de expedición, fps `p8_perf.js`, móvil `p8_mobile.js`); `python3 tools/card-swarm-pwa/stamp.py` tras cualquier cambio de archivos. Estado final, cifras y backlog: `games/card-swarm/README.md` ("Balance, rendimiento y cierre (P8)") y `DESIGN-v5-biomas.md`.

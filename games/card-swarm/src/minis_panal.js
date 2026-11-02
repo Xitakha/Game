@@ -49,7 +49,7 @@
 
   // ================================================================= 1. AVISPÓN REAL (Panal, presión)
   var AV = A.avispon = {};
-  AV.picado = { name: 'picado', cd: 5000, exit: 45, dmg: 24, double: true, fix: 160, sT: ['avispon_buzz', 'whoosh'], pz: ['dash_wind:0', 'dash:0'],
+  AV.picado = { name: 'picado', cd: 3800, exit: 45, dmg: 24, double: true, fix: 160, sT: ['avispon_buzz', 'whoosh'], pz: ['dash_wind:0', 'dash:0'],
     ok: function (e, d) { return d >= 120 && d <= 380; },
     tele: function (e) { return e.stage ? 560 : 650; },
     start: function (e, X) { e.ang = X.a; e.fa = X.a; chargeEnd(e, 340); },
@@ -67,7 +67,7 @@
       lane(c, e.x, e.y, e.ang, len + e.r, 60, u, st === 'run' || e.t >= e.teleMs - 160, false);
     } };
 
-  AV.zumbido = { name: 'zumbido', cd: 11000, exit: 16, dmg: 9, sT: ['avispon_orbit_tele', 'wave_start'], pz: ['roar:0', 'fly:0'],
+  AV.zumbido = { name: 'zumbido', cd: 8500, exit: 16, dmg: 9, sT: ['avispon_orbit_tele', 'wave_start'], pz: ['roar:0', 'fly:0'],
     ok: function (e, d) { return d < 420; },
     tele: function () { return 600; },
     start: function (e, X) { e.orbR = 160; },
@@ -101,7 +101,7 @@
       }
     } };
 
-  AV.estocada = { name: 'estocada', sig: true, double: true, cd: 9000, exit: 45, dmg: 26, fix: 270, sT: ['avispon_sting_tele', 'wave_start'], pz: ['sting_wind:0', 'sting:0'],
+  AV.estocada = { name: 'estocada', sig: true, double: true, cd: 7000, exit: 45, dmg: 26, fix: 270, sT: ['avispon_sting_tele', 'wave_start'], pz: ['sting_wind:0', 'sting:0'],
     off: function (e) { return e.part.broken; },
     ok: function (e, d) { return d >= 140 && d <= 420; },
     tele: function (e) { return e.stage ? 740 : 900; },

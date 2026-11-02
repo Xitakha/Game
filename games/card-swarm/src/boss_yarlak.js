@@ -36,12 +36,13 @@
     },
     weak: [{ tag: 'fire', mul: 1.25, phases: [1, 2, 3, 4] }, { tag: 'lightning', mul: 1.25, phases: [3, 4] }],
     resist: [{ tag: 'ice', mul: 0.6 }, { tag: 'poison', mul: 0.8 }],
-    hpCal: 3.5, dmgK: 1.3,   // calibración con el bot (README, Yarlak P4): 3,0 del doc daba 98 % de victorias; 3,5 deja el p50 en ~140 s (límite 150 s)
+    hpCal: 4.5, dmgK: 1.45, cadK: 1.3, gateHearts: 1,   // P8 (reto del dueño): antes hpCal 3,5 / dmgK 1,3 / 2 corazones por puerta (bot 88 %); ahora ~64 %. Calibración con el bot (README, Yarlak P4): 3,0 del doc daba 98 % de victorias; 3,5 deja el p50 en ~140 s (límite 150 s)
     brasas: 14, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { static: 2, wick: 2, thread: 1 },
     h: { camW: 0.35 }
   };
   var D = S.DEFS.yarlak, H = D.h;
+  (function () { var m = /[?&]yheart=(\d+)/.exec(location.search); if (m) D.gateHearts = +m[1]; })();   // P8: calibración, corazones por puerta
   [['ytusk', 'trophy_yarlak_tusk', 'Colmillo de Yarlak'], ['yplate', 'trophy_yarlak_plate', 'Placa Glaciar'], ['yheart', 'trophy_yarlak_heart', 'Corazón de Escarcha']].forEach(function (t) {
     Object.defineProperty(S.TROPHY, t[0], { enumerable: true, configurable: true, get: function () { return { spr: G.hasSpr(t[1]) ? t[1] : 'trophy_pastor_horn', name: t[2] }; } });
   });

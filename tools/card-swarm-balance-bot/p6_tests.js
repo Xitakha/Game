@@ -258,7 +258,7 @@ async function phases(b) {
       return o;
     });
     console.log(JSON.stringify(g));
-    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 2 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 2 corazones, vuelve a combate (HP ${g.hp} %)`);
+    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 1 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 1 corazón (P8; antes 2), vuelve a combate (HP ${g.hp} %)`);
     ok(g.cap === (k ? 36 : 24), `fase ${g.ph}: tope de celdas de miel ${g.cap}`);
   }
   // desesperado: Zumbido Mortal

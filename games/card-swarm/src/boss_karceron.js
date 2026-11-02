@@ -39,6 +39,7 @@
     },
     weak: [{ tag: 'ice', mul: 1.25, phases: [1, 2] }, { tag: 'lightning', mul: 1.25, phases: [3] }],
     resist: [{ tag: 'fire', mul: 0.6 }, { tag: 'poison', mul: 0.5 }],
+    pelHp: [null, 1.0, 1.08, 1.18, 1.5, 1.75], pelOver: { 2: { dmg: 1.05, tele: 1 }, 3: { dmg: 1.1, tele: 1 } },   // P8: el bot ganaba Peligro II-III al 48 % / 27 % (Karceron) y 33 % / 17 % (Letea) frente al 55 / 51 % del doc; con esto 52-53 %. IV-V siguen con la tabla común
     hpCal: 2.3, // J3: 2,6 -> 2,3 (el bot con 10 % de lapsos ganaba el 48 % a Peligro I; objetivo ~65 %). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 7500 x 2,6 = 19500 a 9 min; p50 aislado ~115 s, partida completa (con horda) ~135 s. Karceron resiste Fuego x0,6 y Veneno x0,5 y las manos de prueba (Chispa/Dardo) los usan: con Hielo/Rayo cae mucho antes
     brasas: 13, brasasPart: 4, pf: 2, pfFirst: 3,
     guaranteed: { plate: 2, wick: 2, static: 1 },

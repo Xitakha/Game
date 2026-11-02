@@ -702,7 +702,7 @@ Por fase de entrega: P1 17 sprites / 167 frames; P2 12 / 111; P3 24 / 192 (inclu
 - **v5.3 (tras P4)**: Tundra + Yarlak (Peligro I; el Portal los muestra a partir de vencer a Letea).
 - **v5.4 (tras P6)**: Panal + Reina.
 - **v5.5 (tras P7)**: Peligro I-V, cacería, Ruta, platos, encargos y logros.
-- **v5.6 (tras P8)**: balance y rendimiento ajustados.
+- **v5.6 (tras P8)**: balance y rendimiento ajustados. **Hecho** (ver `README.md`, "Balance, rendimiento y cierre (P8)").
 Nada de esto exige perder partidas guardadas (guardado v5 compatible hacia atrás).
 
 ---
@@ -734,3 +734,24 @@ Nada de esto exige perder partidas guardadas (guardado v5 compatible hacia atrá
 2. **Sí**: poder permanente situacional sin Puntos de Forja (rama "Ruta") con los trofeos de Yarlak y la Reina.
 3. Jefes nuevos elegidos: Yarlak (Tundra) y Melaria, la Reina Abeja (Panal). Orden del portal: Pastor → Karceron → Letea → Yarlak → Reina.
 4. Empezar por P0 (infraestructura de familias).
+
+
+---
+
+## Estado final tras la P8 (v5.6 estable)
+**Hecho:** los 5 biomas, los 6 jefes (Pastor, Karceron, Letea, Yarlak, Melaria, Cenizar), 10 minijefes + guardianes, Portal de 6 destinos, Ruta, platos, encargos, Peligro I-V, cacería y práctica, guardado v9, PWA con `sw.js` sellado por `stamp.py`.
+
+**Criterios de la P8 (C.2) y resultado** (boss-bot, 16 peleas por mano, ponderado 25/50/25, 10 % de lapsos):
+| Criterio | Resultado |
+|---|---|
+| Victorias por Peligro (media de los jefes) 60 / 55 / 51 / 37 / 24 % +-10 | **59,7 / 53 / 43 / 26,8 / 19,5 %** (media de 6 jefes con Cenizar; I, II, III y V dentro; IV 10 puntos por debajo, en el borde) |
+| Peligro I por jefe (directriz del dueño: reto) | Pastor 70, Karceron 59, Letea 55, **Yarlak 89 -> 64**, **Melaria 77 -> 69**, Cenizar 41 |
+| Cenizar V 6-12 % | **9 %** |
+| fps en Chromium sin GPU no menor que el Pastor - 3 | Pastor 58, Letea 56, Yarlak 54, Karceron 52 (-6), Melaria 60, Cenizar 59; antes 31-39 en los jefes con niebla |
+| Móvil 844x390 >= 40 fps en Media | 35-54 fps sin GPU y con CPU de escritorio (Pastor 46, Cenizar 54, Letea 36); los móviles reales aceleran el lienzo |
+| Capturas en `studio/docs/capturas-v5/` | `studio/docs/capturas-p8/` (4 JPEG) |
+Desviaciones: duración p50 de Yarlak 163-190 s (doc 90-150 s) por la directriz de reto; Karceron V / Letea IV-V y Cenizar IV-V por debajo de la tabla; fps móvil < 40 en Karceron y Letea con CPU de escritorio sin GPU.
+
+**Backlog (post v5.6):** playtest humano y reajuste de `hpCal` / `gateHearts` / `cadK`; bot que esquive la horda (supervivencia real por bioma y duración); minijefes del Panal aún blandos para el bot; cachear el HUD (`Quests.tick` fuera de `Hud.draw`); cuerpo de Karceron (4,5 ms); PWA en teléfono real; ideas de contenido: Peligro VI, nuevos jefes por bioma, modos diarios.
+
+**Changelog v5.x:** v5.1 Bosque + Cripta (familias) | v5.2 Asfódelo | v5.3 Tundra + Yarlak | v5.4 Panal + Melaria | v5.5 Integración (Portal, Ruta, Peligro I-V de los 6 jefes, Cenizar) | **v5.6 balance y rendimiento: Yarlak y Melaria más duros, Peligro II-III de Karceron y Letea hacia el doc, niebla cacheada (+15-20 fps), minijefes del Panal más agresivos, pausa bajo el aviso de vertical**.
