@@ -145,11 +145,38 @@
   G.hasSpr = function (n) { try { return !!Assets.info(n); } catch (e) { return false; } };   // los sprites nuevos pueden no existir aún
   G.dbg = /[?&]dbg=1/.test(location.search) ? { dmg: {} } : null;   // ?dbg=1 cuenta el daño recibido por fuente (window.G.dbg.dmg)
   G.sfx = function (n, o) { try { if (window.Assets) Assets.sfx(n, o); } catch (e) { /* audio opcional */ } };
-  G.txt = function (c, s, x, y, size, color, align, stroke) {
+  // P8: texto con contorno cacheado. Cada cadena (texto + tamaño + colores + escala) se pinta una vez en un lienzo pequeño y después se copia con drawImage:
+  // strokeText + fillText en Chromium sin GPU cuestan ~0,1 ms cada par (el HUD de una pelea lleva ~32). Solo se cachea a partir de la 2.ª vez que se ve la cadena
+  // (las que cambian cada fotograma no reservan lienzos) y solo con transformaciones sin giro y a la escala del lienzo (el zoom de cámara pinta con vectores). ?txc=0 lo apaga.
+  var TXC = {}, TXN = 0, TXON = !/[?&]txc=0/.test(location.search), TXS = G.txStats = { hit: 0, make: 0, raw: 0 };
+  function txtRaw(c, s, x, y, size, color, align, stroke) {
     c.font = 'bold ' + size + 'px "Courier New", monospace';
     c.textAlign = align || 'left'; c.textBaseline = 'middle';
     c.lineWidth = Math.max(2, size / 5); c.strokeStyle = stroke || '#0a0610'; c.lineJoin = 'round';
     c.strokeText(s, x, y); c.fillStyle = color || '#fff'; c.fillText(s, x, y);
+  }
+  G.txt = function (c, s, x, y, size, color, align, stroke) {
+    var m = TXON && c.getTransform ? c.getTransform() : null, rs;
+    if (m && m.b === 0 && m.c === 0 && m.a === m.d && m.a > 0 && s.length < 60) {
+      rs = m.a;
+      var key = s + '|' + size + '|' + (color || '') + '|' + (align || '') + '|' + (stroke || '') + '|' + rs, e = TXC[key];
+      if (e && e.cv) {
+        TXS.hit++; c.drawImage(e.cv, Math.round(x + e.dx), Math.round(y + e.dy), e.w, e.h); return;
+      }
+      if (e) {   // 2.ª vez: se crea el lienzo
+        if (TXN > 500) { TXC = {}; TXN = 0; }
+        var lw = Math.max(2, size / 5), pad = Math.ceil(lw) + 2, tc = document.createElement('canvas').getContext('2d');
+        tc.font = 'bold ' + size + 'px "Courier New", monospace';
+        var tw = Math.ceil(tc.measureText(s).width), W = tw + pad * 2, Hh = Math.ceil(size * 1.5) + pad * 2;
+        tc.canvas.width = Math.ceil(W * rs); tc.canvas.height = Math.ceil(Hh * rs); tc.setTransform(rs, 0, 0, rs, 0, 0);
+        var ax = align === 'center' ? W / 2 : align === 'right' ? W - pad : pad;
+        txtRaw(tc, s, ax, Hh / 2, size, color, align, stroke);
+        e.cv = tc.canvas; e.w = tc.canvas.width / rs; e.h = tc.canvas.height / rs; e.dx = -ax; e.dy = -Hh / 2; TXN++; TXS.make++;
+        c.drawImage(e.cv, Math.round(x + e.dx), Math.round(y + e.dy), e.w, e.h); return;
+      }
+      TXC[key] = {};
+    }
+    TXS.raw++; txtRaw(c, s, x, y, size, color, align, stroke);
   };
   G.fmtTime = function (ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60); s %= 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; };
 
@@ -459,7 +486,7 @@
     if (PN) G.Panal.drawAmbient(ctx, tt);    // P5: polen, tinte ámbar y rayos de luz cálidos (en vez de luciérnagas y niebla)
     else {
     if (Q.flies > 0) Assets.drawFireflies(ctx, G.AW, G.AH, tt, { count: Q.flies, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
-    if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog });
+    if (Q.fog > 0) Assets.drawFog(ctx, G.AW, G.AH, tt, { alpha: 0.4, layers: Q.fog, view: { x: G.cam.x, y: G.cam.y, w: G.W, h: G.VH } });
     }
     ctx.restore();
     if (TN) {   // P3: bruma de la ventisca (pantalla) y, por encima de ella, telegrafías, proyectiles enemigos y jefe (B.1.3: nunca se tapan)

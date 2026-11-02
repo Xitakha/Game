@@ -1278,12 +1278,38 @@
     return c;
   };
   // Niebla a la deriva sobre un area w x h. o: {alpha 0.8, layers 2, speed 12 (px/s)}
+  // P8: con `o.view` ({x,y,w,h}, la parte visible del mundo) cada capa se pinta UNA vez en un lienzo que se repite cada 3 columnas y cada fotograma solo se copian 1-2 trozos de la vista
+  // (antes: ~27 teselas de 330 x 190 px con suavizado y alfa por capa y fotograma = ~8 ms en Chromium sin GPU). Sin `view` (otros llamadores) se conserva el dibujo teselado de siempre.
+  var FOGC = {};
+  function fogLayer(l, w, h, al) {
+    var cv = Assets.sprite('fog' + (l % 2)), sc = 2.6 + l * 0.9, sw = cv.width * sc, sh = cv.height * sc, P = sw * 0.85, K = 3, CW = Math.ceil(K * P), CH = Math.ceil(h);
+    var key = [l, CW, CH, al, cv.width].join('|'); if (FOGC[key]) return FOGC[key];
+    var c = mkCanvas(CW, CH), x = c.getContext('2d'), rows = Math.ceil(h / (sh * 0.7)) + 1, i, j, k;
+    x.imageSmoothingEnabled = true;
+    for (j = 0; j < rows; j++) for (i = 0; i < K; i++) {
+      var hsh = Math.sin((i + l * 7) * 12.9898 + j * 78.233) * 43758.5453; hsh -= Math.floor(hsh);
+      var fx0 = i * P + (hsh - 0.5) * 40 + P * 0.5, fy0 = j * sh * 0.7 + (l * 37) % 50 - sh * 0.2;
+      x.globalAlpha = al * (0.45 + 0.55 * hsh);
+      for (k = -1; k <= 1; k++) x.drawImage(cv, fx0 + k * CW, fy0, sw, sh);   // las teselas que salen por un borde reaparecen por el otro
+    }
+    return (FOGC[key] = { cv: c, W: CW, H: CH });
+  }
   Assets.drawFog = function (ctx2, w, h, tMs, o) {
     o = o || {};
-    var layers = o.layers || 2, sp = o.speed || 12, al = o.alpha == null ? 0.8 : o.alpha, t = (tMs || 0) / 1000;
+    var layers = o.layers || 2, sp = o.speed || 12, al = o.alpha == null ? 0.8 : o.alpha, t = (tMs || 0) / 1000, vw = o.view || null, l;
     ctx2.save();
+    if (vw) {
+      ctx2.imageSmoothingEnabled = false;
+      for (l = 0; l < layers; l++) {
+        var F = fogLayer(l, w, h, al), shift = t * sp * (l + 1) * (l % 2 ? -1 : 1), s0 = Math.floor((((vw.x - shift) % F.W) + F.W) % F.W), sy = Math.max(0, Math.floor(vw.y)), shh = Math.min(Math.ceil(vw.h), F.H - sy);
+        if (shh <= 0) continue;
+        var rem = vw.w, dx = Math.floor(vw.x), sx = s0;
+        while (rem > 0) { var n = Math.min(rem, F.W - sx); ctx2.drawImage(F.cv, sx, sy, n, shh, dx, sy, n, shh); rem -= n; dx += n; sx = 0; }
+      }
+      ctx2.restore(); return;
+    }
     ctx2.imageSmoothingEnabled = true;
-    for (var l = 0; l < layers; l++) {
+    for (l = 0; l < layers; l++) {
       var cv = Assets.sprite('fog' + (l % 2)), sc = 2.6 + l * 0.9, sw = cv.width * sc, sh = cv.height * sc, off = (t * sp * (l + 1) * (l % 2 ? -1 : 1)) % (sw * 0.85);
       var cols = Math.ceil(w / (sw * 0.85)) + 2, rows = Math.ceil(h / (sh * 0.7)) + 1;
       for (var j = 0; j < rows; j++) for (var i = -1; i < cols; i++) {
