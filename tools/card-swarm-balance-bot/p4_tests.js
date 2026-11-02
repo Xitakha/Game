@@ -116,7 +116,7 @@ async function parts(b) {
   console.log(JSON.stringify(w));
   ok(w.open && w.corUp && w.expo === 1.35 && w.kind === 'window', 'el Latido abre el pecho: ventana x1,35 al cuerpo y Corazón apuntable (' + w.expo + ')');
   ok(w.heartDmg > 0 && Math.abs(w.heartDmg / w.bodyDmg - 2 / 1.35) < 0.15, 'Corazón recibe x2,0 / cuerpo x1,35 (' + w.heartDmg + ' vs ' + w.bodyDmg + ')');
-  ok(w.heartBroken && w.cadMul === 1.2 && w.der === 1.5 && w.trophies.indexOf('yheart') >= 0 && !w.openAfter, 'Corazón roto: trofeo, derribo x1,5, Invierno profundo +20 % cadencia, pecho cerrado');
+  ok(w.heartBroken && Math.abs(w.cadMul - 1.3 * 1.2) < 1e-9 && w.der === 1.5 && w.trophies.indexOf('yheart') >= 0 && !w.openAfter, 'Corazón roto: trofeo, derribo x1,5, Invierno profundo +20 % cadencia (sobre el x1,3 de P8), pecho cerrado');
   ok(!pg.errs.length, '0 errores: ' + pg.errs.slice(0, 2)); await pg.close();
 }
 
@@ -136,7 +136,7 @@ async function phases(b) {
       return o;
     });
     log.push(g); console.log(JSON.stringify(g));
-    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 2 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 2 corazones, vuelve a combate (HP ${g.hp} %)`);
+    ok(g.mode === 'gate' && g.immune && g.ph === g.ph0 + 1 && g.hearts >= 1 && g.after === 'fight', `puerta a la fase ${g.ph}: inmune 3 s, 1 corazón (P8; antes 2), vuelve a combate (HP ${g.hp} %)`);
   }
   const patch = await pg.evaluate(() => { var cov = []; return { c: G.Tundra.iceCoverage(null, 20).max }; });
   ok(log[1].cov > log[0].cov - 1 && log[2].cov >= log[1].cov - 1 && log[2].cov <= 260, 'la cobertura de nieve firme crece al encogerse los parches pero se mantiene <= 260 (' + log.map(l => l.cov) + ')');

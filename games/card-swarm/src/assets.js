@@ -1280,7 +1280,7 @@
   // Niebla a la deriva sobre un area w x h. o: {alpha 0.8, layers 2, speed 12 (px/s)}
   // P8: con `o.view` ({x,y,w,h}, la parte visible del mundo) cada capa se pinta UNA vez en un lienzo que se repite cada 3 columnas y cada fotograma solo se copian 1-2 trozos de la vista
   // (antes: ~27 teselas de 330 x 190 px con suavizado y alfa por capa y fotograma = ~8 ms en Chromium sin GPU). Sin `view` (otros llamadores) se conserva el dibujo teselado de siempre.
-  var FOGC = {};
+  var FOGC = {}, FOGOFF = /[?&]fogc=0/.test(location.search);   // ?fogc=0 = niebla teselada de antes (para medir)
   function fogLayer(l, w, h, al) {
     var cv = Assets.sprite('fog' + (l % 2)), sc = 2.6 + l * 0.9, sw = cv.width * sc, sh = cv.height * sc, P = sw * 0.85, K = 3, CW = Math.ceil(K * P), CH = Math.ceil(h);
     var key = [l, CW, CH, al, cv.width].join('|'); if (FOGC[key]) return FOGC[key];
@@ -1296,7 +1296,7 @@
   }
   Assets.drawFog = function (ctx2, w, h, tMs, o) {
     o = o || {};
-    var layers = o.layers || 2, sp = o.speed || 12, al = o.alpha == null ? 0.8 : o.alpha, t = (tMs || 0) / 1000, vw = o.view || null, l;
+    var layers = o.layers || 2, sp = o.speed || 12, al = o.alpha == null ? 0.8 : o.alpha, t = (tMs || 0) / 1000, vw = (FOGOFF ? null : o.view) || null, l;
     ctx2.save();
     if (vw) {
       ctx2.imageSmoothingEnabled = false;

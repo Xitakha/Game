@@ -971,7 +971,7 @@
   var oldDraw = A.drawBoss, oldRender = A.renderBoss, oldShadow = A.drawBossShadow, oldAnch = A.bossAnchors, oldNames = A.bossPoseNames, oldWeak = A.drawWeakIcon;
   A.drawBoss = function (id, ctx, x, y, s) {
     var B = B4[id]; if (!B) return oldDraw.apply(A, arguments);
-    s = s || {}; var R = B.render(s), P = R.pose, dying = s.dying && (s.dt != null ? s.dt : (s.deathT || 0)) >= B.deathMs;
+    s = s || {}; var R = A.rthr(id, s, B.render), P = R.pose, dying = s.dying && (s.dt != null ? s.dt : (s.deathT || 0)) >= B.deathMs;
     if (!s.noShadow) B.shadow(ctx, x, y, s);
     if (P && !s.noFx) B.aura(ctx, x, y, s, P);
     if (!dying) {

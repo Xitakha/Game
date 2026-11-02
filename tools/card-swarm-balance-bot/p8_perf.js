@@ -10,7 +10,7 @@ const FPS = (pg, s) => pg.evaluate(s => new Promise(res => { let n = 0, max = 0,
   for (const sc of ESC) {
     const ctx = await b.newContext({ viewport: { width: 960, height: 540 } }), pg = await ctx.newPage(), errs = [];
     pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-    await pg.goto(`${base}/index.html?reset=1&god=1&nosw=1&nointro=1&prep=0&hand=${HAND}&speed=1&${URL[sc]}`); await pg.waitForTimeout(600);
+    await pg.goto(`${base}/index.html?reset=1&god=1&nosw=1&nointro=1&prep=0&hand=${HAND}&speed=1&${process.env.PERF_EXTRA || ''}&${URL[sc]}`); await pg.waitForTimeout(600);
     if (!/^(pastor|melaria|yarlak|cenizar|karceron|letea)$/.test(sc)) await pg.evaluate(() => { G.startGame(); });
     await pg.evaluate((q) => { setInterval(() => { G.pendingLevels = 0; if (G.state === 'cards') G.state = 'play'; }, 50); if (q !== 'auto' && G.Sys && G.Sys.setQuality) G.Sys.setQuality(q); else if (q === 'auto') { } }, Q);
     if (Q !== 'auto') await pg.evaluate(q => { const S = G.Sys; if (S.qMode !== undefined) { S.qMode = q; } }, Q).catch(() => {});

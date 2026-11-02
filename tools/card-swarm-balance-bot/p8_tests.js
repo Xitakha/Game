@@ -95,7 +95,7 @@ async function perf(b) {
     await pg.waitForTimeout(5500);
     const ms = await pg.evaluate(() => {
       var e = G.Boss.e, S = G.Boss, c = document.createElement('canvas'); c.width = 960; c.height = 540; var x = c.getContext('2d'), n = 120, t0 = performance.now();
-      for (var i = 0; i < n; i++) { x.clearRect(0, 0, 960, 540); if (e.def.h && e.def.h.draw) e.def.h.draw(x, e); else if (S.draw) S.draw(x); }
+      for (var i = 0; i < n; i++) { x.clearRect(0, 0, 960, 540); if (e.def.h && e.def.h.draw) e.def.h.draw(x, e); else if (S.draw) S.draw(x, e); }
       return (performance.now() - t0) / n;
     });
     ok(ms < BUDGET[id] * 2, `${id}: dibujo del cuerpo ${ms.toFixed(2)} ms/fotograma (presupuesto ${BUDGET[id]} ms)`);
