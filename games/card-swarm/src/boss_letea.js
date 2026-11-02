@@ -37,6 +37,7 @@
     },
     weak: [{ tag: 'blood', mul: 1.25, phases: [1, 2] }, { tag: 'poison', mul: 1.25, phases: [3] }, { tag: 'lightning', mul: 1.1, phases: [1, 2, 3] }],
     resist: [{ tag: 'ice', mul: 0.8 }],
+    pelHp: [null, 1.0, 1.08, 1.18, 1.5, 1.75], pelOver: { 2: { dmg: 1.05, tele: 1 }, 3: { dmg: 1.1, tele: 1 } },   // P8: el bot ganaba Peligro II-III al 48 % / 27 % (Karceron) y 33 % / 17 % (Letea) frente al 55 / 51 % del doc; con esto 52-53 %. IV-V siguen con la tabla común
     hpCal: 3.6, // J3: 3,5 -> 3,6 con Mordisco cd 2500 (ver README). Antes (J2): calibrado con el bot (README, Jefes v4 J2): 6600 x 3,5 = 23100 a 9 min; p50 aislado ~122 s, partida completa (con horda) ~140 s
     hpCalFam: 4.7, // v5 P2: con la familia del Asfódelo activa (sin Arqueros / Bombas / Espinosos: menos daño de los adds) el bot ganaba 74 % (73 / 75 %) en Peligro I vs 46 % (44 / 48 %) con ?fam=0; con 4,1 -> 69 %, 4,5 -> 55 %, 4,7 -> 55 / 48 % (README, Familias P2). ?fam=0 conserva hpCal 3,6
     brasas: 12, brasasPart: 4, pf: 2, pfFirst: 3,
