@@ -615,7 +615,7 @@ La Tundra (`DESIGN-v5-biomas.md` B.1, B.3, B.7; fase P3) está **implementada y 
 ## Yarlak, el Coloso Gélido (P4, v5.3)
 Lógica en `src/boss_yarlak.js` (motor genérico de `boss.js`, ganchos `DEFS.yarlak.h`); arte `assets_boss3.js` (`Assets.drawBoss('yarlak')`, con `armor`, `skid`, `aim`, `open`, `broken`; dibujo de reserva por código si faltara); audio `sfx_yarlak.js` (`setTrack('boss_yarlak')`, `setPhase(1..4)`, `setDespair(bool)`, stingers `stg_yarlak_*`). Diseño: `DESIGN-v5-biomas.md` B.2 y B.7. **Desbloqueo:** la Tundra se abre al vencer a Letea (orden Pastor, Karceron, Letea, Yarlak; `Boss.BIOME_BOSS.tundra = 'yarlak'`), la familia de la Tundra pasa a `ready:true`, los encargos dormidos (Lobos de escarcha) se ofrecen y Vesper abre la cacería de Yarlak (4 botones; Practicar con 4 fases). **Guardado v5** (`Save.VERSION = 5`): `peligro.yarlak`, copia de seguridad en `swarmhand.save.v4`; quien ya venció a Letea ve la Tundra abierta sin más. `?boss=yarlak` (bioma Tundra), `?hunt=yarlak`, `?practice=1`, `?phase=1..4`, `?peligro=1..5`; calibración: `?hpcal=`, `?ydmg=` (multiplicador de daño de Yarlak), `?ycad=` (cadencia). Consola: `G.Boss.force('y_alud')`, `G.Boss.breakKey('colmillos'|'armadura'|'corazon')`, `G.Boss.yarlakInfo()`.
 - **Motor generalizado a N fases** (`nPh(e)`): Pastor, Karceron y Letea siguen con 3 (simulación idéntica, ver Pruebas). Nuevos campos de `DEFS`: `gateCol`, `nameCol`, `winCol` (barra blanco-azulada en la ventana), `roarSfx`, `deathMs`, `noFire`; `ATKS[..].ice = true` aplica la regla del hielo en `teleMs`: `tele >= 250 + 220 + 1000 x salida / 190` y los de >= 25 de daño >= 800 ms (Peligro recorta -10 % sin bajar de la regla).
-- **HP:** 8500 x `hpCal` **3,5** (doc 3,0) x duración (0,75 / 1 / 1,10) x Peligro = **29 750** a 9 min Peligro I (22 313 a 7 min, 32 725 a 10; II-V: 34 213 / 38 675 / 44 625 / 52 063). Fases 70 / 45 / 20 % (puertas inmunes de 3 s con 2 corazones), cadencia 3,0 / 2,6 / 2,2 / 1,9 s, paso 55 / 65 / 75 / 85 px/s, desesperado a < 8 %. Débil a Fuego x1,25 y Rayo x1,25 (F3-F4); Hielo x0,6, Veneno x0,8. Furia a 150 s (120 en IV-V). Recompensa: 14 Brasas + 4 por parte (x Peligro), PF 2 (3 la primera vez), garantizados `static 2, wick 2, thread 1`, trofeos `ytusk / yplate / yheart` (Colmillo de Yarlak, Placa Glaciar, Corazón de Escarcha: cuentan como 1 Esencia y quedan en `Save.data.trophies` para la rama 'Ruta' de la P7, que aún no existe).
+- **HP:** 8500 x `hpCal` **3,5** (doc 3,0) x duración (0,75 / 1 / 1,10) x Peligro = **29 750** a 9 min Peligro I (22 313 a 7 min, 32 725 a 10; II-V: 34 213 / 38 675 / 44 625 / 52 063). **P8: `hpCal` 4,5 = 38 250 a 9 min (II-V: 43 988 / 49 725 / 57 375 / 66 938), `dmgK` 1,45, cadencia x1,3 y 1 corazón por puerta; ver "Balance, rendimiento y cierre (P8)".** Fases 70 / 45 / 20 % (puertas inmunes de 3 s con 2 corazones), cadencia 3,0 / 2,6 / 2,2 / 1,9 s, paso 55 / 65 / 75 / 85 px/s, desesperado a < 8 %. Débil a Fuego x1,25 y Rayo x1,25 (F3-F4); Hielo x0,6, Veneno x0,8. Furia a 150 s (120 en IV-V). Recompensa: 14 Brasas + 4 por parte (x Peligro), PF 2 (3 la primera vez), garantizados `static 2, wick 2, thread 1`, trofeos `ytusk / yplate / yheart` (Colmillo de Yarlak, Placa Glaciar, Corazón de Escarcha: cuentan como 1 Esencia y quedan en `Save.data.trophies` para la rama 'Ruta' de la P7, que aún no existe).
 - **Entorno por fase:** F1-F2 nieve firme r 110; F3 r 90 y ventisca más densa (alpha 0,25; claro de visión intacto); F4 r 70 y alpha 0,35; Peligro IV: claro de ventisca 300 y Frío x1,3. Desesperado: ventisca 0,6 y claro 260, las 5 hogueras crecen a r 120 y se encienden las 2 repisas (la hoguera más lejana queda a 195 px del borde de cualquier punto: doc <= 215), Frío +6 %/s fuera de las hogueras, 7 oleadas de 12 carámbanos (v 170, 10 de daño, 2 huecos de 45 grados, giro de 18 grados) cada 1,4 s, jefe quieto en el centro con cuerpo x1,25 y Corazón x2,0. Peligro V: dos Inviernos seguidos, el 2.º con 3 hogueras.
 
 | Ataque | Fases | Telegrafía (ms) | Daño | cd | Salida (px) | Regla del hielo |
@@ -838,3 +838,80 @@ Un plato por expedición (cupo actual). Las recetas cerradas salen con `?` y el 
 - Suites anteriores re-ejecutadas en verde tras la P7: `p3_tests` (cold, data, flow), `p4_tests` (data, unlock, flow, phases), `p5_tests` (data, smoke, honey, flow), `p6_tests` (data, unlock, hunt, flow, phases), `p65_tests` (data, unlock, hunt, flow, chain, phases), `quests_audit.js` (41 encargos, 6 estados de desbloqueo).
 - Actualizados por el Portal y el guardado v9: `p3_tests.js`, `p4_tests.js`, `p5_tests.js`, `p6_tests.js`, `p65_tests.js` (posición de los chips y versión 9), `mobile_flow.js` y `quests_audit.js`.
 - Capturas (4, JPEG pequeñas): `studio/docs/capturas-p7-integracion/` (`p7_portal`, `p7_portal_movil`, `p7_ruta`, `p7_estatua`).
+
+
+## Balance, rendimiento y cierre (P8, v5.6 estable)
+Cierra el plan de `DESIGN-v5-biomas.md`. **Directriz del dueño: el juego es un reto; se sube la dificultad donde estaba fácil y no se suaviza nada por defecto** (las únicas bajadas son Peligro II-III de Karceron y Letea, que quedaban a 17-48 % frente al 51-55 % del doc, y se explican más abajo). Todo medido con `tools/card-swarm-boss-bot/` y `tools/card-swarm-balance-bot/` (servidor `python3 tools/serve.py card-swarm <puerto>`, Chromium sin GPU).
+
+### 1. Jefes: 16 peleas por mano (p25 / p50 / p75), Peligro I-V, bot con 10 % de lapsos y 10 % de pasos al azar, ponderado 25 / 50 / 25
+`table.sh <jefe> "1 2 3 4 5" 16 <puerto>`; `FORGE="1 1.1 1.15 1.35 1.7"` (daño de cartas por Peligro, como en J3) para los cinco jefes y **sin forja** para Cenizar (como en P6.5). **Ruido:** cada celda es 48 peleas; el error típico del ponderado es ~7,5 puntos (+-15 al 95 %): tres variantes casi idénticas de Melaria dieron 53 / 55 / 69 %.
+
+| Peligro I (bot) | Antes (16 peleas) | Ahora | Objetivo | Cambio |
+|---|---|---|---|---|
+| Pastor | 70 % | 70 % | ~75 | sin tocar (dentro del ruido) |
+| Karceron | 59 % | 59 % | ~60 | sin tocar |
+| Letea | 55 % | 55 % | ~60 | sin tocar |
+| **Yarlak** | **89 %** | **64 %** | ~65 | `hpCal` 3,5 -> **4,5** (38 250 HP a 9 min), `dmgK` 1,3 -> **1,45**, `cadK` **1,3** (cadencia +30 %), **1 corazón por puerta** (antes 2) |
+| **Melaria** | **77 %** | **69 %** | ~65 | `dmgK` 1,3 -> **1,45**, **1 corazón por puerta**; `hpCal` 3,6 y `cadK` 1,0 se quedan (con cadencia x1,15 salía 53-55 %: demasiado) |
+| Cenizar | 37,5 % | 41 % | 30-40 | sin tocar (ruido) |
+
+| Ponderado por Peligro | I | II | III | IV | V |
+|---|---|---|---|---|---|
+| Pastor | 70 | 61 | 59 | 48 | 34 |
+| Karceron | 59 | 58 | 58 | 27 | 8 |
+| Letea | 55 | 53 | 42 | 14 | 11 |
+| Yarlak | 64 | 48 | 38 | 34 | 25 |
+| Melaria | 69 | 64 | 47 | 30 | 30 |
+| Cenizar | 41 | 34 | 14 | 8 | 9 |
+| **Media de los 6** | **59,7** | **53** | **43** | **26,8** | **19,5** |
+| Doc (+-10) | 60 | 55 | 51 | 37 | 24 |
+
+(Melaria II y V se midieron con `cadK` 1,15 y I / III / IV con el valor final 1,0; Yarlak II-V con el código final.) Qué se aprendió: (1) con el bot esquivador **solo cuenta lo que se le cobra por lapso**: subir la cadencia casi no mueve nada (la pelea la manda el DPS del jugador), subir `dmgK` está limitado por `HIT_CAP` 32, y lo que sí funciona es **HP** (más exposición: el bot no regenera), **corazones por puerta** (cada uno son 12 HP que no recupera) y la suma de ambos; (2) Yarlak con 1 corazón por puerta, cadencia x1,3 y `dmgK` 1,45: `hpCal` 3,5 -> 83 %, 4,2 -> 71 %, 4,5 -> 64 % (12-16 peleas por mano; sin corazones y `hpCal` 4,0 salió 81 %, dentro del ruido); (3) la duración sube: **Yarlak p50 163-190 s** (el doc pedía 90-150 s; es el precio de la directriz, p25 280-300 s), Melaria p50 119-150 s, Cenizar p50 605-650 s; (4) **Peligro II-III de Karceron y Letea** con la tabla común salían a 48 / 27 % y 33 / 17 % (doc 55 / 51): `pelHp` [1, 1,08, 1,18, 1,5, 1,75] y `pelOver` (daño +5 / +10 %, telegrafía x1,0; la regla de esquiva sigue mandando) en II-III -> 58 / 58 % y 53 / 42 %. IV-V siguen con la tabla común y quedan por debajo del doc en Karceron y Letea (27 / 14 %): se dejan (reto); (5) **Cenizar V** ya estaba en rango: con 16 peleas por mano y `maxSim` 1000 (el 420 por defecto de `fight.js` cortaba las peleas de Cenizar y daba 0 %) mide **9 %** (objetivo 6-12 %) con un corazón extra por puerta en Peligro V (`pelHeart` 5: +1, `?cph5=`), sin tocar HP ni daño; el "3 %" de la P6.5 era ruido de 8 peleas. Perillas nuevas de calibración: `?yheart=`, `?mheart=`, `?cph5=`, `?cphp5=`, `?cpd5=`; `table.sh` ya no corta Cenizar (`MAXSIM=1000`).
+Regla de esquiva (tele >= 250 + 1000 x salida / 190 ms) y `HIT_CAP` 32 verificados en **todos** los ataques de los 6 jefes y los 5 Peligros (`p8_tests.js tele`): nada de la dificultad nueva viene de ataques injustos, solo de HP, cadencia y menos curación.
+
+### 2. Biomas y minijefes
+- **Censo final** (`census.js`, bot de balance, ya medido en P1-P3; esta fase no cambia familias ni packs): Bosque 8 tipos, Cripta 9, Asfódelo 8, Tundra 9, Panal 9 (+ los 2 guardianes de cada bioma como minijefes); masa por tier conservada. La regresión horda 200 s de los 5 biomas (con y sin minijefes) es **idéntica bit a bit** al código de la P7.
+- **TTK de minijefes** (`minis_ttk.js`, mano p50, 16 peleas, p50 en s): Carnero 55, Tejedora 57, Alcaide 51, Centinela 43, Hidra 58, Plañidera 46, Yeti Mayor 61, Ventisquero 48, Avispón 46-51, Reina Joven 49-55: **todos dentro de 40-65 s**; parte rota a ~50 % de la vida en los 10.
+- **Plañidera Anegada:** el "44 %" de muertes eran 7 de 16; la medición de P8 (24 peleas, `god=0`) da **7 de 24 = 29 %** (objetivo <= 35 %), TTK p50 42 s, daño mediano al jugador 27. **No se toca la horda del Asfódelo** (`hm` 0,5, `dmgK` 0,7): bajarla solo la volvería más fácil sin necesidad; con 24 peleas el error típico es ~9 puntos, así que queda anotado para vigilar con jugadores reales.
+- **Panal como reto equivalente:** el Avispón Real y la Reina Joven eran los guardianes más blandos (daño mediano al jugador 6 y 10 frente a 31-98 de los demás; 0 muertes). Ahora `dmgK` 0,7 -> 1,0, ciclos de ataque más cortos (Picado cd 5,0 -> 3,8 s, Zumbido 11 -> 8,5 s, Estocada 9 -> 7 s; `gap` 1000 / 650 -> 800 / 520 el Avispón y 2600 / 1900 -> 2000 / 1500 la Reina Joven) y `hm` 0,6 -> 0,8 (la horda aprieta más mientras vive la Reina Joven). Con el bot siguen siendo los más fáciles (daño 7-14, 0 muertes en 24 + 24 peleas): los ataques de vuelo son los que mejor esquiva el bot y un humano los verá más duros; anotado en pendientes.
+
+### 3. Dificultad de progresión (bot, expedición completa, `fight.js` con `"full":true,"nogod":true`, perfil "mid", 6 runs por celda, 5 biomas x Rápida 7 / Normal 9 / Larga 10)
+El bot esquivador solo esquiva los peligros del jefe, no la horda, así que **no sirve como medida absoluta de supervivencia**: muere antes del jefe en 87 de 90 runs (2 victorias, ambas en 7 min). Como medida relativa sí ordena la presión por duración: muerte media a los **175-203 s en Rápida, 211-258 s en Normal y 230-312 s en Larga** (la misma horda repartida en más tiempo), y en todos los biomas la misma pendiente: Rápida es la más arriesgada por minuto y su recompensa (partes x0,8 pero PF x1,4) y la de Larga (partes x1,15, Esencia rara x1,5, jefe +10 % de HP) siguen siendo riesgo / recompensa como en la tabla de duraciones; los HP de jefe por duración (x0,75 / 1 / 1,10) no cambian. Pendiente real: un bot que también esquive la horda, o playtest humano.
+
+### 4. Rendimiento (Chromium sin GPU, 960x540, calidad Alta, pelea en fase 2 / 3 de Cenizar, 5 s por medida, 3 rondas alternando antes / ahora con `?fogc=0&txc=0&thr=0`; `tools/card-swarm-balance-bot/p8_perf.js`)
+| fps | Antes | Ahora | Baja |
+|---|---|---|---|
+| Pastor | 38,5 | **58,1** | 59,8 |
+| Karceron | 31,5 | **52,1** | 55,0 |
+| Letea | 34,8 | **55,7** | 58,2 |
+| Yarlak | 34,1 | **53,6** | 55,4 |
+| Melaria | 58,9 | 59,8 | 60,4 |
+| Cenizar | 38,7 | **59,1** | 60,4 |
+| Horda Tundra | 38,4 | **58,3** | - |
+- **El coste real era la niebla** (`Assets.drawFog`: 2 capas de ~27 teselas de 330 x 190 px con suavizado y alfa en cada fotograma = ~8 ms; el perfilador de JS no la veía porque el trabajo cae en `(program)`; se halló con ablaciones de `G.Q`). Ahora **cada capa se pinta una vez en un lienzo que se repite cada 3 columnas** y por fotograma solo se copian 1-2 trozos de la vista (`Assets.drawFog(..., { view })`; sin `view` conserva el dibujo teselado; `?fogc=0` lo desactiva). Visualmente idéntico (el patrón de teselas es otro pero con la misma estadística). Panal no usa niebla, por eso Melaria ya iba bien.
+- **Cuerpo de los jefes a 30 Hz máx.** (`Assets.rthr`, `assets_boss*.js`): el lienzo `render` de cada jefe (3-5 ms: Karceron, Letea, Yarlak, Melaria, Cenizar) se repinta como mucho cada 24 ms y se reutiliza entre medias; posición, sombra y efectos siguen a pleno ritmo y por debajo de ~42 fps se repinta cada fotograma. `?thr=0` lo desactiva. Ganancia medida pequeña (+1-3 fps, dentro del ruido).
+- **Texto con contorno cacheado** (`G.txt`, 2.ª aparición de la misma cadena en un lienzo pequeño, solo con transformación sin giro a la escala del lienzo; `?txc=0` lo apaga): la medición no muestra mejora de fps (el HUD cuesta ~4 ms en raster aunque su JS son 0,8 ms) pero quita ~30 `strokeText` por fotograma; se deja porque no cuesta nada.
+- **Humo del Panal (3-4 ms) y `drawWarmLights` (~5 ms):** no se reproducen: `drawWarmLights` cuesta 0,11 ms (8 luces) y el humo ambiental `drawSmoke` 0,9 ms (y el juego no lo llama en vivo); con 6 nubes de humo de Ahumador la pelea de Melaria sigue a 60 fps. Los 3-5 ms que se veían eran el cuerpo de los jefes y la niebla.
+- **Objetivo del doc P8 (fps >= Pastor - 3):** Karceron 52,1, Letea 55,7, Yarlak 53,6 frente a Pastor 58,1: Karceron queda 6 por debajo (su cuerpo cuesta ~4,5 ms); el resto cumple. **>= 55 fps en pelea** se cumple en Pastor, Letea, Melaria y Cenizar en Alta y en los 6 jefes en Baja (55-60). Móvil 844x390 (DPR 2, calidad Media automática, lienzo 1,45x): 35-54 fps con CPU de escritorio y sin GPU (Pastor 46, Karceron 38, Letea 36, Yarlak 42, Melaria 43, Cenizar 54); en móviles reales el lienzo va acelerado.
+
+### 5. Móvil y PWA (`tools/card-swarm-balance-bot/p8_mobile.js`, toque real por CDP, DPR 2, `isMobile`)
+844x390: aldea (el joystick flotante mueve a Marlo), Portal por toques (botón PORTAL, botón del arco, los 6 chips, SALIR), pelea de los 6 jefes (joystick, jefe vivo, 0 errores) y cinemática final (se salta con toques). 390x844: aviso "Gira el teléfono". **Arreglo:** si la partida empezaba ya en vertical (p. ej. `?boss=`) seguía corriendo bajo el aviso; `Sys.frame` ahora la pausa mientras el aviso esté visible. `stamp.py` ejecutado: `sw.js` con VERSION nueva y la lista de precache al día (`p8_tests.js sw`). Capturas: `studio/docs/capturas-p8/` (aldea 844x390, Melaria 844x390, cinemática, vertical).
+
+### 6. Pruebas y regresión de la P8
+- `p8_tests.js data|tele|hearts|perf|sw|regress|all [base]` (**51 comprobaciones OK**): constantes finales de los 6 jefes, regla de esquiva + `HIT_CAP` en todos los ataques de los 6 jefes x 5 Peligros, corazones reales por puerta (Pastor / Karceron / Letea 2, Yarlak / Melaria 1, Cenizar 3 y 4 en Peligro V), coste de dibujo, `sw.js` al día y Pastor / Karceron / Letea sin tocar.
+- Expectativas actualizadas por el balance (intencional): `p4_tests` (HP de Yarlak 38 250, 1 corazón por puerta, Invierno profundo = 1,3 x 1,2 de cadencia), `p6_tests` (1 corazón por puerta), `p7_tests` (Karceron y Letea: `pelHp` y daño propios en II-III). Resultado: `p3` 79, `p4` 103, `p45` 73, `p5` 87, `p6` 144, `p65` 175, `p7` 235, `p8` 51: **todo en verde**.
+- **Regresión contra el código de la P7 (`a31d2a7`, servido aparte):** `p7_regress.js` (Bosque, Cripta, Asfódelo, Tundra y Panal con y sin minijefes, 200 s, con y sin familia): idéntico bit a bit; `p65_regress.js` (peleas de 120 s con la ruta fija): **Pastor, Karceron, Letea, Melaria y Cenizar idénticos** (Melaria no cambia en la simulación sin daño: el hash no incluye la vida del jugador y las puertas caen después de los 120 s) y **Yarlak distinto desde el segundo 0 (esperado: HP x1,29 y cadencia)**. Lo no tocado (render, texto, niebla) no altera la simulación.
+- Herramientas: `fight.js` acepta `"nogod":true` y devuelve `tEnd` / `bossSeen`; `table.sh` acepta `MAXSIM`; `p8_perf.js` (fps + perfilador CDP por escenario y calidad; `PERF_EXTRA` para A/B con `fogc` / `txc` / `thr`), `p8_mobile.js`, `p8_tests.js`.
+
+### Pendientes (backlog tras v5.6)
+1. **Playtest humano:** todas las cifras son del bot esquivador (lee la geometría exacta); un humano debería ganar menos en Yarlak (hielo) y Melaria (miel). Si el humano gana > 75 % en Peligro I: `DEFS.<jefe>.hpCal`, `gateHearts`, `cadK`.
+2. **Yarlak dura 163-190 s en el p50** (doc 90-150 s) por la directriz de reto; si resulta pesado, `hpCal` 4,5 -> 4,0 y compensar con `gateHearts` 0 solo en Peligro III-V.
+3. Karceron / Letea en IV-V (27 / 14 / 8 / 11 %) y Cenizar IV-V (8-9 %) quedan por debajo del doc; no se tocan por la directriz.
+4. Minijefes del Panal siguen siendo los más fáciles para el bot (vuelo).
+5. Un bot que esquive también la horda (medida real de supervivencia por bioma y duración).
+6. HUD ~4 ms de raster en software: cachearlo exige sacar `G.Quests.tick()` de `Hud.draw`; Karceron 6 fps por debajo del Pastor (cuerpo a 4,5 ms).
+7. Probar la PWA en un teléfono real (service worker, instalación, audio).
+8. Arte / audio no tocados en esta fase.
+
+### Changelog v5.6 (P8)
+Yarlak: hpCal 4,5, dmgK 1,45, cadencia x1,3, 1 corazón por puerta. Melaria: dmgK 1,45, 1 corazón por puerta. Karceron / Letea: Peligro II-III con `pelHp` y `pelOver` propios. Cenizar: +1 corazón por puerta en Peligro V. Avispón Real / Reina Joven: más agresivos. Rendimiento: niebla en lienzo cacheado (+15-20 fps en pelea), render de jefes a 30 Hz máx., texto cacheado. Móvil: pausa bajo el aviso de vertical. Herramientas y pruebas P8.
