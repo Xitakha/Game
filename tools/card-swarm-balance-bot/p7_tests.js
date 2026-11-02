@@ -34,7 +34,7 @@ const KILLS5 = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 };
 // centros de los chips del Portal (G.Panels.biomeRect)
 const CHIP = i => ({ x: 440 + 4 + (i % 2) * 98 + 47, y: 84 + 18 + Math.floor(i / 2) * 49 + 23 });
 const DEST = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'];
-const shot = async (pg, name, clip) => { if (!SHOTS) return; fs.mkdirSync(SHOTS, { recursive: true }); await pg.screenshot({ path: SHOTS + '/' + name + '.jpg', type: 'jpeg', quality: 55, clip }); };
+const shot = async (pg, name, clip) => { if (!SHOTS) return; fs.mkdirSync(SHOTS, { recursive: true }); await pg.screenshot(Object.assign({ path: SHOTS + '/' + name + '.jpg', type: 'jpeg', quality: 55 }, clip ? { clip } : {})); };
 
 async function openPortal(pg, kills, biome) {
   await pg.evaluate(([k, bi]) => { G.Save.data.bossKills = k; G.Save.data.biome = bi || 'bosque'; G.Save.save(); G.Aldea.open(false); }, [kills, biome]);
@@ -203,7 +203,6 @@ async function hunt(b) {
     await pg.keyboard.press('KeyF'); await pg.waitForTimeout(1500);
     const r = await pg.evaluate(() => ({ s: G.state, m: G.mode, b: G.bossId, p: G.peligro, bi: G.curBiome }));
     ok(r.m === 'hunt' && r.b === ALL[k] && r.p === 3, `Vesper -> CACERÍA de ${ALL[k]} en Peligro III (${JSON.stringify(r)})`);
-    if (k === 3) await shot(pg, 'p7_vesper', null);
     await pg.evaluate(() => { G.Aldea.open(false); });
   }
   ok(!pg.errs.length, 'Vesper: 0 errores ' + pg.errs.slice(0, 2)); await close(pg);
@@ -474,7 +473,7 @@ async function estatua(b) {
   });
   ok(r.before !== 'estatua' && r.after === 'estatua', `la estatua solo existe tras vencer a Cenizar (antes ${r.before}, después ${r.after})`);
   ok(r.hasArt && r.icons && r.dlg, 'arte procedural (estatua + 6 iconos de destino) y diálogo de la estatua');
-  await pg.evaluate(() => { G.Aldea.pos.x = 790; G.Aldea.pos.y = 440; }); await pg.waitForTimeout(500); await shot(pg, 'p7_estatua', { x: 560, y: 300, width: 400, height: 240 });
+  await pg.evaluate(() => { G.Aldea.pos.x = 540; G.Aldea.pos.y = 482; }); await pg.waitForTimeout(500); await shot(pg, 'p7_estatua', { x: 560, y: 300, width: 400, height: 240 });
   // colisión: Marlo no atraviesa la base de la estatua caminando hacia abajo
   await pg.evaluate(() => { G.Dialog.close(); G.Aldea.pos.x = 790; G.Aldea.pos.y = 440; });
   await pg.keyboard.down('KeyS'); await pg.waitForTimeout(1500); await pg.keyboard.up('KeyS');

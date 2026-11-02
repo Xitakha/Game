@@ -179,8 +179,9 @@
       G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 11, TIERC[d.tier], 'left');
       if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 70, r.y + 20, 10, '#9dffb4', 'left');
       if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx + (d.tutorial ? 140 : 70), r.y + 20, 10, '#9a8fb0', 'left');
-      G.txt(c, d.desc, r.x + 16, r.y + 44, 12, '#d8cfe8', 'left');
-      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 64, 11, '#ffe9a0', 'left');
+      var dl = U.wrap(c, d.desc, 700, 11);   // P7: las descripciones largas (Tundra, Panal, Cráter y varias anteriores) se salían por debajo del botón: 2 líneas de 11 px
+      dl.slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 16, r.y + 38 + k * 13, 11, '#d8cfe8', 'left'); });
+      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 68, 11, '#ffe9a0', 'left');
       var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 80, bw, 9);
       c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 80, bw * G.clamp(prog / d.goal, 0, 1), 9);
       G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 28, r.y + 85, 11, '#d8cfe8', 'left');
