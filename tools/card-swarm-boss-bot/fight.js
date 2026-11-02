@@ -1,7 +1,7 @@
 // uso: (jefes: "boss":"pastor|karceron|letea", "port":8765) node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const fs = require('fs');
-const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, burst: null, horizon: 1600, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765 }, JSON.parse(process.argv[2] || '{}'));
+const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, burst: null, horizon: 1600, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765, nogod: false }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/bot.js', 'utf8');
 async function one(b, i) {
   const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
@@ -24,7 +24,7 @@ async function one(b, i) {
     await pg.evaluate(() => { G.startGame(); });
   }
   await pg.evaluate(botSrc);
-  await pg.evaluate((o) => { window.installBot(o); }, { react: cfg.react, mistakes: cfg.mistakes, dist: cfg.dist, every: cfg.every, godUntilBoss: true, noLevel: cfg.noLevel, inattn: cfg.inattn, hp0: cfg.hp0, burst: cfg.burst != null ? !!cfg.burst : cfg.boss === 'cenizar', horizon: cfg.horizon || (cfg.boss === 'cenizar' ? 2800 : 1600) });
+  await pg.evaluate((o) => { window.installBot(o); }, { react: cfg.react, mistakes: cfg.mistakes, dist: cfg.dist, every: cfg.every, godUntilBoss: !cfg.nogod, noLevel: cfg.noLevel, inattn: cfg.inattn, hp0: cfg.hp0, burst: cfg.burst != null ? !!cfg.burst : cfg.boss === 'cenizar', horizon: cfg.horizon || (cfg.boss === 'cenizar' ? 2800 : 1600) });
   const ph = []; let last = null, res = null; const t0 = Date.now();
   const frames = [];
   while (Date.now() - t0 < 600000) {
@@ -34,9 +34,9 @@ async function one(b, i) {
     if (s.st === 'gameover') { res = s; break; }
     if (s.info && s.info.combatT > cfg.maxSim * 1000) { res = Object.assign(s, { timeout: true }); break; }
   }
-  const fin = await pg.evaluate(() => ({ hand: G.finalHand && G.finalHand.hand.map(h => h && (h.id + h.lvl)).join(','), lvl: G.player.level, kills: G.kills, won: G.won, info: G.Boss.info(), summary: G.Loot.summary && G.Loot.summary.boss, bot: window.__bot && { hb: window.__bot.hurtsBy, minHp: window.__bot.minHp, err: window.__bot.err, log: window.__bot.log }, hp: G.player.hp, parts: G.Boss.e && G.Boss.e.partsBroken, combat: G.Boss.combatT }));
+  const fin = await pg.evaluate(() => ({ hand: G.finalHand && G.finalHand.hand.map(h => h && (h.id + h.lvl)).join(','), lvl: G.player.level, kills: G.kills, won: G.won, info: G.Boss.info(), summary: G.Loot.summary && G.Loot.summary.boss, bot: window.__bot && { hb: window.__bot.hurtsBy, minHp: window.__bot.minHp, err: window.__bot.err, log: window.__bot.log }, hp: G.player.hp, parts: G.Boss.e && G.Boss.e.partsBroken, combat: G.Boss.combatT, tEnd: Math.round((G.time - (G.t0 || 0)) / 1000), boss: !!(G.Boss.e && G.Boss.e.mode !== 'intro') }));
   await pg.close();
-  return { i, hand: fin.hand, lvl: fin.lvl, kills: fin.kills, won: !!fin.won, combatT: Math.round(fin.combat / 1000), bossHp: fin.info && fin.info.hp, parts: fin.parts, phases: ph, hb: fin.bot && fin.bot.hb, minHp: fin.bot && Math.round(fin.bot.minHp), log: fin.won ? undefined : (fin.bot && fin.bot.log), err: fin.bot && fin.bot.err, errs: errs.slice(0, 2), timeout: !!(res && res.timeout), wall: Math.round((Date.now() - t0) / 1000) };
+  return { i, tEnd: fin.tEnd, bossSeen: fin.boss, hand: fin.hand, lvl: fin.lvl, kills: fin.kills, won: !!fin.won, combatT: Math.round(fin.combat / 1000), bossHp: fin.info && fin.info.hp, parts: fin.parts, phases: ph, hb: fin.bot && fin.bot.hb, minHp: fin.bot && Math.round(fin.bot.minHp), log: fin.won ? undefined : (fin.bot && fin.bot.log), err: fin.bot && fin.bot.err, errs: errs.slice(0, 2), timeout: !!(res && res.timeout), wall: Math.round((Date.now() - t0) / 1000) };
 }
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });

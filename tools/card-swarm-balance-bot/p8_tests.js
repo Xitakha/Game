@@ -27,7 +27,7 @@ const FINAL = {
   karceron: { hpCal: 2.3, dmgK: undefined, cadK: undefined, gate: undefined },
   letea:    { hpCal: 3.6, dmgK: undefined, cadK: undefined, gate: undefined },
   yarlak:   { hpCal: 4.5, dmgK: 1.45, cadK: 1.3, gate: 1 },
-  melaria:  { hpCal: 3.6, dmgK: 1.45, cadK: 1.15, gate: 1 },
+  melaria:  { hpCal: 3.6, dmgK: 1.45, cadK: 1.0, gate: 1 },
   cenizar:  { hpCal: 4.1, dmgK: 1.0, cadK: 1.35, gate: 3 }
 };
 
