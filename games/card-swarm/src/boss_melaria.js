@@ -42,6 +42,7 @@
     h: { camW: 0.4 }
   };
   var D = S.DEFS.melaria, H = D.h;
+  D.gateHearts = qn('mheart', D.gateHearts);   // P8: calibración, corazones por puerta
   // Geometría de calibración (README, Melaria P6): factor sobre las zonas del doc (carril 70, picado r 100, cono 80 grados, rosquilla 100-260). El doc deja mucha holgura en la regla de esquiva
   // (Estocada 900 ms frente a 513; Picado 1000 frente a 776...), así que se agrandan las zonas SIN tocar la telegrafía; la regla se sigue cumpliendo con la salida nueva (S.EXIT se recalcula aquí).
   function geo(k) { return (D.geo[k] || 1) * qn('mgeo', 1); }
