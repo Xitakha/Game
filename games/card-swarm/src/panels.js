@@ -30,6 +30,7 @@
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
     if (name === 'forge') G.Tree.open();
     if (name === 'rufo') st.rt = 0;
+    if (name === 'portal') st.pv = null;
     if (name === 'vesper') { G.Quests.seen(); st.vt = st.vt || 0; huntFix(); }
     if (name === 'logros') { st.lsel = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
@@ -299,29 +300,45 @@
   function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
   function lenRect(i) { return { x: 650 + i * 98, y: 94, w: 92, h: 52 }; }
   var R_GO = { x: 650, y: 482, w: 290, h: 52 };
-  // Destino (bioma): decide el jefe. Cripta se abre al vencer al Pastor; Asfodelo al vencer al jefe de la Cripta (J2, aún sin jefe propio)
-  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor' }, { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor', bid: 'karceron' },
-    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', bid: 'letea' },
-    // P4: la Tundra (Yarlak) se abre al vencer a Letea
-    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', bid: 'yarlak' },
-    // P6: el Panal (Melaria) se abre al vencer a Yarlak
-    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', bid: 'melaria' },
-    // P6.5: el Cráter (Cenizar, Asalto) se abre al vencer a los cinco jefes (provisional hasta el Portal de la P7)
-    { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes (apaga las cinco llamas)', bid: 'cenizar' }];
-  function biomeRect(i) { return { x: 650 + i * 48, y: 336, w: 46, h: 42 }; }   // 5 destinos de 56 px (650 + 4 x 58 + 56 = 938 <= 940)
+  // Destino (bioma): decide el jefe. Orden de desbloqueo en cadena (P7): Cripta con el Pastor, Asfódelo con Karceron, Tundra con Letea, Panal con Yarlak, Cráter con los cinco.
+  // hint = pista del Portal ('Lleva Fuego' en Tundra y Panal); lock = requisito en texto corto (chip) y largo (panel de destino).
+  var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor', hint: 'Sin requisitos. El Pastor sufre más con Fuego y Acero.' },
+    { id: 'cripta', name: 'CRIPTA', boss: 'Karceron el Carcelero', need: 'pastor', needName: 'el Pastor Corrupto', short: 'Pastor', bid: 'karceron', hint: 'Karceron y los huesos del Carcelero: Hielo y Rayo les pegan más.' },
+    { id: 'asfodelo', name: 'ASFODELO', boss: 'Letea la Hidra', need: 'karceron', needName: 'Karceron', short: 'Karceron', bid: 'letea', hint: 'Letea odia el Veneno y la Sangre. Cauteriza las cabezas con Fuego.' },
+    { id: 'tundra', name: 'TUNDRA', boss: 'Yarlak el Coloso Gélido', need: 'letea', needName: 'Letea', short: 'Letea', bid: 'yarlak', fire: true, hint: 'LLEVA FUEGO: sin él el Frío te paraliza. Fuego, Sangre y Hielo lo frenan; busca las hogueras.' },
+    { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', short: 'Yarlak', bid: 'melaria', fire: true, hint: 'LLEVA FUEGO: derrite la cera y carameliza la miel; el humo sedante duerme a las abejas.' },
+    { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes', short: 'los 5', bid: 'cenizar', hint: 'ASALTO: 6 ofertas de carta, sin horda ni checkpoints. Cada fase cambia la debilidad: lleva de todo.' }];
+  var BIOME_GRID = [0, 1, 2, 3, 4, 5];   // orden de lectura: 2 columnas x 3 filas
+  var DEST = { x: 440, y: 84, w: 200, h: 152 };
+  function biomeRect(i) { return { x: DEST.x + 4 + (i % 2) * 98, y: DEST.y + 18 + Math.floor(i / 2) * 45, w: 94, h: 42 }; }   // 6 destinos de 94 x 42 (antes 46 x 42 en una fila)
+  P.biomeRect = biomeRect; P.BIOMES = BIOMES;
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
+  // P7: lo que cambia de verdad en cada Peligro, por jefe (el Portal y la cacería lo muestran; los tests comprueban cada variante contra el código)
+  var PEL_BOSS = {
+    pastor: ['', 'Base.', '+1 add en La Llamada; telegrafías -10 %.', 'Embestida doble: tras la 1.ª, 2.ª carga con re-aim.', 'Furia 120 s, partes +30 %, derribos 2,4 s, 2 trofeos por parte.', 'Último aliento: dos desesperados seguidos, hasta 6 adds.'],
+    karceron: ['', 'Base.', '+1 Ascua en las invocaciones; telegrafías -10 %.', 'Lluvia de 9 brasas en vez de 6.', 'Furia 120 s, partes +30 %; la marea de lava vuelve antes.', 'Último aliento: 2.º desesperado = Marea final sin lluvia.'],
+    letea: ['', 'Base.', '+1 Plañidera por invocación; telegrafías -10 %.', 'Rayo del cielo desde la F1, con 6 rayos en línea.', 'Furia 120 s, partes +30 %; las cabezas rebrotan antes.', 'Último aliento: dos desesperados seguidos, hasta 6 adds.'],
+    yarlak: ['', 'Base.', 'La Llamada invoca +1 Lobo (3; 4 desde la F3).', 'Aliento polar de ida y vuelta (30 grados) y Alud de 12 bloques.', 'Furia 120 s, ventisca r 300, Frío x1,3, partes +30 %, derribos 2,4 s.', 'Último aliento: dos Inviernos Eternos (el 2.º con 3 hogueras), hasta 6 adds.'],
+    melaria: ['', 'Base.', 'La Llamada invoca +1 Obrera (3; 4 en la F3).', 'Picado doble: 2.º picado con re-aim de 600 ms.', 'Furia 120 s, miel x1,5 (hasta 54 celdas), partes +30 %, derribos 2,4 s.', 'Último aliento: dos Zumbidos Mortales seguidos, hasta 6 adds.'],
+    cenizar: ['', 'Base: 7 fases, Rosario de 6 eslabones.', 'Daño +5 %, +1 add en Llamadas; telegrafías con suelo de esquiva.', 'Martillazo triple (F3), Eco de 3 s (F4) y 7.º eslabón Eco.', 'Furia 120 s, partes +30 %, 2.º Aviso fantasma de 1 s en el Rosario.', 'Último aliento: dos Cadenas Finales (6 % y 3 %), hasta 6 adds.']
+  };
+  P.pelText = function (bid, n) { return (PEL_BOSS[bid] || [])[n] || PEL_TXT[n]; };
   function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
+  function biomeUnlocked(b, S) { S = S || SV(); return !b.need || (b.need === '*' ? G.Save.craterOpen() : (S.bossKills[b.need] || 0) > 0); }
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
-    var S = SV(), id = S.biome || 'bosque';
-    if (id === 'asfodelo' && !S.bossKills.karceron) id = S.bossKills.pastor ? 'cripta' : 'bosque';
-    if (id === 'tundra' && !S.bossKills.letea) id = S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
-    if (id === 'panal' && !S.bossKills.yarlak) id = S.bossKills.letea ? 'tundra' : S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
-    if (id === 'crater' && !G.Save.craterOpen()) id = S.bossKills.yarlak ? 'panal' : S.bossKills.letea ? 'tundra' : S.bossKills.karceron ? 'asfodelo' : S.bossKills.pastor ? 'cripta' : 'bosque';
-    if (id === 'cripta' && !S.bossKills.pastor) id = 'bosque';
-    return BIOMES.filter(function (b) { return b.id === id; })[0];
+    var S = SV(), id = S.biome || 'bosque', b = BIOMES.filter(function (x) { return x.id === id; })[0] || BIOMES[0], k = 0;
+    if (!biomeUnlocked(b, S)) { BIOMES.forEach(function (x, ix) { if (x.id !== 'crater' && biomeUnlocked(x, S)) k = ix; }); return BIOMES[k]; }
+    return b;
   }
-  function biomeOpen(b) { return !b.locked && (!b.need || (b.need === '*' ? G.Save.craterOpen() : (SV().bossKills[b.need] || 0) > 0)); }
+  P.effBiome = effBiome;
+  function biomeOpen(b) { return !b.locked && biomeUnlocked(b); }
+  // texto de requisito de un destino cerrado (panel del Portal y aviso al tocar)
+  function lockText(b) {
+    var S = SV(), k = S.bossKills;
+    if (b.need === '*') { var n = G.Save.FIVE.filter(function (x) { return (k[x] || 0) > 0; }).length; return 'Bloqueado: vence a los cinco jefes (' + n + '/5) y se abre el Cráter de Cenizar.'; }
+    return 'Bloqueado: vence a ' + b.needName + ' para abrir ' + b.name.charAt(0) + b.name.slice(1).toLowerCase() + '.';
+  }
   function unlockedList() { return G.Cards.defs.filter(function (d) { return d.id && L.unlocked(d.id); }); }
   function toggleAnchor(id) {
     var S = SV(), a = S.anchors, i = a.indexOf(id);
@@ -334,8 +351,12 @@
     for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
     for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
-      if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-      else say('Bloqueado: vence a ' + BIOMES[i].needName + ' para abrir este destino.');
+      if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; S.portalSeen[BIOMES[i].id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+      else { st.pv = BIOMES[i].id; say(lockText(BIOMES[i])); G.sfx('discard', { vol: 0.4 }); }   // un destino cerrado se puede mirar: el panel dice qué hay que vencer
+    }
+    if (inp.hit('ArrowLeft', 'ArrowRight')) {   // teclado: ciclar entre los destinos abiertos
+      var op = BIOMES.filter(biomeOpen), ci = op.indexOf(effBiome()), nx = op[(ci + (inp.hit('ArrowRight') ? 1 : op.length - 1)) % op.length];
+      if (nx) { S.biome = nx.id; S.portalSeen[nx.id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     }
     for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     var bid = effBiome().bid;
@@ -364,7 +385,7 @@
     bg(c, '¿LISTO, MARLO?'); header(c, 360);
     G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 94, 12, '#9a8fb0', 'left');
     drawHand(c);
-    G.txt(c, G.B.anchorSlots + ' anclas fijas; los otros ' + (5 - G.B.anchorSlots) + ' slots se llenan al subir de nivel con tus cartas.', 20, 236, 11, '#9a8fb0', 'left');
+    G.txt(c, G.B.anchorSlots + ' anclas fijas; el resto se llena al subir de nivel.', 20, 236, 11, '#9a8fb0', 'left');
     G.txt(c, 'TUS CARTAS  (toca para fijar / quitar como ancla)', 20, 254, 12, '#9a8fb0', 'left');
     for (i = 0; i < list.length; i++) {
       var r = ancRect(i), isA = S.anchors.indexOf(list[i].id) >= 0;
@@ -392,27 +413,46 @@
     if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 293, 12, '#8a7f96', 'left');
     var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
     G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
+    // P7: panel de destinos (2 x 3 chips de 94 x 42, con icono, Peligro elegido, requisito y marca NUEVO); al lado de la mano, que deja libre ese hueco
+    U.panel(c, DEST.x, DEST.y, DEST.w, DEST.h, { border: '#4a5a8a' });
+    G.txt(c, 'DESTINO  (toca uno)', DEST.x + 10, DEST.y + 11, 11, '#9a8fb0', 'left');
     BIOMES.forEach(function (b, k) {
-      var open = biomeOpen(b), on = cb.id === b.id;
-      U.button(c, biomeRect(k), open ? b.name : '? ' + b.name, { size: 9, color: on ? '#2a6aa8' : open ? '#2c2438' : '#1a1422', hot: '#3a8ad0', border: on ? '#bfeaff' : open ? '#6a5a80' : '#3a3046', off: !open, sub: open ? (on ? 'elegido' : 'P' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'cerrado' });
+      var r = biomeRect(k), open = biomeOpen(b), on = cb.id === b.id, pv = st.pv === b.id, hov = U.inR(r, inp.mouse);
+      c.fillStyle = on ? '#2a6aa8' : open ? (hov ? '#3a3050' : '#2c2438') : (pv ? '#2a1e32' : '#1a1422'); c.fillRect(r.x, r.y, r.w, r.h);
+      c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(r.x, r.y, r.w, 8);
+      c.strokeStyle = on ? '#bfeaff' : pv ? '#c0a060' : open ? '#6a5a80' : '#3a3046'; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3);
+      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 18, r.y + 18, 24, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 8, 20, 20); }
+      G.txt(c, b.name, r.x + 34, r.y + 15, 11, open ? '#fff' : '#7a7086', 'left');
+      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 6, r.y + 33, 10, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
+      if (on && !SV().portalSeen[b.id]) { SV().portalSeen[b.id] = 1; G.Save.save(); }
+      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 32, r.y + 26, 29, 12); G.txt(c, 'NUEVO', r.x + r.w - 17.5, r.y + 32.5, 9, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
+      else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 10, r.y + 10, { size: 12 });   // pista: 'Lleva Fuego'
+      if (!open) { c.fillStyle = '#7a7086'; c.fillRect(r.x + r.w - 14, r.y + 8, 8, 6); c.strokeStyle = '#7a7086'; c.lineWidth = 2; c.strokeRect(r.x + r.w - 13, r.y + 3, 6, 6); }
     });
-    // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
-    var ln = G.B.matLens(cb.id);
-    if (ln) {
-      var lx = 650, ly = 383;
-      G.txt(c, 'MEJOR', lx, ly + 6, 9, '#9dffb4', 'left'); lx += 38;
-      ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { size: 12 }); lx += 15; });
-      lx += 10; G.txt(c, 'PEOR', lx, ly + 6, 9, '#ff9a8a', 'left'); lx += 30;
-      ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { resist: true, size: 12 }); lx += 15; });
+    // info del destino elegido (o del cerrado que se está mirando): chips de debilidades, pista y requisito
+    var ib = st.pv ? BIOMES.filter(function (x) { return x.id === st.pv; })[0] : cb, ln = ib && biomeOpen(ib) ? G.B.matLens(ib.id) : null;
+    if (ib && !biomeOpen(ib)) {
+      G.txt(c, ib.name + ' (' + ib.boss + ')', 650, 344, 11, '#ffb08a', 'left');
+      U.wrap(c, lockText(ib), 290, 10).slice(0, 3).forEach(function (l, k) { G.txt(c, l, 650, 358 + k * 12, 10, '#ff9a8a', 'left'); });
+      if (ib.need === '*') G.Save.FIVE.forEach(function (bk, k) { var got = (SV().bossKills[bk] || 0) > 0; c.fillStyle = got ? '#ffd24a' : '#3a3046'; c.beginPath(); c.arc(660 + k * 20, 392, 6, 0, 6.283); c.fill(); c.strokeStyle = '#1b1124'; c.lineWidth = 2; c.stroke(); });
+    } else if (ib) {
+      if (ln) {   // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
+        var lx = 650, ly = 344;
+        G.txt(c, 'MEJOR', lx, ly + 6, 9, '#9dffb4', 'left'); lx += 38;
+        ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { size: 12 }); lx += 15; });
+        lx += 10; G.txt(c, 'PEOR', lx, ly + 6, 9, '#ff9a8a', 'left'); lx += 30;
+        ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { resist: true, size: 12 }); lx += 15; });
+      }
+      U.wrap(c, ib.hint, 290, 10).slice(0, 3).forEach(function (l, k) { G.txt(c, l, 650, 366 + k * 12, 10, ib.fire ? '#ffc890' : '#c8b8e8', 'left'); });
     }
-    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax], 650, 401, 11, '#9a8fb0', 'left');
+    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 650, 401, 11, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
       U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 16, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
     }
     var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : '');
     G.txt(c, pl1, 650, 453, 10, '#ffe9a0', 'left');
-    U.wrap(c, PEL_TXT[psel] + (psel >= 4 ? ' Recomendado: DPS >= 110.' : ''), 290, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 650, 466 + k * 12, 10, '#c8b8e8', 'left'); });
+    U.wrap(c, P.pelText(bid, psel), 290, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 650, 466 + k * 12, 10, '#c8b8e8', 'left'); });
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
     U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 15, sub: 'Enter  -  ' + names });
   }

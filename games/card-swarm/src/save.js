@@ -1,4 +1,6 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v9 (P7, Integración): portalSeen { destino: 1 } (destinos ya vistos abiertos en el Portal: los recién desbloqueados se marcan 'NUEVO'); la rama 'Ruta' del árbol usa nodos normales (nodes) y los trofeos ya guardados (trophies);
+   los platos nuevos y las misiones nuevas no necesitan datos propios (shop.dish / pending.dish / quest). Migración v8 -> v9 con copia en swarmhand.save.v8: los destinos que ya tenías abiertos salen como vistos.
    v8 (P6.5, Cenizar): peligro.cenizar, endingSeen (cinemática final vista), trofeos de Cenizar; el Cráter se abre al vencer a los 5 jefes. Migración v7 -> v8 con copia en swarmhand.save.v7.
    v7 (P6, Panal + Melaria): peligro.melaria; el Panal se abre al vencer a Yarlak (bossKills.yarlak). Migración v6 -> v7 con copia en swarmhand.save.v6; quien ya venció a Yarlak ve el Panal abierto.
    v6 (P4.5, minijefes): insignias { id: n } (trofeo menor de cada minijefe) y elites por SLOT (mini_slot1 / mini_slot2 en vez de mini_bulwark / mini_hive). Migración v5 -> v6 con copia en swarmhand.save.v5.
@@ -14,7 +16,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 8;
+  var KEY = 'swarmhand.save', VERSION = 9;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -35,7 +37,7 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   var warned = false;
@@ -78,6 +80,12 @@
       d.v = 8; d.peligro = (d.peligro && typeof d.peligro === 'object') ? d.peligro : {}; if (!d.peligro.cenizar) d.peligro.cenizar = 1; if (d.endingSeen == null) d.endingSeen = false;
       d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated8 = 1;
     }
+    if (d.v === 8) {   // P7: destinos vistos del Portal (los ya abiertos no se marcan como nuevos)
+      d.v = 9; var bk8 = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {};
+      d.portalSeen = { bosque: 1 }; if (bk8.pastor > 0) d.portalSeen.cripta = 1; if (bk8.karceron > 0) d.portalSeen.asfodelo = 1; if (bk8.letea > 0) d.portalSeen.tundra = 1; if (bk8.yarlak > 0) d.portalSeen.panal = 1;
+      if (['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(function (b) { return bk8[b] > 0; })) d.portalSeen.crater = 1;
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated9 = 1;
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -99,7 +107,7 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });

@@ -33,9 +33,12 @@
   function npcName(id) { var n = Lay.npcs[id] || FALLBACK.npcs[id]; return n.name || FALLBACK.npcs[id].name; }
 
   // Lista de interactuables (pies). El portal es un objeto sin NPC.
+  var STATUE = { x: 790, y: 505 };   // P7: pies de la estatua del Hogar (el brasero de la P6.5 ocupaba el mismo sitio)
+  function statueOn() { var k = G.Save.data.bossKills; return !!(k && k.cenizar > 0); }
   function ints() {
     var out = NPC_ORDER.map(function (id) { var p = npcPos(id); return { id: id, x: p.x, y: p.y, name: npcName(id), npc: true }; });
     var sp = Lay.spots.portal; out.push({ id: 'portal', x: sp.x, y: sp.y, name: 'Portal', npc: false });
+    if (statueOn()) out.push({ id: 'estatua', x: STATUE.x, y: STATUE.y - 22, name: 'Estatua del Hogar', npc: false });   // P7: estatua de la plaza (tras vencer a Cenizar)
     return out;
   }
   function target() {
@@ -174,6 +177,12 @@
     S.flags.lanudo = (S.flags.lanudo || 0) + 1;
     D.say(w, lines, [{ label: 'Consejo', fn: function () { D.say(w, [rot('tipn_lanudo', lanudoTips())]); } }, { label: 'Logros', fn: function () { openPanel('logros'); } }, bye]);
   }
+  // P7: la estatua del Hogar. Cuenta lo que has apagado (victorias, Peligro más alto, Insignia 'Brasa Primera') y cierra con el título
+  function talkStatue(it) {
+    var S = G.Save.data, k = S.bossKills, wins = G.Save.BOSSES.reduce(function (n, b) { return n + (k[b] || 0); }, 0), pel = Math.max.apply(null, G.Save.BOSSES.map(function (b) { return (G.Save.pelMax(b) - 1) * ((k[b] || 0) > 0 ? 1 : 0); })) + 1;
+    var w = who(it, '#ffd24a'); w.name = 'Estatua del Hogar'; w.y = it.y - 100;
+    D.say(w, ['Seis llamas en piedra: Pastor, Karceron, Letea, Yarlak, Melaria y, arriba, la Brasa Primera.', 'Placa: "Aquí volvió a arder el hogar de Rescoldo. ' + wins + ' jefes derribados, Peligro hasta ' + G.Boss.ROMAN[G.clamp(pel, 1, 5)] + '."'], [{ label: 'Adiós', fn: function () {} }]);
+  }
   function talkCastana(it) {
     var S = G.Save.data, w = who(it), Cook = G.Cook, cur = Cook.pending(), bye = { label: 'Adiós', fn: function () {} };
     var first = !flag('castana'), line;
@@ -187,6 +196,7 @@
   function talk(it) {
     var S = G.Save.data, w = who(it), Q = G.Quests, L = G.Loot;
     if (it.id === 'portal') { panel = 'portal'; mode = 'panel'; G.Panels.open('portal'); G.sfx('whoosh', { vol: 0.5 }); return; }
+    if (it.id === 'estatua') { talkStatue(it); return; }
     if (it.id === 'lanudo') { talkLanudo(it); return; }
     if (it.id === 'castana') { talkCastana(it); return; }
     var bye = { label: 'Adiós', fn: function () { /* cierra */ } }, ch = { label: 'Charlar', fn: function () { chat(it); } };
@@ -225,6 +235,7 @@
     var w = Lay.walk;
     if (x < w.x + 10 || x > w.x + w.w - 10 || y < w.y || y > w.y + w.h) return true;
     var i, c, cols = Lay.colliders;
+    if (statueOn()) cols = cols.concat([{ x: STATUE.x - 44, y: STATUE.y - 34, w: 88, h: 28 }]);   // P7: base de la estatua
     for (i = 0; i < cols.length; i++) {
       c = cols[i];
       if (x > c.x - FEET && x < c.x + c.w + FEET && y > c.y - 2 && y < c.y + c.h + 2) return true;
@@ -370,9 +381,10 @@
     return o;
   }
 
-  // P6.5: brasero de la plaza. Al vencer a Melaria arde (es el punto de entrada provisional al Cráter, que está en el Portal); tras vencer a Cenizar queda la estatua 'Brasa Primera'
+  // P6.5: brasero de la plaza (arde al vencer a Melaria). P7: tras vencer a Cenizar lo sustituye la estatua del Hogar (Assets.drawHearthStatue, assets_p7.js)
   function drawBrasero(c, now) {
     var k = G.Save.data.bossKills; if (!k.melaria) return;
+    if (statueOn() && window.Assets && Assets.drawHearthStatue) { Assets.drawHearthStatue(c, STATUE.x, STATUE.y, now, { lit: G.Save.FIVE.filter(function (b) { return k[b] > 0; }).length, final: true }); return; }
     var x = 790, y = 505, fl = Math.sin(now / 90) * 3, done = (k.cenizar || 0) > 0;
     c.save(); c.strokeStyle = '#1b1124'; c.lineWidth = 3; c.fillStyle = '#4a4352';
     c.beginPath(); c.moveTo(x - 22, y - 14); c.lineTo(x + 22, y - 14); c.lineTo(x + 14, y + 4); c.lineTo(x - 14, y + 4); c.closePath(); c.fill(); c.stroke(); c.fillRect(x - 4, y + 4, 8, 14); c.strokeRect(x - 4, y + 4, 8, 14);
