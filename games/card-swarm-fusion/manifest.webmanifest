@@ -1,0 +1,21 @@
+{
+  "id": "swarm-hand-fusion/",
+  "name": "Swarm Hand: Fusión",
+  "short_name": "Swarm Fusión",
+  "description": "Prototipo: ataque básico automático, cartas como infusiones y poderes activos por fusión.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#07050c",
+  "theme_color": "#07050c",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
