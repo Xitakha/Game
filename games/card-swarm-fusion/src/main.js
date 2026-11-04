@@ -343,6 +343,7 @@
     var hq = /[?&]hand=([^&]+)/.exec(location.search);
     if (G.mode === 'practice' && G.practiceHand && G.practiceHand.boss === G.bossId && !hq) {   // reinicio rápido: misma mano del intento anterior
       G.practiceHand.hand.forEach(function (h) { if (h) for (var n = 0; n < h.lvl; n++) G.Cards.add(h.id); });
+      (G.practiceHand.actives || []).forEach(function (a) { if (a) G.Fusion.grant(a.id, a.lvl); });   // FUSION
       G.Cards.recalc(false);
     } else if (G.mode !== 'run' && !hq && !G.noPrep) G.prep = { left: 6, total: 6 };
     if (hq) { decodeURIComponent(hq[1]).split(',').forEach(function (kv) { var a = kv.split(':'), n = parseInt(a[1], 10) || 1; for (var i = 0; i < n; i++) G.Cards.add(a[0]); }); G.Cards.recalc(false); }

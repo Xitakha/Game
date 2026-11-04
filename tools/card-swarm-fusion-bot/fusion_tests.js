@@ -131,12 +131,12 @@ async function powers() {
   for (const lv of [1, 2]) for (const id of IDS) {
     if (lv === 2 && !['tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].includes(id)) continue;
     const pg = await mk(b, `reset=1&god=1&direct=1&all=1&speed=3&nointro=1&actives=${id}${lv === 2 ? '2' : ''}&hand=spark:1,shard:1`);
-    await sleep(pg, 600); await E(pg, () => { G.player.hp = 60; });
+    await autoSkip(pg); await sleep(pg, 600); await E(pg, () => { G.player.hp = 60; });
     await E(pg, () => { for (let i = 0; i < 16; i++) { const a = i * 0.4; G.Enemies.spawn('worm', G.player.x + Math.cos(a) * (70 + i * 7), G.player.y + Math.sin(a) * (70 + i * 7)); } });
     await sleep(pg, 900);
     await E(pg, id => { G.enemies.forEach(e => { e.hp = e.maxHp = 600; if (id === 'descarga') G.Combat.poison(e, 3); if (id === 'filo' || id === 'tormenta') G.Combat.slow(e, 0.3, 6000); }); G.player.actives[0].cd = 0; }, id);
     const hp0 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0));
-    await pg.keyboard.press('KeyQ'); await sleep(pg, 400);
+    await pg.keyboard.press('KeyQ'); await sleep(pg, ['filo', 'descarga'].includes(id) ? 20 : 100);
     let st = await E(pg, () => { const s = G.Fusion.snapshot(); return { s, fields: G.Fusion.fields.length, axes: G.Fusion.axes.length, fxs: G.Fusion.fxs.length, on: !!G.player.actives[0].st, marks: G.enemies.filter(e => e.hemoT > 0).length, buff: G.player.fusBuffT > 0 }; });
     const tag = `${id}${lv === 2 ? ' Nv2' : ''}`;
     ok(st.s.actives[0].uses === 1 && st.s.actives[0].cd > 5000, `${tag}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
@@ -159,10 +159,10 @@ async function powers() {
   await done(pg, 'pacto-min');
   pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=2&nointro=1&actives=iman&hand=spark:1');
   await sleep(pg, 500); const im = await E(pg, async () => {
-    const p = G.player; G.enemies.length = 0; G.Enemies.spawn('worm', p.x + 120, p.y); G.enemies[0].spawnT = 0; const d0 = Math.hypot(G.enemies[0].x - p.x, G.enemies[0].y - p.y);
+    const p = G.player; G.enemies.length = 0; G.Enemies.spawn('worm', p.x + 120, p.y); const w = G.enemies[0]; w.spawnT = 0; const d0 = Math.hypot(w.x - p.x, w.y - p.y);
     G.projectiles.push({ team: 'e', x: p.x + 60, y: p.y, vx: 0, vy: 0, life: 5000, r: 5, dmg: 5, ang: 0, kind: 'arrow', hit: new Set(), o: {}, t: 0, rot: 0 }); const ne0 = G.projectiles.filter(q => q.team === 'e').length;
-    p.actives[0].cd = 0; G.Fusion.fire(0); await new Promise(r => setTimeout(r, 900));
-    return { d0, d1: G.enemies[0] ? Math.hypot(G.enemies[0].x - p.x, G.enemies[0].y - p.y) : 0, ne0, ne1: G.projectiles.filter(q => q.team === 'e' && q.life > 0).length };
+    p.actives[0].cd = 0; G.Fusion.fire(0); await new Promise(r => setTimeout(r, 500));
+    return { d0, d1: Math.hypot(w.x - p.x, w.y - p.y), ne0, ne1: G.projectiles.filter(q => q.team === 'e' && q.life > 0).length };
   });
   ok(im.d1 < im.d0 - 40, `iman: tira de los enemigos pequeños (${Math.round(im.d0)} -> ${Math.round(im.d1)})`);
   ok(im.ne1 < im.ne0, 'iman: destruye proyectiles enemigos');

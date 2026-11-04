@@ -687,8 +687,8 @@
   };
   Cook.drawHud = function (c) {
     var d = G.runBuff && G.runBuff.dish ? Cook.def(G.runBuff.dish) : null; if (!d) return;
-    c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(66, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(67, G.H - 33, 146, 20);
-    U.part(c, d.icon, 80, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 94, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
+    c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(462, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(463, G.H - 33, 146, 20);   // FUSION: a la derecha de la mano
+    U.part(c, d.icon, 476, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 490, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
   };
   function dRow(i) { return { x: 14, y: 70 + i * 63, w: 932, h: 57 }; }
   function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 4, w: 156, h: 48 }; }
