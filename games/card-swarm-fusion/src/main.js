@@ -97,7 +97,8 @@
     },
     light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
     // Multiplicador GLOBAL de daño de cartas (armas, combos, zonas, estados). Aplicado en G.Combat.deal y G.Combat.dot. No afecta a enemigos. 0.98 = -2 %.
-    cardDmgMul: 0.98 * (qnum('cmul', 1) || 1),   // ?cmul=1.2 (solo calibración): modela una mano forjada (DPS x1,2) para medir Peligro con el bot
+    cardDmgMul: 0.98 * (qnum('cmul', 3.5) || 1),   // FUSION: x3,5 por defecto (calibrado con play_bot.js contra la línea base del original; ?cmul=1 = cifras puras del diseño)
+    // (original: cardDmgMul: 0.98 * (qnum('cmul', 1) || 1),   // ?cmul=1.2 (solo calibración): modela una mano forjada (DPS x1,2) para medir Peligro con el bot
     // Curación por golpe (v5): el robo de vida (Colmillo) y el Pacto ardiente solo curan con esta probabilidad por kill, a cambio de una cantidad mayor.
     // Cura media por kill: Colmillo 1 -> 0,6 HP (-40 %); Pacto ardiente 2 -> 0,8 HP por kill de Fuego (-60 %). Sangre envenenada (4 HP cada 15 kills) no cambia.
     heal: { chance: 0.2, fang: 3, pact: 4, bloodpoison: 4 },

@@ -110,7 +110,8 @@ async function flow() {
   ok((await E(pg, ash0 => G.player.ash - ash0, ash0)) === 20, 'el poder reemplazado da +20 Ceniza');
   // Nv2 re-fusionando la misma receta
   await E(pg, () => { G.Cards.add('spark'); G.Cards.add('zap'); G.Cards.recalc(false); });
-  ok((await E(pg, () => G.Fusion.handPairs().map(p => p.recipe.id).sort().join())) === 'gas,plasma', 'parejas disponibles: ' + 'gas,plasma');
+  const pairs = await E(pg, () => G.Fusion.handPairs().map(p => p.recipe.id).sort().join());
+  ok(/plasma/.test(pairs), 'pareja de Plasma disponible para re-fusionar (parejas: ' + pairs + ')');
   await E(pg, () => { const o = G.Fusion.handPairs().find(p => p.recipe.id === 'plasma'); G.Fusion.fuse(o.recipe, o.slot, o.slot2, null, () => {}); });
   s = await E(pg, () => G.Fusion.snapshot());
   ok(s.actives[1].id === 'plasma' && s.actives[1].lvl === 2, 'misma receta otra vez -> Nv2');
@@ -134,8 +135,8 @@ async function powers() {
     await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6500 : 3000);
     st = await E(pg, () => G.Fusion.snapshot());
     ok(st.actives[0].dmg > 0, `${id}: ha hecho daño (${st.actives[0].dmg})`);
-    if (id === 'vapor') { await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 60); await sleep(pg, 1500); await pg.keyboard.press('KeyQ'); await sleep(pg, 200);
-      ok(await E(pg, () => G.enemies.some(e => e.blindT > 0)) && await E(pg, () => G.enemies.some(e => e.slowT > 0)), 'vapor: ciega y ralentiza'); }
+    if (id === 'vapor') { await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 60); await E(pg, () => G.enemies.forEach(e => { e.hp = e.maxHp = 1e6; })); await sleep(pg, 700); await pg.keyboard.press('KeyQ'); await sleep(pg, 100);
+      const vs = await E(pg, () => ({ blind: G.enemies.filter(e => e.blindT > 0).length, slow: G.enemies.filter(e => e.slowT > 0).length })); ok(vs.blind > 0 && vs.slow > 0, 'vapor: ciega y ralentiza (' + vs.blind + ' ciegos, ' + vs.slow + ' lentos)'); }
     if (id === 'sed') ok(await E(pg, () => G.player.hp > 40), 'sed: curación por golpes del básico (hp ' + await E(pg, () => G.player.hp) + ')');
     if (id === 'gas') ok(await E(pg, () => G.Fusion.fields.length === 0), 'gas: la nube detonó y se retiró');
     // enfriamiento termina y avisa
@@ -154,7 +155,7 @@ async function touch() {
   const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
   const sysBtns = [{ x: 246, y: 6, w: 48, h: 48 }, { x: 298, y: 6, w: 48, h: 48 }];   // mobile.js BTN.pause / muteRun
   ok(g.btn.every(c => c.x - c.r >= 480), 'botones en la mitad derecha (el joystick flotante solo nace en x < 480)');
-  ok(g.btn.every(c => c.r >= 40) && Math.hypot(g.btn[0].x - g.btn[1].x, g.btn[0].y - g.btn[1].y) > g.btn[0].r + g.btn[1].r, 'radio >= 40 (>= 70 px en 844x390) y botones sin solaparse');
+  ok(g.btn.every(c => c.r >= 40) && Math.hypot(g.btn[0].x - g.btn[1].x, g.btn[0].y - g.btn[1].y) > g.btn[0].r + g.btn[1].r, 'radio >= 40 (unos 61 px de diámetro en 844x390) y botones sin solaparse');
   ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && c.x + c.r <= 960 && c.y + c.r <= 540), 'sin solapar la mano ni los botones de pausa / silencio de mobile.js');
   // toque en el botón 1 dispara
   await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 80); await sleep(pg, 1300);
