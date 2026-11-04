@@ -46,7 +46,7 @@
     if (e.type === 'boss' && e.def && e.def.noPoison) return;   // P6: Melaria es inmune a los estados de veneno (el daño directo va x0,5 en su tabla de resistencias)
     var a = A(), m = M();
     e.poisonN = Math.min(m.poisonMax, (e.poisonN || 0) + (n || 1));
-    var dur = 4000 + (a.plague && e.slowT > 0 ? 3000 : 0), tf = G.Tree.fx;
+    var dur = 4000 + ((a.plague || e.fusPlague) && e.slowT > 0 ? 3000 : 0), tf = G.Tree.fx;   // FUSION: Escarcha tóxica marca (fusPlague)
     e.poisonT = Math.max(e.poisonT, dur);
     if (tf.plaga && (e.big || e.type === 'boss')) e.poisonT = 1e9;   // Plaga (Veneno, maestría): el veneno nunca expira en élites y jefes
     if (tf.neurotoxina && e.poisonN >= 5 && !(e.neuCd > 0)) { e.neuCd = 3000; C.stun(e, 1000); fx.burst(e.x, e.y, 6, '#b4ff7a', 120, 400, 3, { add: true }); }   // Neurotoxina: 5 stacks aturden 1 s
@@ -109,7 +109,8 @@
     }
     if (tf.quebradizo && slowed) dmg *= 1.25;                          // Quebradizo (Hielo): +25 % de daño a ralentizados
     if (tf.berserker && p.hp < p.maxHp * 0.4) dmg *= 1.35;            // Berserker (Sangre): +35 % con menos del 40 % de vida
-    if (p.pactT > 0) dmg *= 1.1;                                       // Pacto de sangre: +10 % de daño 5 s
+    if (p.pactT > 0) dmg *= 1.1;
+    if (p.fusBuffT > 0) dmg *= p.fusBuffMul || 1.25;   // FUSION: buff de Pacto ardiente                                       // Pacto de sangre: +10 % de daño 5 s
     if (a.pact && p.hp < p.maxHp * 0.5) dmg *= 1.2;
     if (tag === 'fire' && a.vapor && slowed) {
       dmg *= 1.5;
@@ -321,6 +322,7 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
+    if (e.hemoT > 0) G.Fusion.hemoDeath(e);   // FUSION: Hemotoxina
     if (tag === 'fire' && G.Tundra.on) G.Tundra.fireKill();   // P3: cada baja con Fuego baja el Frío (máx. -4 %/s)
     var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
     for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
@@ -353,7 +355,7 @@
     if (a.pact && tag === 'fire' && Math.random() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
     if (e.poisonN > 0) {
       if (a.bloodpoison) { p.poisonKills++; if (p.poisonKills % 15 === 0) G.Player.heal(p, B.heal.bloodpoison, 'bloodpoison'); }
-      if (a.plague) {
+      if (a.plague || e.fusPlague) {
         var n = 0, L = C.inRange(e.x, e.y, 70);
         for (var k = 0; k < L.length && n < 3; k++) if (L[k] !== e) { C.poison(L[k], 1); fx.bolt(e.x, e.y, L[k].x, L[k].y, '#7be34a', 2); n++; }
       }

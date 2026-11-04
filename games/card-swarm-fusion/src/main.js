@@ -29,7 +29,7 @@
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
     player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
-    anchorSlots: 2,                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
+    anchorSlots: 1,  // FUSION: 1 carta ancla (2 con el nodo del tronco)                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
       worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1, maxAlive: 40 },
@@ -535,7 +535,7 @@
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
-    if (!G.bossUrl && !G.huntUrl && !/[?&]village=1/.test(location.search)) G.startGame();   // FUSION: el prototipo arranca directo en partida (?village=1 abre la aldea)
+    if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(location.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
     if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };

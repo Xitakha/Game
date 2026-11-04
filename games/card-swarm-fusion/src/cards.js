@@ -46,7 +46,7 @@
   var ORB = { ring: 1, thorns: 1 };
   C.ORB = ORB;
 
-  C.combos = [];   // FUSION: los 12 combos pasivos están desactivados (sus parejas son ahora recetas de fusión, ver G.Fusion.recipes)
+  C.combos = [];   // FUSION: fusion.js lo rellena con las 12 recetas (solo informativo: ya no hay combos pasivos)
 
   C.active = {}; C.flash = {};
   C.mods = {};
@@ -64,7 +64,9 @@
     G.player.hand = []; for (var i = 0; i < SLOTS; i++) G.player.hand.push(null);
     C.active = {}; C.flash = {}; C.off = null;
     // anclas de la Base: precargadas en los primeros slots (solo si siguen desbloqueadas)
-    // FUSION: cuenta vacía, sin anclas; se empieza con la elección de 1 carta inicial (modo 'start')
+    // FUSION: anclas de la Base (1 slot; 2 con el nodo del tronco). La 1.ª ancla es la carta inicial que se conserva en la 1.ª fusión. Sin ancla: elección inicial (modo 'start')
+    var an = G.Save.data.anchors || [];
+    for (i = 0; i < an.length && i < G.B.anchorSlots; i++) if (G.Fusion.unlockedCard(an[i])) { var ar = C.add(an[i]); if (ar && !hand().some(function (h) { return h && h.starter; })) hand()[ar.slot].starter = true; }
     G.Fusion.reset();
     C.recalc(false); G.player.hp = G.player.maxHp;
   };
@@ -90,22 +92,8 @@
     m.magnet = lv('magnet') > 0 ? 2 : 1; m.xpMul = (1 + 0.2 * lv('magnet')) * (rb.xp ? 1.1 : 1);
     m.ashMul = 1 + 0.5 * lv('satchel'); m.rerollDisc = lv('satchel') > 0 ? 5 : 0;
     p.maxHp = G.B.player.hp + 30 * lv('heart') + (tf.jalea ? 10 : 0) + (rb.hp || 0); p.hp = Math.min(p.hp, p.maxHp);   // P7: 'Jalea de reserva' (Ruta) +10 y 'Caldo del Hogar Reencendido' +12
-    var prev = C.active, now = {}, idx = 0;
-    C.combos.forEach(function (c, i) {
-      if (C.hasTag(c.a) && C.hasTag(c.b)) {
-        now[c.k] = true;
-        if (G.Save && G.Save.data && G.Save.data.combosSeen && !G.Save.data.combosSeen[c.k]) { G.Save.data.combosSeen[c.k] = 1; G.Save.save(); }   // Ulalume y Lanudo comentan los combos que ya viste
-        if (announce && !prev[c.k]) {
-          G.Hud.banner(c.name + '!', 2000, '#ffe9a0', c);
-          G.Snd.play('combo', c.pitch);
-          C.flash[c.k] = 1800; idx = i;
-          G.fx.ring(p.x, p.y, 10, 120, 500, G.TAGS[c.a].color, 6); G.fx.ring(p.x, p.y, 6, 90, 400, G.TAGS[c.b].color, 4);
-          G.fx.burst(p.x, p.y, 24, G.TAGS[c.b].color, 260, 600, 4, { add: true });
-          G.fx.burst(p.x, p.y, 24, G.TAGS[c.a].color, 200, 600, 4, { add: true });
-        }
-      }
-    });
-    C.active = now;
+    C.active = {};   // FUSION: los combos pasivos ya no se activan (son las recetas de fusión)
+
   };
 
   C.snapshot = function () {
@@ -125,7 +113,7 @@
 
   // ------------------------------------------------------------- Oferta
   // Solo cartas de TU colección (desbloqueadas en la Base) y que no estén ya a Nv3
-  function pool() { return C.defs.filter(function (d) { var s = C.slotOf(d.id); return G.Fusion.inPool(d.id) && (!s || s.lvl < 3); }); }   // FUSION: 12 infusiones + 5 pasivas, todas disponibles
+  function pool() { return C.defs.filter(function (d) { var s = C.slotOf(d.id); return G.Fusion.unlockedCard(d.id) && (!s || s.lvl < 3); }); }   // FUSION: lo desbloqueado en la forja (o todo con ?all=1)
   function rndOf(a) { return a[Math.floor(Math.random() * a.length)]; }
   // FUSION: 'newCombos' devuelve las RECETAS que completaría una carta de esta etiqueta con las cartas de ataque de la mano (formato {k,name,a,b,desc,recipe,slot})
   C.newCombos = function (tag) {
@@ -136,7 +124,7 @@
   C.makeOffer = function (mode) {
     var P = pool(), out = [], full = C.count() >= SLOTS, F = G.Fusion;
     if (mode === 'start') {   // 3 cartas de etiquetas distintas
-      var tags = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'].sort(function () { return Math.random() - 0.5; }).slice(0, 3);
+      var tags = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'].filter(function (tg) { return P.some(function (d) { return d.type === 'attack' && d.tag === tg; }); }).sort(function () { return Math.random() - 0.5; }).slice(0, 3);
       return tags.map(function (tg) { return rndOf(P.filter(function (d) { return d.type === 'attack' && d.tag === tg; })).id; });
     }
     var syn = P.filter(function (d) { return d.type === 'attack' && !C.slotOf(d.id) && C.newCombos(d.tag).length > 0; });
@@ -213,7 +201,7 @@
     if (fo.length) {   // la carta completa una receta con la mano: FUSIONAR YA o A LA MANO
       var d0 = C.def(id), btns = fo.slice(0, 3).map(function (o) {
         var keep = G.Fusion.fused === 0, pn = C.def(hand()[o.slot].id).short;
-        return { label: 'FUSIONAR YA: ' + o.recipe.name + '   (' + pn + ' + ' + d0.short + (keep ? ';  conservas ' + pn : ';  se consumen las dos') + ')', col: '#8a6a1a',
+        return { label: 'FUSIONAR YA: ' + o.recipe.short + '  (' + pn + ' + ' + d0.short + (keep ? ';  conservas ' + pn : ';  se consumen las dos') + ')', col: '#8a6a1a',
           fn: function () { G.Fusion.fuse(o.recipe, o.slot, null, id, function () { C.closeOffer(); }); } };
       });
       btns.push({ label: 'A LA MANO  (' + d0.short + ' como infusión)', col: '#2a4a6a', fn: function () { handPick(i); } });
@@ -272,7 +260,7 @@
   C.slotRect = function (i, big) {
     if (big === 'end') return { x: 20 + i * 94, y: 118, w: 86, h: 114 };
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
-    return { x: 280 + i * 82, y: 428, w: 72, h: 96 };
+    return { x: 8 + i * 77, y: 430, w: 72, h: 96 };   // FUSION: la mano va a la IZQUIERDA (los 4 botones de poderes ocupan la zona del pulgar derecho)
   };
   C.skipRect = { x: 580, y: 440, w: 250, h: 48 };
   C.rerollRect = { x: 580, y: 352, w: 250, h: 48 };

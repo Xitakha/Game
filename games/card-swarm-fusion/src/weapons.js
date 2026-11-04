@@ -338,6 +338,7 @@
     }
   }
 
+  W.FIRE = FIRE; W.updateOrbital = updateOrbital; W.updateAura = updateAura;   // FUSION: las cartas no proyectil siguen como armas auxiliares (fusion.js)
   W.update = function (dt) {
     var p = G.player; if (p.dead) return;
     updateExtras(dt, p);

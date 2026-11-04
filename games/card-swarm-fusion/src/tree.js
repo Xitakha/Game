@@ -173,8 +173,8 @@
       desc: 'Abre los nodos de nivel T3 (cartas épicas) y T4 (maestrías).' },
     { id: 'ASH', tree: 'trunk', tag: 'neutral', type: 'P', name: 'Ceniza viva', col: 4, row: 1, icon: 'burst', fx: 'ash', cost: { pf: 1, parts: { thread: 20 }, brasas: 30 },
       desc: 'Pasivo: empiezas cada expedición con +20 de Ceniza.' },
-    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Tercera ancla', col: 2, row: 2, icon: '3', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
-      desc: 'Llevas 3 cartas ancla ya en la mano al salir, en vez de 2.' },
+    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Segunda ancla', col: 2, row: 2, icon: '2', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
+      desc: 'Llevas 2 cartas ancla ya en la mano al salir, en vez de 1 (Fusión: la 1.ª es la carta inicial que se conserva en la 1.ª fusión).' },
     { id: 'N1', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Pezuñas veloces', col: 1, row: 3, icon: 'boots', card: 'hooves',
       desc: 'Desbloquea la pasiva Pezuñas veloces: +12 % de velocidad de movimiento.' },
     { id: 'N2', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Imán de brasas', col: 2, row: 3, icon: 'magnet', card: 'magnet',
@@ -382,7 +382,7 @@
       if (n.type === 'M' && n.ch[o.c]) fx[n.ch[o.c].fx] = true;
     }
     T.fx = fx;
-    G.B.anchorSlots = fx.anchor3 ? 3 : 2;
+    G.B.anchorSlots = fx.anchor3 ? 2 : 1;   // FUSION: 1 ancla (la carta inicial); el nodo del tronco da la 2.ª
     S.anchors = S.anchors.filter(function (id2, i, a) { return G.Loot.unlocked(id2) && a.indexOf(id2) === i; }).slice(-G.B.anchorSlots);
   };
   T.startAsh = function () { return (T.fx.ash ? 20 : 0) + (G.runBuff && G.runBuff.tonic ? 40 : 0); };
