@@ -174,7 +174,7 @@
     for (var i = 0; i < h.length; i++) {
       var s = h[i]; if (!s) continue; var d = C.def(s.id); if (d.type !== 'attack') continue;
       var o = inf[d.tag] || (inf[d.tag] = { bonus: 0, lv: 0, n: 0 });
-      o.bonus += BONUS[s.lvl - 1] * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id); o.lv = Math.max(o.lv, s.lvl); o.n++;
+      o.bonus += BONUS[s.lvl - 1] * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id) * (d.id === 'dart' && G.Tree.fx.puntaAfilada ? 2 : 1); o.lv = Math.max(o.lv, s.lvl); o.n++;
     }
     return inf;
   };
@@ -210,6 +210,7 @@
     if (!q) return false;
     q.fus = { tags: tags, inf: inf };
     q.pierceN = inf.steel ? (inf.steel.lv >= 3 ? 2 : 1) : 0;
+    if (inf.ice && G.Tree.fx.perfora) q.pierceN = 99;   // talento Esquirla II-A: atraviesa
     F.stats.basicShots++;
     G.Snd.play(dom || 'neutral', 1);
     return true;
@@ -218,12 +219,14 @@
     var inf = q.fus.inf;
     oo.tag = pickTag(e, q.fus.tags);
     if (inf.fire) oo.burn = 3;
-    if (inf.ice) oo.slow = [0.25, 1500];
-    if (inf.poison) oo.poison = true;
+    var tf = G.Tree.fx;   // talentos de las cartas proyectil (Chispa / Esquirla / Dardo) trasladados a sus infusiones
+    if (inf.ice) oo.slow = tf.helada ? [0.4, 2500] : [0.25, 1500];
+    if (inf.poison) oo.poison = tf.dosisDoble ? 2 : true;
     if (inf.blood) { oo.lifesteal = 1; if (inf.blood.lv >= 3) oo.bleed = true; }
   };
   F.basicAfter = function (e, q) {    // después del daño: cadena, explosión, congelación y cuenta de golpes de Sed de hierro
     var inf = q.fus.inf, p = G.player;
+    if (inf.fire && G.Tree.fx.pavesa) CB.burn(e, 3.9, 4000);   // talento Chispa II-A
     if (inf.lightning) { var nx = CB.nearest(e.x, e.y, 110, [e]); if (nx) CB.chain(e.x, e.y, nx, inf.lightning.lv >= 3 ? 2 : 1, q.dmg * 0.8, 0.8, 110, 'lightning', { exclude: [e], id: 'basic' }); }
     if (inf.fire && inf.fire.lv >= 3) CB.boom(e.x, e.y, 30, q.dmg * 0.4, 'fire', { id: 'basic', kb: 10 });
     if (inf.ice && inf.ice.lv >= 3 && !e.frozeOnce) { e.frozeOnce = true; CB.stun(e, 500); }
@@ -588,7 +591,7 @@
     // ataque básico (Sed de hierro: +40 % de cadencia)
     var rate = base * (slotsActive('sed') ? 1.4 : 1);
     bT -= dt * rate;
-    if (bT <= 0) { if (basicShot(p)) bT = P.basicCd; else bT = 0; }
+    if (bT <= 0) { if (basicShot(p)) bT = P.basicCd * (G.Tree.fx.rafaga && C.hasTag('fire') ? 0.85 : 1); else bT = 0; }   // talento Chispa II-B: -15 % de cooldown
     auxUpdate(dt, base, p);
     for (i = 0; i < NS; i++) { s = p.actives[i]; if (s) updateSlot(s, dt, p); }
     updateFields(dt, p); updateAxes(dt, p);
