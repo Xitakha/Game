@@ -7,7 +7,7 @@
    Parámetros URL de prueba: ?actives=vapor,plasma (poderes de inicio, Nv1; "vapor2" = Nv2)  ?fuseAsh=<n> (coste en Ceniza de fusionar)  ?bosscap=<frac> (tope por uso contra jefe)  ?cmul= (daño global). */
 (function () {
   'use strict';
-  var G = window.G, B = G.B, C = G.Cards, W = G.Weapons, fx = G.fx, inp = G.input, F = G.Fusion = {};
+  var G = window.G, B = G.B, C = G.Cards, CB = G.Combat, W = G.Weapons, fx = G.fx, inp = G.input, F = G.Fusion = {};
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
 
   var P = F.P = { basicDmg: 10, basicCd: 650, speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, maxFields: 2 };
@@ -157,7 +157,7 @@
   // ------------------------------------------------------------- Ataque básico
   function slotsActive(id) { var a = G.player.actives; for (var i = 0; i < 2; i++) if (a[i] && a[i].id === id && a[i].st) return a[i]; return null; }
   function basicShot(p) {
-    var t = C.nearest(p.x, p.y, RANGE); if (!t) return false;
+    var t = CB.nearest(p.x, p.y, RANGE); if (!t) return false;
     var inf = F.infusion(), mul = 1, tags = [], dom = null, best = 0;
     for (var tg in inf) { mul += inf[tg].bonus; tags.push(tg); if (inf[tg].bonus > best) { best = inf[tg].bonus; dom = tg; } }
     var a = Math.atan2(t.y - p.y, t.x - p.x);
@@ -179,9 +179,9 @@
   };
   F.basicAfter = function (e, q) {    // después del daño: cadena, explosión, congelación y cuenta de golpes de Sed de hierro
     var inf = q.fus.inf, p = G.player;
-    if (inf.lightning) { var nx = C.nearest(e.x, e.y, 110, [e]); if (nx) C.chain(e.x, e.y, nx, inf.lightning.lv >= 3 ? 2 : 1, q.dmg * 0.8, 0.8, 110, 'lightning', { exclude: [e], id: 'basic' }); }
-    if (inf.fire && inf.fire.lv >= 3) C.boom(e.x, e.y, 30, q.dmg * 0.4, 'fire', { id: 'basic', kb: 10 });
-    if (inf.ice && inf.ice.lv >= 3 && !e.frozeOnce) { e.frozeOnce = true; C.stun(e, 500); }
+    if (inf.lightning) { var nx = CB.nearest(e.x, e.y, 110, [e]); if (nx) CB.chain(e.x, e.y, nx, inf.lightning.lv >= 3 ? 2 : 1, q.dmg * 0.8, 0.8, 110, 'lightning', { exclude: [e], id: 'basic' }); }
+    if (inf.fire && inf.fire.lv >= 3) CB.boom(e.x, e.y, 30, q.dmg * 0.4, 'fire', { id: 'basic', kb: 10 });
+    if (inf.ice && inf.ice.lv >= 3 && !e.frozeOnce) { e.frozeOnce = true; CB.stun(e, 500); }
     var sed = slotsActive('sed');
     if (sed && ++hitN % 5 === 0 && sed.st.healed < sed.st.L.heal && !p.dead) { sed.st.healed++; G.Player.heal(p, 1, 'sed'); }
   };
@@ -207,13 +207,13 @@
     if (used >= cap) return 0;
     slot.use[r.fid] = used + dmg;
     o.tag = pickTag(e, tags); o.id = o.id || slot.id; o.zone = true;
-    var d = C.deal(e, dmg, o) || 0; slot.dmg += d;
+    var d = CB.deal(e, dmg, o) || 0; slot.dmg += d;
     F.stats.dmg[slot.id] = (F.stats.dmg[slot.id] || 0) + d;
     return d;
   }
   function tickEnemy(e, key, ms) { var tk = e.tk || (e.tk = {}); if ((tk[key] || 0) > G.time) return false; tk[key] = G.time + ms; return true; }
   function densest(p, range, rad) {   // enemigo con más vecinos en rad (centro de la nube / granada)
-    var list = C.inRange(p.x, p.y, range), best = null, bn = -1;
+    var list = CB.inRange(p.x, p.y, range), best = null, bn = -1;
     for (var i = 0; i < list.length; i++) {
       var e = list[i]; if (e.partOf) continue;
       var n = 0; for (var j = 0; j < list.length; j++) if (Math.hypot(list[j].x - e.x, list[j].y - e.y) <= rad) n++;
@@ -243,12 +243,12 @@
       return true;
     },
     beam: function (slot, r, L, p) {
-      var t = C.nearest(p.x, p.y, 520); if (!t) return false;
+      var t = CB.nearest(p.x, p.y, 520); if (!t) return false;
       slot.st = { t: L.dur, dur: L.dur, ang: Math.atan2(t.y - p.y, t.x - p.x), tk: 0, snd: 0, L: L };
       return true;
     },
     orbit: function (slot, r, L, p) {
-      if (!C.nearest(p.x, p.y, 420)) return false;
+      if (!CB.nearest(p.x, p.y, 420)) return false;
       slot.st = { t: L.dur, dur: L.dur, ang: 0, healed: 0, bodies: [], L: L };
       fx.ring(p.x, p.y, 8, 70, 400, '#d02048', 5);
       return true;
@@ -268,10 +268,10 @@
     return true;
   };
   function autoOK(s, r, p) {   // modo AUTO: dispara cuando hay objetivo útil
-    var n = C.inRange(p.x, p.y, 280).length, boss = G.Enemies.boss && G.Enemies.boss();
+    var n = CB.inRange(p.x, p.y, 280).length, boss = G.Enemies.boss && G.Enemies.boss();
     if (r.kind === 'cloud' || r.kind === 'gas') return n >= 3 || (boss && n >= 1);
-    if (r.kind === 'beam') return C.inRange(p.x, p.y, 240).length >= 1;
-    if (r.kind === 'orbit') return C.inRange(p.x, p.y, 150).length >= 2;
+    if (r.kind === 'beam') return CB.inRange(p.x, p.y, 240).length >= 1;
+    if (r.kind === 'orbit') return CB.inRange(p.x, p.y, 150).length >= 2;
     return false;
   }
 
@@ -290,7 +290,7 @@
       if (st.snd <= 0) { st.snd = 420; G.Snd.play('fx_plasma', 1); }
       if (st.tk <= 0) {
         st.tk = 140;
-        var list = C.inRange(p.x, p.y, st.L.len + 30), hits = [], dx = st.x1 - st.x0, dy = st.y1 - st.y0, ll = dx * dx + dy * dy;
+        var list = CB.inRange(p.x, p.y, st.L.len + 30), hits = [], dx = st.x1 - st.x0, dy = st.y1 - st.y0, ll = dx * dx + dy * dy;
         for (var i = 0; i < list.length; i++) {
           var e = list[i], u = Math.max(0, Math.min(1, ((e.x - st.x0) * dx + (e.y - st.y0) * dy) / ll)), d = Math.hypot(e.x - (st.x0 + dx * u), e.y - (st.y0 + dy * u));
           if (d <= st.L.w / 2 + e.r) hits.push({ e: e, u: u });
@@ -304,7 +304,7 @@
       for (var b = 0; b < 3; b++) {
         var a = st.ang + b * 2.094, bx = p.x + Math.cos(a) * 55, by = p.y - 2 + Math.sin(a) * 55;
         st.bodies.push({ x: bx, y: by, a: a });
-        var near = C.inRange(bx, by, 11);
+        var near = CB.inRange(bx, by, 11);
         for (var j = 0; j < near.length; j++) { if (tickEnemy(near[j], 'sed', 450)) hitE(near[j], s, st.L.dmg, { bleed: true, kb: 20, ang: a + Math.PI / 2 }, ['blood', 'steel']); }
       }
     }
@@ -315,7 +315,7 @@
       var f = F.fields[i]; f.life -= dt; f.tk -= dt;
       if (f.tk <= 0) {
         f.tk = f.interval;
-        var list = C.inRange(f.x, f.y, f.r);
+        var list = CB.inRange(f.x, f.y, f.r);
         for (var j = 0; j < list.length; j++) {
           var e = list[j];
           if (f.kind === 'cloud') {
@@ -323,7 +323,7 @@
             if (!big) e.blindT = Math.max(e.blindT || 0, f.interval + 300);
             hitE(e, f.slot, f.L.dmg * (big ? 1.2 : 1), { slow: [0.3, 600], noChain: true, kb: 0 }, ['fire', 'ice']);   // jefes / élites: sin ceguera, +20 % de daño recibido
           } else {
-            if (!e.partOf) C.poison(e, 1);
+            if (!e.partOf) CB.poison(e, 1);
             hitE(e, f.slot, 2, { noChain: true, kb: 0 }, ['poison', 'fire']);
           }
         }
@@ -331,9 +331,9 @@
       }
       if (f.life <= 0) {
         if (f.kind === 'gas') {
-          var L = f.L, all = C.inRange(f.x, f.y, f.r);
+          var L = f.L, all = CB.inRange(f.x, f.y, f.r);
           if (L.perStack) all.forEach(function (e) { if (e.poisonN > 0 && !e.partOf) hitE(e, f.slot, L.perStack * e.poisonN, { noChain: true, kb: 0 }, ['fire']); });
-          C.boom(f.x, f.y, f.r, L.det, 'fire', { id: 'gas', burn: 3, big: true, kb: 60, color: '#b8ff40' });
+          CB.boom(f.x, f.y, f.r, L.det, 'fire', { id: 'gas', burn: 3, big: true, kb: 60, color: '#b8ff40' });
           G.Snd.play('fx_gas_boom', 1); fx.shake(5, 160);
         }
         F.fields.splice(i, 1);
