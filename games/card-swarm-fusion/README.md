@@ -66,7 +66,7 @@ Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swa
 - `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` mismo bot sobre el original (`python3 tools/serve.py card-swarm 8812`); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
 
 ## Balance
-Ver la sección "Balance medido" al final (números reales, ruido y límites del bot).
+Ver "Balance medido" al final (números reales, ruido y límites del bot).
 
 ## Aislamiento respecto al juego original
 - Guardado en `localStorage` `swarmhand.fusion.save` (el original usa `swarmhand.save`; no se leen ni se tocan).
@@ -75,3 +75,34 @@ Ver la sección "Balance medido" al final (números reales, ruido y límites del
 
 ## Cambios sobre el código copiado (marcados con `FUSION`)
 Nuevos: `src/fusion.js`, `src/assets_fusion.js`, `src/assets_fusion2.js`, `src/sfx_fusion.js`, `src/sfx_fusion2.js`. Editados: `cards.js` (anclas, pool por desbloqueo, ofertas con receta, ventana de fusión, botón, chips de poderes, mano a la izquierda), `weapons.js` (las cartas proyectil ya no disparan; exporta orbitales / auras / FIRE para las auxiliares), `combat.js` (buff de Pacto, marca de Hemotoxina, plaga de Escarcha tóxica), `enemies.js` (`blindT`), `hud.js`, `base.js`, `main.js`, `tree.js` (anclas 1/2), `save.js`, `panels.js` / `quests.js` (textos), `pwa.js`, `sw.js`, `index.html`, `manifest.webmanifest`.
+
+## Balance medido (v1)
+Herramienta: el MISMO bot de esquiva (solo se mueve, elige cartas, AUTO para los poderes) sobre el original (`baseline_bot.js`, puerto 8812) y sobre la copia (`play_bot.js`), `speed=4`, cuenta vacía salvo indicación, 844x390. Es un bot burdo: **no llega a ganar ninguna partida ni en el original (0/8)**, así que la meta del diseño (victoria del bot 40-60 %, activos = +25 puntos) **no se puede medir con él**; se compara el tiempo de supervivencia (muerte, en s de partida; el jefe aparece a los 450 s). Media +- desviación típica (n); el error típico de la media es sd/raíz(n), es decir 12-30 s.
+
+| Configuración | Supervivencia | Victorias |
+|---|---|---|
+| **Original** `card-swarm` | **377 +- 51 s** (n=8; rango 312-450; un bot llegó al jefe con el 71 % de su vida) | 0/8 |
+| Fusión v1, `cmul` 3,5 (por defecto), con 4 poderes | 264 +- 34 s (n=8) | 0/8 |
+| Fusión, `cmul` 5 | 251 +- 72 s (n=8) | 0/8 |
+| Fusión, `cmul` 8 | 206 +- 75 s (n=6) | 0/6 |
+| Fusión, `cmul` 2 | 195 +- 33 s (n=6) | 0/6 |
+| Fusión, `cmul` 3,5, SIN poderes (solo infusiones + auxiliares) | 241 +- 86 s (n=8) | 0/8 |
+| Fusión, `cmul` 3,5, todas las cartas desbloqueadas (`all=1`) | 250 +- 48 s (n=6) | 0/6 |
+
+Lectura honesta:
+- **El multiplicador x3,5 se mantiene**: entre 3,5 y 8 la supervivencia del bot no mejora (251 / 206: ruido, no tendencia); con x2 sí empeora (195). La supervivencia del bot la limita el cerco de enemigos, no el DPS. Con las armas auxiliares el daño total ya es mayor que en v0 (v0 no las tenía).
+- La Fusión es **más difícil que el original para este bot**: ~30 % menos de supervivencia (264 frente a 377 s; diferencia de ~110 s, unos 5 errores típicos, no es ruido). Hay muertes muy tempranas (98-151 s) con cualquier configuración: el arranque con un solo ataque básico sobre el enemigo más cercano es débil hasta la 1.ª fusión (~45-55 s). Es un reto, pero no está calibrado a "igual que el original": hace falta un jugador humano o el bot de balance completo (`tools/card-swarm-balance-bot`, **no adaptado**) para afinar.
+- **Los poderes aportan poco para este bot**: 264 +- 34 s con poderes frente a 241 +- 86 s sin ellos (no distinguible con n=8). Contra jefes (boss_bot, mano y 4 poderes fijados por URL, jefe a los 450 s; n=3 salvo Pastor con poderes n=4):
+
+| Jefe | Con 4 poderes: victorias / vida del jefe al morir | Sin poderes |
+|---|---|---|
+| Pastor | 1/4 (muertes con el jefe al 67, 14, 30 %) | 0/3 (55, 75, 49 %) |
+| Karceron | 0/2 (70, 73 %) | 0/3 (85, 74, 76 %) |
+| Letea | 0/2 (81, 86 %) | sin medir |
+| Yarlak | 0/2 (64, 74 %) | 0/3 (75, 81, 71 %) |
+| Melaria | 0/2 (57, 70 %) | 0/3 (70, 47, 75 %) |
+| Cenizar | 0/2 (95, 86 %) | sin medir |
+
+  Los poderes quitan de media ~10 puntos de vida del jefe, con mucha dispersión; el Pastor (Forja + Plasma + Pacto, debilidades de Fuego y Acero) es el único derrotado. No se ha medido el boss-bot original (`tools/card-swarm-boss-bot`) para comparar jefe a jefe.
+- Topes por uso (400 por objetivo, 3 % de la vida del jefe) sin cambios: con el tope al 3 %, un poder da como máximo ~730 de daño por uso a un jefe de ~24.000 PV; no se han probado 1,5 %.
+- Rendimiento: humo en Chromium de escritorio con horda de 100 enemigos, 4 poderes en AUTO y mano completa: ~58 fps, frame máximo 41 ms, 0 errores. Sin medición en móvil real.
