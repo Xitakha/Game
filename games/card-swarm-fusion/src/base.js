@@ -49,7 +49,7 @@
     }
     var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
     if (names.length) {
-      G.txt(c, 'COMBOS ACTIVOS', 20, 276, 13, '#9a8fb0', 'left');
+      G.txt(c, 'FUSIONES', 20, 276, 13, '#9a8fb0', 'left');
       names.slice(0, 7).forEach(function (cb, k) {
         var y = 298 + k * 22;
         c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(28, y, 5, 0, 6.283); c.fill();

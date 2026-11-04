@@ -24,7 +24,7 @@
 
   function fresh() {
     var cards = {}; STARTERS.forEach(function (id) { cards[id] = 1; });
-    return { v: VERSION, parts: {}, brasas: 0, cards: cards, anchors: ['spark', 'dart'], len: 9, runs: 0, wins: 0, pity: 0, firstBuildRuns: null,
+    return { v: VERSION, parts: {}, brasas: 0, cards: cards, anchors: ['spark'], len: 9, runs: 0, wins: 0, pity: 0, firstBuildRuns: null,
       pf: { earned: 1 },                       // 1 PF de regalo
       nodes: {},                               // id -> { c: elección ('1' | 'A' | 'B'), free: 1 si es heredado/gratis, r: 1 si dio +1 rango }
       ever: {}, mile: 0,                       // nodos comprados alguna vez (hitos "Maestría de oficio") y hitos ya cobrados

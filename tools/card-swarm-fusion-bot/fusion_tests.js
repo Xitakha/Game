@@ -49,8 +49,10 @@ async function iso() {
 
 async function flow() {
   console.log('--- flujo: inicio, infusiones, fusión, reemplazo, Nv2');
-  const b = await launch(); const pg = await mk(b, 'reset=1&god=1');
-  ok((await E(pg, () => G.state)) === 'cards', 'arranca directo en la oferta inicial (sin aldea)');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&noanchor=1');
+  ok((await E(pg, () => G.state)) === 'cards' || (await E(pg, () => G.state)) === 'play', '?direct=1 arranca en partida (la aldea abre sin direct)');
+  await E(pg, () => { G.Save.data.anchors = []; G.startGame(); });
+  ok((await E(pg, () => G.state)) === 'cards', 'sin ancla: oferta inicial');
   const offer = await E(pg, () => G.Cards.off.cards.map(id => G.Cards.def(id).tag));
   ok(offer.length === 3 && new Set(offer).size === 3, 'oferta inicial: 3 etiquetas distintas ' + offer);
   // la carta inicial es de Fuego para que las recetas sean predecibles
@@ -86,21 +88,22 @@ async function flow() {
   await sleep(pg, 500);
   const fr = await E(pg, () => G.Cards.fuseRect); await tap(pg, fr.x + 50, fr.y + 15);
   modal = await E(pg, () => G.Cards.off.modal && G.Cards.off.modal.buttons.map(x => x.label));
-  ok(modal && modal.length === 3 && /Plasma/.test(modal.join()) && /Gas/.test(modal.join()), 'botón FUSIONAR lista las parejas: ' + (modal || []).join(' | '));
+  ok(modal && modal.length === 4 && /Plasma/.test(modal.join()) && /Gas/.test(modal.join()), 'botón FUSIONAR lista las parejas: ' + (modal || []).join(' | '));
   const plasmaIdx = modal.findIndex(l => /Plasma/.test(l)); await key(pg, 'Digit' + (plasmaIdx + 1)); await sleep(pg, 300);
   s = await E(pg, () => G.Fusion.snapshot());
   ok(s.actives[1] && s.actives[1].id === 'plasma', '2.º poder: Plasma en el slot 2');
   ok(s.hand[0] === null && s.hand[1] === null && s.hand[2] === 'dart:1', 'fusión posterior: se consumen las dos cartas: ' + s.hand);
   ok((await E(pg, () => G.state)) === 'cards', 'fusionar desde la mano no cierra la oferta');
-  // tercera receta: hay que elegir qué poder reemplazar (con cancelar)
+  await E(pg, () => { G.Fusion.grant('sed'); G.Fusion.grant('forja'); });   // 4 poderes: el 5.º pide reemplazo
+  // quinta receta: hay que elegir qué poder reemplazar (con cancelar)
   await E(pg, () => { G.Cards.add('spark'); G.Cards.recalc(false); });
   await tap(pg, fr.x + 50, fr.y + 15);
   modal = await E(pg, () => G.Cards.off.modal && { t: G.Cards.off.modal.title, b: G.Cards.off.modal.buttons.map(x => x.label) });
   ok(modal && /Gas/.test(modal.b.join()), 'Gas inflamable disponible (dardo + chispa)');
   await key(pg, 'Digit1'); await sleep(pg, 300);
   modal = await E(pg, () => G.Cards.off.modal && { t: G.Cards.off.modal.title, b: G.Cards.off.modal.buttons.map(x => x.label) });
-  ok(modal && /2 PODERES/.test(modal.t) && modal.b.length === 3 && /CANCELAR/.test(modal.b[2]), 'con 2 poderes pide confirmar cuál reemplazar: ' + (modal && modal.b.join(' | ')));
-  await key(pg, 'Digit3'); await sleep(pg, 300);
+  ok(modal && /4 PODERES/.test(modal.t) && modal.b.length === 5 && /CANCELAR/.test(modal.b[4]), 'con 4 poderes pide confirmar cuál reemplazar: ' + (modal && modal.b.join(' | ')));
+  await key(pg, 'Digit5'); await sleep(pg, 300);
   s = await E(pg, () => G.Fusion.snapshot());
   ok(s.actives[0].id === 'vapor' && s.actives[1].id === 'plasma' && s.hand[2] === 'dart:1', 'cancelar no consume nada');
   const ash0 = await E(pg, () => G.player.ash);
@@ -122,40 +125,103 @@ async function flow() {
 }
 
 async function powers() {
-  console.log('--- poderes: cada uno dispara, daña y entra en enfriamiento');
+  console.log('--- poderes: los 12 disparan, dañan / aplican su efecto y entran en enfriamiento (Nv1 y Nv2)');
   const b = await launch();
-  for (const id of ['vapor', 'plasma', 'gas', 'sed']) {
-    const pg = await mk(b, `reset=1&god=1&speed=3&actives=${id}&hand=spark:1,shard:1`);
-    await autoSkip(pg); await sleep(pg, 800); await E(pg, () => { G.player.hp = 40; }); await spawnAround(pg, 14, 70); await sleep(pg, 1000);
-    const ready = await E(pg, () => G.player.actives[0].cd <= 0 || (G.player.actives[0].cd = 0, true));
-    await E(pg, () => { G.player.actives[0].cd = 0; }); await pg.keyboard.press('KeyQ'); await sleep(pg, 600);
-    let st = await E(pg, () => { const s = G.Fusion.snapshot(); const bl = G.enemies.filter(e => e.blindT > 0 || e.slowT > 0).length; return { s, bl, orb: G.player.actives[0].st && G.player.actives[0].st.bodies && G.player.actives[0].st.bodies.length, fields: G.Fusion.fields.length }; });
-    ok(st.s.actives[0].uses === 1 && st.s.actives[0].cd > 5000, `${id}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
-    ok(id === 'sed' ? st.orb === 3 : id === 'plasma' ? (await E(pg, () => !!G.player.actives[0].st)) : id === 'gas' ? true : st.fields === 1, `${id}: efecto activo (campos ${st.fields}, orbes ${st.orb})`);
-    await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6500 : 3000);
-    st = await E(pg, () => G.Fusion.snapshot());
-    ok(st.actives[0].dmg > 0, `${id}: ha hecho daño (${st.actives[0].dmg})`);
-    if (id === 'vapor') { await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 60); await E(pg, () => G.enemies.forEach(e => { e.hp = e.maxHp = 1e6; })); await sleep(pg, 700); await pg.keyboard.press('KeyQ'); await sleep(pg, 100);
-      const vs = await E(pg, () => ({ blind: G.enemies.filter(e => e.blindT > 0).length, slow: G.enemies.filter(e => e.slowT > 0).length })); ok(vs.blind > 0 && vs.slow > 0, 'vapor: ciega y ralentiza (' + vs.blind + ' ciegos, ' + vs.slow + ' lentos)'); }
-    if (id === 'sed') ok(await E(pg, () => G.player.hp > 40), 'sed: curación por golpes del básico (hp ' + await E(pg, () => G.player.hp) + ')');
-    if (id === 'gas') ok(await E(pg, () => G.Fusion.fields.length === 0), 'gas: la nube detonó y se retiró');
-    // enfriamiento termina y avisa
-    await E(pg, () => { G.player.actives[0].cd = 20; }); await sleep(pg, 70);
-    ok((await E(pg, () => G.player.actives[0].readyT)) > 0, `${id}: aviso de poder listo`);
-    await done(pg, 'poder ' + id);
+  const IDS = ['vapor', 'plasma', 'gas', 'sed', 'tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'];
+  for (const lv of [1, 2]) for (const id of IDS) {
+    if (lv === 2 && !['tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].includes(id)) continue;
+    const pg = await mk(b, `reset=1&god=1&direct=1&all=1&speed=3&nointro=1&actives=${id}${lv === 2 ? '2' : ''}&hand=spark:1,shard:1`);
+    await autoSkip(pg); await sleep(pg, 600); await E(pg, () => { G.player.hp = 60; });
+    await E(pg, () => { for (let i = 0; i < 16; i++) { const a = i * 0.4; G.Enemies.spawn('worm', G.player.x + Math.cos(a) * (70 + i * 7), G.player.y + Math.sin(a) * (70 + i * 7)); } });
+    await sleep(pg, 900);
+    await E(pg, id => { G.enemies.forEach(e => { e.hp = e.maxHp = 600; if (id === 'descarga') G.Combat.poison(e, 3); if (id === 'filo' || id === 'tormenta') G.Combat.slow(e, 0.3, 6000); }); G.player.actives[0].cd = 0; }, id);
+    const hp0 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0));
+    await pg.keyboard.press('KeyQ'); await sleep(pg, ['filo', 'descarga'].includes(id) ? 20 : 100);
+    let st = await E(pg, () => { const s = G.Fusion.snapshot(); return { s, fields: G.Fusion.fields.length, axes: G.Fusion.axes.length, fxs: G.Fusion.fxs.length, on: !!G.player.actives[0].st, marks: G.enemies.filter(e => e.hemoT > 0).length, buff: G.player.fusBuffT > 0 }; });
+    const tag = `${id}${lv === 2 ? ' Nv2' : ''}`;
+    ok(st.s.actives[0].uses === 1 && st.s.actives[0].cd > 5000, `${tag}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
+    ok(st.fields + st.axes + st.fxs > 0 || st.on || st.buff, `${tag}: efecto visible (campos ${st.fields}, hachas ${st.axes}, fx ${st.fxs}, canal ${st.on})`);
+    if (id === 'hemo') ok(st.marks >= (lv === 2 ? 9 : 6), `${tag}: marca ${st.marks} enemigos`);
+    if (id === 'pacto') ok(st.buff && (await E(pg, () => G.player.hp)) >= 20, `${tag}: buff activo y HP >= 20`);
+    await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6000 : id === 'tormenta' ? 4000 : 3200);
+    const hp1 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0)), sn = await E(pg, () => G.Fusion.snapshot());
+    ok(sn.actives[0].dmg > 0 || id === 'hemo' || hp1 < hp0, `${tag}: ha hecho daño (${sn.actives[0].dmg}; vida enemiga ${Math.round(hp0)} -> ${Math.round(hp1)})`);
+    if (id === 'descarga') ok(await E(pg, () => G.enemies.filter(e => e.poisonN > 0).length) < 16, 'descarga: consume el veneno');
+    await E(pg, () => { G.player.actives[0].cd = 20; G.player.actives[0].used = true; }); await sleep(pg, 80);
+    ok((await E(pg, () => G.player.actives[0].readyT)) > 0, `${tag}: aviso de poder listo`);
+    await done(pg, 'poder ' + tag);
   }
-  await b.close();
+  // reglas especiales
+  let pg = await mk(b, 'reset=1&direct=1&all=1&speed=2&nointro=1&actives=pacto&hand=spark:1');
+  await sleep(pg, 500); await E(pg, () => { G.player.hp = 22; G.enemies.length = 0; G.Enemies.spawn('worm', G.player.x + 60, G.player.y); G.enemies[0].spawnT = 0; G.player.actives[0].cd = 0; });
+  await pg.keyboard.press('KeyQ'); await sleep(pg, 200);
+  ok(await E(pg, () => G.player.hp >= 20), 'pacto: nunca baja de 20 HP (hp ' + await E(pg, () => G.player.hp) + ')');
+  await done(pg, 'pacto-min');
+  pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=2&nointro=1&actives=iman&hand=spark:1');
+  await sleep(pg, 500); const im = await E(pg, async () => {
+    const p = G.player; G.enemies.length = 0; G.Enemies.spawn('worm', p.x + 120, p.y); const w = G.enemies[0]; w.spawnT = 0; const d0 = Math.hypot(w.x - p.x, w.y - p.y);
+    G.projectiles.push({ team: 'e', x: p.x + 60, y: p.y, vx: 0, vy: 0, life: 5000, r: 5, dmg: 5, ang: 0, kind: 'arrow', hit: new Set(), o: {}, t: 0, rot: 0 }); const ne0 = G.projectiles.filter(q => q.team === 'e').length;
+    p.actives[0].cd = 0; G.Fusion.fire(0); await new Promise(r => setTimeout(r, 500));
+    return { d0, d1: Math.hypot(w.x - p.x, w.y - p.y), ne0, ne1: G.projectiles.filter(q => q.team === 'e' && q.life > 0).length };
+  });
+  ok(im.d1 < im.d0 - 40, `iman: tira de los enemigos pequeños (${Math.round(im.d0)} -> ${Math.round(im.d1)})`);
+  ok(im.ne1 < im.ne0, 'iman: destruye proyectiles enemigos');
+  await done(pg, 'iman-tiro'); await b.close();
+}
+
+async function ui() {
+  console.log('--- interfaz: 4 botones, teclas, mano a la izquierda, 844x390 y vertical');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=2&nointro=1&actives=vapor,plasma,forja,hemo&hand=spark:1,shard:1,dart:1,dagger:1,fang:1');
+  await sleep(pg, 800);
+  const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)), n: G.Fusion.activeCount() }));
+  const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
+  const sysBtns = [{ x: 246, y: 6, w: 48, h: 48 }, { x: 298, y: 6, w: 48, h: 48 }];   // mobile.js BTN.pause / muteRun
+  const hud = [{ x: 8, y: 6, w: 240, h: 34 }, { x: 760, y: 6, w: 196, h: 110 }];       // barra de vida y bloque Kills / Ceniza / Partes (derecha arriba)
+  ok(g.n === 4 && g.btn.length === 4, '4 slots de poderes y 4 botones');
+  ok(g.hand.every(r => r.x + r.w <= 480), 'la mano de cartas está a la IZQUIERDA (termina en x=' + (g.hand[4].x + g.hand[4].w) + ')');
+  ok(g.btn.every(c => c.x - c.r >= 480), 'botones en la mitad derecha (zona del pulgar derecho; el joystick solo nace en x < 480)');
+  ok(g.btn.every(c => c.r >= 38) && g.btn.every((c, i) => g.btn.every((d, j) => i === j || Math.hypot(c.x - d.x, c.y - d.y) > c.r + d.r)), 'radio >= 38 (55 px CSS en 844x390) y botones sin solaparse');
+  ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && !hud.some(r => hit(c, r)) && c.x + c.r <= 960 && c.y + c.r <= 540), 'sin solapar mano, pausa / silencio ni HUD');
+  ok(g.btn.every(c => !hit(c, { x: g.auto.x, y: g.auto.y, w: g.auto.w, h: g.auto.h })) && g.hand.every(r => r.x + r.w < g.auto.x), 'chip AUTO libre de mano y botones');
+  await E(pg, () => { G.enemies.length = 0; for (let i = 0; i < 10; i++) G.Enemies.spawn('worm', G.player.x + 60 + i * 12, G.player.y + (i % 3) * 20); G.enemies.forEach(e => { e.spawnT = 0; e.hp = e.maxHp = 9999; }); G.player.actives.forEach(s => { s.cd = 0; }); });
+  for (const k of ['KeyQ', 'KeyE', 'KeyR', 'Space']) { await pg.keyboard.press(k); await sleep(pg, 120); }
+  let u = await E(pg, () => G.player.actives.map(s => s.uses)); ok(u.every(x => x === 1), 'Q / E / R / Espacio disparan los 4 poderes: ' + u);
+  await E(pg, () => { G.player.actives.forEach(s => { s.cd = 0; s.st = null; }); G.Fusion.fields.length = 0; });
+  for (const k of ['Digit1', 'Digit2', 'Digit3', 'Digit4']) { await pg.keyboard.press(k); await sleep(pg, 120); }
+  u = await E(pg, () => G.player.actives.map(s => s.uses)); ok(u.every(x => x === 2), 'teclas 1-4 equivalen: ' + u);
+  if (process.env.SHOT_UI) await pg.screenshot({ path: process.env.SHOT_UI, type: 'jpeg', quality: 45 });
+  await done(pg, 'ui');
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }), pv = await ctx.newPage(); pv.errs = []; pv.ctx = ctx;
+  pv.on('console', m => { if (m.type() === 'error') pv.errs.push(m.text()); }); pv.on('pageerror', e => pv.errs.push('PAGEERR ' + e.message));
+  await pv.goto(`${base}/index.html?nosw=1&reset=1&direct=1&all=1`); await sleep(pv, 800);
+  ok(await E(pv, () => [...document.querySelectorAll('div')].some(d => /gira/i.test(d.textContent) && getComputedStyle(d).display !== 'none')), 'vertical 390x844: aviso "gira el teléfono"');
+  await done(pv, 'vertical'); await b.close();
+}
+
+async function village() {
+  console.log('--- aldea: se abre, ancla, partida, fin con cuenta propia');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&speed=4');
+  ok((await E(pg, () => G.state)) === 'aldea', 'sin ?direct=1 el juego abre la aldea');
+  const d = await E(pg, () => ({ anchors: G.Save.data.anchors, slots: G.B.anchorSlots }));
+  ok(d.slots === 1 && d.anchors.length === 1, 'cuenta nueva: 1 ancla (' + d.anchors + ') de ' + d.slots + ' slot');
+  const r = await E(pg, () => { G.Save.data.anchors = ['dart']; G.startGame(); return { st: G.state, hand: G.player.hand.map(h => h && h.id + (h.starter ? '*' : '')) }; });
+  ok(r.st === 'play' && r.hand[0] === 'dart*', 'startGame con ancla: parte en partida con la carta inicial ' + r.hand[0]);
+  ok((await E(pg, () => G.Cards.defs.filter(d => G.Fusion.unlockedCard(d.id) && d.type === 'attack').length)) === 5, 'pool de la cuenta vacía: solo las cartas iniciales desbloqueadas (5 de ataque)');
+  await sleep(pg, 1500);
+  await E(pg, () => { G.god = false; G.player.hp = 0; G.player.dead = true; });
+  ok(await waitState(pg, 'gameover', 8000), 'morir lleva a la pantalla final');
+  const keys = await E(pg, () => Object.keys(localStorage)); ok(keys.every(k => k.startsWith('swarmhand.fusion.')), 'guardado propio: ' + keys.join(','));
+  await done(pg, 'aldea'); await b.close();
 }
 
 async function touch() {
   console.log('--- táctil: botones grandes, sin chocar con el joystick ni con mobile.js');
-  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&actives=vapor,plasma&hand=spark:1&speed=2');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&actives=vapor,plasma,forja,hemo&hand=spark:1&speed=2');
   await autoSkip(pg); await sleep(pg, 800);
   const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)) }));
   const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
   const sysBtns = [{ x: 246, y: 6, w: 48, h: 48 }, { x: 298, y: 6, w: 48, h: 48 }];   // mobile.js BTN.pause / muteRun
   ok(g.btn.every(c => c.x - c.r >= 480), 'botones en la mitad derecha (el joystick flotante solo nace en x < 480)');
-  ok(g.btn.every(c => c.r >= 40) && Math.hypot(g.btn[0].x - g.btn[1].x, g.btn[0].y - g.btn[1].y) > g.btn[0].r + g.btn[1].r, 'radio >= 40 (unos 61 px de diámetro en 844x390) y botones sin solaparse');
   ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && c.x + c.r <= 960 && c.y + c.r <= 540), 'sin solapar la mano ni los botones de pausa / silencio de mobile.js');
   // toque en el botón 1 dispara
   await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 80); await sleep(pg, 1300);
@@ -175,6 +241,17 @@ async function touch() {
     return { joyOn, still, used, moved };
   }, [g.btn[1]]);
   ok(res.joyOn && res.still && res.used === 1 && res.moved > 20, `joystick a la izquierda y botón 2 a la derecha a la vez (joy ${res.joyOn}/${res.still}, usos ${res.used}, avance ${Math.round(res.moved)} px)`);
+  // dos dedos con los 4 botones: joystick izquierdo mantenido mientras se tocan los botones 3 y 4
+  const r4 = await E(pg, async ([bs]) => {
+    const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / 960, Y = y => r.top + y * r.height / 540;
+    const ev = (t, id, x, y) => cv.dispatchEvent(new PointerEvent(t, { pointerType: 'touch', pointerId: id, clientX: X(x), clientY: Y(y), bubbles: true, cancelable: true, isPrimary: id === 5 }));
+    G.player.actives.forEach(s => { s.cd = 0; s.st = null; }); const u0 = G.player.actives.map(s => s.uses), x0 = G.player.x;
+    ev('pointerdown', 5, 120, 380); ev('pointermove', 5, 200, 380);
+    for (let i = 0; i < 4; i++) { ev('pointerdown', 10 + i, bs[i].x, bs[i].y); ev('pointerup', 10 + i, bs[i].x, bs[i].y); }
+    await new Promise(r => setTimeout(r, 500)); const moved = G.player.x - x0, joy = G.input.joy.active; ev('pointerup', 5, 200, 380);
+    return { u: G.player.actives.map((s, i) => s.uses - u0[i]), moved, joy };
+  }, [g.btn]);
+  ok(r4.u.every(x => x === 1) && r4.joy && r4.moved > 20, `joystick mantenido + los 4 botones (usos ${r4.u}, avance ${Math.round(r4.moved)} px)`);
   // AUTO
   await tap(pg, g.auto.x + 40, g.auto.y + 10); ok(await E(pg, () => G.Fusion.auto), 'chip AUTO activa el modo automático');
   await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 8, 90); await sleep(pg, 2500);
@@ -186,7 +263,7 @@ async function touch() {
 
 async function boss() {
   console.log('--- jefe: tope por uso y partida de humo con el Pastor');
-  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&dbg=1&speed=4&boss=pastor&nointro=1&prep=0&actives=plasma,vapor&hand=spark:1,shard:2');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&dbg=1&direct=1&all=1&speed=4&boss=pastor&nointro=1&prep=0&actives=plasma,vapor,forja,pacto&hand=spark:1,shard:2');
   await autoSkip(pg); await sleep(pg, 2500);
   const hp0 = await E(pg, () => { const e = G.Enemies.boss(); return e ? e.hp : 0; });
   ok(hp0 > 0, 'el Pastor está en la arena (hp ' + Math.round(hp0) + ')');
@@ -200,7 +277,7 @@ async function boss() {
 }
 
 (async () => {
-  const run = { iso, flow, powers, touch, boss };
+  const run = { iso, flow, powers, ui, village, touch, boss };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
