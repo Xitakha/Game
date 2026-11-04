@@ -13,7 +13,7 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: 10, basicCd: 650, speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, maxFields: 4, slots: NS };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 650), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, maxFields: 4, slots: NS };
   var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.6), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;

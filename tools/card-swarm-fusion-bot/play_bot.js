@@ -5,10 +5,12 @@
 // Con sinPoderes=1 no fusiona nunca (las cartas quedan como infusiones y armas auxiliares).
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const N = +process.argv[2] || 3, CM = process.argv[3] || '', NOACT = process.argv[4] === '1', base = process.argv[5] || 'http://localhost:8811', SPEED = +process.argv[6] || 4;
-const ALL = process.argv[7] === '1', EXTRA = process.argv[8] || '';
+const ALL = process.argv[7] === '1', EXTRA = process.argv[8] || '', PAR = +process.env.PAR || 1;   // PAR=3: partidas en paralelo (una página por partida)
 const BOT = () => {
   const inp = G.input, C = G.Cards, F = G.Fusion;
-  window.__log = { picks: [] };
+  window.__log = { picks: [], hb: {}, samples: [] };
+  const oh = G.Player.hurt; G.Player.hurt = function (p, dmg, sx, sy, o) { const h0 = p.hp, r = oh.call(G.Player, p, dmg, sx, sy, o); if (r) { const k = (o && o.src) || '?'; window.__log.hb[k] = (window.__log.hb[k] || 0) + (h0 - p.hp); } return r; };
+  let lastS = -99; setInterval(() => { const t = G.runT / 1000; if (G.state === 'play' && t - lastS >= 20) { lastS = t; window.__log.samples.push([Math.round(t), Math.round(G.player.hp), G.player.level, G.Fusion.fused, G.enemies.length]); } }, 500);
   setInterval(() => {
     if (G.state === 'cards' && C.off) {
       const O = C.off; if (O.t < 450) return;
@@ -35,6 +37,7 @@ const BOT = () => {
     const p = G.player; let ax = 0, ay = 0;
     for (const e of G.enemies) { if (e.dead || e.spawnT > 0) continue; const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy); if (d < 260 && d > 0) { const w = (e.type === 'boss' ? 2.5 : 1) * (260 - d) / 260 / d; ax += dx * w; ay += dy * w; } }
     for (const q of G.projectiles) { if (q.team === 'p') continue; const dx = p.x - q.x, dy = p.y - q.y, d = Math.hypot(dx, dy); if (d < 140 && d > 0) { ax += dx / d * (140 - d) / 60; ay += dy / d * (140 - d) / 60; } }
+    if (window.__gems !== 0 && Math.hypot(ax, ay) < 0.35) { let bd = 380, bg = null; for (const g of G.gems) { if (g.kind === 'part') continue; const d = Math.hypot(g.x - p.x, g.y - p.y); if (d < bd) { bd = d; bg = g; } } if (bg) { ax += (bg.x - p.x) / bd * 0.8; ay += (bg.y - p.y) / bd * 0.8; } }   // recoge gemas cuando no hay peligro cerca (como un jugador); ?gems=0 en window.__gems lo apaga
     ax += (G.AW / 2 - p.x) * 0.0015; ay += (G.AH / 2 - p.y) * 0.0015;
     if (p.x < 90) ax += 2; if (p.x > G.AW - 90) ax -= 2; if (p.y < 90) ay += 2; if (p.y > G.AH - 90) ay -= 2;
     inp.keys.KeyA = ax < -0.15; inp.keys.KeyD = ax > 0.15; inp.keys.KeyW = ay < -0.15; inp.keys.KeyS = ay > 0.15;
@@ -43,24 +46,28 @@ const BOT = () => {
 };
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
-  const res = [];
-  for (let g = 0; g < N; g++) {
+  const res = []; let next = 0;
+  async function one(g) {
     const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];
     pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
     await pg.goto(`${base}/index.html?nosw=1&reset=1&direct=1&speed=${SPEED}${CM ? '&cmul=' + CM : ''}${ALL ? '&all=1' : ''}${EXTRA}`); await pg.waitForTimeout(500);
     await pg.evaluate(NOACT => { window.__noact = NOACT; }, NOACT);
     await pg.evaluate(BOT);
     const t0 = Date.now(); let r = null;
-    while (Date.now() - t0 < 420000) {
+    while (Date.now() - t0 < 600000) {
       await pg.waitForTimeout(1000);
-      r = await pg.evaluate(() => ({ st: G.state, t: Math.round(G.runT / 1000), won: G.won, lvl: G.player.level, kills: G.kills, hp: Math.round(G.player.hp), boss: G.Enemies.boss() ? Math.round(G.Enemies.boss().hp / G.Enemies.boss().maxHp * 100) : null, snap: G.Fusion.snapshot() }));
+      r = await pg.evaluate(() => ({ st: G.state, t: Math.round(G.runT / 1000), won: G.won, lvl: G.player.level, kills: G.kills, hp: Math.round(G.player.hp), boss: G.Enemies.boss() ? Math.round(G.Enemies.boss().hp / G.Enemies.boss().maxHp * 100) : null, snap: G.Fusion.snapshot(), log: window.__log }));
       if (r.st === 'gameover') break;
     }
-    res.push({ ...r, errs: errs.length, errsText: errs.slice(0, 2) });
-    console.log(`partida ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} bossHp=${r.boss}% fusiones=${JSON.stringify(r.snap.stats.fusions.map(f => f.id + (f.lvl > 1 ? '2' : '') + '@' + f.t))} usos=${JSON.stringify(r.snap.stats.uses)} errs=${errs.length}`);
+    r.errs = errs.length; r.errsText = errs.slice(0, 2); res.push(r);
+    const hb = Object.entries(r.log.hb).sort((a, c) => c[1] - a[1]).slice(0, 4).map(([k, v]) => k + ':' + Math.round(v)).join(',');
+    console.log(`partida ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} bossHp=${r.boss}% 1ªfus=${r.snap.stats.firstFusionT} fusiones=${JSON.stringify(r.snap.stats.fusions.map(f => f.id + (f.lvl > 1 ? '2' : '') + '@' + f.t))} usos=${JSON.stringify(r.snap.stats.uses)} dmgPod=${JSON.stringify(r.snap.stats.dmg)} dano=${hb} hp20s=${r.log.samples.map(x => x[1]).join('/')} errs=${errs.length}`);
     await pg.close(); await ctx.close();
   }
-  const w = res.filter(x => x.won).length;
-  console.log(`RESUMEN cmul=${CM || 'defecto'} sinPoderes=${NOACT} all=${ALL}${EXTRA}: victorias ${w}/${N}, tiempo medio ${Math.round(res.reduce((a, x) => a + x.t, 0) / N)}s, errores ${res.reduce((a, x) => a + x.errs, 0)}`);
+  async function worker() { while (next < N) { const g = next++; try { await one(g); } catch (e) { console.log('ERR', g, e.message); } } }
+  await Promise.all(Array.from({ length: Math.min(PAR, N) }, worker));
+  const w = res.filter(x => x.won).length, ts = res.map(x => x.t), m = ts.reduce((a, x) => a + x, 0) / ts.length, sd = Math.sqrt(ts.reduce((a, x) => a + (x - m) * (x - m), 0) / Math.max(1, ts.length - 1));
+  const f1 = res.map(x => x.snap.stats.firstFusionT).filter(x => x != null);
+  console.log(`RESUMEN cmul=${CM || 'defecto'} sinPoderes=${NOACT} all=${ALL}${EXTRA}: n=${res.length} victorias ${w}/${res.length}, tiempo ${Math.round(m)} +- ${Math.round(sd)}s (ee ${Math.round(sd / Math.sqrt(ts.length))}) min ${Math.min(...ts)} muertes<150s ${ts.filter(x => x < 150).length}, 1ª fusión media ${f1.length ? Math.round(f1.reduce((a, x) => a + x, 0) / f1.length) : '-'}s, errores ${res.reduce((a, x) => a + x.errs, 0)}`);
   await b.close();
 })();
