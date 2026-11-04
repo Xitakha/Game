@@ -223,6 +223,7 @@
       e.preventDefault(); try { G.Snd.unlock(); } catch (x) { /* audio */ }
       try { canvas.setPointerCapture(e.pointerId); } catch (x2) { /* sin captura */ }
       var p = pt(e);
+      if (G.state === 'play' && G.Fusion && G.Fusion.press(p, e.pointerType === 'mouse' ? 'mouse' : 'touch')) return;   // FUSION: botones de poderes (mitad derecha: no chocan con el joystick de la mitad izquierda)
       if (e.pointerType === 'mouse') {
         if (G.Sys) G.Sys.touchActive = false;
         inp.mouse.x = p.x; inp.mouse.y = p.y; inp.keys['Mouse' + e.button] = true; inp.pressed['Mouse' + e.button] = true;
@@ -533,6 +534,7 @@
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
+    if (!G.bossUrl && !G.huntUrl && !/[?&]village=1/.test(location.search)) G.startGame();   // FUSION: el prototipo arranca directo en partida (?village=1 abre la aldea)
     if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };

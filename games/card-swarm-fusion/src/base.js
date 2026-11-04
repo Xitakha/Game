@@ -56,7 +56,7 @@
         c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(39, y, 5, 0, 6.283); c.fill();
         G.txt(c, cb.name, 52, y, 13, '#ffe9a0', 'left');
       });
-    } else G.txt(c, 'Sin combos: la próxima vez junta etiquetas distintas', 20, 276, 12, '#9a8fb0', 'left');
+    } else G.txt(c, G.Fusion.endText(), 20, 276, 12, '#ffe9a0', 'left');   // FUSION
     if (prac) { drawPracticePanel(c, sm); drawEndButtons(c, S); return; }
     // botín
     U.panel(c, 500, 96, 440, 336, { border: '#8a6a30' });

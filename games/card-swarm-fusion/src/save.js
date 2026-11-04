@@ -16,7 +16,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.save', VERSION = 9;
+  var KEY = 'swarmhand.fusion.save', VERSION = 9;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;

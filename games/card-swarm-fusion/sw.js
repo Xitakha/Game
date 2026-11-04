@@ -1,9 +1,9 @@
-/* sw.js - Service worker de Swarm Hand: precache versionado y cache-first (funciona sin conexión).
-   La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp.py (la VERSION es un hash del contenido: cualquier cambio en el juego
+/* sw.js - Service worker de Swarm Hand: Fusión (copia aislada): precache versionado y cache-first (funciona sin conexión).
+   La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp_fusion.py (la VERSION es un hash del contenido: cualquier cambio en el juego
    cambia este archivo, el navegador instala el worker nuevo y el juego avisa "hay una versión nueva" sin recargar por su cuenta).
    Todas las rutas son relativas al propio sw.js, así que sirve igual en / que en una subruta (https://usuario.github.io/Game/card-swarm/). */
 const VERSION = '42d631a202';
-const CACHE = 'swarmhand-' + VERSION;
+const CACHE = 'fusionhand-' + VERSION;
 const FILES = /*FILES*/[
   "./",
   "./index.html",
@@ -88,7 +88,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k.startsWith('swarmhand-') && k !== CACHE).map((k) => caches.delete(k))))
+      .then((ks) => Promise.all(ks.filter((k) => k.startsWith('fusionhand-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

@@ -124,6 +124,7 @@
     }
     // mano y XP
     drawHand(c);
+    G.Fusion.drawHud(c);   // FUSION: botones de poderes activos con enfriamiento
     H.drawCdSlow(c, p);
     var need = B.xpNeed(p.level);
     c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - 7, G.W, 7);
@@ -133,8 +134,8 @@
     var since = G.time - G.t0;
     if (since < 9000 && G.state === 'play') {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
-      G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: las cartas atacan solas' : 'Muévete con WASD / flechas: las cartas atacan solas', G.W / 2, 380, 16, '#ffffff', 'center');
-      G.txt(c, 'Sube de nivel para conseguir cartas. Haz que sus etiquetas se toquen.', G.W / 2, 402, 13, '#d8cfe8', 'center');
+      G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 380, 16, '#ffffff', 'center');
+      G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (Q / E o botón).', G.W / 2, 402, 13, '#d8cfe8', 'center');
       c.restore();
     }
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
@@ -177,10 +178,10 @@
     U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a' });
     G.txt(c, 'Conservas las partes recogidas', G.W / 2, 388, 12, '#ffb347', 'center');
     if (G.Sys.isTouch()) {
-      G.txt(c, 'Las cartas atacan solas: tú solo esquiva', G.W / 2, 424, 14, '#d8cfe8', 'center');
+      G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 424, 14, '#d8cfe8', 'center');
       G.txt(c, 'Mueve el pulgar en la mitad izquierda para andar', G.W / 2, 446, 13, '#9a8fb0', 'center');
     } else {
-      G.txt(c, 'P o Esc: continuar     WASD / flechas: mover', G.W / 2, 424, 14, '#d8cfe8', 'center');
+      G.txt(c, 'P o Esc: continuar     WASD: mover     Q / E: poderes     F: auto', G.W / 2, 424, 14, '#d8cfe8', 'center');
       G.txt(c, 'B: abandonar' + (G.mode === 'practice' ? '     R: reiniciar práctica' : ''), G.W / 2, 446, 13, '#9a8fb0', 'center');
     }
   }
