@@ -251,13 +251,13 @@
     var f = API[k];
     B[k] = function (c) { if (!c) return; c.save(); try { f.apply(null, arguments); } catch (e) { B.lastError = e; } c.restore(); };
   });
-  var iconNew = B.icon; B.icon = function (c, id, x, y, s) { if (!NEW[id] && OLD) { c.save(); try { OLD(c, id, x, y, s); } catch (e) { B.lastError = e; } c.restore(); } else iconNew(c, id, x, y, s); };
+  var iconNew = B.icon; B.icon = function (c, id, x, y, s) { if (!c) return; if (!NEW[id] && OLD) { c.save(); try { OLD(c, id, x, y, s); } catch (e) { B.lastError = e; } c.restore(); } else iconNew(c, id, x, y, s); };
   B.ids = ['vapor', 'plasma', 'gas', 'sed', 'tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'];
   B.tags = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'];
   B.states = ['blind', 'slow', 'freeze', 'burn', 'poison', 'bleed', 'stun', 'mark'];
 
   // Los ids nuevos funcionan con G.FusionArt.icon existente; ids antiguos siguen en la función original.
   var old = OLD;
-  A1.icon = function (c, id, x, y, s) { if (NEW[id] || !old) return B.icon(c, id, x, y, s); return old.apply(A1, arguments); };
+  A1.icon = function (c, id, x, y, s) { if (!c) return; if (NEW[id] || !old) return B.icon(c, id, x, y, s); return old.apply(A1, arguments); };
   A1.btn = A1.btn || B.btn;
 })();
