@@ -13,7 +13,7 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), vstep: qnum('vstep', 2), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), pmul: qnum('pmul', 1), pcd: qnum('pcd', 1), vpow: qnum('vpow', 0), vstep: qnum('vstep', 2), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
   var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.6), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;
@@ -208,6 +208,7 @@
   function slotsActive(id) { var a = G.player.actives; for (var i = 0; i < NS; i++) if (a[i] && a[i].id === id && a[i].st) return a[i]; return null; }
   function volleyN(inf) {   // disparos extra del básico: +1 por cada P.vstep niveles de infusión sumados (tope P.vmax)
     var sum = 0; for (var tg in inf) sum += inf[tg].lvSum || 0;
+    G.player.actives.forEach(function (a) { if (a) sum += P.vpow * a.lvl; });   // ?vpow: cada poder activo cuenta como vpow niveles de infusión
     return P.vstep > 0 ? Math.min(P.vmax, Math.floor(sum / P.vstep)) : 0;
   }
   function basicShot(p) {
@@ -290,6 +291,7 @@
   // ------------------------------------------------------------- Daño de poderes con topes por uso
   function hitE(e, slot, dmg, o, tags) {
     var r = e.partOf || e; if (!r.fid) r.fid = ++uid;
+    dmg *= P.pmul;   // ?pmul: multiplicador de daño de los poderes
     var used = slot.use[r.fid] || 0, cap = r.type === 'boss' ? P.bossCap * r.maxHp : P.perTargetCap;
     if (used >= cap) return 0;
     slot.use[r.fid] = used + dmg;
@@ -453,7 +455,7 @@
     var r = RBY[s.id], L = r.lv[s.lvl - 1];
     s.use = {};
     if (!CAST[r.kind](s, r, L, p)) { if (!auto) { fx.num(p.x, p.y - 34, 'sin objetivo', '#9a8fb0'); snd('fx_btn_cancel', 120); } return false; }
-    s.cdMax = Math.round(L.cd * cdMul()); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
+    s.cdMax = Math.round(L.cd * cdMul() * P.pcd); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
     F.stats.uses[s.id] = (F.stats.uses[s.id] || 0) + 1;
     sfx(r, '', 0, 1); fx.shake(3, 100);
     if (r.sfx !== r.id || ['tormenta', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].indexOf(r.id) >= 0) addFx({ kind: 'cast', id: r.id, dur: 320 });
