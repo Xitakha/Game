@@ -9,6 +9,7 @@ const ALL = process.argv[7] === '1', EXTRA = process.argv[8] || '', PAR = +proce
 const BOT = () => {
   const inp = G.input, C = G.Cards, F = G.Fusion;
   window.__log = { picks: [], hb: {}, samples: [] };
+  const oheal = G.Player.heal; G.Player.heal = function (p, n, src) { const b0 = p.hp; oheal.call(G.Player, p, n, src); const k = src || '?'; window.__log.hl = window.__log.hl || {}; window.__log.hl[k] = (window.__log.hl[k] || 0) + (p.hp - b0); };
   const oh = G.Player.hurt; G.Player.hurt = function (p, dmg, sx, sy, o) { const h0 = p.hp, r = oh.call(G.Player, p, dmg, sx, sy, o); if (r) { const k = (o && o.src) || '?'; window.__log.hb[k] = (window.__log.hb[k] || 0) + (h0 - p.hp); } return r; };
   let lastS = -99; setInterval(() => { const t = G.runT / 1000; if (G.state === 'play' && t - lastS >= 20) { lastS = t; window.__log.samples.push([Math.round(t), Math.round(G.player.hp), G.player.level, G.Fusion.fused, G.enemies.length]); } }, 500);
   setInterval(() => {
@@ -61,7 +62,7 @@ const BOT = () => {
     }
     r.errs = errs.length; r.errsText = errs.slice(0, 2); res.push(r);
     const hb = Object.entries(r.log.hb).sort((a, c) => c[1] - a[1]).slice(0, 4).map(([k, v]) => k + ':' + Math.round(v)).join(',');
-    console.log(`partida ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} bossHp=${r.boss}% 1ªfus=${r.snap.stats.firstFusionT} fusiones=${JSON.stringify(r.snap.stats.fusions.map(f => f.id + (f.lvl > 1 ? '2' : '') + '@' + f.t))} usos=${JSON.stringify(r.snap.stats.uses)} dmgPod=${JSON.stringify(r.snap.stats.dmg)} dano=${hb} hp20s=${r.log.samples.map(x => x[1]).join('/')} errs=${errs.length}`);
+    console.log(`partida ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} bossHp=${r.boss}% 1ªfus=${r.snap.stats.firstFusionT} fusiones=${JSON.stringify(r.snap.stats.fusions.map(f => f.id + (f.lvl > 1 ? '2' : '') + '@' + f.t))} usos=${JSON.stringify(r.snap.stats.uses)} dmgPod=${JSON.stringify(r.snap.stats.dmg)} dano=${hb} cura=${JSON.stringify(Object.fromEntries(Object.entries(r.log.hl || {}).map(([k, v]) => [k, Math.round(v)])))} hp20s=${r.log.samples.map(x => x[1]).join("/")} n20s=${r.log.samples.map(x => x[4]).join("/")} lv20s=${r.log.samples.map(x => x[2]).join("/")} errs=${errs.length}`);
     await pg.close(); await ctx.close();
   }
   async function worker() { while (next < N) { const g = next++; try { await one(g); } catch (e) { console.log('ERR', g, e.message); } } }

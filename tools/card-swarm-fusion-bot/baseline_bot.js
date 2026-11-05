@@ -6,6 +6,7 @@ const PAR = +process.env.PAR || 1;
 const BOT = () => {
   const inp = G.input, C = G.Cards;
   window.__log = { hb: {}, samples: [] };
+  const oheal = G.Player.heal; G.Player.heal = function (p, n, src) { const b0 = p.hp; oheal.call(G.Player, p, n, src); const k = src || '?'; window.__log.hl = window.__log.hl || {}; window.__log.hl[k] = (window.__log.hl[k] || 0) + (p.hp - b0); };
   const oh = G.Player.hurt; G.Player.hurt = function (p, dmg, sx, sy, o) { const h0 = p.hp, r = oh.call(G.Player, p, dmg, sx, sy, o); if (r) { const k = (o && o.src) || '?'; window.__log.hb[k] = (window.__log.hb[k] || 0) + (h0 - p.hp); } return r; };
   let lastS = -99; setInterval(() => { const t = G.runT / 1000; if (G.state === 'play' && t - lastS >= 20) { lastS = t; window.__log.samples.push([Math.round(t), Math.round(G.player.hp), G.player.level, 0, G.enemies.length]); } }, 500);
   setInterval(() => {
@@ -37,7 +38,7 @@ const BOT = () => {
     while (Date.now() - t0 < 600000) { await pg.waitForTimeout(1000); r = await pg.evaluate(() => ({ st: G.state, t: Math.round(G.runT / 1000), won: G.won, lvl: G.player.level, kills: G.kills, boss: G.Enemies.boss() ? Math.round(G.Enemies.boss().hp / G.Enemies.boss().maxHp * 100) : null, log: window.__log })); if (r.st === 'gameover') break; }
     res.push(r);
     const hb = Object.entries(r.log.hb).sort((a, c) => c[1] - a[1]).slice(0, 4).map(([k, v]) => k + ':' + Math.round(v)).join(',');
-    console.log(`base ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} boss=${r.boss} dano=${hb} hp20s=${r.log.samples.map(x => x[1]).join('/')}`);
+    console.log(`base ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} boss=${r.boss} dano=${hb} cura=${JSON.stringify(Object.fromEntries(Object.entries(r.log.hl || {}).map(([k, v]) => [k, Math.round(v)])))} hp20s=${r.log.samples.map(x => x[1]).join("/")} n20s=${r.log.samples.map(x => x[4]).join("/")} lv20s=${r.log.samples.map(x => x[2]).join("/")}`);
     await pg.close(); await ctx.close();
   }
   async function worker() { while (next < N) { const g = next++; try { await one(g); } catch (e) { console.log('ERR', g, e.message); } } }
