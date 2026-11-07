@@ -1,4 +1,4 @@
-/* fusion.js - PROTOTIPO v1 "Fusión" (ver games/card-swarm-fusion-DESIGN.md). G.Fusion.
+/* fusion.js - PROTOTIPO v1 "Fusión" (ver games/card-swarm/DESIGN-fusion.md). G.Fusion.
    - Ataque básico automático del jugador (10 de daño cada 650 ms al enemigo más cercano) + INFUSIONES: las cartas de ataque de la mano mejoran el básico
      (+20 / +35 / +50 % por Nv de carta y un efecto de su etiqueta). Las cartas que no son proyectil (orbitales, auras, Bobina, Murciélago, Nova...) conservan
      además su arma original como AUXILIAR (más lenta y más débil: AUX.dmg / AUX.cd; ?aux=0 las apaga) y dan solo la mitad del bono al básico.

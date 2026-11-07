@@ -1,4 +1,4 @@
-// COPIA de tools/card-swarm-boss-bot/fight.js (el original no se toca) para la Fusión: cfg.fusion=true usa ?actives=<poderes>&all=1&direct=1; mismo bot esquivador (dodge_fusion.js, con AUTO).
+// COPIA de tools/card-swarm-clasico-boss-bot/fight.js (el original no se toca) para la Fusión: cfg.fusion=true usa ?actives=<poderes>&all=1&direct=1; mismo bot esquivador (dodge_fusion.js, con AUTO).
 // uso: node boss_fight.js '{"fusion":true,"boss":"pastor","port":8811,"hand":"spark:3,dart:2,shard:2,dagger:2,fang:1","actives":"forja,plasma,pacto,gas","runs":8,"par":4,"speed":12,"noLevel":true}'
 // uso: (jefes: "boss":"pastor|karceron|letea", "port":8765) node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
 const { chromium } = require('/opt/node-tools/node_modules/playwright');

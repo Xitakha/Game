@@ -1,5 +1,5 @@
-// Línea base: el MISMO bot de esquiva sobre el juego ORIGINAL (games/card-swarm servido en otro puerto), para comparar con play_bot.js.
-//   python3 tools/serve.py card-swarm 8812 &   node tools/card-swarm-fusion-bot/baseline_bot.js <n> [base=http://localhost:8812]
+// Línea base: el MISMO bot de esquiva sobre el juego CLASICO (games/card-swarm-clasico servido en otro puerto), para comparar con play_bot.js.
+//   python3 tools/serve.py card-swarm-clasico 8812 &   node tools/card-swarm-bot/baseline_bot.js <n> [base=http://localhost:8812]
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const N = +process.argv[2] || 3, base = process.argv[3] || 'http://localhost:8812';
 const PAR = +process.env.PAR || 1;

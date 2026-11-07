@@ -1,8 +1,8 @@
 {
-  "id": "swarm-hand-fusion/",
-  "name": "Swarm Hand: Fusión",
-  "short_name": "Swarm Fusión",
-  "description": "Prototipo: ataque básico automático, cartas como infusiones y poderes activos por fusión.",
+  "id": "./",
+  "name": "Swarm Hand",
+  "short_name": "Swarm Hand",
+  "description": "Survivors de cartas: ataque básico automático, cartas como infusiones y poderes activos por fusión.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

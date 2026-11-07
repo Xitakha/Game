@@ -1,6 +1,6 @@
-// PRUEBAS del prototipo Fusión (games/card-swarm-fusion). Uso:
-//   python3 tools/serve.py card-swarm-fusion 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-fusion-bot/fusion_tests.js [all|iso|flow|powers|touch|boss] [base=http://localhost:8811]
+// PRUEBAS de Swarm Hand (games/card-swarm). Uso:
+//   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
+//   node tools/card-swarm-bot/tests.js [all|iso|flow|powers|touch|boss] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const { execSync } = require('child_process');
@@ -28,17 +28,20 @@ const autoSkip = pg => E(pg, () => { setInterval(() => { if (G.state === 'cards'
 const spawnAround = (pg, n, dist) => E(pg, ([n, dist]) => { const p = G.player; for (let i = 0; i < n; i++) { const a = i * 6.283 / n; G.Enemies.spawn('worm', p.x + Math.cos(a) * dist, p.y + Math.sin(a) * dist); } }, [n, dist]);
 
 async function iso() {
-  console.log('--- aislamiento del juego original');
-  const chg = execSync('git diff --stat b7a1ea7 -- games/card-swarm tools/card-swarm-balance-bot tools/card-swarm-boss-bot tools/card-swarm-iso tools/card-swarm-pwa/stamp.py tools/card-swarm-pwa/make-icons.js tools/serve.py', { cwd: ROOT }).toString().trim();
-  ok(chg === '', 'games/card-swarm, sus tests/bots y stamp.py intactos respecto al diseño' + (chg ? ': ' + chg : ''));
-  const sw = fs.readFileSync(path.join(ROOT, 'games/card-swarm-fusion/sw.js'), 'utf8'), man = JSON.parse(fs.readFileSync(path.join(ROOT, 'games/card-swarm-fusion/manifest.webmanifest'), 'utf8'));
-  ok(/const CACHE = 'fusionhand-'/.test(sw) && !/startsWith\('swarmhand-'\)/.test(sw), 'sw.js: cache fusionhand-* (el original borra swarmhand-*: no puede tocarlo)');
-  ok(man.name === 'Swarm Hand: Fusión' && man.start_url === './' && man.scope === './' && man.id !== './', 'manifest propio: ' + man.name + ' / id ' + man.id);
-  const html = fs.readFileSync(path.join(ROOT, 'games/card-swarm-fusion/index.html'), 'utf8');
-  ok(/<title>Swarm Hand: Fusión/.test(html), 'título propio');
-  const out = execSync('python3 tools/card-swarm-pwa/stamp_fusion.py', { cwd: ROOT }).toString();
-  ok(/sw\.js: \d+ archivos/.test(out), 'stamp_fusion.py: ' + out.trim());
-  ok(/assets_fusion\.js/.test(fs.readFileSync(path.join(ROOT, 'games/card-swarm-fusion/sw.js'), 'utf8')) && /sfx_fusion\.js/.test(sw + fs.readFileSync(path.join(ROOT, 'games/card-swarm-fusion/sw.js'), 'utf8')), 'precache incluye assets_fusion.js y sfx_fusion.js');
+  console.log('--- PWA / guardado / precache (games/card-swarm)');
+  const G_DIR = 'games/card-swarm/';
+  const sw = fs.readFileSync(path.join(ROOT, G_DIR, 'sw.js'), 'utf8'), man = JSON.parse(fs.readFileSync(path.join(ROOT, G_DIR, 'manifest.webmanifest'), 'utf8'));
+  ok(/const CACHE = 'fusionhand-'/.test(sw) && !/startsWith\('swarmhand-'\)/.test(sw), 'sw.js: cache fusionhand-* (no colisiona con las swarmhand-* del clasico)');
+  ok(man.name === 'Swarm Hand' && man.start_url === './' && man.scope === './' && man.id === './', 'manifest: ' + man.name + ' / id ' + man.id);
+  const html = fs.readFileSync(path.join(ROOT, G_DIR, 'index.html'), 'utf8');
+  ok(/<title>Swarm Hand<\/title>/.test(html), 'titulo Swarm Hand');
+  const out = execSync('python3 tools/card-swarm-pwa/stamp.py', { cwd: ROOT }).toString();
+  ok(/sw\.js: \d+ archivos/.test(out), 'stamp.py: ' + out.trim());
+  const sw2 = fs.readFileSync(path.join(ROOT, G_DIR, 'sw.js'), 'utf8');
+  const files = JSON.parse(sw2.match(/\/\*FILES\*\/([\s\S]*?)\/\*END\*\//)[1]);
+  const missing = fs.readdirSync(path.join(ROOT, G_DIR, 'src')).filter(f => f.endsWith('.js') && !files.includes('./src/' + f));
+  ok(missing.length === 0, 'precache incluye todos los src/*.js' + (missing.length ? ' (faltan ' + missing.join(',') + ')' : ''));
+  ok(/assets_fusion\.js/.test(sw2) && /sfx_fusion\.js/.test(sw2), 'precache incluye assets_fusion.js y sfx_fusion.js');
   const b = await launch(); const pg = await mk(b, 'reset=1');
   await sleep(pg, 500);
   await E(pg, () => G.Save.save());

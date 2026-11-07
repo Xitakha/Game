@@ -105,7 +105,7 @@
 
   // ------------------------------------------------------------- Cumplibilidad por bioma (v5 P2: las familias quitan roles de algunos biomas)
   // Un encargo de caza solo avanza en los biomas cuya familia tiene el rol objetivo (los minijefes, bajas, partes, etiquetas y duraciones valen en todos). El Tablón solo ofrece
-  // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-balance-bot/quests_audit.js.
+  // lo que se puede cumplir en algún bioma YA desbloqueado (Bosque siempre; Cripta al vencer al Pastor; Asfódelo al vencer a Karceron). Auditoría: tools/card-swarm-clasico-balance-bot/quests_audit.js.
   Q.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'];
   Q.biomesOf = function (d) {
     if (d.biome) return [d.biome];   // P7: encargos de destino (Tundra, Panal, Cráter)

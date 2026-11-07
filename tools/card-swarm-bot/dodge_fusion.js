@@ -1,4 +1,4 @@
-// COPIA del bot esquivador del original (tools/card-swarm-boss-bot/bot.js, sin tocar) + AUTO de poderes para la Fusión.
+// COPIA del bot esquivador del original (tools/card-swarm-clasico-boss-bot/bot.js, sin tocar) + AUTO de poderes para la Fusión.
 // Bot esquivador (se inyecta en la página). Lee las telegrafías vía G.Boss.hazards() + zonas + proyectiles, igual que un jugador las ve.
 // opts: { react: ms (reacción humana), every: ms (decisión), horizon: ms, mistakes: prob (0-1), godUntilBoss: bool, tag: string }
 window.installBot = function (opts) {

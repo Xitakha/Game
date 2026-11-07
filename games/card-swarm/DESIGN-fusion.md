@@ -161,8 +161,8 @@ Meta de calibración: con el bot, supervivencia al jefe 40-60 % (igual a la refe
 
 | Bot | Cambio |
 |---|---|
-| `tools/card-swarm-balance-bot` | (1) Puntuación de la oferta: prioridad a cartas "FUSIÓN" mientras haya hueco de activo (+40), luego refuerzo. (2) Elegir "FUSIONAR YA". (3) Disparar cada activo cuando `slot.cd<=0` y haya >= 3 enemigos en radio (o `p.hp<60 %` para Imán/Pacto). (4) Métricas nuevas: tiempo de la 1.ª fusión, nº de usos por activo, daño por activo. Copia en `tools/card-swarm-fusion-balance-bot/`. |
-| `tools/card-swarm-boss-bot` | Dispara activos al abrirse una ventana de vulnerabilidad o cuando el jefe tiene la debilidad activa; nunca en telegrafía de ataque letal. Reutiliza su esquiva sin cambios. Prueba por jefe con 2 activos fijados por URL (`?actives=plasma,forja`). |
+| `tools/card-swarm-clasico-balance-bot` | (1) Puntuación de la oferta: prioridad a cartas "FUSIÓN" mientras haya hueco de activo (+40), luego refuerzo. (2) Elegir "FUSIONAR YA". (3) Disparar cada activo cuando `slot.cd<=0` y haya >= 3 enemigos en radio (o `p.hp<60 %` para Imán/Pacto). (4) Métricas nuevas: tiempo de la 1.ª fusión, nº de usos por activo, daño por activo. Copia en `tools/card-swarm-fusion-balance-bot/`. |
+| `tools/card-swarm-clasico-boss-bot` | Dispara activos al abrirse una ventana de vulnerabilidad o cuando el jefe tiene la debilidad activa; nunca en telegrafía de ataque letal. Reutiliza su esquiva sin cambios. Prueba por jefe con 2 activos fijados por URL (`?actives=plasma,forja`). |
 | Parámetros de prueba | `?fusion=1` (activar), `?actives=a,b` (activos de inicio), `?fuseAsh=`, `?cmul`. |
 
 ## 10. Rendimiento

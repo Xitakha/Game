@@ -1,4 +1,4 @@
-// Capturas JPEG pequeñas (844x390 táctil) para studio/docs/capturas-fusion/. Uso: node tools/card-swarm-fusion-bot/shots.js [base]
+// Capturas JPEG pequeñas (844x390 táctil) para studio/docs/capturas-fusion/. Uso: node tools/card-swarm-bot/shots.js [base]
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const path = require('path'), base = process.argv[2] || 'http://localhost:8811', out = path.join(__dirname, '..', '..', 'studio', 'docs', 'capturas-fusion');
 (async () => {

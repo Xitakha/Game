@@ -1,5 +1,5 @@
 // Bot de partidas completas para calibrar el prototipo Fusión (v1: 4 poderes activos). Uso:
-//   node tools/card-swarm-fusion-bot/play_bot.js <n_partidas> <cmul> [sinPoderes=0|1] [base=http://localhost:8811] [speed=4] [all=0|1] [extra=&aux=0...]
+//   node tools/card-swarm-bot/play_bot.js <n_partidas> <cmul> [sinPoderes=0|1] [base=http://localhost:8811] [speed=4] [all=0|1] [extra=&aux=0...]
 // Esquiva alejándose de los enemigos (mismo bot de movimiento que baseline_bot.js), elige cartas (prioriza fusiones mientras haya hueco de poder, luego refuerzos),
 // usa AUTO (F) para los poderes y reporta supervivencia / victoria / poderes usados. all=1 desbloquea todas las cartas (si no: cuenta vacía, solo las cartas iniciales).
 // Con sinPoderes=1 no fusiona nunca (las cartas quedan como infusiones y armas auxiliares).

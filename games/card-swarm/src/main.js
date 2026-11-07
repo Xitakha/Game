@@ -119,7 +119,7 @@
     // Cada gema de XP vale  v * gemMul * lenMul(duración)  (x Imán de brasas +20 %).  lenMul compensa que las runs cortas comprimen el director
     // (mas kills por minuto real): 7 min x1,30, 9 min x1,00, 10 min x0,885 (lineal entre puntos). Objetivo: la build completa (5 cartas Nv3 = 15 puntos
     // de nivel de carta, ~nivel 16-17 con el bot) llega al ~82 % de la expedición (hacia el jefe), no a la mitad.
-    // Nivel esperado al empezar cada minuto (bot de balance tools/card-swarm-balance-bot, media de 8 runs, god, recoge gemas, fusiona primero) - antes -> ahora.
+    // Nivel esperado al empezar cada minuto (bot de balance tools/card-swarm-clasico-balance-bot, media de 8 runs, god, recoge gemas, fusiona primero) - antes -> ahora.
     //   La subida a Nv3 de las 5 cartas ("build completa") exige 13 elecciones tras las 2 anclas = nivel ~14-15. El jefe aparece al 83 % de la run y congela el reloj.
     //   minuto        1     2     3     4     5     6     7     8     9    10
     //   7 min antes  5,0   8,0  12,0  16,0  20,1  24,0  25,3   (jefe a 5:50)   build completa (5 x Nv3) a los 3:23
