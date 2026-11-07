@@ -13,7 +13,7 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), pmul: qnum('pmul', 2), pcd: qnum('pcd', 0.7), vpow: qnum('vpow', 2), vstep: qnum('vstep', 2), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), pmul: qnum('pmul', 2), pcd: qnum('pcd', 0.7), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0), infmul: qnum('infmul', 1), vstep: qnum('vstep', 2), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
   var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.6), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;
@@ -179,7 +179,7 @@
     for (var i = 0; i < h.length; i++) {
       var s = h[i]; if (!s) continue; var d = C.def(s.id); if (d.type !== 'attack') continue;
       var o = inf[d.tag] || (inf[d.tag] = { bonus: 0, lv: 0, n: 0 });
-      o.bonus += BONUS[s.lvl - 1] * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id) * (d.id === 'dart' && G.Tree.fx.puntaAfilada ? 2 : 1); o.lv = Math.max(o.lv, s.lvl); o.n++; o.lvSum = (o.lvSum || 0) + s.lvl;
+      o.bonus += BONUS[s.lvl - 1] * P.infmul * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id) * (d.id === 'dart' && G.Tree.fx.puntaAfilada ? 2 : 1); o.lv = Math.max(o.lv, s.lvl); o.n++; o.lvSum = (o.lvSum || 0) + s.lvl;
     }
     return inf;
   };
@@ -215,6 +215,7 @@
     var t = CB.nearest(p.x, p.y, RANGE); if (!t) return false;
     var inf = F.infusion(), mul = 1, tags = [], dom = null, best = 0;
     for (var tg in inf) { mul += inf[tg].bonus; tags.push(tg); if (inf[tg].bonus > best) { best = inf[tg].bonus; dom = tg; } }
+    G.player.actives.forEach(function (a) { if (a) mul += P.pinf * a.lvl; });   // ?pinf: cada poder activo mejora el básico (compensa las cartas consumidas)
     var targets = [t], extra = volleyN(inf);
     if (extra > 0) {   // extra: a otros objetivos distintos, primero los enemigos a distancia (arqueros...) y luego los más cercanos
       var cand = CB.inRange(p.x, p.y, RANGE).filter(function (e) { return e !== t && !e.partOf; });
