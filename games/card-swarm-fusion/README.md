@@ -1,11 +1,11 @@
-# Swarm Hand: Fusión (prototipo v1)
+# Swarm Hand: Fusión (prototipo v1, balance v2)
 
 Experimento **aislado** de "cartas activas" sobre una copia de `games/card-swarm/` (que no se ha tocado). Diseño de partida: `../card-swarm-fusion-DESIGN.md`.
 El README del juego original (heredado de la copia, sin actualizar) está en `README-card-swarm-heredado.md`; los `DESIGN-*.md` / `GDD.md` de esta carpeta también son heredados.
 Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2.js` (contrato en `ASSETS_FUSION.md`).
 
 ## Qué es
-- **Ataque básico automático** del jugador: 10 de daño cada 650 ms al enemigo más cercano (alcance 440).
+- **Ataque básico automático** del jugador: 10 de daño cada 500 ms (v1: 650) al enemigo más cercano (alcance 440). **Volley (v2)**: +1 disparo extra (80 % de daño) a otro objetivo, prefiriendo arqueros / brujos, por cada 4 niveles de infusión sumados (cada poder activo cuenta 2 por nivel); tope +3.
 - Las **cartas de ataque son INFUSIONES** del básico: cada carta da +20 / +35 / +50 % de daño al básico (Nv 1-3) y el efecto de su etiqueta:
   Fuego quema (Nv3 explota), Hielo ralentiza (Nv3 congela 0,5 s la 1.ª vez), Rayo encadena 1 salto (Nv3: 2), Veneno 1 stack, Sangre 20 % de curar 1 HP (Nv3 sangrado), Acero atraviesa 1 (Nv3: 2) y 10 % de crítico.
   Dos cartas iguales = **REFUERZO** de Nv. Los talentos de las cartas proyectil del árbol (Pavesa, Ráfaga, Perforante, Escarcha densa, Dosis doble, Punta afilada) pasan a sus infusiones.
@@ -30,7 +30,7 @@ Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2
 
   Sin receta (la UI no las ofrece): **Sangre+Hielo, Sangre+Rayo, Veneno+Acero**.
 - Etiqueta dinámica: cada impacto del básico y de los poderes usa, de las etiquetas que lo componen, la que mejor multiplica contra ese objetivo (debilidades / resistencias de jefes y materiales). Los poderes no reciben bonos de Nv de carta.
-- **Topes por uso**: 400 de daño por objetivo y uso; contra un jefe, 3 % de su vida máxima por uso (`?bosscap=`; el diseño proponía 1,5 %).
+- **Topes por uso**: 400 de daño base por objetivo y uso; contra un jefe, 3 % de su vida máxima por uso (`?bosscap=`; se mide en daño base, antes de `cmul`/`bossmul`/debilidades). Los poderes hacen x3 de daño (`?pmul`) y recargan un 40 % antes (`?pcd`).
 
 ## Reglas de fusión
 - Al subir de nivel, si una carta ofrecida completa una receta con una carta de tu mano, muestra "FUSIÓN: nombre" y al elegirla sale una **ventana**: `FUSIONAR YA` (dice qué cartas se consumen) / `A LA MANO` / `VOLVER`. Fusionar cuenta como tu elección de nivel.
@@ -53,13 +53,14 @@ Los botones están en x >= 772 (el joystick solo nace en x < 480); no se solapan
 Vuelve a estar activo: **aldea** (`?direct=1` salta directo a la partida, para pruebas), **Portal** (biomas bosque, cripta, asfódelo, tundra, panal, Cráter; duración; Cacería y Práctica), **6 jefes** (Pastor, Karceron, Letea, Yarlak, Melaria, Cenizar) con sus debilidades, **minijefes**, **árbol de forja** (Grum), Rangos de forja, **Archivo** (colección, 3 loadouts), **platos** de Tía Castaña, **misiones** del Tablón / Ruta y Resonancia, todo con la cuenta propia `swarmhand.fusion.save`.
 - **Anclas**: 1 slot (la carta inicial, que se conserva en la 1.ª fusión); el nodo del tronco "Segunda ancla" da el 2.º. Cuenta nueva: Chispa de ancla; cartas desbloqueadas = las iniciales (Chispa, Esquirla, Dardo, Daga, Colmillo, Reloj). Rayo se desbloquea en la forja (para Plasma, Tormenta, Imán, Descarga hace falta).
 - Efectos de talentos y Rangos: el Rango de forja (+8 % de daño por rango) multiplica la infusión y el arma auxiliar de esa carta; los talentos de armas auxiliares (Nova doble, Hacha II, etc.) siguen funcionando; los de cartas proyectil se trasladan a la infusión; Resonancia (3-4 cartas de la misma etiqueta) y sus sets siguen activos (compiten con fusionar etiquetas distintas: es decisión del jugador).
-- **Qué NO se ha adaptado / queda abierto**: los textos del árbol conservan las descripciones del original ("carta Fuego +8 %"...) y no indican que el talento actúe sobre la infusión; no se ha repasado talento por talento el posible doble pago de los sets de Resonancia con los poderes; los efectos de plato / Ruta sobre "combos" no existen en el original; no se ha jugado a mano una campaña completa (aldea -> 6 jefes -> Cráter) con el nuevo sistema, solo humo con bots (ver Balance).
+- **Textos del árbol (v2)**: los talentos de Chispa / Esquirla / Dardo dicen ahora que actúan sobre la infusión del básico y los 5 sets de Resonancia avisan de que valen para básico, poderes y armas auxiliares y que fusionar gasta cartas. Doble pago revisado: los 12 combos pasivos siguen apagados (`C.active = {}`), Pacto no suma el pasivo del original; la Resonancia (+25 % por etiqueta con 3 cartas) sí multiplica poderes de esa etiqueta, pero fusionar consume cartas y suele romper el set, así que es una decisión y no un doble cobro acumulable (no se ha medido con el bot).
+- **Queda abierto**: los efectos de plato / Ruta sobre "combos" no existen en el original; no se ha jugado a mano una campaña completa (aldea -> 6 jefes -> Cráter) con el nuevo sistema, solo humo con bots (ver Balance).
 
 ## Cómo probarlo
 ```
 python3 tools/serve.py card-swarm-fusion 8811      # desde la raíz del repo -> http://localhost:8811/index.html
 ```
-Parámetros: `?direct=1` (sin aldea), `?all=1` (todas las cartas desbloqueadas), `?actives=vapor,plasma,forja2,hemo` (poderes de inicio; sufijo 2 = Nv2; ids: vapor plasma gas sed tormenta escarcha pacto iman forja filo hemo descarga), `?hand=spark:1,shard:1`, `?boss=pastor&nointro=1&prep=0`, `?assault=1` (Cenizar), `?god=1`, `?speed=4`, `?cmul=` (daño global), `?aux=0&auxmul=&auxcd=`, `?fuseAsh=`, `?bosscap=`, `?nosw=1`, `?reset=1`.
+Parámetros de balance v2 (todos sin recompilar, valores por defecto entre paréntesis): `?cmul=` (3,5 daño global) `?bossmul=` (0,2 daño a jefes, encima de cmul) `?bosscap=` (0,03 tope de vida del jefe por uso de poder, en daño base) `?pmul=` (3 daño de poderes) `?pcd=` (0,6 factor de cooldown de poderes) `?pinf=` (0,25 bono del básico por nivel de poder activo) `?infmul=` (0,7 bono de las infusiones) `?bcd=` (500 ms cadencia del básico) `?bdmg=` (10) `?vstep=` (4 niveles por disparo extra; 0 = sin volley) `?vmax=` (3) `?vdmg=` (0,8) `?vpow=` (2) `?lvheal=` (0,20 cura de vida máx. al subir de nivel) `?fuseheal=` (25 PV al fusionar) `?xpfirst=` (6) `?xpmul=` (1) `?auxmul=` (0,4 daño de armas auxiliares) `?auxcd=` (1,5). Otros: `?direct=1` (sin aldea), `?all=1` (todas las cartas desbloqueadas), `?actives=vapor,plasma,forja2,hemo` (poderes de inicio; sufijo 2 = Nv2; ids: vapor plasma gas sed tormenta escarcha pacto iman forja filo hemo descarga), `?hand=spark:1,shard:1`, `?boss=pastor&nointro=1&prep=0`, `?assault=1` (Cenizar), `?god=1`, `?speed=4`, `?cmul=` (daño global), `?aux=0&auxmul=&auxcd=`, `?fuseAsh=`, `?bosscap=`, `?nosw=1`, `?reset=1`.
 
 Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swarm-fusion-bot/`):
 - `node fusion_tests.js [all|iso|flow|powers|ui|village|touch|boss]` (0 errores de consola en cada una; `iso` comprueba que `games/card-swarm/` y sus herramientas siguen intactos).
@@ -76,7 +77,35 @@ Ver "Balance medido" al final (números reales, ruido y límites del bot).
 ## Cambios sobre el código copiado (marcados con `FUSION`)
 Nuevos: `src/fusion.js`, `src/assets_fusion.js`, `src/assets_fusion2.js`, `src/sfx_fusion.js`, `src/sfx_fusion2.js`. Editados: `cards.js` (anclas, pool por desbloqueo, ofertas con receta, ventana de fusión, botón, chips de poderes, mano a la izquierda), `weapons.js` (las cartas proyectil ya no disparan; exporta orbitales / auras / FIRE para las auxiliares), `combat.js` (buff de Pacto, marca de Hemotoxina, plaga de Escarcha tóxica), `enemies.js` (`blindT`), `hud.js`, `base.js`, `main.js`, `tree.js` (anclas 1/2), `save.js`, `panels.js` / `quests.js` (textos), `pwa.js`, `sw.js`, `index.html`, `manifest.webmanifest`.
 
-## Balance medido (v1)
+## Balance v2 (medido, bot de esquiva con recogida de gemas)
+Herramientas: `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` (variable `PAR=4` = 4 partidas en paralelo; **no lanzar dos lotes a la vez: la carga de CPU falsea los resultados**), `baseline_bot.js` (original, puerto 8812), `boss_fight.js` (copia adaptada del `fight.js` del original, con `dodge_fusion.js`; el original no se toca), `speed=4`, n=12-16 por celda. Cambio de método: el bot ahora recoge gemas cuando no hay peligro (como un jugador); esto no altera al original (382 +- 60, 374 +- 45, 409 +- 45 en tres lotes).
+
+| Configuración (bosque, cuenta vacía, hasta el jefe a 450 s) | v1 (antes) | v2 (ahora) |
+|---|---|---|
+| Original `card-swarm` (referencia) | 374-409 s (n=12) | igual |
+| Fusión con 4 poderes en AUTO | 255 +- 59 s (n=16, con gemas); 240 +- 15 sin gemas | **396 +- 55 s (n=12)**, 0 muertes <150 s (v1: 2/16) |
+| Fusión SIN fusionar (infusiones + auxiliares) | 241 +- 86 (v1 sin gemas) | 423 +- 41 s (n=12) |
+| 1.ª fusión | 48 s (el bot no recogía gemas) | 18 s |
+| Pastor, mano normal (p50), 4 poderes | 1/4 (n pequeño) | **8/12 (67 %)** |
+| Pastor, misma mano, SIN poderes | 0/3 | **1/12** |
+| Pastor original (boss-bot, misma mano) | 6/8 (75 %) | igual |
+
+Victorias del boss-bot con la mano p50 (n=8; original / Fusión v2): Pastor 6/8 / 5/8 (62 %, n=8) y 8/12; Karceron 4/8 / 7/8; Letea 4/8 / 6/8; Yarlak 6/8 / 5/8; Melaria 5/8 / 8/8; Cenizar 0/8 / 0/8. Karceron, Melaria y Letea quedan algo más fáciles que el original; sin ajuste por jefe (`bossmul` es global).
+
+Qué se cambió y por qué (cada paso medido con el bot):
+- **Causa del hueco**: el original se cura 130-300 PV por partida con los combos pasivos Pacto / Sangre envenenada, que en la Fusión pasaron a poderes activos. Ahora hay cura por nivel (20 % de vida máx.) y 25 PV por fusión (`lvheal`, `fuseheal`).
+- Básico más rápido (650 -> 500 ms) y volley; recoger gemas movió la 1.ª fusión a ~18 s (garantizada en la 1.ª oferta). Con x1,0 de `xpfirst` no cambia nada: la XP la limita recoger gemas.
+- Poderes: x3 daño, cooldown x0,6, y cada poder activo sube el básico un 25 % por nivel y cuenta para el volley (compensa las cartas que se consumen al fusionar). Infusiones x0,7 y auxiliares x0,4 para que no fusionar no sea superior.
+- Jefes: el x3,5 global dejaba al Pastor en 28 s (original: ~120 s); `bossmul` 0,2 lo lleva a ~95 s y 62-67 % de victoria.
+- Sin cambio: `cmul` 3,5, `bosscap` 3 % (no se probó 1,5 %).
+
+Lectura honesta / desvíos:
+- **En el bosque, el bot con poderes (396 +- 55) NO sobrevive más que sin ellos (423 +- 41)**: la diferencia no es medible (y es negativa). Contra jefes sí: Pastor 8/12 con poderes frente a 1/12 sin ellos. El bot solo usa el AUTO del juego (no dispara "en el momento útil"); no se ha afinado el AUTO.
+- Supervivencia de la Fusión (396) dentro de ~5 % del original (~380). Ningún bot gana el bosque completo (0/12); antes de `bossmul` el bot sin poderes ganaba 5-8/12, lo que indicaba demasiado daño contra el jefe.
+- Cada fusión tiene papel (control: Vapor, Tormenta, Imán, Tóxica; área: Gas, Plasma, Filo, Descarga; jefe: Forja, Plasma, Pacto; cura: Sed, Hemo, Pacto/nivel), pero no se midió cada poder aislado.
+- Pruebas: `fusion_tests.js all` (incl. `balance`) 0 errores de consola; algunos tests se hicieron robustos (`bcd=60000&aux=0` para que el básico no mate a los blancos). Sin medición en móvil real ni campaña completa.
+
+## Balance medido (v1, histórico)
 Herramienta: el MISMO bot de esquiva (solo se mueve, elige cartas, AUTO para los poderes) sobre el original (`baseline_bot.js`, puerto 8812) y sobre la copia (`play_bot.js`), `speed=4`, cuenta vacía salvo indicación, 844x390. Es un bot burdo: **no llega a ganar ninguna partida ni en el original (0/8)**, así que la meta del diseño (victoria del bot 40-60 %, activos = +25 puntos) **no se puede medir con él**; se compara el tiempo de supervivencia (muerte, en s de partida; el jefe aparece a los 450 s). Media +- desviación típica (n); el error típico de la media es sd/raíz(n), es decir 12-30 s.
 
 | Configuración | Supervivencia | Victorias |
