@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - DESIGN v2 (enemigos + protagonista)
 
 Alcance: dos bloques independientes para dos implementadores en paralelo. A = `enemies.js`, `waves.js`, `main.js` (`G.B.enemy`) y sprites de enemigos en `assets.js`. B = solo el sprite `player` en `assets.js` (ver "Zonas de `assets.js`" al final para no pisarse). Sin código aquí; los valores son punto de partida a afinar jugando.

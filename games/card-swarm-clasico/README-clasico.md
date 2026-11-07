@@ -1,3 +1,5 @@
+> **ARCHIVADO.** Versión clásica v5.6 de Swarm Hand, ya no se despliega ni se mantiene. El juego publicado es `../card-swarm/` (Fusión). Copia remota: rama `archive/card-swarm-clasico-v5.6`. Sus bots: `tools/card-swarm-clasico-balance-bot/`, `tools/card-swarm-clasico-boss-bot/` (sirve con `python3 tools/serve.py card-swarm-clasico <puerto>`).
+
 # Swarm Hand (prototipo)
 
 Survivors donde no atacas: tu **mano de 5 cartas** dispara sola y, cuando dos etiquetas de tu mano se tocan

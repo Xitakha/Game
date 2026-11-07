@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v6: Minijefes por bioma (fase P4.5)
 
 Estado: DISEÑO para implementar, sin código. Amplía `DESIGN-v4-jefes.md` (reglas de jefe, regla de esquiva, HIT_CAP) y `DESIGN-v5-biomas.md` (familias, tabla de materiales A.8, Tundra y Panal). Estado real del código leído para este documento: `src/enemies.js` (`ai_bulwark`, `ai_hive`, `E.VARIANTS`, `E.minis`), `enemies_tundra.js`, `families.js`, `waves.js` (`spawnElite`, `W.MINI_LAST`), `main.js` (`G.B.enemy.mini_*`, `G.B.mini`), `loot.js` (`L.GUARANTEED`, `L.MINI_PART_BONUS`, `L.DUR`), `tree.js` (`T.onElite`), `combat.js` (`shieldHit`/`sacHit`), `boss.js` (`drawGuardBar`), `assets_enemies2.js`, `assets_fam3.js`, `README.md` ("Minijefes v5", "Guardianes", P0-P4).

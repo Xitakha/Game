@@ -1,7 +1,7 @@
-# Swarm Hand: Fusión (prototipo v1, balance v2)
+# Swarm Hand (antes "Fusión": prototipo v1, balance v2)
 
-Experimento **aislado** de "cartas activas" sobre una copia de `games/card-swarm/` (que no se ha tocado). Diseño de partida: `../card-swarm-fusion-DESIGN.md`.
-El README del juego original (heredado de la copia, sin actualizar) está en `README-card-swarm-heredado.md`; los `DESIGN-*.md` / `GDD.md` de esta carpeta también son heredados.
+**Este es el juego publicado en https://xitakha.github.io/Game/card-swarm/** (el dueño aprobó el prototipo Fusión y sustituyó a la versión anterior). La versión clásica (mano de 5 cartas con combos pasivos, v5.6) quedó archivada en `../card-swarm-clasico/` (no se despliega; también en la rama remota `archive/card-swarm-clasico-v5.6`; su README: `../card-swarm-clasico/README-clasico.md`). Diseño de partida: `DESIGN-fusion.md`.
+Los `DESIGN-v*.md`, `GDD.md`, `MOVIL.md`, etc. de esta carpeta son heredados del clásico (llevan una nota arriba); donde hablan de combos pasivos no aplican.
 Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2.js` (contrato en `ASSETS_FUSION.md`).
 
 ## Qué es
@@ -49,7 +49,7 @@ Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2
 
 Los botones están en x >= 772 (el joystick solo nace en x < 480); no se solapan con la mano, pausa / silencio (arriba a la izquierda) ni con el HUD (probado con dos dedos: joystick mantenido + los 4 botones, `fusion_tests.js touch` / `ui`). Vertical 390x844: solo el aviso "gira el teléfono" (como el original). Modo AUTO: dispara un poder listo si hay objetivo útil (>= 3 enemigos para nubes / tormenta / gas, >= 4 para Imán, 2 para dagas / esporas / filo / marca, 1 para Plasma / Forja, >= 2 envenenados para Descarga, HP >= 40 % para Pacto; jefe presente baja los umbrales).
 
-## Integración con el juego original (v1)
+## Integración con el sistema heredado (v1)
 Vuelve a estar activo: **aldea** (`?direct=1` salta directo a la partida, para pruebas), **Portal** (biomas bosque, cripta, asfódelo, tundra, panal, Cráter; duración; Cacería y Práctica), **6 jefes** (Pastor, Karceron, Letea, Yarlak, Melaria, Cenizar) con sus debilidades, **minijefes**, **árbol de forja** (Grum), Rangos de forja, **Archivo** (colección, 3 loadouts), **platos** de Tía Castaña, **misiones** del Tablón / Ruta y Resonancia, todo con la cuenta propia `swarmhand.fusion.save`.
 - **Anclas**: 1 slot (la carta inicial, que se conserva en la 1.ª fusión); el nodo del tronco "Segunda ancla" da el 2.º. Cuenta nueva: Chispa de ancla; cartas desbloqueadas = las iniciales (Chispa, Esquirla, Dardo, Daga, Colmillo, Reloj). Rayo se desbloquea en la forja (para Plasma, Tormenta, Imán, Descarga hace falta).
 - Efectos de talentos y Rangos: el Rango de forja (+8 % de daño por rango) multiplica la infusión y el arma auxiliar de esa carta; los talentos de armas auxiliares (Nova doble, Hacha II, etc.) siguen funcionando; los de cartas proyectil se trasladan a la infusión; Resonancia (3-4 cartas de la misma etiqueta) y sus sets siguen activos (compiten con fusionar etiquetas distintas: es decisión del jugador).
@@ -58,21 +58,21 @@ Vuelve a estar activo: **aldea** (`?direct=1` salta directo a la partida, para p
 
 ## Cómo probarlo
 ```
-python3 tools/serve.py card-swarm-fusion 8811      # desde la raíz del repo -> http://localhost:8811/index.html
+python3 tools/serve.py card-swarm 8811      # desde la raíz del repo -> http://localhost:8811/index.html
 ```
 Parámetros de balance v2 (todos sin recompilar, valores por defecto entre paréntesis): `?cmul=` (3,5 daño global) `?bossmul=` (0,2 daño a jefes, encima de cmul) `?bosscap=` (0,03 tope de vida del jefe por uso de poder, en daño base) `?pmul=` (3 daño de poderes) `?pcd=` (0,6 factor de cooldown de poderes) `?pinf=` (0,25 bono del básico por nivel de poder activo) `?infmul=` (0,7 bono de las infusiones) `?bcd=` (500 ms cadencia del básico) `?bdmg=` (10) `?vstep=` (4 niveles por disparo extra; 0 = sin volley) `?vmax=` (3) `?vdmg=` (0,8) `?vpow=` (2) `?lvheal=` (0,20 cura de vida máx. al subir de nivel) `?fuseheal=` (25 PV al fusionar) `?xpfirst=` (6) `?xpmul=` (1) `?auxmul=` (0,4 daño de armas auxiliares) `?auxcd=` (1,5). Otros: `?direct=1` (sin aldea), `?all=1` (todas las cartas desbloqueadas), `?actives=vapor,plasma,forja2,hemo` (poderes de inicio; sufijo 2 = Nv2; ids: vapor plasma gas sed tormenta escarcha pacto iman forja filo hemo descarga), `?hand=spark:1,shard:1`, `?boss=pastor&nointro=1&prep=0`, `?assault=1` (Cenizar), `?god=1`, `?speed=4`, `?cmul=` (daño global), `?aux=0&auxmul=&auxcd=`, `?fuseAsh=`, `?bosscap=`, `?nosw=1`, `?reset=1`.
 
-Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swarm-fusion-bot/`):
-- `node fusion_tests.js [all|iso|flow|powers|ui|village|touch|boss]` (0 errores de consola en cada una; `iso` comprueba que `games/card-swarm/` y sus herramientas siguen intactos).
-- `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` mismo bot sobre el original (`python3 tools/serve.py card-swarm 8812`); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
+Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swarm-bot/`):
+- `node tools/card-swarm-bot/tests.js [all|iso|flow|powers|ui|village|touch|boss|balance]` (0 errores de consola en cada una; `iso` ahora comprueba PWA: manifest, caché `fusionhand-*`, precache completo, guardado `swarmhand.fusion.*`).
+- `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` mismo bot sobre el clásico (`python3 tools/serve.py card-swarm-clasico 8812`); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
 
 ## Balance
 Ver "Balance medido" al final (números reales, ruido y límites del bot).
 
-## Aislamiento respecto al juego original
-- Guardado en `localStorage` `swarmhand.fusion.save` (el original usa `swarmhand.save`; no se leen ni se tocan).
-- `sw.js`: caché `fusionhand-<hash>` (NO empieza por `swarmhand-`: el `activate` del original borra todas las `swarmhand-*` de su origen). `manifest.webmanifest`: `id` `swarm-hand-fusion/`, `start_url`/`scope` `./`. Título propio.
-- `tools/card-swarm-pwa/stamp_fusion.py` (copia de `stamp.py`; el precache sale de `index.html`, ya incluye `assets_fusion2.js` y `sfx_fusion2.js`). `.github/workflows/pages.yml` solo añade un bloque que copia `games/card-swarm-fusion` a `_site/card-swarm-fusion` y ejecuta ese stamp.
+## Guardado y PWA (convivencia con el clásico)
+- Guardado en `localStorage` `swarmhand.fusion.save`. El guardado clásico `swarmhand.save` (y sus copias `.v2`-`.v8`) NO se lee, migra ni borra: queda intacto por si se reabre el clásico.
+- `sw.js`: caché `fusionhand-<hash>` (NO empieza por `swarmhand-`: el `activate` del clásico borraba las `swarmhand-*` del origen). `manifest.webmanifest`: `id`/`start_url`/`scope` `./` (mismo `id` que el clásico: quien lo tenía instalado recibe el juego nuevo como actualización de la misma app, con sus datos nuevos en blanco).
+- `tools/card-swarm-pwa/stamp.py` (único; el precache sale de `index.html`). `.github/workflows/pages.yml` despliega solo `games/card-swarm` en `/card-swarm/`; `/card-swarm-fusion/` es solo una redirección (`tools/site/card-swarm-fusion-redirect.html` + `card-swarm-fusion-sw.js`, que desregistra el SW del prototipo).
 
 ## Cambios sobre el código copiado (marcados con `FUSION`)
 Nuevos: `src/fusion.js`, `src/assets_fusion.js`, `src/assets_fusion2.js`, `src/sfx_fusion.js`, `src/sfx_fusion2.js`. Editados: `cards.js` (anclas, pool por desbloqueo, ofertas con receta, ventana de fusión, botón, chips de poderes, mano a la izquierda), `weapons.js` (las cartas proyectil ya no disparan; exporta orbitales / auras / FIRE para las auxiliares), `combat.js` (buff de Pacto, marca de Hemotoxina, plaga de Escarcha tóxica), `enemies.js` (`blindT`), `hud.js`, `base.js`, `main.js`, `tree.js` (anclas 1/2), `save.js`, `panels.js` / `quests.js` (textos), `pwa.js`, `sw.js`, `index.html`, `manifest.webmanifest`.

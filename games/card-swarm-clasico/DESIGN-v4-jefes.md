@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v4: Jefes de verdad (estilo Monster Hunter / Hades)
 
 Estado: DISEÑO para implementar, sin código. Amplía `DESIGN-v2.md` (enemigos, regla de legibilidad) y `DESIGN-v3-aldea.md` (aldea, árbol, economía; allí "jefes mayores" y "Peligro I-V" estaban fuera de alcance: esta es la hoja de ruta para recuperarlos). Las cifras son punto de partida y se afinan con el bot (`?dbg=1&speed=4`).

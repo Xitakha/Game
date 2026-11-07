@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v7: Jefe final de la historia (Cenizar, el Incendio Primero)
 
 Estado: DISEÑO, sin código, sin commit. Se inserta entre la P6 (Melaria, hecha) y la P7 (Integración) como fase **P6.5**. Parte de `DESIGN-v4-jefes.md` (principios, regla de esquiva, partes, Peligro), `DESIGN-v5-biomas.md` (Portal de 5 destinos, plan P0-P8, decisiones del dueño) y del estado real de `src/boss.js` + `boss_karceron/letea/yarlak/melaria.js` leído en el README (motor de N fases con `nPh`, `HIT_CAP` 32, `EXIT`, `PELIGRO`, `hpCal`/`dmgK`, `geo`, `weak/resist` por fase, desesperado, Último aliento en Peligro V, `hunt`/`practice`). Todas las cifras son punto de partida para el boss-bot.

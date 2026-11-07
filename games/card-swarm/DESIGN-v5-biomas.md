@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v5: Familias de monstruos por bioma + Tundra (Yarlak) + Panal (Reina Abeja)
 
 Estado: DISEÑO para implementar, sin código. Amplía `DESIGN-v2.md` (roster, regla de legibilidad), `DESIGN-v3-aldea.md` (forja, economía) y `DESIGN-v4-jefes.md` (jefes, Peligro, cacería). Estado real del código leído para este documento: `src/main.js` (`G.B.enemy`, `G.B.tier`, `G.B.tierCurve`, `G.B.light`), `src/waves.js` (director, packs, `capOf`), `src/enemies.js` (IA por tipo, `G.zones`, `slowT/slowPct`, guardianes con `e.variant`), `src/boss.js` + `boss_karceron.js` + `boss_letea.js` (motor de jefes, `DEFS`, `PELIGRO`, `EXIT`), `src/loot.js` (`L.DUR`, `L.GUARANTEED`, `L.DROPS`), `README.md` (calibración medida con el bot) y `ASSETS_API.md`.
