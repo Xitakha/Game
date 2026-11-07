@@ -13,8 +13,8 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: 10, basicCd: 650, speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, maxFields: 4, slots: NS };
-  var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.6), cd: qnum('auxcd', 1.5), bonus: 0.5 };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), bossMul: qnum('bossmul', 0.2), pmul: qnum('pmul', 3), pcd: qnum('pcd', 0.6), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0.25), infmul: qnum('infmul', 0.7), vstep: qnum('vstep', 4), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
+  var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.4), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;
   var KEYS = ['KeyQ', 'KeyE', 'KeyR', 'Space'], KEYL = ['Q', 'E', 'R', '_'], DIGS = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
@@ -76,6 +76,10 @@
   ];
   var RBY = {}, RKEY = {};
   R.forEach(function (r) { RBY[r.id] = r; RKEY[[r.a, r.b].sort().join('+')] = r; });
+  F.onLevel = function () {   // sostén: el original curaba ~200-400 PV por partida con los combos pasivos Pacto / Sangre envenenada; aquí, cura al subir de nivel
+    var p = G.player; if (p.dead || P.lvHeal <= 0) return;
+    G.Player.heal(p, Math.round(p.maxHp * P.lvHeal), 'nivel');
+  };
   F.recipe = function (id) { return RBY[id]; };
   F.recipeFor = function (t1, t2) { return RKEY[[t1, t2].sort().join('+')] || null; };
   // C.combos (solo informativo para la Base / Archivo: ya no se activan como pasivos)
@@ -153,6 +157,7 @@
       try { G.Save.data.combosSeen[r.id] = 1; G.Save.save(); } catch (e0) { /* sin guardado */ }
       F.fused++; F.stats.fusions.push({ id: r.id, lvl: lvlUp ? 2 : 1, t: Math.round(G.runT) }); if (F.stats.firstFusionT == null) F.stats.firstFusionT = Math.round(G.runT);
       C.recalc(false);
+      if (P.fuseHeal > 0 && !p.dead) G.Player.heal(p, P.fuseHeal, 'fusion');
       G.Hud.banner('¡FUSIÓN! ' + r.name + (lvlUp ? ' Nv2' : ''), 2400, '#ffd24a', { a: r.a, b: r.b, name: '¡' + r.name.toUpperCase() + '!', desc: r.desc });
       sfxFallback(r, 'fuse', 'fx_fusion'); snd('fuse', 0);
       fx.ring(p.x, p.y, 10, 120, 500, G.TAGS[r.a].color, 6); fx.ring(p.x, p.y, 6, 90, 400, G.TAGS[r.b].color, 4);
@@ -174,7 +179,7 @@
     for (var i = 0; i < h.length; i++) {
       var s = h[i]; if (!s) continue; var d = C.def(s.id); if (d.type !== 'attack') continue;
       var o = inf[d.tag] || (inf[d.tag] = { bonus: 0, lv: 0, n: 0 });
-      o.bonus += BONUS[s.lvl - 1] * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id) * (d.id === 'dart' && G.Tree.fx.puntaAfilada ? 2 : 1); o.lv = Math.max(o.lv, s.lvl); o.n++;
+      o.bonus += BONUS[s.lvl - 1] * P.infmul * (d.kind === 'proj' ? 1 : AUX.bonus) * G.Loot.rm(s.id) * (d.id === 'dart' && G.Tree.fx.puntaAfilada ? 2 : 1); o.lv = Math.max(o.lv, s.lvl); o.n++; o.lvSum = (o.lvSum || 0) + s.lvl;
     }
     return inf;
   };
@@ -201,19 +206,34 @@
 
   // ------------------------------------------------------------- Ataque básico
   function slotsActive(id) { var a = G.player.actives; for (var i = 0; i < NS; i++) if (a[i] && a[i].id === id && a[i].st) return a[i]; return null; }
+  function volleyN(inf) {   // disparos extra del básico: +1 por cada P.vstep niveles de infusión sumados (tope P.vmax)
+    var sum = 0; for (var tg in inf) sum += inf[tg].lvSum || 0;
+    G.player.actives.forEach(function (a) { if (a) sum += P.vpow * a.lvl; });   // ?vpow: cada poder activo cuenta como vpow niveles de infusión
+    return P.vstep > 0 ? Math.min(P.vmax, Math.floor(sum / P.vstep)) : 0;
+  }
   function basicShot(p) {
     var t = CB.nearest(p.x, p.y, RANGE); if (!t) return false;
     var inf = F.infusion(), mul = 1, tags = [], dom = null, best = 0;
     for (var tg in inf) { mul += inf[tg].bonus; tags.push(tg); if (inf[tg].bonus > best) { best = inf[tg].bonus; dom = tg; } }
-    var a = Math.atan2(t.y - p.y, t.x - p.x);
-    var q = W.spawnProj({ x: p.x, y: p.y - 4, ang: a, speed: P.speed, dmg: P.basicDmg * mul, tag: dom || 'neutral', id: 'basic', kind: 'basic', r: 6, life: 1300 });
-    if (!q) return false;
-    q.fus = { tags: tags, inf: inf };
-    q.pierceN = inf.steel ? (inf.steel.lv >= 3 ? 2 : 1) : 0;
-    if (inf.ice && G.Tree.fx.perfora) q.pierceN = 99;   // talento Esquirla II-A: atraviesa
-    F.stats.basicShots++;
-    G.Snd.play(dom || 'neutral', 1);
-    return true;
+    G.player.actives.forEach(function (a) { if (a) mul += P.pinf * a.lvl; });   // ?pinf: cada poder activo mejora el básico (compensa las cartas consumidas)
+    var targets = [t], extra = volleyN(inf);
+    if (extra > 0) {   // extra: a otros objetivos distintos, primero los enemigos a distancia (arqueros...) y luego los más cercanos
+      var cand = CB.inRange(p.x, p.y, RANGE).filter(function (e) { return e !== t && !e.partOf; });
+      cand.sort(function (a, b) { var ra = (a.type === 'archer' || a.type === 'warlock') ? -400 : 0, rb = (b.type === 'archer' || b.type === 'warlock') ? -400 : 0; return (Math.hypot(a.x - p.x, a.y - p.y) + ra) - (Math.hypot(b.x - p.x, b.y - p.y) + rb); });
+      for (var i = 0; i < cand.length && targets.length < 1 + extra; i++) targets.push(cand[i]);
+    }
+    var fired = false;
+    for (var k = 0; k < targets.length; k++) {
+      var tt = targets[k], a = Math.atan2(tt.y - p.y, tt.x - p.x);
+      var q = W.spawnProj({ x: p.x, y: p.y - 4, ang: a, speed: P.speed, dmg: P.basicDmg * mul * (k ? P.vdmg : 1), tag: dom || 'neutral', id: 'basic', kind: 'basic', r: 6, life: 1300 });
+      if (!q) continue;
+      q.fus = { tags: tags, inf: inf };
+      q.pierceN = inf.steel ? (inf.steel.lv >= 3 ? 2 : 1) : 0;
+      if (inf.ice && G.Tree.fx.perfora) q.pierceN = 99;   // talento Esquirla II-A: atraviesa
+      F.stats.basicShots++; fired = true;
+    }
+    if (fired) G.Snd.play(dom || 'neutral', 1);
+    return fired;
   }
   F.basicHit = function (e, q, oo) {   // antes del daño: etiqueta dinámica + estados de las infusiones
     var inf = q.fus.inf;
@@ -272,6 +292,7 @@
   // ------------------------------------------------------------- Daño de poderes con topes por uso
   function hitE(e, slot, dmg, o, tags) {
     var r = e.partOf || e; if (!r.fid) r.fid = ++uid;
+    dmg *= P.pmul;   // ?pmul: multiplicador de daño de los poderes
     var used = slot.use[r.fid] || 0, cap = r.type === 'boss' ? P.bossCap * r.maxHp : P.perTargetCap;
     if (used >= cap) return 0;
     slot.use[r.fid] = used + dmg;
@@ -435,7 +456,7 @@
     var r = RBY[s.id], L = r.lv[s.lvl - 1];
     s.use = {};
     if (!CAST[r.kind](s, r, L, p)) { if (!auto) { fx.num(p.x, p.y - 34, 'sin objetivo', '#9a8fb0'); snd('fx_btn_cancel', 120); } return false; }
-    s.cdMax = Math.round(L.cd * cdMul()); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
+    s.cdMax = Math.round(L.cd * cdMul() * P.pcd); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
     F.stats.uses[s.id] = (F.stats.uses[s.id] || 0) + 1;
     sfx(r, '', 0, 1); fx.shake(3, 100);
     if (r.sfx !== r.id || ['tormenta', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].indexOf(r.id) >= 0) addFx({ kind: 'cast', id: r.id, dur: 320 });

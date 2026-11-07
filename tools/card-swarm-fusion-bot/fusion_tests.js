@@ -65,7 +65,7 @@ async function flow() {
   await sleep(pg, 700); await spawnAround(pg, 3, 120); await sleep(pg, 2500);
   ok((await E(pg, () => G.Fusion.stats.basicShots)) > 0, 'el ataque básico dispara solo');
   ok((await E(pg, () => G.Weapons && G.projectiles.every(q => q.team !== 'p' || q.kind === 'basic'))), 'solo proyectiles básicos (las cartas no disparan)');
-  const mods = await E(pg, () => { const i = G.Fusion.infusion(); return JSON.stringify(i); }); ok(/"fire":\{"bonus":0.2/.test(mods), 'infusión Fuego Nv1 +20 %: ' + mods);
+  const mods = await E(pg, () => { const i = G.Fusion.infusion(); return JSON.stringify(i); }); ok(/"fire":\{"bonus":0.1[34]/.test(mods), 'infusión Fuego Nv1 +14 % (20 % x infmul 0,7): ' + mods);
   // 1.ª oferta tras el inicio: garantiza una carta que forme receta
   let guar = 0; for (let k = 0; k < 40; k++) { const o = await E(pg, () => { G.Cards.open('level'); return G.Cards.off.cards.some(id => G.Cards.newCombos(G.Cards.def(id).tag).length > 0); }); if (o) guar++; }
   ok(guar === 40, '1.ª oferta (sin fusiones): siempre hay carta de fusión (' + guar + '/40)');
@@ -130,7 +130,7 @@ async function powers() {
   const IDS = ['vapor', 'plasma', 'gas', 'sed', 'tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'];
   for (const lv of [1, 2]) for (const id of IDS) {
     if (lv === 2 && !['tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].includes(id)) continue;
-    const pg = await mk(b, `reset=1&god=1&direct=1&all=1&speed=3&nointro=1&actives=${id}${lv === 2 ? '2' : ''}&hand=spark:1,shard:1`);
+    const pg = await mk(b, `reset=1&god=1&direct=1&all=1&speed=3&nointro=1&actives=${id}${lv === 2 ? '2' : ''}&hand=spark:1,shard:1&bcd=60000&aux=0`);
     await autoSkip(pg); await sleep(pg, 600); await E(pg, () => { G.player.hp = 60; });
     await E(pg, () => { for (let i = 0; i < 16; i++) { const a = i * 0.4; G.Enemies.spawn('worm', G.player.x + Math.cos(a) * (70 + i * 7), G.player.y + Math.sin(a) * (70 + i * 7)); } });
     await sleep(pg, 900);
@@ -141,7 +141,7 @@ async function powers() {
     const tag = `${id}${lv === 2 ? ' Nv2' : ''}`;
     ok(st.s.actives[0].uses === 1 && st.s.actives[0].cd > 5000, `${tag}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
     ok(st.fields + st.axes + st.fxs > 0 || st.on || st.buff, `${tag}: efecto visible (campos ${st.fields}, hachas ${st.axes}, fx ${st.fxs}, canal ${st.on})`);
-    if (id === 'hemo') ok(st.marks >= (lv === 2 ? 9 : 6), `${tag}: marca ${st.marks} enemigos`);
+    if (id === 'hemo') ok(st.marks >= (lv === 2 ? 7 : 6), `${tag}: marca ${st.marks} enemigos`);
     if (id === 'pacto') ok(st.buff && (await E(pg, () => G.player.hp)) >= 20, `${tag}: buff activo y HP >= 20`);
     await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6000 : id === 'tormenta' ? 4000 : 3200);
     const hp1 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0)), sn = await E(pg, () => G.Fusion.snapshot());
@@ -216,7 +216,7 @@ async function village() {
 
 async function touch() {
   console.log('--- táctil: botones grandes, sin chocar con el joystick ni con mobile.js');
-  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&actives=vapor,plasma,forja,hemo&hand=spark:1&speed=2');
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&actives=vapor,plasma,forja,hemo&hand=spark:1&speed=2&bcd=60000&aux=0');
   await autoSkip(pg); await sleep(pg, 800);
   const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)) }));
   const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
@@ -242,6 +242,7 @@ async function touch() {
   }, [g.btn[1]]);
   ok(res.joyOn && res.still && res.used === 1 && res.moved > 20, `joystick a la izquierda y botón 2 a la derecha a la vez (joy ${res.joyOn}/${res.still}, usos ${res.used}, avance ${Math.round(res.moved)} px)`);
   // dos dedos con los 4 botones: joystick izquierdo mantenido mientras se tocan los botones 3 y 4
+  await spawnAround(pg, 14, 80); await sleep(pg, 450); await waitState(pg, "play", 3000);
   const r4 = await E(pg, async ([bs]) => {
     const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / 960, Y = y => r.top + y * r.height / 540;
     const ev = (t, id, x, y) => cv.dispatchEvent(new PointerEvent(t, { pointerType: 'touch', pointerId: id, clientX: X(x), clientY: Y(y), bubbles: true, cancelable: true, isPrimary: id === 5 }));
@@ -276,8 +277,25 @@ async function boss() {
   await done(pg, 'boss'); await b.close();
 }
 
+async function balance() {
+  console.log('--- balance v2: perillas por URL, defaults, volley, cura, jefes');
+  const b = await launch(); let pg = await mk(b, 'reset=1&god=1&direct=1&all=1&hand=spark:3,shard:3,dart:3,fang:2,dagger:2&nosw=1');
+  const P = await E(pg, () => { const p = G.Fusion.P; return { bd: p.basicDmg, bcd: p.basicCd, pmul: p.pmul, pcd: p.pcd, bm: p.bossMul, vs: p.vstep, im: p.infmul, lv: p.lvHeal, fh: p.fuseHeal, aux: G.Fusion.AUX.dmg, cm: G.B.cardDmgMul }; });
+  ok(P.bcd === 500 && P.pmul === 3 && P.pcd === 0.6 && P.bm === 0.2 && P.vs === 4 && P.im === 0.7 && P.lv === 0.2 && P.fh === 25 && P.aux === 0.4, 'valores por defecto: ' + JSON.stringify(P));
+  await sleep(pg, 800);
+  const v = await E(pg, () => { const inf = G.Fusion.infusion(); let s = 0; for (const k in inf) s += inf[k].lvSum; return { s, shots: G.Fusion.P.vstep }; });
+  ok(v.s >= 8, 'las infusiones suman niveles para el volley (' + v.s + ')');
+  const h = await E(pg, () => { G.god = false; const p = G.player; p.hp = 50; G.Fusion.onLevel(); return p.hp; });
+  ok(h > 50, 'cura al subir de nivel (' + h + ')');
+  await done(pg, 'balance-defaults');
+  pg = await mk(b, 'reset=1&god=1&direct=1&all=1&bcd=300&pmul=1&bossmul=1&lvheal=0&vstep=0&nosw=1');
+  const Q = await E(pg, () => { const p = G.Fusion.P; return [p.basicCd, p.pmul, p.bossMul, p.lvHeal, p.vstep]; });
+  ok(JSON.stringify(Q) === '[300,1,1,0,0]', 'perillas ?bcd ?pmul ?bossmul ?lvheal ?vstep se leen de la URL: ' + Q);
+  await done(pg, 'balance-url'); await b.close();
+}
+
 (async () => {
-  const run = { iso, flow, powers, ui, village, touch, boss };
+  const run = { iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

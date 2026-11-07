@@ -128,7 +128,7 @@
     //   9 min ahora  3,0   5,0   6,0   8,0  10,0  12,0  14,0  15,0  15,0        build completa a los 6:55  (77 %; jefe a 7:30)
     //  10 min antes  5,0   7,9  10,1  13,1  17,0  20,0  24,0  27,9  29,8  30,0  build completa a los 4:02
     //  10 min ahora  3,0   4,0   6,0   7,0   9,0  11,0  12,0  14,0  15,0  15,0  build completa a los 7:46  (78 %; jefe a 8:20)
-    xp: { first: 6, base: 26, lin: 0, quad: 0.9, gemMul: 0.5, lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
+    xp: { first: qnum('xpfirst', 6), base: 26, lin: 0, quad: 0.9, gemMul: 0.5 * qnum('xpmul', 1), lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
     xpNeed: function (L) { var x = G.B.xp; return L === 1 ? x.first : Math.round(x.base + x.lin * L + x.quad * L * L); },
     xpGem: function () {   // multiplicador de XP por gema según la duración elegida
       var x = G.B.xp, t = x.lenMul, m = G.RUN_LEN / 60000, i;

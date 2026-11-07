@@ -164,7 +164,7 @@
 
   function close() {
     var O = C.off;
-    if (O.mode === 'level') G.pendingLevels = Math.max(0, G.pendingLevels - 1);
+    if (O.mode === 'level') { G.pendingLevels = Math.max(0, G.pendingLevels - 1); if (!G.prep && G.Fusion.onLevel) G.Fusion.onLevel(); }   // FUSION: cura al subir de nivel
     C.off = null; G.state = 'play'; G.input.lock = 200;
   }
 

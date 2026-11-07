@@ -138,6 +138,7 @@
     if (e.expT > 0) dmg *= e.expMul;   // ventana de exposición de los minijefes (x1,5 / x1,4) desde cualquier ángulo
     if (e.dmgIn && e.dmgIn !== 1) dmg *= e.dmgIn;   // P4.5: herida abierta de la Hidra Joven (x1,3)
     dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
+    if (e.type === 'boss') { dmg *= G.Fusion.P.bossMul; }   // FUSION: ?bossmul (el x3,5 global del bosque dejaba a los jefes en 30 s)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
     if (e.mini) { /* P4.5: la parte la gasta Minis.onHit */ }
     else if (blocked && e.type === 'mini_bulwark') G.Enemies.shieldHit(e, pre * G.B.cardDmgMul);   // Escudo rompible: el daño frontal bloqueado lo gasta
