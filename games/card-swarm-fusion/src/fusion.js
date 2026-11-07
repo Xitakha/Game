@@ -13,8 +13,8 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), pmul: qnum('pmul', 2), pcd: qnum('pcd', 0.7), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0), infmul: qnum('infmul', 1), vstep: qnum('vstep', 2), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
-  var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.6), cd: qnum('auxcd', 1.5), bonus: 0.5 };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), pmul: qnum('pmul', 3), pcd: qnum('pcd', 0.6), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0.25), infmul: qnum('infmul', 0.7), vstep: qnum('vstep', 4), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
+  var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.4), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;
   var KEYS = ['KeyQ', 'KeyE', 'KeyR', 'Space'], KEYL = ['Q', 'E', 'R', '_'], DIGS = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
