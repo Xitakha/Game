@@ -12,7 +12,7 @@
     { id: 'F0', tree: 'fire', tag: 'fire', type: 'root', name: 'Chispa', col: 2.5, row: 0, icon: 'flame', desc: 'Carta inicial de Fuego (Rango I): proyectil al enemigo más cercano con quemadura. Raíz del árbol.' },
     { id: 'F1', tree: 'fire', tag: 'fire', type: 'M', tier: 'T1', name: 'Chispa II', col: 1, row: 1, icon: 'flame', card: 'spark', req: { all: ['F0'] },
       desc: 'Chispa sube a Rango II (+8 % de daño). Elige una mejora permanente.',
-      ch: { A: { name: 'Pavesa', fx: 'pavesa', desc: 'La quemadura de Chispa dura +2 s y hace +30 % de su daño.' }, B: { name: 'Ráfaga', fx: 'rafaga', desc: 'El cooldown de Chispa baja un 15 %.' } } },
+      ch: { A: { name: 'Pavesa', fx: 'pavesa', desc: 'Infusión de Fuego: la quemadura del ataque básico dura +2 s y hace +30 % de su daño.' }, B: { name: 'Ráfaga', fx: 'rafaga', desc: 'Con una carta de Fuego en la mano, el ataque básico dispara un 15 % más rápido.' } } },
     { id: 'F2', tree: 'fire', tag: 'fire', type: 'C', tier: 'T1', name: 'Bola de brasa', col: 4, row: 1, icon: 'burst', card: 'ember', req: { all: ['F0'] },
       desc: 'Desbloquea la carta Bola de brasa (común): bola lenta que explota en área.' },
     { id: 'F4', tree: 'fire', tag: 'fire', type: 'P', tier: 'T1', name: 'Pulmón de fragua', col: 0, row: 2, icon: 'flame', fx: 'lung', req: { all: ['F1'] },
@@ -39,7 +39,7 @@
     { id: 'H0', tree: 'ice', tag: 'ice', type: 'root', name: 'Esquirla', col: 2.5, row: 0, icon: 'flake', desc: 'Carta inicial de Hielo (Rango I): proyectil que ralentiza al enemigo. Raíz del árbol.' },
     { id: 'H1', tree: 'ice', tag: 'ice', type: 'M', tier: 'T1', name: 'Esquirla II', col: 1, row: 1, icon: 'flake', card: 'shard', req: { all: ['H0'] },
       desc: 'Esquirla sube a Rango II (+8 % de daño). Elige una mejora permanente.',
-      ch: { A: { name: 'Perforante', fx: 'perfora', desc: 'La Esquirla atraviesa a todos los enemigos de su trayectoria.' }, B: { name: 'Escarcha densa', fx: 'helada', desc: 'La Esquirla ralentiza +15 puntos y 1 s más.' } } },
+      ch: { A: { name: 'Perforante', fx: 'perfora', desc: 'Infusión de Hielo: el ataque básico atraviesa a todos los enemigos de su trayectoria.' }, B: { name: 'Escarcha densa', fx: 'helada', desc: 'Infusión de Hielo: el ataque básico ralentiza +15 puntos y 1 s más.' } } },
     { id: 'H2', tree: 'ice', tag: 'ice', type: 'C', tier: 'T1', name: 'Nova helada', col: 4, row: 1, icon: 'nova', card: 'nova', req: { all: ['H0'] },
       desc: 'Desbloquea la carta Nova helada (común): pulso de radio 85 a tu alrededor que daña y ralentiza.' },
     { id: 'H4', tree: 'ice', tag: 'ice', type: 'P', tier: 'T1', name: 'Aliento gélido', col: 0, row: 2, icon: 'snow', fx: 'aliento', req: { all: ['H1'] },
@@ -56,7 +56,7 @@
     { id: 'H8', tree: 'ice', tag: 'ice', type: 'C', tier: 'T3', name: 'Ventisca', col: 4, row: 3, icon: 'snow', card: 'blizzard', req: { all: ['H3', 'H5'] },
       desc: 'Desbloquea la carta épica Ventisca: aura permanente de radio 70 que daña y ralentiza. Exige 1 Esencia rara.' },
     { id: 'H10', tree: 'ice', tag: 'ice', type: 'S', tier: 'T2', name: 'Cripta de hielo', col: 2, row: 4, icon: 'flake', fx: 'setIce', req: { any: ['H6', 'H7'] },
-      desc: 'Set: con 3 cartas de Hielo en la mano, +25 % de daño de Hielo. Con 4 o más, "Cripta": los ralentizados con menos del 15 % de vida mueren congelados.' },
+      desc: 'Set: con 3 cartas de Hielo en la mano, +25 % de daño de Hielo. Con 4 o más, "Cripta": los ralentizados con menos del 15 % de vida mueren congelados. (Fusión: vale para el básico, los poderes y armas auxiliares de esa etiqueta; fusionar gasta cartas y puede romper el set.)' },
     { id: 'H9', tree: 'ice', tag: 'ice', type: 'M', tier: 'T2', name: 'Ventisca II', col: 4, row: 4, icon: 'snow', card: 'blizzard', req: { all: ['H8'] },
       desc: 'Ventisca sube a Rango II. Elige una mejora permanente.',
       ch: { A: { name: 'Ventisca ancha', fx: 'ventAncha', desc: 'El radio del aura crece un 30 %.' }, B: { name: 'Escarcha eterna', fx: 'ventDura', desc: 'El aura hace +40 % de daño por segundo.' } } },
@@ -82,7 +82,7 @@
     { id: 'Z3', tree: 'lightning', tag: 'lightning', type: 'C', tier: 'T3', name: 'Tormenta', col: 4, row: 3, icon: 'storm', card: 'storm', req: { all: ['Z4', 'Z8'] },
       desc: 'Desbloquea la carta épica Tormenta: cae un rayo de 32 de daño en área sobre un enemigo visible. Exige 1 Esencia rara.' },
     { id: 'Z10', tree: 'lightning', tag: 'lightning', type: 'S', tier: 'T2', name: 'Eco de tormenta', col: 2, row: 4, icon: 'bolt', fx: 'setLight', req: { any: ['Z6', 'Z7'] },
-      desc: 'Set: con 3 cartas de Rayo en la mano, +25 % de daño de Rayo. Con 4 o más, "Eco": cada 8.º rayo (Chispazo, Tormenta) se repite solo.' },
+      desc: 'Set: con 3 cartas de Rayo en la mano, +25 % de daño de Rayo. Con 4 o más, "Eco": cada 8.º rayo (Chispazo, Tormenta) se repite solo. (Fusión: vale para el básico, los poderes y armas auxiliares de esa etiqueta; fusionar gasta cartas y puede romper el set.)' },
     { id: 'Z9', tree: 'lightning', tag: 'lightning', type: 'M', tier: 'T2', name: 'Tormenta II', col: 4, row: 4, icon: 'storm', card: 'storm', req: { all: ['Z3'] },
       desc: 'Tormenta sube a Rango II. Elige una mejora permanente.',
       ch: { A: { name: 'Dos rayos', fx: 'dobleRayo', desc: 'Cae un segundo rayo (60 % de daño) sobre otro enemigo.' }, B: { name: 'Rayo ancho', fx: 'rayoAncho', desc: 'Área x1,5 y +10 % de daño.' } } },
@@ -92,7 +92,7 @@
     { id: 'V0', tree: 'poison', tag: 'poison', type: 'root', name: 'Dardo tóxico', col: 2.5, row: 0, icon: 'dart', desc: 'Carta inicial de Veneno (Rango I): proyectil con veneno que apila. Raíz del árbol.' },
     { id: 'V1', tree: 'poison', tag: 'poison', type: 'M', tier: 'T1', name: 'Dardo II', col: 1, row: 1, icon: 'dart', card: 'dart', req: { all: ['V0'] },
       desc: 'Dardo tóxico sube a Rango II (+8 % de daño). Elige una mejora permanente.',
-      ch: { A: { name: 'Dosis doble', fx: 'dosisDoble', desc: 'Cada Dardo aplica 2 stacks de veneno en vez de 1.' }, B: { name: 'Punta afilada', fx: 'puntaAfilada', desc: 'El daño inicial del Dardo se duplica.' } } },
+      ch: { A: { name: 'Dosis doble', fx: 'dosisDoble', desc: 'Infusión de Veneno: cada disparo básico aplica 2 stacks de veneno en vez de 1.' }, B: { name: 'Punta afilada', fx: 'puntaAfilada', desc: 'Infusión de Veneno: el bono de daño de la carta Dardo al ataque básico se duplica.' } } },
     { id: 'V2', tree: 'poison', tag: 'poison', type: 'C', tier: 'T1', name: 'Charco', col: 4, row: 1, icon: 'pool', card: 'pool', req: { all: ['V0'] },
       desc: 'Desbloquea la carta Charco (común): charco de 5 s bajo el enemigo más cercano, 6 dps + veneno.' },
     { id: 'V4', tree: 'poison', tag: 'poison', type: 'P', tier: 'T1', name: 'Savia amarga', col: 0, row: 2, icon: 'flask', fx: 'savia', req: { all: ['V1'] },
@@ -109,7 +109,7 @@
     { id: 'V8', tree: 'poison', tag: 'poison', type: 'C', tier: 'T3', name: 'Nube pútrida', col: 4, row: 3, icon: 'cloud', card: 'cloud', req: { all: ['V3', 'V5'] },
       desc: 'Desbloquea la carta Nube pútrida (aura permanente de radio 60: 3 dps + veneno). Exige 1 Esencia rara.' },
     { id: 'V10', tree: 'poison', tag: 'poison', type: 'S', tier: 'T2', name: 'Foco de infección', col: 2, row: 4, icon: 'flask', fx: 'setPoison', req: { any: ['V6', 'V7'] },
-      desc: 'Set: con 3 cartas de Veneno en la mano, +25 % de daño de Veneno. Con 4 o más, "Epidemia": un envenenado que muere deja un charco venenoso 2,5 s.' },
+      desc: 'Set: con 3 cartas de Veneno en la mano, +25 % de daño de Veneno. Con 4 o más, "Epidemia": un envenenado que muere deja un charco venenoso 2,5 s. (Fusión: vale para el básico, los poderes y armas auxiliares de esa etiqueta; fusionar gasta cartas y puede romper el set.)' },
     { id: 'V9', tree: 'poison', tag: 'poison', type: 'M', tier: 'T2', name: 'Nube II', col: 4, row: 4, icon: 'cloud', card: 'cloud', req: { all: ['V8'] },
       desc: 'Nube pútrida sube a Rango II. Elige una mejora permanente.',
       ch: { A: { name: 'Nube densa', fx: 'nubeAncha', desc: 'El radio del aura crece un 30 %.' }, B: { name: 'Miasma', fx: 'miasma', desc: 'El aura hace x1,5 de daño por segundo.' } } },
@@ -136,7 +136,7 @@
     { id: 'S7', tree: 'blood', tag: 'blood', type: 'X', tier: 'T2', name: 'Berserker', col: 3, row: 3, icon: 'fang', fx: 'berserker', req: { all: ['S5'] }, xor: 'S6',
       desc: 'Todas tus cartas hacen +35 % de daño con menos del 40 % de vida. Para jugar al límite. Excluye a Vampiro.' },
     { id: 'S10', tree: 'blood', tag: 'blood', type: 'S', tier: 'T2', name: 'Pacto de sed', col: 2, row: 4, icon: 'drop', fx: 'setBlood', req: { any: ['S6', 'S7'] },
-      desc: 'Set: con 3 cartas de Sangre en la mano, +25 % de daño de Sangre. Con 4, "Sed": cada 3 kills ganas un escudo de 10 HP (tope 20).' },
+      desc: 'Set: con 3 cartas de Sangre en la mano, +25 % de daño de Sangre. Con 4, "Sed": cada 3 kills ganas un escudo de 10 HP (tope 20). (Fusión: vale para el básico, los poderes y armas auxiliares de esa etiqueta; fusionar gasta cartas y puede romper el set.)' },
     { id: 'S11', tree: 'blood', tag: 'blood', type: 'Ma', tier: 'T4', name: 'Pacto de sangre', col: 3, row: 5, icon: 'heart', fx: 'pactoSangre', req: { all: ['S9', 'S10'] },
       desc: 'Maestría: cada 25 kills recuperas 15 HP y ganas +10 % de daño durante 5 s.' },
     // ================= ACERO (12 nodos, ~20 PF): críticos y defensa. Debilidad del Pastor.
@@ -160,7 +160,7 @@
     { id: 'A8', tree: 'steel', tag: 'steel', type: 'C', tier: 'T3', name: 'Hacha giratoria', col: 4, row: 3, icon: 'axe', card: 'axe', req: { all: ['A3', 'A5'] },
       desc: 'Desbloquea la carta épica Hacha giratoria: boomerang que atraviesa, 22 de daño. Exige 1 Esencia rara.' },
     { id: 'A10', tree: 'steel', tag: 'steel', type: 'S', tier: 'T2', name: 'Filo eterno', col: 2, row: 4, icon: 'whet', fx: 'setSteel', req: { any: ['A6', 'A7'] },
-      desc: 'Set: con 3 cartas de Acero en la mano, +25 % de daño de Acero. Con 4 o más, "Filo eterno": cada crítico recorta 0,3 s todos los cooldowns.' },
+      desc: 'Set: con 3 cartas de Acero en la mano, +25 % de daño de Acero. Con 4 o más, "Filo eterno": cada crítico recorta 0,3 s todos los cooldowns. (Fusión: vale para el básico, los poderes y armas auxiliares de esa etiqueta; fusionar gasta cartas y puede romper el set.)' },
     { id: 'A9', tree: 'steel', tag: 'steel', type: 'M', tier: 'T2', name: 'Hacha II', col: 4, row: 4, icon: 'axe', card: 'axe', req: { all: ['A8'] },
       desc: 'Hacha giratoria sube a Rango II. Elige una mejora permanente.',
       ch: { A: { name: 'Hoja ancha', fx: 'hojaAncha', desc: 'El Hacha es un 50 % más grande y golpea a más enemigos.' }, B: { name: 'Hacha veloz', fx: 'hachaVeloz', desc: 'El cooldown del Hacha baja un 20 %.' } } },
@@ -173,8 +173,8 @@
       desc: 'Abre los nodos de nivel T3 (cartas épicas) y T4 (maestrías).' },
     { id: 'ASH', tree: 'trunk', tag: 'neutral', type: 'P', name: 'Ceniza viva', col: 4, row: 1, icon: 'burst', fx: 'ash', cost: { pf: 1, parts: { thread: 20 }, brasas: 30 },
       desc: 'Pasivo: empiezas cada expedición con +20 de Ceniza.' },
-    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Tercera ancla', col: 2, row: 2, icon: '3', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
-      desc: 'Llevas 3 cartas ancla ya en la mano al salir, en vez de 2.' },
+    { id: 'ANC', tree: 'trunk', tag: 'neutral', type: 'S', name: 'Segunda ancla', col: 2, row: 2, icon: '2', fx: 'anchor3', req: { all: ['R3'] }, cost: { pf: 3, parts: { rare: 2 }, brasas: 60 },
+      desc: 'Llevas 2 cartas ancla ya en la mano al salir, en vez de 1 (Fusión: la 1.ª es la carta inicial que se conserva en la 1.ª fusión).' },
     { id: 'N1', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Pezuñas veloces', col: 1, row: 3, icon: 'boots', card: 'hooves',
       desc: 'Desbloquea la pasiva Pezuñas veloces: +12 % de velocidad de movimiento.' },
     { id: 'N2', tree: 'trunk', tag: 'neutral', type: 'C', tier: 'T1', name: 'Imán de brasas', col: 2, row: 3, icon: 'magnet', card: 'magnet',
@@ -382,7 +382,7 @@
       if (n.type === 'M' && n.ch[o.c]) fx[n.ch[o.c].fx] = true;
     }
     T.fx = fx;
-    G.B.anchorSlots = fx.anchor3 ? 3 : 2;
+    G.B.anchorSlots = fx.anchor3 ? 2 : 1;   // FUSION: 1 ancla (la carta inicial); el nodo del tronco da la 2.ª
     S.anchors = S.anchors.filter(function (id2, i, a) { return G.Loot.unlocked(id2) && a.indexOf(id2) === i; }).slice(-G.B.anchorSlots);
   };
   T.startAsh = function () { return (T.fx.ash ? 20 : 0) + (G.runBuff && G.runBuff.tonic ? 40 : 0); };

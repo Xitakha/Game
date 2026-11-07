@@ -6,6 +6,7 @@
   var LV = [null, { dmg: 1, cd: 1, area: 1 }, { dmg: 1.6, cd: 0.85, area: 1.1 }, { dmg: 2.5, cd: 0.7, area: 1.2 }];
   W.LV = LV;
   var RANGE = 440;
+  W.RANGE = RANGE;
 
   function C() { return G.Combat; }
   function col(t) { return G.TAGS[t].color; }
@@ -16,11 +17,14 @@
 
   // ------------------------------------------------------------- Proyectiles del jugador
   function spawnProj(o) {
-    if (G.projectiles.length > G.Q.projCap * 1.5) return;
-    G.projectiles.push({ team: 'p', x: o.x, y: o.y, vx: Math.cos(o.ang) * o.speed, vy: Math.sin(o.ang) * o.speed, ang: o.ang, dmg: o.dmg,
+    if (G.projectiles.length > G.Q.projCap * 1.5) return null;
+    var nq = { team: 'p', x: o.x, y: o.y, vx: Math.cos(o.ang) * o.speed, vy: Math.sin(o.ang) * o.speed, ang: o.ang, dmg: o.dmg,
       tag: o.tag, id: o.id, kind: o.kind, r: o.r || 6, life: o.life || 1600, pierce: !!o.pierce, explode: o.explode || 0,
-      o: o.o || {}, hit: new Set(), t: 0, rot: 0, back: false, speed: o.speed, bounce: o.bounce || 0 });
+      o: o.o || {}, hit: new Set(), t: 0, rot: 0, back: false, speed: o.speed, bounce: o.bounce || 0 };
+    G.projectiles.push(nq); return nq;
   }
+
+  W.spawnProj = spawnProj;   // FUSION: lo usa el ataque básico (fusion.js)
 
   // Explosión de un proyectil (Bola de brasa). Mejoras de Fuego: Metralla (3 fragmentos de 8) y Napalm (suelo ardiente 2 s, 4 dps, radio 40)
   function explodeProj(q) {
@@ -82,8 +86,11 @@
         if (q.explode) { explodeProj(q); return true; }
         var oo = { tag: q.tag, id: q.id, ang: q.ang, kb: 30, proj: true, sx: q.x - Math.cos(q.ang) * 30, sy: q.y - Math.sin(q.ang) * 30 };   // sx/sy: origen del golpe (escudo frontal)
         for (var k in q.o) oo[k] = q.o[k];
+        if (q.fus) G.Fusion.basicHit(e, q, oo);   // FUSION: etiqueta dinámica + efectos de las infusiones
         C().deal(e, q.dmg, oo);
-        if (!q.pierce) {
+        if (q.fus) G.Fusion.basicAfter(e, q);
+        if (q.pierceN > 0) q.pierceN--;
+        else if (!q.pierce) {
           if (q.bounce > 0) {   // Tormenta de acero (maestría): las dagas rebotan una vez hacia otro enemigo
             var nx = C().nearest(q.x, q.y, 180, Array.from(q.hit));
             if (nx) { q.bounce--; q.ang = Math.atan2(nx.y - q.y, nx.x - q.x); q.vx = Math.cos(q.ang) * q.speed; q.vy = Math.sin(q.ang) * q.speed; q.life = Math.max(q.life, 500); fx.hitspark(q.x, q.y, 0.8); return false; }
@@ -98,6 +105,7 @@
   W.drawProj = function (c, q) {
     c.save(); c.translate(Math.round(q.x), Math.round(q.y));
     switch (q.kind) {
+      case 'basic': G.Fusion.drawBasic(c, q); break;   // FUSION
       case 'spark': case 'lob': {
         var sc = q.kind === 'lob' ? 1.5 : 0.8;
         c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5; c.fillStyle = '#ff7a2a'; c.beginPath(); c.arc(0, 0, 11 * sc, 0, 6.283); c.fill();
@@ -330,32 +338,17 @@
     }
   }
 
+  W.FIRE = FIRE; W.updateOrbital = updateOrbital; W.updateAura = updateAura;   // FUSION: las cartas no proyectil siguen como armas auxiliares (fusion.js)
   W.update = function (dt) {
     var p = G.player; if (p.dead) return;
     updateExtras(dt, p);
     var m = G.Cards.mods, base = (1 / m.cdMul) * (p.frenzyT > 0 ? 1.3 : 1) * (p.cdSlowT > 0 ? 1 - Math.min(0.4, p.cdSlowPct) : 1) * (G.cold && G.cold.frozenT > 0 ? 0.75 : 1);   // M9 (Lirio del olvido): recarga más lenta, tope 40 %
-    for (var i = 0; i < p.hand.length; i++) {
-      var s = p.hand[i]; if (!s) continue;
-      var d = G.Cards.def(s.id); if (d.type !== 'attack') continue;
-      var L = LV[s.lvl], rm = G.Loot.rm(s.id);
-      if (rm !== 1) L = { dmg: L.dmg * rm, cd: L.cd, area: L.area };   // Rango de forja: +8 % de daño por rango (por carta), se combina con cardDmgMul en Combat.deal
-      if (s.flash > 0) s.flash -= dt;
-      if (d.kind === 'orbital') { updateOrbital(s, d, L, dt, p); continue; }
-      if (d.kind === 'aura') { updateAura(s, d, L, dt, p); continue; }
-      s.cd -= dt * base * (d.tag === 'lightning' ? m.lightSpd : 1);
-      if (s.cd <= 0) {
-        if (FIRE[d.kind](s, d, L, p)) {
-          s.cd = s.cdMax = d.cd * L.cd * G.Tree.cdMul(d.id); s.flash = 140;
-          G.Snd.play(d.tag, 1 + (i - 2) * 0.03);
-          C().shot(d.tag);
-          if (d.tag === 'lightning' && m.set4.lightning && (d.kind === 'chain' || d.kind === 'strike') && ++W.echoN % 8 === 0) FIRE[d.kind](s, d, L, p);   // Eco (set Rayo 4+): cada 8.º rayo se repite solo
-        } else s.cd = 0;
-      }
-    }
+    G.Fusion.update(dt, base);   // FUSION: ataque básico + poderes activos (las cartas ya no disparan: son infusiones)
   };
 
   // ------------------------------------------------------------- Dibujo
   W.drawGround = function (c) {
+    G.Fusion.drawGround(c);
     var p = G.player, t = G.time / 1000;
     for (var i = 0; i < p.hand.length; i++) {
       var s = p.hand[i]; if (!s) continue;
@@ -371,6 +364,7 @@
     }
   };
   W.drawAir = function (c) {
+    G.Fusion.drawAir(c);
     var p = G.player, tt = G.time / 1000;
     for (var ti = 0; ti < W.turrets.length; ti++) {   // torretas de la Bobina
       var tu = W.turrets[ti], fade = Math.min(1, tu.life / 400, (G.time - tu.born) / 200 + 0.2);

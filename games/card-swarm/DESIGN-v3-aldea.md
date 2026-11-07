@@ -1,3 +1,5 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v3: Aldea, árbol de forja y economía rebalanceada
 
 Estado: DISEÑO para implementar, sin código. Sustituye a la "Base de una página" (`src/base.js`) y amplía `PROPUESTA-crafteo.md` y `DESIGN-v2.md`.

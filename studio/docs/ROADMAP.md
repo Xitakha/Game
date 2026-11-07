@@ -6,14 +6,18 @@
 - [ ] Primera herramienta interna (según necesidad)
 
 - [x] Estudio de juegos virales (studio/research/)
-- [x] Prototipo Swarm Hand (games/card-swarm)
+- [x] Prototipo Swarm Hand (games/card-swarm-clasico, hoy archivado)
 - [ ] Playtest humano y balance de Swarm Hand
-- [x] Crafteo Fase 1 (Base, forja, botin, anclas) en games/card-swarm
+- [x] Crafteo Fase 1 (Base, forja, botin, anclas) en games/card-swarm-clasico
 - [ ] Playtest humano de la Fase 1; decidir Fase 2 (sets, encargos, desmontar) y version movil
 - [x] Fase 2a: aldea Rescoldo, arbol de Fuego, economia v2
 - [ ] Jefes J1 (Pastor rediseñado): arte en curso, logica pendiente
 
-## Cola de trabajo de Swarm Hand (orden)
+## Swarm Hand: Fusión reemplaza al clásico (2026-11)
+- [x] El dueño aprobó el prototipo Fusión y sustituye al clásico: `games/card-swarm/` = Fusión; el clásico v5.6 archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`. Las rutas de abajo (hitos P0-P8) se refieren al clásico.
+- [ ] Playtest humano de la Fusión y balance (ver README de Swarm Hand); PWA en teléfono real
+
+## Cola de trabajo de Swarm Hand clásico (orden, histórico)
 1. [x] Jefe Pastor J1 (arte + lógica)
 2. [x] Ajustes de balance del playtest: menos XP por gema / curva más lenta; minijefes con más habilidades y presión; carta de curación (20% de prob. por golpe); velocidad de enemigos creciente con el tiempo (con tope); bajar de nuevo drops y costes (meta: 1 craft o 1 mejora de talento por expedición de 7 min)
 3. [x] Vista inclinada tipo Hades (Nivel 1) detrás de ?view=iso: suelo aplastado ~0.6, telegrafías elípticas, sprites en pie ordenados por y, sombras; lógica sin cambios

@@ -35,11 +35,10 @@ jobs:
           rm -f _site/card-swarm/src/assets_village_tmp.js
           # versión del service worker = hash del contenido; falla si falta algún archivo del precache
           python3 tools/card-swarm-pwa/stamp.py _site/card-swarm
-          # prototipo Fusión (copia aislada, con su propio sw.js / manifest / cache)
+          # enlaces antiguos del prototipo: /card-swarm-fusion/ redirige al juego (el SW clásico y el nuevo solo controlan /card-swarm/)
           mkdir -p _site/card-swarm-fusion
-          cp -a games/card-swarm-fusion/. _site/card-swarm-fusion/
-          find _site/card-swarm-fusion -type f -name '*.md' -delete
-          python3 tools/card-swarm-pwa/stamp_fusion.py _site/card-swarm-fusion
+          cp tools/site/card-swarm-fusion-redirect.html _site/card-swarm-fusion/index.html
+          cp tools/site/card-swarm-fusion-sw.js _site/card-swarm-fusion/sw.js
           find _site -type f | sort
 
       - name: Configurar Pages

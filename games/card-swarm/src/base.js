@@ -49,14 +49,14 @@
     }
     var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
     if (names.length) {
-      G.txt(c, 'COMBOS ACTIVOS', 20, 276, 13, '#9a8fb0', 'left');
+      G.txt(c, 'FUSIONES', 20, 276, 13, '#9a8fb0', 'left');
       names.slice(0, 7).forEach(function (cb, k) {
         var y = 298 + k * 22;
         c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(28, y, 5, 0, 6.283); c.fill();
         c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(39, y, 5, 0, 6.283); c.fill();
         G.txt(c, cb.name, 52, y, 13, '#ffe9a0', 'left');
       });
-    } else G.txt(c, 'Sin combos: la próxima vez junta etiquetas distintas', 20, 276, 12, '#9a8fb0', 'left');
+    } else G.txt(c, G.Fusion.endText(), 20, 276, 12, '#ffe9a0', 'left');   // FUSION
     if (prac) { drawPracticePanel(c, sm); drawEndButtons(c, S); return; }
     // botín
     U.panel(c, 500, 96, 440, 336, { border: '#8a6a30' });

@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Swarm Hand",
   "short_name": "Swarm Hand",
-  "description": "Survivors donde tu mano de cartas dispara sola y los combos de etiquetas hacen el resto.",
+  "description": "Survivors de cartas: ataque básico automático, cartas como infusiones y poderes activos por fusión.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

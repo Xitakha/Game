@@ -1,8 +1,10 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v6: Minijefes por bioma (fase P4.5)
 
 Estado: DISEÑO para implementar, sin código. Amplía `DESIGN-v4-jefes.md` (reglas de jefe, regla de esquiva, HIT_CAP) y `DESIGN-v5-biomas.md` (familias, tabla de materiales A.8, Tundra y Panal). Estado real del código leído para este documento: `src/enemies.js` (`ai_bulwark`, `ai_hive`, `E.VARIANTS`, `E.minis`), `enemies_tundra.js`, `families.js`, `waves.js` (`spawnElite`, `W.MINI_LAST`), `main.js` (`G.B.enemy.mini_*`, `G.B.mini`), `loot.js` (`L.GUARANTEED`, `L.MINI_PART_BONUS`, `L.DUR`), `tree.js` (`T.onElite`), `combat.js` (`shieldHit`/`sacHit`), `boss.js` (`drawGuardBar`), `assets_enemies2.js`, `assets_fam3.js`, `README.md` ("Minijefes v5", "Guardianes", P0-P4).
 
-Todas las cifras son punto de partida y se afinan con el bot (`tools/card-swarm-balance-bot/`). Unidades: ms, px de juego, px/s; el jugador va a 190 px/s y tiene 100 HP; sprites como `base -> final (x2)`; tiempos de run en escala virtual de 9:00 (`G.vt()`) salvo que se diga "real".
+Todas las cifras son punto de partida y se afinan con el bot (`tools/card-swarm-clasico-balance-bot/`). Unidades: ms, px de juego, px/s; el jugador va a 190 px/s y tiene 100 HP; sprites como `base -> final (x2)`; tiempos de run en escala virtual de 9:00 (`G.vt()`) salvo que se diga "real".
 
 ---
 
@@ -688,7 +690,7 @@ Total aproximado: **~21 días en un solo flujo, ~12-13 con tres flujos en parale
 
 ## 11. Criterios de aceptación (medibles)
 
-Herramientas: `tools/card-swarm-balance-bot/` (`minis.js` ya mide telegrafías; se amplía con `minis2_tests.js data|tele|parts|director|flow|all`, `minis_ttk.js` para duración de pelea). Todas las medidas con servidor local (`python3 tools/serve.py card-swarm <puerto>`).
+Herramientas: `tools/card-swarm-clasico-balance-bot/` (`minis.js` ya mide telegrafías; se amplía con `minis2_tests.js data|tele|parts|director|flow|all`, `minis_ttk.js` para duración de pelea). Todas las medidas con servidor local (`python3 tools/serve.py card-swarm <puerto>`).
 
 **Duración de la pelea (build de referencia = bot con mano p50, `?god=1&speed=20`, 16 peleas por minijefe y por duración):**
 1. TTK mediano de cada minijefe **entre 40 y 70 s** (Normal) y entre 36 y 75 s en Rápida y Larga; p25 (mano floja) <= 100 s; p75 (mano buena) >= 30 s.

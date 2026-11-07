@@ -1,7 +1,9 @@
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+
 # Swarm Hand - Diseño v5: Familias de monstruos por bioma + Tundra (Yarlak) + Panal (Reina Abeja)
 
 Estado: DISEÑO para implementar, sin código. Amplía `DESIGN-v2.md` (roster, regla de legibilidad), `DESIGN-v3-aldea.md` (forja, economía) y `DESIGN-v4-jefes.md` (jefes, Peligro, cacería). Estado real del código leído para este documento: `src/main.js` (`G.B.enemy`, `G.B.tier`, `G.B.tierCurve`, `G.B.light`), `src/waves.js` (director, packs, `capOf`), `src/enemies.js` (IA por tipo, `G.zones`, `slowT/slowPct`, guardianes con `e.variant`), `src/boss.js` + `boss_karceron.js` + `boss_letea.js` (motor de jefes, `DEFS`, `PELIGRO`, `EXIT`), `src/loot.js` (`L.DUR`, `L.GUARANTEED`, `L.DROPS`), `README.md` (calibración medida con el bot) y `ASSETS_API.md`.
-Todas las cifras son punto de partida y se afinan con el bot (`tools/card-swarm-boss-bot/`, `tools/card-swarm-balance-bot/`). Convención de unidades: tiempos en ms o `m:ss` (escala de 9:00, igual que `from` en `G.B.enemy`), distancias en px de juego, velocidades en px/s, el jugador se mueve a 190 px/s, tamaños de sprite como `base (final x2)`.
+Todas las cifras son punto de partida y se afinan con el bot (`tools/card-swarm-clasico-boss-bot/`, `tools/card-swarm-clasico-balance-bot/`). Convención de unidades: tiempos en ms o `m:ss` (escala de 9:00, igual que `from` en `G.B.enemy`), distancias en px de juego, velocidades en px/s, el jugador se mueve a 190 px/s, tamaños de sprite como `base (final x2)`.
 
 Orden del documento: Parte A (familias de los 3 biomas actuales, propuesta ya aprobada) - Parte B (Tundra/Yarlak y Panal/Reina Abeja) - Parte C (plan por fases, assets y presupuesto de arte) - preguntas al dueño - resumen.
 
@@ -597,7 +599,7 @@ Sin cambios en `L.DUR` salvo un campo nuevo `cold` (0,90 / 1,00 / 1,10) para el 
 - Barra de Frío con cifra y escarcha en esquinas; barra de parte y medidor de ventana como en v4; textos mínimos de 12 px; botones del Portal >= 52 px; opciones "Hielo suave", "Ventisca ligera" y la existente "reducir sacudidas".
 
 ### Calibración inicial y bot
-- El bot esquivador de `tools/card-swarm-boss-bot/` necesita tres añadidos (tarea de `tools-engineer`): (1) modelo de movimiento con tau/lambda para planificar la esquiva con derrape; (2) lectura del Frío y búsqueda de hogueras/nieve firme; (3) lectura de celdas de miel y de las nubes de humo. Mismas manos p25/p50/p75, 12 peleas por mano y celda.
+- El bot esquivador de `tools/card-swarm-clasico-boss-bot/` necesita tres añadidos (tarea de `tools-engineer`): (1) modelo de movimiento con tau/lambda para planificar la esquiva con derrape; (2) lectura del Frío y búsqueda de hogueras/nieve firme; (3) lectura de celdas de miel y de las nubes de humo. Mismas manos p25/p50/p75, 12 peleas por mano y celda.
 - Objetivo de victoria ponderado 25/50/25 por Peligro (media de los 5 jefes): 60 % / 55 % / 51 % / 37 % / 24 % (I-V); cada jefe nuevo dentro de +-10 puntos de esa fila. Duración de victorias p50: 90-150 s; p75 >= 60 s; p25 con Furia ~180 s.
 
 ---

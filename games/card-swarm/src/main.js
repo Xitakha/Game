@@ -29,7 +29,7 @@
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
     player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
-    anchorSlots: 2,                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
+    anchorSlots: 1,  // FUSION: 1 carta ancla (2 con el nodo del tronco)                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
       worm:    { hp: 14,  spd: 70, dmg: 6,  r: 10, cost: 1, from: 0,      w: 55, spr: 'worm',    xp: 1, ash: 1, maxAlive: 40 },
@@ -97,7 +97,8 @@
     },
     light: { worm: 1, archer: 1, fanner: 1, bomb: 1, moth: 1 },   // únicos tipos que el director permite con el jefe vivo
     // Multiplicador GLOBAL de daño de cartas (armas, combos, zonas, estados). Aplicado en G.Combat.deal y G.Combat.dot. No afecta a enemigos. 0.98 = -2 %.
-    cardDmgMul: 0.98 * (qnum('cmul', 1) || 1),   // ?cmul=1.2 (solo calibración): modela una mano forjada (DPS x1,2) para medir Peligro con el bot
+    cardDmgMul: 0.98 * (qnum('cmul', 3.5) || 1),   // FUSION: x3,5 por defecto (calibrado con play_bot.js contra la línea base del original; ?cmul=1 = cifras puras del diseño)
+    // (original: cardDmgMul: 0.98 * (qnum('cmul', 1) || 1),   // ?cmul=1.2 (solo calibración): modela una mano forjada (DPS x1,2) para medir Peligro con el bot
     // Curación por golpe (v5): el robo de vida (Colmillo) y el Pacto ardiente solo curan con esta probabilidad por kill, a cambio de una cantidad mayor.
     // Cura media por kill: Colmillo 1 -> 0,6 HP (-40 %); Pacto ardiente 2 -> 0,8 HP por kill de Fuego (-60 %). Sangre envenenada (4 HP cada 15 kills) no cambia.
     heal: { chance: 0.2, fang: 3, pact: 4, bloodpoison: 4 },
@@ -118,7 +119,7 @@
     // Cada gema de XP vale  v * gemMul * lenMul(duración)  (x Imán de brasas +20 %).  lenMul compensa que las runs cortas comprimen el director
     // (mas kills por minuto real): 7 min x1,30, 9 min x1,00, 10 min x0,885 (lineal entre puntos). Objetivo: la build completa (5 cartas Nv3 = 15 puntos
     // de nivel de carta, ~nivel 16-17 con el bot) llega al ~82 % de la expedición (hacia el jefe), no a la mitad.
-    // Nivel esperado al empezar cada minuto (bot de balance tools/card-swarm-balance-bot, media de 8 runs, god, recoge gemas, fusiona primero) - antes -> ahora.
+    // Nivel esperado al empezar cada minuto (bot de balance tools/card-swarm-clasico-balance-bot, media de 8 runs, god, recoge gemas, fusiona primero) - antes -> ahora.
     //   La subida a Nv3 de las 5 cartas ("build completa") exige 13 elecciones tras las 2 anclas = nivel ~14-15. El jefe aparece al 83 % de la run y congela el reloj.
     //   minuto        1     2     3     4     5     6     7     8     9    10
     //   7 min antes  5,0   8,0  12,0  16,0  20,1  24,0  25,3   (jefe a 5:50)   build completa (5 x Nv3) a los 3:23
@@ -127,7 +128,7 @@
     //   9 min ahora  3,0   5,0   6,0   8,0  10,0  12,0  14,0  15,0  15,0        build completa a los 6:55  (77 %; jefe a 7:30)
     //  10 min antes  5,0   7,9  10,1  13,1  17,0  20,0  24,0  27,9  29,8  30,0  build completa a los 4:02
     //  10 min ahora  3,0   4,0   6,0   7,0   9,0  11,0  12,0  14,0  15,0  15,0  build completa a los 7:46  (78 %; jefe a 8:20)
-    xp: { first: 6, base: 26, lin: 0, quad: 0.9, gemMul: 0.5, lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
+    xp: { first: qnum('xpfirst', 6), base: 26, lin: 0, quad: 0.9, gemMul: 0.5 * qnum('xpmul', 1), lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
     xpNeed: function (L) { var x = G.B.xp; return L === 1 ? x.first : Math.round(x.base + x.lin * L + x.quad * L * L); },
     xpGem: function () {   // multiplicador de XP por gema según la duración elegida
       var x = G.B.xp, t = x.lenMul, m = G.RUN_LEN / 60000, i;
@@ -223,6 +224,7 @@
       e.preventDefault(); try { G.Snd.unlock(); } catch (x) { /* audio */ }
       try { canvas.setPointerCapture(e.pointerId); } catch (x2) { /* sin captura */ }
       var p = pt(e);
+      if (G.state === 'play' && G.Fusion && G.Fusion.press(p, e.pointerType === 'mouse' ? 'mouse' : 'touch')) return;   // FUSION: botones de poderes (mitad derecha: no chocan con el joystick de la mitad izquierda)
       if (e.pointerType === 'mouse') {
         if (G.Sys) G.Sys.touchActive = false;
         inp.mouse.x = p.x; inp.mouse.y = p.y; inp.keys['Mouse' + e.button] = true; inp.pressed['Mouse' + e.button] = true;
@@ -341,6 +343,7 @@
     var hq = /[?&]hand=([^&]+)/.exec(location.search);
     if (G.mode === 'practice' && G.practiceHand && G.practiceHand.boss === G.bossId && !hq) {   // reinicio rápido: misma mano del intento anterior
       G.practiceHand.hand.forEach(function (h) { if (h) for (var n = 0; n < h.lvl; n++) G.Cards.add(h.id); });
+      (G.practiceHand.actives || []).forEach(function (a) { if (a) G.Fusion.grant(a.id, a.lvl); });   // FUSION
       G.Cards.recalc(false);
     } else if (G.mode !== 'run' && !hq && !G.noPrep) G.prep = { left: 6, total: 6 };
     if (hq) { decodeURIComponent(hq[1]).split(',').forEach(function (kv) { var a = kv.split(':'), n = parseInt(a[1], 10) || 1; for (var i = 0; i < n; i++) G.Cards.add(a[0]); }); G.Cards.recalc(false); }
@@ -533,6 +536,7 @@
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
+    if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(location.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
     if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };

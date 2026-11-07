@@ -79,7 +79,7 @@
   }
   W.capOf = capOf;
 
-  // CENSO (A.2, herramienta tools/card-swarm-balance-bot/census.js): enemigos normales VISIBLES vivos por rol, por tier y por nombre de familia en este instante (`hidden` = ocultos / muñones, aparte).
+  // CENSO (A.2, herramienta tools/card-swarm-clasico-balance-bot/census.js): enemigos normales VISIBLES vivos por rol, por tier y por nombre de familia en este instante (`hidden` = ocultos / muñones, aparte).
   W.census = function () {
     var out = { alive: 0, hidden: 0, byType: {}, byTier: [0, 0, 0, 0], byFam: {}, fam: !!B.famOf() }, i, e, f = B.famOf();
     for (i = 0; i < G.enemies.length; i++) {
@@ -102,7 +102,7 @@
     if (!W.bossSpawned) {
       if (G.pendingLevels > 0) return;   // preparación en curso
       G.prep = null;
-      if (G.mode === 'practice') G.practiceHand = { boss: G.bossId, hand: G.Cards.snapshot().hand };
+      if (G.mode === 'practice') G.practiceHand = { boss: G.bossId, hand: G.Cards.snapshot().hand, actives: G.player.actives.map(function (a) { return a && { id: a.id, lvl: a.lvl }; }) };   // FUSION: también los poderes
       spawnBoss(); return;
     }
     if (!boss || boss.dead || boss.mode !== 'fight') return;
