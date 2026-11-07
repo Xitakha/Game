@@ -102,7 +102,7 @@
     if (!W.bossSpawned) {
       if (G.pendingLevels > 0) return;   // preparación en curso
       G.prep = null;
-      if (G.mode === 'practice') G.practiceHand = { boss: G.bossId, hand: G.Cards.snapshot().hand };
+      if (G.mode === 'practice') G.practiceHand = { boss: G.bossId, hand: G.Cards.snapshot().hand, actives: G.player.actives.map(function (a) { return a && { id: a.id, lvl: a.lvl }; }) };   // FUSION: también los poderes
       spawnBoss(); return;
     }
     if (!boss || boss.dead || boss.mode !== 'fight') return;

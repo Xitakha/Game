@@ -1049,11 +1049,10 @@
       var slowF = (e.slowT > 0 ? 1 - e.slowPct : 1) * (G.Panal.on ? G.Panal.enemySlow(e) : 1);   // P5: la miel ralentiza 35 % a los terrestres (los voladores y la Babosa no)
       e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
-      var pp = e.blindT > 0 ? G.Fusion.blindTarget(e, p, dt) : p;   // FUSION: un enemigo cegado (Vapor) persigue un punto al azar en vez de al jugador
-      var dx = pp.x - e.x, dy = pp.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+      var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
       if (Math.abs(dx) > 2 && e.type !== 'boss' && !((e.type === 'boar' || e.type === 'scorcher') && (e.st === 'charge' || e.st === 'wind' || e.st === 'dash' || e.st === 'roll' || e.st === 'roll2' || e.st === 'bounce' || e.st === 'slide')) && !((e.type === 'dog' || e.type === 'chainer') && e.st !== 'move' && e.st !== 'rec') && !(e.type === 'frostwolf' && e.st !== 'surround' && e.st !== 'rec')) e.face = dx >= 0 ? 1 : -1;
       if (e.slide) { e.mvx = e.mvy = 0; }
-      if (!p.dead) (e.tai ? E.TAI[e.type] : e.pai ? E.PAI[e.type] : AI[e.type])(e, dt, s, pp, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
+      if (!p.dead) (e.tai ? E.TAI[e.type] : e.pai ? E.PAI[e.type] : AI[e.type])(e, dt, s, p, d, a); else if (e.type !== 'boss') { /* sin jugador, quietos */ }
       if (e.slide) G.Tundra.slideEnemy(e, dt, s);   // P3: integra la velocidad con inercia (tau 300 ms) y choca con las estalagmitas
       var m = G.WALL + e.r;
       e.x = G.clamp(e.x, m, G.AW - m); e.y = G.clamp(e.y, m, G.AH - m);

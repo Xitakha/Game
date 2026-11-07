@@ -13,7 +13,7 @@
     if (!('serviceWorker' in navigator)) return;
     if (/[?&]nosw=1/.test(location.search)) {
       navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); });
-      if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { if (/^fusionhand-/.test(k)) caches.delete(k); }); });
+      if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { if (/^swarmhand-/.test(k)) caches.delete(k); }); });
       return;
     }
     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
@@ -136,7 +136,7 @@
 
   P.init = function () {
     swInit(); installInit();
-    try { localStorage.setItem('swarmhand.fusion.probe', '1'); localStorage.removeItem('swarmhand.fusion.probe'); } catch (e) { G.Save.ok = false; }
+    try { localStorage.setItem('swarmhand.probe', '1'); localStorage.removeItem('swarmhand.probe'); } catch (e) { G.Save.ok = false; }
     if (G.Save.ok === false) G.Sys.toast('Tu navegador bloquea el guardado (modo privado?). Se juega igual, pero no se guarda: exporta tu progreso en Ajustes.', { close: true, ms: 9000 });
   };
 })();

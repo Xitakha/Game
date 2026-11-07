@@ -59,7 +59,7 @@
   // M9 (A.5): icono de RELOJ ROTO a la izquierda de la mano mientras las cartas recargan más lento (zona del Lirio del olvido); el aro se vacía con los 2 s de gracia
   H.drawCdSlow = function (c, p) {
     if (!(p.cdSlowT > 0) || p.dead) return;
-    var x = 424, y = 470, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
+    var x = 250, y = 476, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
     c.save(); c.globalAlpha = pulse;
     c.fillStyle = 'rgba(8,4,14,0.8)'; c.beginPath(); c.arc(x, y, r + 4, 0, 6.283); c.fill();
     if (G.hasSpr('icon_olvido')) { var ic = Assets.sprite('icon_olvido', Math.floor(G.time / 500) % 2); c.drawImage(ic, Math.round(x - ic.width / 2), Math.round(y - ic.height / 2)); }   // arte P2: reloj roto turquesa (32x32)
@@ -124,18 +124,17 @@
     }
     // mano y XP
     drawHand(c);
-    G.Fusion.drawHud(c);   // FUSION: botones de poderes activos con enfriamiento
     H.drawCdSlow(c, p);
     var need = B.xpNeed(p.level);
     c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - 7, G.W, 7);
     c.fillStyle = '#4dd870'; c.fillRect(0, G.H - 6, G.W * G.clamp(p.xp / need, 0, 1), 4);
-    G.txt(c, 'NV ' + p.level, 408, G.H - 20, 15, '#9dffb4', 'left');   // FUSION: la mano ocupa la esquina inferior izquierda
+    G.txt(c, 'NV ' + p.level, 16, G.H - 20, 15, '#9dffb4', 'left');
     // ayuda inicial
     var since = G.time - G.t0;
     if (since < 9000 && G.state === 'play') {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
-      G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 300, 16, '#ffffff', 'center');
-      G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: botones o Q E R Espacio).', G.W / 2, 322, 13, '#d8cfe8', 'center');
+      G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: las cartas atacan solas' : 'Muévete con WASD / flechas: las cartas atacan solas', G.W / 2, 380, 16, '#ffffff', 'center');
+      G.txt(c, 'Sube de nivel para conseguir cartas. Haz que sus etiquetas se toquen.', G.W / 2, 402, 13, '#d8cfe8', 'center');
       c.restore();
     }
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
@@ -178,10 +177,10 @@
     U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a' });
     G.txt(c, 'Conservas las partes recogidas', G.W / 2, 388, 12, '#ffb347', 'center');
     if (G.Sys.isTouch()) {
-      G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 424, 14, '#d8cfe8', 'center');
+      G.txt(c, 'Las cartas atacan solas: tú solo esquiva', G.W / 2, 424, 14, '#d8cfe8', 'center');
       G.txt(c, 'Mueve el pulgar en la mitad izquierda para andar', G.W / 2, 446, 13, '#9a8fb0', 'center');
     } else {
-      G.txt(c, 'P o Esc: continuar   WASD: mover   Q E R Espacio (o 1-4): poderes   F: auto', G.W / 2, 424, 14, '#d8cfe8', 'center');
+      G.txt(c, 'P o Esc: continuar     WASD / flechas: mover', G.W / 2, 424, 14, '#d8cfe8', 'center');
       G.txt(c, 'B: abandonar' + (G.mode === 'practice' ? '     R: reiniciar práctica' : ''), G.W / 2, 446, 13, '#9a8fb0', 'center');
     }
   }
