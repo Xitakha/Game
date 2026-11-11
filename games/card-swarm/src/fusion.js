@@ -2,10 +2,10 @@
    - Ataque básico automático del jugador (10 de daño cada 650 ms al enemigo más cercano) + INFUSIONES: las cartas de ataque de la mano mejoran el básico
      (+20 / +35 / +50 % por Nv de carta y un efecto de su etiqueta). Las cartas que no son proyectil (orbitales, auras, Bobina, Murciélago, Nova...) conservan
      además su arma original como AUXILIAR (más lenta y más débil: AUX.dmg / AUX.cd; ?aux=0 las apaga) y dan solo la mitad del bono al básico.
-   - FUSIÓN: dos cartas de etiquetas distintas con receta = PODER ACTIVO (máx. 4 slots). 12 recetas (las 12 parejas de combos pasivos del original; 3 parejas sin receta).
+   - FUSIÓN: dos cartas de etiquetas distintas con receta = PODER ACTIVO (máx. 4 slots). 15 recetas (las 15 parejas de etiquetas: 12 combos pasivos del original + Cristal de sangre, Zancada carmesí y Virote corrosivo).
      Se dispara a mano (botón táctil, Q / E / R / Espacio o 1-4) o en modo AUTO (F). Re-fusionar la misma receta = Nv2. La 1.ª fusión es ayudada: la carta inicial se conserva.
    - La interfaz de la oferta (modal "FUSIONAR YA / A LA MANO", botón FUSIONAR, chips de poderes) vive en cards.js y usa estas funciones.
-   Parámetros URL: ?actives=vapor,plasma,forja2 (poderes de inicio; sufijo 2 = Nv2)  ?fuseAsh=<n>  ?bosscap=<frac>  ?cmul= (daño global)  ?aux=0  ?auxmul=<f>  ?auxcd=<f>. */
+   Parámetros URL: ?actives=vapor,plasma,forja2 (poderes de inicio; sufijo 2 = Nv2)  ?fuseAsh=<n>  ?bosscap=<frac>  ?cmul= (daño global)  ?aux=0  ?auxmul=<f>  ?auxcd=<f>  ?corr=<f> (escala la Corrosión del Virote). */
 (function () {
   'use strict';
   var G = window.G, B = G.B, C = G.Cards, CB = G.Combat, W = G.Weapons, fx = G.fx, inp = G.input, F = G.Fusion = {};
@@ -13,7 +13,7 @@
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
-  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), bossMul: qnum('bossmul', 0.2), pmul: qnum('pmul', 3), pcd: qnum('pcd', 0.6), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0.25), infmul: qnum('infmul', 0.7), vstep: qnum('vstep', 4), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS };
+  var P = F.P = { basicDmg: qnum('bdmg', 10), basicCd: qnum('bcd', 500), speed: 440, fuseAsh: qnum('fuseAsh', 0), replaceAsh: 20, bossCap: qnum('bosscap', 0.03), perTargetCap: 400, lvHeal: qnum('lvheal', 0.20), fuseHeal: qnum('fuseheal', 25), bossMul: qnum('bossmul', 0.2), pmul: qnum('pmul', 3), pcd: qnum('pcd', 0.6), vpow: qnum('vpow', 2), pinf: qnum('pinf', 0.25), infmul: qnum('infmul', 0.7), vstep: qnum('vstep', 4), vmax: qnum('vmax', 3), vdmg: qnum('vdmg', 0.8), maxFields: 4, slots: NS, corr: qnum('corr', 1) };
   var AUX = F.AUX = { on: qnum('aux', 1) > 0, dmg: qnum('auxmul', 0.4), cd: qnum('auxcd', 1.5), bonus: 0.5 };
   var BONUS = [0.2, 0.35, 0.5];            // daño del básico por infusión según el Nv de la carta
   var RANGE = 440, uid = 0;
@@ -72,7 +72,17 @@
       lv: [{ n: 6, dur: 6000, heal: 2, cd: 13000 }, { n: 9, dur: 6000, heal: 3, cd: 13000 }] },
     { id: 'descarga', name: 'Descarga tóxica', short: 'Descarga', a: 'poison', b: 'lightning', color: '#c8ff4a', kind: 'discharge', sfx: 'descarga',
       desc: 'Rayo sobre todos los envenenados visibles: consume el veneno (8 por stack).',
-      lv: [{ base: 12, per: 8, cd: 12000 }, { base: 12, per: 12, cd: 12000 }] }
+      lv: [{ base: 12, per: 8, cd: 12000 }, { base: 12, per: 12, cd: 12000 }] },
+    // 13-15 (DESIGN-fusion.md sec. 14): escudo, embestida y vulnerabilidad
+    { id: 'cristal', name: 'Cristal de sangre', short: 'Cristal', a: 'blood', b: 'ice', color: '#d86a98', kind: 'ward', sfx: 'cristal',
+      desc: 'Coraza de cristal carmesí (30 PV, 6 s): ralentiza a quien te toca y al romperse estalla en esquirlas heladas.',
+      lv: [{ shield: 30, dur: 6000, dmg: 20, per: 1.5, r: 100, cd: 17000 }, { shield: 45, dur: 8000, dmg: 30, per: 1.5, r: 120, cd: 17000 }] },
+    { id: 'zancada', name: 'Zancada carmesí', short: 'Zancada', a: 'blood', b: 'lightning', color: '#ff6a7a', kind: 'dash', sfx: 'zancada',
+      desc: 'Embestida eléctrica de 180 px: invulnerable un instante, daña a lo que cruzas y deja una estela que aturde.',
+      lv: [{ dist: 180, dmg: 24, heal: 4, charges: 1, cd: 15000 }, { dist: 240, dmg: 30, heal: 6, charges: 2, cd: 15000 }] },
+    { id: 'virote', name: 'Virote corrosivo', short: 'Virote', a: 'poison', b: 'steel', color: '#9ad05a', kind: 'bolt', sfx: 'virote',
+      desc: 'Virote al enemigo más fuerte: atraviesa 3, envenena y oxida su armadura (+20 % de daño recibido 6 s).',
+      lv: [{ n: 3, dmg: 55, corr: 0.20, corrBig: 0.10, dur: 6000, cd: 12000 }, { n: 5, dmg: 80, corr: 0.25, corrBig: 0.12, dur: 8000, cd: 12000 }] }
   ];
   var RBY = {}, RKEY = {};
   R.forEach(function (r) { RBY[r.id] = r; RKEY[[r.a, r.b].sort().join('+')] = r; });
@@ -101,7 +111,7 @@
   function hand() { return G.player.hand; }
   F.reset = function () {
     var p = G.player; p.actives = []; for (var i = 0; i < NS; i++) p.actives.push(null);
-    F.fused = 0; F.auto = false; F.fields = []; F.fxs = []; F.timers = []; F.axes = []; bT = 300; hitN = 0;
+    F.fused = 0; F.auto = false; F.fields = []; F.fxs = []; F.timers = []; F.axes = []; bT = 300; hitN = 0; p.ward = 0;
     F.stats = { fusions: [], uses: {}, dmg: {}, firstFusionT: null, basicShots: 0 };
     var u = /[?&]actives=([\w,]+)/.exec(location.search);
     if (u) u[1].split(',').slice(0, NS).forEach(function (k) { var m = /^([a-z]+?)(2)?$/.exec(k); if (m && RBY[m[1]]) F.grant(m[1], m[2] ? 2 : 1); });
