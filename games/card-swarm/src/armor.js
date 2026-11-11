@@ -167,7 +167,7 @@
   A.equip = function (id) {
     var p = D.BY[id], S = SV(); if (!p || !A.owned(id)) return false;
     var before = A.get().sets, b2 = {}, b4 = {}; Object.keys(before).forEach(function (k) { b2[k] = before[k] >= 2; b4[k] = before[k] >= 4; });
-    S.armor.equipped[p.slot] = id; A.dirty(); G.Save.save();
+    S.armor.equipped[p.slot] = id; A.dirty(); if (A.get().sets[p.set] >= 4) S.flags.arm_set4 = 1; G.Save.save();
     var af = A.get().sets, ns = af[p.set] || 0; A.snd('equip', D.SETS[p.set].tier === 0 ? 'leather' : SND_SLOT[p.slot]);
     if (ns >= 4 && !b4[p.set] && D.SETS[p.set].b4) A.snd('set4'); else if (ns >= 2 && !b2[p.set]) A.snd('set2');
     try { G.Ach.check(); } catch (e) { /* logros */ }

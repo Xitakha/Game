@@ -214,7 +214,7 @@
     D.say(w, [line], [{ label: 'Taller', fn: function () { smithVisit = false; openPanel('armor'); } }, { label: 'Charlar', fn: function () { chat(it); } }, bye]);
   }
   var smithVisit = false, sceneDone = false;
-  A.onCrafted = function () { smithVisit = true; };
+  A.onCrafted = function () { smithVisit = true; smithBusy = 1500; };
   function startScene() {
     var S = G.Save.data, it = ints().filter(function (i) { return i.id === 'carapa'; })[0]; if (!it) return;
     sceneDone = true; var had = !!S.flags.smithGift, w = who(it, '#3a7a86'); w.voice = true;
@@ -264,6 +264,7 @@
     var w = Lay.walk;
     if (x < w.x + 10 || x > w.x + w.w - 10 || y < w.y || y > w.y + w.h) return true;
     var i, c, cols = Lay.colliders;
+    if (window.Assets && Assets.ARMOR_WORKSHOP && Assets.ARMOR_WORKSHOP.colliders) cols = cols.concat(Assets.ARMOR_WORKSHOP.colliders);
     if (statueOn()) cols = cols.concat([{ x: STATUE.x - 44, y: STATUE.y - 34, w: 88, h: 28 }]);   // P7: base de la estatua
     for (i = 0; i < cols.length; i++) {
       c = cols[i];
@@ -281,6 +282,7 @@
     M.moving = l > 0.12;
     if (!M.moving) return;
     if (ix) M.dir = ix > 0 ? 1 : -1;
+    if (smithBusy > 0) smithBusy -= dt;
     var s = SPEED * dt / 1000, nx = M.x + ix * s, ny = M.y + iy * s;
     if (!blocked(nx, M.y)) M.x = nx;
     if (!blocked(M.x, ny)) M.y = ny;
@@ -415,7 +417,15 @@
     if (NPC_ORDER.indexOf('carapa') < 0) o.carapa = { hidden: true };   // antes de que llegue la Armera no se dibuja
     return o;
   }
-  function npcDrawn() { return !!(window.Assets && Assets.NPC_NAMES && Assets.NPC_NAMES.indexOf('carapa') >= 0 && Assets.VILLAGE && Assets.VILLAGE.npcs.carapa); }
+  function npcDrawn() { return !!(window.Assets && Assets.drawWorkshop); }   // con assets_armor.js el taller entero (toldo, Carapa, maniquí) es un actor de drawVillage
+  var SET_ART = { aldeano: 'aldeano', esquila: 'pastor', carcelero: 'karceron' };
+  function workshopActor(now) {
+    var eq = {}, ids = ['yelmo', 'peto', 'grebas', 'talisman'], A_ = G.Armor, open = NPC_ORDER.indexOf('carapa') >= 0;
+    try { A_.eq().forEach(function (id, i) { var p = id && G.ArmorData.piece(id); eq[ids[i]] = p ? { set: SET_ART[p.set] || 'aldeano', ref: Math.max(0, A_.ref(id)) } : null; }); } catch (e) { /* sin equipo */ }
+    var talk = D.active() && A.lastTarget && A.lastTarget.id === 'carapa';
+    return { y: 452, draw: function (c) { try { Assets.drawWorkshop(c, now, { open: open, carapa: open ? (talk ? { anim: 'talk', flip: M.x < 262 } : { flip: Math.hypot(262 - M.x, 452 - M.y) < 120 && M.x < 262 }) : false, equip: eq, hammer: open && smithBusy > 0 }); } catch (e2) { /* arte */ } } };
+  }
+  var smithBusy = 0;
   // Sin el arte de assets_armor.js: toldo y armadilla de relleno (solo formas, para poder jugar)
   function drawCarapaFallback(c, now) {
     if (NPC_ORDER.indexOf('carapa') < 0 || npcDrawn()) return;
@@ -444,7 +454,7 @@
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;
-    var actors = [{ y: M.y, draw: drawMarlo }];
+    var actors = [{ y: M.y, draw: drawMarlo }]; if (window.Assets && Assets.drawWorkshop) actors.push(workshopActor(now));
     var haveArt = window.Assets && Assets.drawVillage;
     c.imageSmoothingEnabled = false;
     if (haveArt) {
