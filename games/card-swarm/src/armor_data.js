@@ -1,5 +1,5 @@
 /* armor_data.js - Datos puros de la Armera (DESIGN-v8-herrero.md C.1-C.5): 4 slots, tablas por tier, 3 sets del MVP (Aldeano, Esquila de Hierro, Carcelero de Brasa) y 12 piezas.
-   Los sets de Letea, Yarlak, Melaria y Cenizar (T3-T6) se añaden aquí como datos (SETS + PIECES + una fila en las tablas); la lógica (armor.js) y la UI (smith.js) no cambian. */
+   v8.1: sets de Letea (Escama del Olvido), Yarlak (Pelaje Glacial), Melaria (Jalea Real) y Cenizar (Brasa Primera) + 5 talismanes de minijefe (set 'mini', sin bono de set, DEF x0,4 y una utilidad). */
 (function () {
   'use strict';
   var G = window.G, D = G.ArmorData = {};
@@ -28,9 +28,19 @@
     carcelero: { id: 'carcelero', name: 'Carcelero de Brasa', tier: 2, tag: 'fire', fam: 'blast', boss: 'karceron', color: '#ff6a1a', tros: ['core', 'mace', 'shackle'], mins: ['alcaide', 'centinela'],
       b2: { dmg: 0.04, res: 0.08 }, t2: '+4 % daño de Fuego y +8 % de resistencia a explosiones.', b4: 'grilletes', t4: 'Grilletes ardientes: al recibir un golpe, pulso de radio 70 (20 de daño, quema), 1 vez cada 6 s.' }
   };
-  D.SET_ORDER = ['aldeano', 'esquila', 'carcelero'];
+  D.SETS.escama = { id: 'escama', name: 'Escama del Olvido', tier: 3, tag: 'poison', fam: 'ranged', boss: 'letea', color: '#2f6f6a', tros: ['ice', 'acid', 'bolt'], mins: ['hidra', 'planidera'],
+    b2: { dmg: 0.04, res: 0.08 }, t2: '+4 % daño de Veneno y +8 % de resistencia a proyectiles.', b4: 'pantano', t4: 'Piel de pantano: charcos y Lirio del olvido pierden la mitad de su efecto; cada 20 s la 1.ª baja con Veneno cura 2 HP.' };
+  D.SETS.glacial = { id: 'glacial', name: 'Pelaje Glacial', tier: 4, tag: 'ice', fam: 'melee', boss: 'yarlak', color: '#9fd8ff', tros: ['ytusk', 'yplate', 'yheart'], mins: ['yeti_mayor', 'ventisquero'],
+    b2: { dmg: 0.04, cold: 0.15 }, t2: '+4 % daño de Hielo y el Frío sube un 15 % más despacio.', b4: 'hoguera', t4: 'Corazón de hoguera: retroceso -50 % en hielo y las hogueras te curan 1 HP/s dentro de su radio.' };
+  D.SETS.jalea = { id: 'jalea', name: 'Jalea Real', tier: 5, tag: 'blood', fam: 'big', boss: 'melaria', color: '#ffd23a', tros: ['mjelly', 'mwing', 'msting'], mins: ['avispon', 'reina_joven'],
+    b2: { dmg: 0.04, honey: 0.25 }, t2: '+4 % daño de Sangre y la miel te frena un 25 % menos.', b4: 'reina', t4: 'Reina de la colmena: las curas de nivel suben +5 puntos y cada 20 bajas se crea un escudo de 6 HP.' };
+  D.SETS.brasa = { id: 'brasa', name: 'Brasa Primera', tier: 6, tag: 'lightning', fam: 'big', boss: 'cenizar', color: '#ff9a3c', tros: ['cz_cay', 'cz_nuc', 'cz_ojo', 'cz_col', 'cz_cor', 'cz_cora'], mins: ['carnero', 'tejedora', 'alcaide', 'centinela', 'hidra', 'planidera', 'yeti_mayor', 'ventisquero', 'avispon', 'reina_joven'],
+    insGroups: [['carnero', 'tejedora'], ['alcaide', 'centinela'], ['hidra', 'planidera'], ['yeti_mayor', 'ventisquero'], ['avispon', 'reina_joven']],
+    b2: { dmg: 0.04, res: 0.03 }, t2: '+4 % daño de Rayo y +3 % de resistencia a élites y jefes.', b4: 'ultima', t4: 'Última brasa: 1 vez por expedición un golpe mortal te deja a 1 HP y 1,5 s invulnerable (se gasta el primero que active: este o el Corazón de brasa).' };
+  D.SETS.mini = { id: 'mini', name: 'Talismanes de minijefe', tier: 0, tag: 'neutral', fam: 'melee', boss: null, color: '#c8a0ff', noSet: true, b2: null, t2: '', b4: null, t4: '' };
+  D.SET_ORDER = ['aldeano', 'esquila', 'carcelero', 'escama', 'glacial', 'jalea', 'brasa', 'mini'];
   D.FAM_NAME = { melee: 'cuerpo a cuerpo', ranged: 'proyectiles', blast: 'explosiones', big: 'élites y jefes' };
-  D.TAG_NAME = { steel: 'Acero', fire: 'Fuego', neutral: '' };
+  D.TAG_NAME = { steel: 'Acero', fire: 'Fuego', poison: 'Veneno', ice: 'Hielo', blood: 'Sangre', lightning: 'Rayo', neutral: '' };
   // slot: 0 Yelmo, 1 Peto, 2 Grebas, 3 Talismán. main / sec: partes (Loot.PARTS). tro: trofeo concreto del jefe (Yelmo, Peto, Grebas); el Talismán pide las 2 Insignias del bioma.
   D.PIECES = [
     { id: 'ald_helm', set: 'aldeano', slot: 0, name: 'Gorro de lana', main: 'thread' },
@@ -44,8 +54,32 @@
     { id: 'car_helm', set: 'carcelero', slot: 0, name: 'Cráneo del alcaide', main: 'wick', tro: 'core' },
     { id: 'car_chest', set: 'carcelero', slot: 1, name: 'Coraza de magma', main: 'wick', sec: 'plate', tro: 'mace' },
     { id: 'car_greaves', set: 'carcelero', slot: 2, name: 'Grilletes ardientes', main: 'wick', sec: 'thread', tro: 'shackle' },
-    { id: 'car_talis', set: 'carcelero', slot: 3, name: 'Llave de la cripta', main: 'wick', sec: 'static' }
+    { id: 'car_talis', set: 'carcelero', slot: 3, name: 'Llave de la cripta', main: 'wick', sec: 'static' },
+    { id: 'esc_helm', set: 'escama', slot: 0, name: 'Cresta de perla', main: 'spine', tro: 'ice' },
+    { id: 'esc_chest', set: 'escama', slot: 1, name: 'Escamas de hidra', main: 'spine', sec: 'frost', tro: 'acid' },
+    { id: 'esc_greaves', set: 'escama', slot: 2, name: 'Sandalias de marea', main: 'spine', sec: 'feather', tro: 'bolt' },
+    { id: 'esc_talis', set: 'escama', slot: 3, name: 'Colgante del olvido', main: 'spine', sec: 'static' },
+    { id: 'gla_helm', set: 'glacial', slot: 0, name: 'Casco de colmillos', main: 'frost', tro: 'ytusk' },
+    { id: 'gla_chest', set: 'glacial', slot: 1, name: 'Placa glacial', main: 'frost', sec: 'plate', tro: 'yplate' },
+    { id: 'gla_greaves', set: 'glacial', slot: 2, name: 'Pezuñas de escarcha', main: 'frost', sec: 'thread', tro: 'yheart' },
+    { id: 'gla_talis', set: 'glacial', slot: 3, name: 'Garra del yeti', main: 'frost', sec: 'fang' },
+    { id: 'jal_helm', set: 'jalea', slot: 0, name: 'Corona de jalea', main: 'fang', tro: 'mjelly' },
+    { id: 'jal_chest', set: 'jalea', slot: 1, name: 'Manto de alas', main: 'fang', sec: 'feather', tro: 'mwing' },
+    { id: 'jal_greaves', set: 'jalea', slot: 2, name: 'Espolones de aguijón', main: 'fang', sec: 'thread', tro: 'msting' },
+    { id: 'jal_talis', set: 'jalea', slot: 3, name: 'Frasco de miel', main: 'fang', sec: 'frost' },
+    { id: 'bra_helm', set: 'brasa', slot: 0, name: 'Corona de ceniza', main: 'static', tro: ['cz_cor', 'cz_ojo'] },
+    { id: 'bra_chest', set: 'brasa', slot: 1, name: 'Corazón de Brasa Primera', main: 'static', sec: 'wick', tro: ['cz_cora', 'cz_nuc'] },
+    { id: 'bra_greaves', set: 'brasa', slot: 2, name: 'Pasos de ceniza', main: 'static', sec: 'feather', tro: ['cz_col', 'cz_cay'] },
+    { id: 'bra_talis', set: 'brasa', slot: 3, name: 'Rescoldo', main: 'static', sec: 'rare' },
+    // Talismanes de minijefe (alternativas de utilidad, DEF x0,4): las 2 Insignias del bioma + 1 Esencia. tier = el del bioma; boss = el jefe del bioma (requisitos de refuerzo)
+    { id: 'mn_bosque', set: 'mini', slot: 3, name: 'Colmillo de arrastre', main: 'thread', tier: 1, boss: 'pastor', mins: ['carnero', 'tejedora'], util: { k: 'magnet', v: 0.10 }, ut: '+10 % de radio del imán', bio: 'Bosque' },
+    { id: 'mn_cripta', set: 'mini', slot: 3, name: 'Llave maestra', main: 'wick', tier: 2, boss: 'karceron', mins: ['alcaide', 'centinela'], util: { k: 'heart', v: 1 }, ut: '+1 HP por corazón recogido', bio: 'Cripta' },
+    { id: 'mn_asfodelo', set: 'mini', slot: 3, name: 'Perla del río', main: 'spine', tier: 3, boss: 'letea', mins: ['hidra', 'planidera'], util: { k: 'xp', v: 0.10 }, ut: '+10 % de XP de gemas en el Asfódelo', bio: 'Asfódelo' },
+    { id: 'mn_tundra', set: 'mini', slot: 3, name: 'Brasa de bolsillo', main: 'frost', tier: 4, boss: 'yarlak', mins: ['yeti_mayor', 'ventisquero'], util: { k: 'cold', v: 0.10 }, ut: 'El Frío sube un 10 % más despacio', bio: 'Tundra' },
+    { id: 'mn_panal', set: 'mini', slot: 3, name: 'Gota de ámbar', main: 'fang', tier: 5, boss: 'melaria', mins: ['avispon', 'reina_joven'], util: { k: 'honey', v: 0.15 }, ut: 'La miel te frena un 15 % menos', bio: 'Panal' }
   ];
+  D.tierOf = function (p) { return p.tier != null ? p.tier : D.SETS[p.set].tier; };
+  D.bossOf = function (p) { return p.boss !== undefined ? p.boss : D.SETS[p.set].boss; };
   D.BY = {}; D.PIECES.forEach(function (p) { D.BY[p.id] = p; });
   D.piece = function (id) { return D.BY[id] || null; };
   D.ofSet = function (sid) { return D.PIECES.filter(function (p) { return p.set === sid; }); };

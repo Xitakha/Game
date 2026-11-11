@@ -151,6 +151,7 @@
     var cap = Math.max(25, ICE.kbCap - drift) * 12 / 1.104, mag = Math.hypot(p.kx, p.ky);   // distancia total del retroceso = velocidad / 12 (x1,104 por la integración a 60 Hz: la 1.ª muestra no decae)
     if (mag > cap) { p.kx *= cap / mag; p.ky *= cap / mag; }
     p.vx *= 0.4; p.vy *= 0.4;
+    if (G.Armor && G.Armor.set4('hoguera')) { p.kx *= 0.5; p.ky *= 0.5; }   // v8.1: Corazón de hoguera, retroceso -50 % en hielo
   };
 
   // ================================================================= ESTALAGMITAS (obstáculos) y colisión
@@ -257,6 +258,8 @@
       if (c.immuneT > 0 || c.frozenT > 0) rate = 0;
       c.tIce += dt;
     }
+    if (G.Armor && rate > 0) { var acm = G.Armor.coldMul(); if (acm !== 1) rate *= acm; }   // v8.1: Pelaje Glacial (bono 2) y Brasa de bolsillo
+    if (fire && G.Armor && G.Armor.set4('hoguera') && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + s);   // Corazón de hoguera: 1 HP/s junto al fuego
     rate -= T.passive();
     c.rate = rate; c.v += rate * s;
     if (c.v < 0) c.v = 0;

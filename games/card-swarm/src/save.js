@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v11 (v8.1 sets nuevos): sin campos nuevos; regala el Peto de Escama / Pelaje / Jalea / Brasa por jefe ya vencido (Letea, Yarlak, Melaria, Cenizar) y equipa el de mayor tier. Migración v10 -> v11 con copia en swarmhand.fusion.save.v10.
    v10 (v8 Herrero): armor { owned, equipped, seen, stats, ped }, trophiesEver / insigniasEver (acumulado: Ruta, logros y Archivo; trophies / insignias pasan a ser saldo gastable), loadouts[i].armor, stats.playMs, flags.smithMet / smithGift. Migración v9 -> v10 con copia en swarmhand.fusion.save.v9: regala set Aldeano + Peto de cada jefe vencido.
    v9 (P7, Integración): portalSeen { destino: 1 } (destinos ya vistos abiertos en el Portal: los recién desbloqueados se marcan 'NUEVO'); la rama 'Ruta' del árbol usa nodos normales (nodes) y los trofeos ya guardados (trophies);
    los platos nuevos y las misiones nuevas no necesitan datos propios (shop.dish / pending.dish / quest). Migración v8 -> v9 con copia en swarmhand.save.v8: los destinos que ya tenías abiertos salen como vistos.
@@ -17,7 +18,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.fusion.save', VERSION = 10;
+  var KEY = 'swarmhand.fusion.save', VERSION = 11;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -100,6 +101,23 @@
         a.equipped = ['ald_helm', 'ald_chest', 'ald_boots', 'ald_amulet'];
         SETS.forEach(function (st) { if (st[1] && bk9[st[1]] > 0) { var pid = st[0] === 'esquila' ? 'esq_chest' : 'car_chest'; a.owned[pid] = 0; a.equipped[1] = pid; } });
         d.flags.smithGift = 1;
+      }
+    }
+    if (d.v === 10) {   // v8.1: Peto de los sets nuevos por jefe ya vencido
+      d.v = 11; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated11 = 1;
+      var bk10 = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {}, AD = G.ArmorData;
+      if (!d.armor || typeof d.armor !== 'object') d.armor = freshArmor();
+      if (!d.armor.owned || typeof d.armor.owned !== 'object') d.armor.owned = {};
+      if (!Array.isArray(d.armor.equipped) || d.armor.equipped.length !== 4) d.armor.equipped = [null, null, null, null];
+      if (AD && bk10.pastor > 0) {
+        AD.SET_ORDER.forEach(function (sid) {
+          var st = AD.SETS[sid], pe = st.boss && AD.peto(sid);
+          if (pe && bk10[st.boss] > 0 && d.armor.owned[pe.id] == null) {
+            d.armor.owned[pe.id] = 0;
+            var cur = d.armor.equipped[1], ct = cur && AD.BY[cur] ? AD.tierOf(AD.BY[cur]) : -1;
+            if (st.tier > ct) d.armor.equipped[1] = pe.id;
+          }
+        });
       }
     }
     return d.v === VERSION ? d : null;

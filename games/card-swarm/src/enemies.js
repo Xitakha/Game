@@ -114,9 +114,10 @@
       if (z.kind === 'fire' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-8, 8), z.y, 0, -40, 400, '#ff9a3c', 3, { add: true });
       if (p.dead) continue;
       if (G.dist(z.x, z.y, p.x, p.y) <= z.r) {
-        if (z.slow) G.Player.slow(p, z.slow, z.slowMs || 400);
+        var bog = (G.Armor && (z.kind === 'acid' || z.kind === 'olvido' || z.cd)) ? G.Armor.bogMul() : 1;   // v8.1: Piel de pantano reduce a la mitad charcos y Lirio
+        if (z.slow) G.Player.slow(p, z.slow * bog, (z.slowMs || 400) * bog);
         if (z.cold) G.Tundra.coldAdd(z.cold * dt / 1000);   // P3: la Ventisca local del Ventisquero sube el Frío mientras estés dentro
-        if (z.cd) { G.Player.cdSlow(p, z.cdPct || CDSLOW[0], CDSLOW[1]); var hn = performance.now(); if (hn - (E._hum || 0) > 1600) { E._hum = hn; G.sfx('olvido_hum', { vol: 0.5 }); } }   // M9: las cartas recargan más lento mientras estés dentro (+2 s al salir)
+        if (z.cd) { G.Player.cdSlow(p, (z.cdPct || CDSLOW[0]) * bog, CDSLOW[1] * bog); var hn = performance.now(); if (hn - (E._hum || 0) > 1600) { E._hum = hn; G.sfx('olvido_hum', { vol: 0.5 }); } }   // M9: las cartas recargan más lento mientras estés dentro (+2 s al salir)
         z.tk -= dt;
         if (z.tk <= 0) { z.tk = z.tick; if (z.dmg > 0) G.Player.hurt(p, z.dmg, z.x, z.y, { soft: true, src: z.src }); }   // dmg 0 = solo ralentiza (remolino del Espíritu de nieve)
       } else z.tk = Math.min(z.tk, 0);

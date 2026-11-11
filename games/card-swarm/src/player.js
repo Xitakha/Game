@@ -63,6 +63,7 @@
       G.Hud.banner('¡CORAZÓN DE BRASA!', 1800, '#ff9a3c'); G.fx.shake(10, 300);
       return true;
     }
+    if (p.hp <= 0 && AR && AR.lastEmber(p)) return true;   // v8.1: Última brasa (Brasa Primera, 4 piezas): se gasta el primero que active (Corazón de brasa o este)
     if (p.hp <= 0) { p.hp = 0; p.dead = true; G.fx.hit(120); G.fx.smoke(p.x, p.y, 8); }
     return true;
   };
@@ -87,6 +88,7 @@
     var s = dt / 1000, inp = G.input;
     p.animT += dt;
     if (p.hurtT > 0) p.hurtT -= dt;
+    if (G.Armor && G.Armor.blockT > 0) G.Armor.blockT -= dt;
     if (p.squash > 0) p.squash -= dt;
     if (p.frenzyT > 0) p.frenzyT -= dt;
     if (p.pactT > 0) p.pactT -= dt;
@@ -145,5 +147,6 @@
     else if (p.slowT > 0) { o.tint = p.honeyT > 0 ? '#e8a53a' : '#7fd4ff'; o.tintA = 0.35; }
     else if (p.frenzyT > 0) { o.tint = '#ff3050'; o.tintA = 0.25 + 0.15 * Math.sin(p.animT / 40); }
     G.fx.spr(c, cv, p.x, p.y, o);
+    if (G.Armor && G.Armor.blockT > 0 && !p.dead) G.Armor.drawBlock(c, p.x, p.y - 4);   // v8.1: destello de bloqueo si la armadura redujo >= 20 % del golpe
   };
 })();

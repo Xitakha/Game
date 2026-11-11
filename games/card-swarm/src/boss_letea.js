@@ -163,7 +163,7 @@
     var a = A(), p = PL(), t = G.time, i, k, rate;
     // charcos
     if (a.poolMul < a.poolTo) a.poolMul = Math.min(a.poolTo, a.poolMul + 0.2 * dt / 2000);
-    if (!p.dead) for (i = 0; i < POOLS.length; i++) if (Math.hypot(p.x - POOLS[i][0], p.y - POOLS[i][1]) < poolR(a) - 4) G.Player.slow(p, 0.3, 300);
+    if (!p.dead) for (i = 0; i < POOLS.length; i++) if (Math.hypot(p.x - POOLS[i][0], p.y - POOLS[i][1]) < poolR(a) - 4) G.Player.slow(p, 0.3 * (G.Armor ? G.Armor.bogMul() : 1), 300);
     a.subU += ((e.submerged ? 1 : 0) - a.subU) * Math.min(1, dt / 220);
     // pilares de cristal: se reconstruyen a los 35 s
     for (i = 0; i < S.obs.length; i++) {

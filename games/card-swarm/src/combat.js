@@ -324,6 +324,7 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
+    if (G.Armor && !e.summoned) { if (e.poisonN > 0) G.Armor.onPoisonKill(); G.Armor.onKillCount(); }   // v8.1: bonos de 4 piezas Escama (Piel de pantano) y Jalea (Reina de la colmena)
     if (e.hemoT > 0) G.Fusion.hemoDeath(e);   // FUSION: Hemotoxina
     if (tag === 'fire' && G.Tundra.on) G.Tundra.fireKill();   // P3: cada baja con Fuego baja el Frío (máx. -4 %/s)
     var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
@@ -378,7 +379,7 @@
   function collect(g) {
     var p = G.player, m = M();
     if (g.kind === 'xp') {
-      p.xp += g.v * m.xpMul * B.xpGem();
+      p.xp += g.v * m.xpMul * B.xpGem() * (G.Armor ? G.Armor.xpMul() : 1);
       var need = B.xpNeed(p.level);
       while (p.xp >= need) { p.xp -= need; p.level++; G.pendingLevels++; need = B.xpNeed(p.level); }
       G.Snd.play('gem', 1);
@@ -388,11 +389,11 @@
       G.Minis.collectInsignia(g); G.sfx('pickup');
     } else if (g.kind === 'ash') {
       p.ash += Math.max(1, Math.round(g.v * m.ashMul)); G.Snd.play('gem', 1.4);
-    } else { G.Player.heal(p, g.v, 'gem'); G.sfx('pickup'); }
+    } else { G.Player.heal(p, g.v + (G.Armor ? G.Armor.heartBonus() : 0), 'gem'); G.sfx('pickup'); }
   }
 
   function updateGems(dt) {
-    var p = G.player, s = dt / 1000, R = B.player.pickup * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1);
+    var p = G.player, s = dt / 1000, R = B.player.pickup * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1) * (G.Armor ? G.Armor.magnetMul() : 1);
     for (var i = G.gems.length - 1; i >= 0; i--) {
       var g = G.gems[i]; g.t += dt;
       var dx = p.x - g.x, dy = p.y - g.y, d = Math.hypot(dx, dy);
