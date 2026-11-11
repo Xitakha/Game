@@ -85,7 +85,8 @@
       lv: [{ n: 3, dmg: 55, corr: 0.20, corrBig: 0.10, dur: 6000, cd: 12000 }, { n: 5, dmg: 80, corr: 0.25, corrBig: 0.12, dur: 8000, cd: 12000 }] }
   ];
   var RBY = {}, RKEY = {};
-  R.forEach(function (r) { RBY[r.id] = r; RKEY[[r.a, r.b].sort().join('+')] = r; });
+  var NONEW = qnum('nonew', 0) > 0;   // ?nonew=1: sin las recetas 13-15 (solo para comparar balance con la versión de 12 recetas)
+  R.forEach(function (r) { RBY[r.id] = r; if (NONEW && /^(cristal|zancada|virote)$/.test(r.id)) return; RKEY[[r.a, r.b].sort().join('+')] = r; });
   F.onLevel = function () {   // sostén: el original curaba ~200-400 PV por partida con los combos pasivos Pacto / Sangre envenenada; aquí, cura al subir de nivel
     var p = G.player; if (p.dead || P.lvHeal <= 0) return;
     G.Player.heal(p, Math.round(p.maxHp * (P.lvHeal + (G.Armor ? G.Armor.lvHealAdd() : 0))), 'nivel');

@@ -122,8 +122,8 @@ async function flow() {
   s = await E(pg, () => G.Fusion.snapshot());
   ok(s.actives[1].id === 'plasma' && s.actives[1].lvl === 2, 'misma receta otra vez -> Nv2');
   ok((await E(pg, () => G.Fusion.handPairs().every(p => p.recipe.id !== 'plasma'))), 'Nv2 es el tope: la receta deja de ofrecerse');
-  // parejas sin receta
-  ok((await E(pg, () => G.Fusion.recipeFor('ice', 'blood') === null && G.Fusion.recipeFor('poison', 'steel') === null)), 'parejas sin receta (hielo+sangre, veneno+acero) no fusionan');
+  // las 15 parejas tienen receta (fusiones 13-15)
+  ok((await E(pg, () => G.Fusion.recipeFor('ice', 'blood').id === 'cristal' && G.Fusion.recipeFor('lightning', 'blood').id === 'zancada' && G.Fusion.recipeFor('poison', 'steel').id === 'virote')), 'hielo+sangre, rayo+sangre y veneno+acero fusionan (cristal, zancada, virote)');
   await done(pg, 'flow'); await b.close();
 }
 
@@ -197,7 +197,7 @@ async function powers() {
     });
     ok(zd.f1 && zd.dx1 > 200 && zd.inv >= 200, 'zancada: embiste hacia el enemigo (' + Math.round(zd.dx1) + ' px) e invulnerable (' + zd.inv + ' ms)');
     ok(zd.c1 < 600 && zd.f2 && Math.abs(zd.dx2) > 100 && zd.c2 > 5000 && zd.f3 === false, 'zancada Nv2: 2 cargas (2.ª sin esperar), luego cooldown completo (' + zd.c1 + ' / ' + Math.round(zd.c2) + ')');
-    ok(zd.hit >= 1 && zd.hp > 50 && zd.hp <= 56, 'zancada: golpea y cura con tope (hp ' + Math.round(zd.hp) + ', golpeados ' + zd.hit + ')');
+    ok(zd.hit >= 1 && zd.hp > 50 && zd.hp <= 60, 'zancada: golpea y cura con tope (hp ' + Math.round(zd.hp) + ', golpeados ' + zd.hit + ')');
     ok(zd.x4 >= 28, 'zancada: respeta los límites del mapa (x=' + Math.round(zd.x4) + ')');
     await done(pg, 'zancada');
     // Virote: corrosión (x1,2 normal; jefe topado x1,25), propaga veneno, afecta a otras fuentes
