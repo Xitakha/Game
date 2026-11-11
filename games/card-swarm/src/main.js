@@ -302,7 +302,7 @@
     if (!rq && G.huntUrl) rq = { mode: G.practiceUrl ? 'practice' : 'hunt', boss: G.huntUrl };
     if (!rq && G.practiceUrl && G.bossUrl) rq = { mode: 'practice', boss: G.bossUrl };
     G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
-    G.mode = rq ? rq.mode : 'run'; G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
+    G.mode = rq ? rq.mode : 'run'; if (G.Armor) G.Armor.modeSet(); G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
     G.final = false;
     if (!rq && !G.biomeUrl && !G.bossUrl && biome === 'crater' && G.Save.craterOpen()) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.Save.pelSel('cenizar'), phase: 0, final: true };   // P6.5: el Cráter es el Asalto (estilo cacería, HP completo)
@@ -405,6 +405,7 @@
         updateWorld(dt);
         break;
       case 'paused':
+        if (G.Hud.eqOpen) { if (G.Smith.update(dt)) { G.Hud.eqOpen = false; G.Smith.close(); } break; }   // v8.1: EQUIPO (solo lectura) dentro de la pausa
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
         else if (inp.hit('KeyB')) G.finish(false);   // abandonar: conserva las partes recogidas y va al botín
         else if (inp.hit('KeyR') && G.mode === 'practice') G.Base.retryPractice();   // práctica: reinicio rápido

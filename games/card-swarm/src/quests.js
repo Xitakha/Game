@@ -99,6 +99,11 @@
     DEFS.push({ id: 'win_' + tg, cat: 'C', tier: 3, kind: 'wintag', tag: tg, name: 'Mano de ' + TAGN[tg], goal: 1, label: 'Gana con ' + TAGN[tg], rare: 1,
       desc: 'Gana una expedición con 3 o más cartas de ' + TAGN[tg].toUpperCase() + ' en tu mano final.', rewardParts: rp, brasas: 160, pf: 2, pfRepeat: 1 });
   });
+  // v8.1: los pedidos de Carapa (G.Armor.PED) también salen en el Tablón de Vesper como encargos de condición ('armped'). La recompensa se paga una sola vez: se cobre donde se cobre
+  // se marca armor.ped[id] (Carapa) y Q.feasible deja de ofrecerlo. Progreso = la condición del pedido (se evalúa en vivo, sin contador propio).
+  try { G.Armor.PED.forEach(function (pd) {
+    DEFS.push({ id: 'ped_' + pd.id, cat: 'C', tier: 2, kind: 'armped', ped: pd.id, name: 'Pedido: ' + pd.name, goal: 1, label: pd.name, desc: 'Pedido de Carapa. ' + pd.desc, rewardParts: pd.reward.parts, brasas: pd.reward.brasas, pf: 0, pfRepeat: 0 });
+  }); } catch (eP) { /* sin armadura */ }
   Q.DEFS = DEFS;
   var BY = {}; DEFS.forEach(function (d) { BY[d.id] = d; });
   Q.def = function (id) { return BY[id]; };
@@ -119,12 +124,18 @@
     kills = kills || (G.Save.data && G.Save.data.bossKills) || {};
     return Q.BIOMES.filter(function (b) { return b === 'bosque' || (b === 'cripta' && kills.pastor > 0) || (b === 'asfodelo' && kills.karceron > 0) || (b === 'tundra' && kills.letea > 0) || (b === 'panal' && kills.yarlak > 0); }).concat(['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(function (b) { return kills[b] > 0; }) ? ['crater'] : []);   // P7: el Cráter cuenta como destino abierto con los cinco jefes vencidos. P4: la Tundra se abre al vencer a Letea (su jefe, Yarlak, la espera dentro)
   };
-  Q.feasible = function (d, kills) { var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
+  Q.feasible = function (d, kills) {
+    if (d.kind === 'armped') return G.Armor.smithOn() && !G.Save.data.armor.ped[d.ped];
+ var un = Q.unlockedBiomes(kills); return Q.biomesOf(d).some(function (b) { return un.indexOf(b) >= 0; }); };
   Q.TAGN = TAGN;
 
   function S() { return G.Save.data.quest; }
   Q.active = function () { var a = S().active; return a ? BY[a] || null : null; };
-  Q.progress = function (id) { return S().prog[id] || 0; };
+  Q.progress = function (id) {
+    var d = BY[id];
+    if (d && d.kind === 'armped') { var pd = G.Armor.PED.filter(function (x) { return x.id === d.ped; })[0]; return pd && pd.ok(G.Save.data) ? 1 : 0; }
+    return S().prog[id] || 0;
+  };
   Q.times = function (id) { return S().done[id] || 0; };
   Q.isReady = function () { var d = Q.active(); return !!d && Q.progress(d.id) >= d.goal; };
   Q.target = function () { var d = Q.active(); return d && (d.kind === 'hunt' || d.kind === 'mini') && Q.progress(d.id) < d.goal ? d.target : null; };
@@ -234,6 +245,7 @@
   Q.claim = function () {
     var d = Q.active(); if (!d || !Q.isReady()) return null;
     var Sv = G.Save.data, first = Q.times(d.id) === 0, pf = first ? d.pf : d.pfRepeat, k, mul = first ? 1 : Q.REPEAT_MUL, rp = {}, br = Math.round(d.brasas * mul);
+    if (d.kind === 'armped') { if (Sv.armor.ped[d.ped]) mul = 0; else Sv.armor.ped[d.ped] = 1; if (!mul) { Sv.quest.active = null; G.Save.save(); return { text: 'Ese pedido ya estaba cobrado en el taller de Carapa', first: false }; } }   // sin duplicar recompensas
     for (k in d.rewardParts) { rp[k] = Math.max(1, Math.round(d.rewardParts[k] * mul)); G.Save.add(k, rp[k]); }
     if (d.rare && first) { rp.rare = d.rare; G.Save.add('rare', d.rare); }
     Sv.brasas += br;
@@ -241,10 +253,10 @@
     Sv.quest.done[d.id] = Q.times(d.id) + 1; Sv.quest.prog[d.id] = 0; Sv.quest.active = null;
     G.Save.save();
     try { G.Ach.check(); } catch (e) { /* logros */ }
-    return { text: partsText(rp) + ', ' + br + ' Brasas' + (got ? ', +' + got + ' PF' : ' (PF al tope)'), first: first };
+    return { text: partsText(rp) + ', ' + br + ' Brasas' + (pf <= 0 ? '' : got ? ', +' + got + ' PF' : ' (PF al tope)'), first: first };
   };
 
-  var BOOLK = ['wintag', 'win7', 'partkey', 'nojump', 'coldwin', 'noram', 'czwin'];   // encargos de sí / no (sin contador)
+  var BOOLK = ['armped', 'wintag', 'win7', 'partkey', 'nojump', 'coldwin', 'noram', 'czwin'];   // encargos de sí / no (sin contador)
   Q.hudText = function () {
     var d = Q.active(); if (!d) return null;
     if (d.kind === 'clean') return d.label + ' ' + Math.min(d.goal, Math.max(Q.progress(d.id), Math.floor(G.Loot.cleanSecs()))) + '/' + d.goal + ' s';
@@ -277,7 +289,7 @@
     if (first == null) first = Q.times(d.id) === 0;
     var mul = first ? 1 : Q.REPEAT_MUL, rp = {};
     for (var k in d.rewardParts) rp[k] = Math.max(1, Math.round(d.rewardParts[k] * mul));
-    return Object.keys(rp).map(function (p) { return rp[p] + ' ' + G.Loot.part(p).short; }).join(' + ') + (d.rare && first ? ' + 1 Esencia' : '') + ' + ' + Math.round(d.brasas * mul) + ' Brasas + ' + (first ? d.pf : d.pfRepeat) + ' PF';
+    return Object.keys(rp).map(function (p) { return rp[p] + ' ' + G.Loot.part(p).short; }).join(' + ') + (d.rare && first ? ' + 1 Esencia' : '') + ' + ' + Math.round(d.brasas * mul) + ' Brasas' + ((first ? d.pf : d.pfRepeat) ? ' + ' + (first ? d.pf : d.pfRepeat) + ' PF' : '');
   };
   Q.tierName = function (t) { return t === 1 ? 'FÁCIL' : t === 2 ? 'MEDIO' : 'DIFÍCIL'; };
   Q.totalDone = function () { var n = 0, d = G.Save.data.quest.done; for (var k in d) n += d[k]; return n; };
@@ -328,12 +340,18 @@
       lore: 'Seis trofeos de un incendio. Ahora el Cráter respira contigo, no contra ti.' },
     { id: 'arm1', name: 'Armero aficionado', desc: 'Fabrica tu primera pieza de armadura (Carapa).', ok: function (s) { return s.armor && s.armor.stats.crafts >= 1; },
       lore: 'Carapa dice que cosiste bien. Ella nunca dice eso. Cuídalo, chaval.' },
-    { id: 'arm4', name: 'Cuatro latidos', desc: 'Equipa 4 piezas del mismo set.', ok: function (s) { var m = G.Armor && G.Armor.get(); return !!m && Object.keys(m.sets).some(function (k) { return m.sets[k] >= 4; }) || !!(s.flags && s.flags.arm_set4); },
+    { id: 'arm4', name: 'Cuatro latidos', desc: 'Equipa 4 piezas del mismo set.', ok: function (s) { return !!(s.flags && s.flags.arm_set4); },
       lore: 'Cuatro piezas a juego. Se te ve el porte de un pastor... o de un carcelero.' },
     { id: 'armup', name: 'Refuerzo triple', desc: 'Lleva una pieza a +3.', ok: function (s) { return !!s.armor && Object.keys(s.armor.owned).some(function (k) { return s.armor.owned[k] >= 3; }); },
       lore: 'Una pieza a +3. Grum templó el metal y Carapa cosió la última puntada. Eso sí que aguanta.' },
     { id: 'armbare', name: 'Cordero sin lana', desc: 'Vence a un jefe en Peligro II sin armadura equipada.', ok: function (s) { return !!(s.flags && s.flags.arm_bare); },
       lore: 'Sin una sola pieza. Carapa se tapó los ojos; yo no pude dejar de mirar.' },
+    { id: 'armmos', name: 'Mosaico', desc: 'Lleva a la vez piezas de 4 sets distintos (una por slot).', ok: function (s) { var e = s.armor && s.armor.equipped, sets = {}; if (!e) return false; e.forEach(function (id) { var p = id && G.ArmorData.piece(id); if (p) sets[p.set] = 1; }); return Object.keys(sets).length >= 4 || !!(s.flags && s.flags.arm_mosaic); },
+      lore: 'Un yelmo de aquí, un peto de allá... Carapa dice que pareces un retal. Con cariño, claro.' },
+    { id: 'armseal', name: 'Sello de Peligro V', desc: 'Vence a un jefe en Peligro V con un set de 4 piezas (cosmético).', ok: function (s) { return !!(s.flags && s.flags.arm_seal); },
+      lore: 'El Sello de Peligro V. Carapa lo cose en el pecho del peto: no da defensa, pero se nota.' },
+    { id: 'armcol', name: 'Colgante completo', desc: 'Fabrica los 5 talismanes de minijefe (10 Insignias).', ok: function (s) { return !!s.armor && ['mn_bosque', 'mn_cripta', 'mn_asfodelo', 'mn_tundra', 'mn_panal'].every(function (id) { return s.armor.owned[id] != null; }); },
+      lore: 'Cinco talismanes, diez insignias. Cuelgas más historias que yo en mi pared.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Crea 5 fusiones distintas.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Crea las 12 fusiones.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },
@@ -353,7 +371,7 @@
     A.DEFS.forEach(function (a) {
       if (s.ach[a.id]) return;
       var ok = false; try { ok = a.ok(s); } catch (e) { ok = false; }
-      if (ok) { s.ach[a.id] = s.runs + 1; out.push(a); A.fresh.push(a); if (a.give) for (var gk in a.give) s.parts[gk] = (s.parts[gk] || 0) + a.give[gk]; }
+      if (ok) { s.ach[a.id] = s.runs + 1; out.push(a); A.fresh.push(a); if (/^arm/.test(a.id) && G.Armor) { G.Armor.snd2('achv'); } if (a.give) for (var gk in a.give) s.parts[gk] = (s.parts[gk] || 0) + a.give[gk]; }
     });
     if (out.length) G.Save.save();
     return out;

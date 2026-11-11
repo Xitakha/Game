@@ -78,7 +78,7 @@
   R.forEach(function (r) { RBY[r.id] = r; RKEY[[r.a, r.b].sort().join('+')] = r; });
   F.onLevel = function () {   // sostén: el original curaba ~200-400 PV por partida con los combos pasivos Pacto / Sangre envenenada; aquí, cura al subir de nivel
     var p = G.player; if (p.dead || P.lvHeal <= 0) return;
-    G.Player.heal(p, Math.round(p.maxHp * P.lvHeal), 'nivel');
+    G.Player.heal(p, Math.round(p.maxHp * (P.lvHeal + (G.Armor ? G.Armor.lvHealAdd() : 0))), 'nivel');
   };
   F.recipe = function (id) { return RBY[id]; };
   F.recipeFor = function (t1, t2) { return RKEY[[t1, t2].sort().join('+')] || null; };

@@ -36,7 +36,7 @@
     if (name === 'logros') { st.lsel = 0; st.lscroll = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
   };
-  P.closeAll = function () { cur = null; st.armorFrom = null; };
+  P.closeAll = function () { cur = null; st.armorFrom = null; if (G.Smith) G.Smith.close(); };
   P.vesperTab = function (n) { st.vt = n; huntFix(); };   // 0 = Tablón, 1 = Cacería (lo usa el diálogo de Vesper)
   P.current = function () { return cur; };
   P.lastMsg = function () { return msg; };   // último aviso en pantalla (pruebas)

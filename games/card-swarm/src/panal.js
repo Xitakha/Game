@@ -214,6 +214,7 @@
   P.honeyPct = function () {
     var pct = (G.Tree && G.Tree.fx && G.Tree.fx.guantes) ? 0.25 : D.honey.player;
     if (G.runBuff && G.runBuff.fx && G.runBuff.fx.honey) pct *= 1 - G.runBuff.fx.honey;
+    if (G.Armor) { var hm = G.Armor.honeyMul(); if (hm !== 1) pct *= hm; }   // v8.1: Jalea Real (bono 2) y Gota de ámbar
     return pct;
   };
   P.clouds = clouds;

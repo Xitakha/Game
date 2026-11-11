@@ -1381,6 +1381,21 @@ Atajo: `G.Snd.armor(tipo, arg, pitch)`; `G.Snd.armornames` lista todos los ids.
 
 `pitch` (2.o argumento de `play`, 3.o del atajo) multiplica la frecuencia (defecto 1). Verificado en Chromium headless: carga sin errores, renderizado offline de los 34 sonidos sin silencio ni clipping.
 
+### Armadura v8, sets nuevos y extras: `src/sfx_armor2.js` (cargar DESPUES de `sfx_armor.js`; el programador anade el `<script>`)
+Procedural, no toca `sfx_armor.js`. Atajo `G.Snd.armor2(tipo, arg, pitch)`; `G.Snd.armor2names` (32 ids) y tambien anadidos a `G.Snd.armornames`. `set` = `letea|yarlak|melaria|cenizar`; `arg` de equip/set/upgrade acepta `'letea'`, `'letea:2'` (nivel) o `{set,lvl}`.
+
+| Id | Atajo | Uso |
+|---|---|---|
+| `a2_equip_<set>` | `armor2('equip', set)` | equipar pieza del set: letea burbujas de pantano, yarlak cristal de hielo, melaria cera/miel, cenizar brasa y ceniza |
+| `a2_upgrade_<set>_1/2/3` | `armor2('upgrade', 'set:n')` | mejora +1/+2/+3 (2, 3, 4 notas con escala propia por set; +3 con brillo y cola) |
+| `a2_set_<set>` | `armor2('set', set)` | set completo, stinger distinto por set (~0,8 s) |
+| `a2_talisman_mini` | `armor2('talisman')` | talisman de minijefe obtenido (campanilla mistica + pulso grave) |
+| `a2_hit_<mat>` | `armor2('hit', mat)` | golpe amortiguado con `hurt`; mat = `leather|metal|charm|letea|yarlak|melaria|cenizar` (otro -> metal) |
+| `a2_equipo_open` / `a2_equipo_close` / `a2_equipo_try` | `armor2('open'/'close'/'try')` | boton EQUIPO: abrir, cerrar y probar equipo |
+| `a2_achv` | `armor2('achv')` | logro de armadura (fanfarria ~0,9 s) |
+
+Verificado en Chromium headless (Playwright): carga sin errores y los 32 ids suenan sin excepciones.
+
 
 ---
 
@@ -1418,3 +1433,13 @@ Sprites (ancla = bottom-center, tamanos finales): `vil_workshop` **192x144** (fr
 - Sin `Assets` o `_h`: `armorIcon`/`armorSlotIcon` devuelven cuadro 64x64 con letra del slot y "+n"; `drawCarapa`/`drawDefIcon` dibujan rectangulos; `drawWorkshop`/`drawMannequin` no pintan. Con `Assets` pero sin `assets_village`, `Assets.VILLAGE` puede faltar (se omite el registro de datos).
 - Coste: se crean 3 sprites NPC/retrato + 4 de decor (~25 canvases) al cargar; los iconos son perezosos y cacheados. Probado en Chromium: 0 errores; 500 `drawArmorIcon` = ~2 ms.
 - Pendiente (fuera del MVP): `fx_armor_block`, `vil_trophy_wall`, iconos `icon_set_*`/`icon_aplomo`/`icon_afinidad`, sets Letea/Yarlak/Melaria/Cenizar, overlay completo de Marlo vestido.
+
+---
+
+# Armaduras v8 parte 2 (src/assets_armor2.js, cargar DESPUES de assets_armor.js; solo arte)
+Extiende `assets_armor.js` sin tocarlo: sets T3-T6, 5 talismanes de minijefe, Marlo vestido y `fx_armor_block`. Seguro (no lanza; si falta `assets_armor.js` solo avisa y no hace nada). El programador anade `<script src="src/assets_armor2.js">` justo tras `assets_armor.js` (e `sw.js`).
+- **Sets nuevos** (mismos slots `yelmo|peto|grebas|talisman`, `ref` 0..3, misma API que los 3 del MVP): `'letea'` (alias `escama`, veneno, verde-azulado `#2f6f6a` + acido; rareza 3), `'yarlak'` (alias `glacial`, hielo `#9fd8ff` con pelaje y colmillos; rareza 3), `'melaria'` (alias `jalea`, panal dorado `#ffd23a` con alas; rareza 4), `'cenizar'` (alias `brasa_primera`, ceniza con brasa `#ff9a3c`/`#ffe45a`; rareza 4). `Assets.armorIcon(set, slot, ref, {rarity, locked})`, `Assets.drawArmorIcon(ctx, set, slot, x, y, size, {ref,...})` y `drawMannequin` los aceptan; los otros sets delegan en `assets_armor.js`. `Assets.ARMOR_ART.sets/setColors/defaultRarity/setAlias` incluyen los nuevos (`pieceCanvas` tambien).
+- **Talismanes de minijefe** (1 por bioma, piezas 29-33; rareza 2 por defecto): `Assets.armorIcon('mini', id, ref, opts)` (o `Assets.miniTalismanIcon(id, ref, opts)`, `Assets.drawMiniTalisman(ctx, id, x, y, size, opts)`; `drawArmorIcon(ctx,'mini',id,...)` tambien). `id` = minijefe o bioma: `bosque`=carnero|tejedora (Colmillo de arrastre), `cripta`=alcaide|centinela (Llave maestra), `asfodelo`=hidra|planidera (Perla del rio), `tundra`=yeti_mayor|ventisquero (Brasa de bolsillo), `panal`=avispon|reina_joven (Gota de ambar). `Assets.ARMOR_ART.mini` = `{biomes, alias, info{nombre,bonus,ids,bg}, norm(id)}`. En maniqui: `talisman: {set:'mini', id:'panal'}`.
+- **Marlo vestido**: `Assets.drawMarloArmor(ctx, x, y, t, {set, flip, scale=1, anim:'idle|walk|hurt', by, equip:{yelmo,peto}, alpha})`. x,y = CENTRO del sprite `player` (mismo punto que `G.fx.spr` / `drawMarlo`; en la aldea scale 1.3). Dibujarlo justo despues del sprite. `set` admite los 7 sets (`aldeano|pastor|karceron|letea|yarlak|melaria|cenizar` + alias) o null; `equip` mezcla sets por pieza. Devuelve true si dibujo. Cache por set/pose (24x24 -> 48x48).
+- **fx_armor_block**: sprite `fx_armor_block` (32x32 base, 3 frames: impacto, escudo hexagonal, disipacion; anim `block`) y `Assets.fxArmorBlock(ctx, x, y, t, {scale=1, dur=300, alpha})`: x,y = centro, `t` = ms desde el golpe; devuelve false al pasar `dur` (el llamador lo descarta). Usa `lighter`, sin `shadowBlur`.
+- Captura de verificacion: `studio/docs/capturas-herrero/5-armaduras-t3-t6.jpg`. 500 `drawArmorIcon` ~3 ms.

@@ -302,7 +302,7 @@ async function armor() {
   const b = await launch();
   // 1) cuenta vacia: sin Carapa; ?smith=1 la abre y la escena entrega el set Aldeano
   let pg = await mk(b, 'reset=1&nosw=1');
-  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 10), 'cuenta nueva: guardado v10, Carapa aun no ha llegado');
+  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 11), 'cuenta nueva: guardado v11, Carapa aun no ha llegado');
   const zb = await E(pg, () => { G.curBiome = 'bosque'; return [G.Armor.engaged(), G.Armor.zone()]; });
   ok(zb[0] === false && zb[1] === 1, 'cuenta vacia en Bosque: sin zoneDmg ni armadura (rama antigua de hurt)');
   await done(pg, 'armor-vacia');
@@ -315,10 +315,10 @@ async function armor() {
     G.Save.load(); const d = G.Save.data;
     return { v: d.v, brasas: d.brasas, thread: d.parts.thread, pf: d.pf.earned, te: d.trophiesEver, ie: d.insigniasEver, tr: d.trophies, owned: Object.keys(d.armor.owned).sort(), eq: d.armor.equipped, gift: d.flags.smithGift, bak: !!localStorage.getItem('swarmhand.fusion.save.v9') };
   });
-  ok(mig.v === 10 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v10 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
+  ok(mig.v === 11 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
   ok(mig.owned.join() === 'ald_amulet,ald_boots,ald_chest,ald_helm,car_chest,esq_chest' && mig.eq[1] === 'car_chest' && mig.gift === 1, 'regalo: Aldeano + Peto por jefe vencido (Esquila y Carcelero), mejor equipado: ' + mig.owned.length + ' piezas');
-  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 11, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
-  ok(imp[0] === true && imp[1] === false, 'importText acepta la v10 y rechaza versiones mayores');
+  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 12, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
+  ok(imp[0] === true && imp[1] === false, 'importText acepta la v11 y rechaza versiones mayores');
   await done(pg, 'armor-migra');
   // 3) panel: fabricar, equipar, reforzar con toques en 844x390
   pg = await mk(b, 'reset=1&smith=1&nosw=1&give=thread:80,feather:30,plate:80,wick:60,fang:20,brasas:4000,horn:4,fleece:2,carnero:1,tejedora:1,spine:5');
@@ -391,8 +391,123 @@ async function armor() {
   await done(pg, 'armor-aldea'); await b.close();
 }
 
+
+async function armor2() {
+  console.log('--- armadura v8.1: sets Letea/Yarlak/Melaria/Cenizar, minijefes, zoneDmg por defecto, bonos de 4, prueba, pausa, pedidos en Vesper');
+  const b = await launch();
+  let pg = await mk(b, 'reset=1&nosw=1');
+  // migracion v10 -> v11
+  const m11 = await E(pg, () => {
+    const d = G.Save.data; const old = JSON.parse(JSON.stringify(d)); old.v = 10; old.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; delete old.flags.migrated11;
+    old.armor.owned = { ald_helm: 0, ald_chest: 0, ald_boots: 0, ald_amulet: 0, esq_chest: 0, car_chest: 0 }; old.armor.equipped = ['ald_helm', 'car_chest', 'ald_boots', 'ald_amulet']; old.trophies = { horn: 1 }; old.trophiesEver = { horn: 1 }; old.brasas = 555;
+    localStorage.setItem('swarmhand.fusion.save', JSON.stringify(old)); G.Save.load(); const x = G.Save.data;
+    return { v: x.v, owned: Object.keys(x.armor.owned).sort().join(), eq: x.armor.equipped, brasas: x.brasas, bak: !!localStorage.getItem('swarmhand.fusion.save.v10'), tr: x.trophies.horn };
+  });
+  ok(m11.v === 11 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
+  ok(['bra_chest', 'esc_chest', 'gla_chest', 'jal_chest', 'car_chest', 'esq_chest'].every(id => m11.owned.includes(id)) && m11.eq[1] === 'bra_chest', 'regalo: Peto de Escama, Pelaje, Jalea y Brasa por jefe vencido; equipa el de mayor tier (' + m11.eq[1] + ')');
+  // datos y costes
+  const dt = await E(pg, () => {
+    const D = G.ArmorData, A = G.Armor, c = id => A.cost(D.piece(id), 0), r = (id, n) => A.cost(D.piece(id), n);
+    return { sets: Object.keys(D.SETS).length, pieces: D.PIECES.length, per: D.PIECES.filter(p => p.set !== 'mini').length,
+      braH: c('bra_helm').items.map(i => i.ids[0]), braT: c('bra_talis'), mn: c('mn_tundra'), glaC: c('gla_chest'), jalHr3: r('jal_helm', 3), escT: c('esc_talis').items.map(i => i.ids[0]) };
+  });
+  ok(dt.sets === 8 && dt.pieces === 33 && dt.per === 28, 'datos: 7 sets x 4 piezas + 5 talismanes de minijefe (' + dt.pieces + ' piezas)');
+  ok(dt.braH.join() === 'cz_cor,cz_ojo' && dt.braT.items.length === 5 && dt.braT.parts.rare === 2, 'Brasa Primera: Yelmo pide 2 trofeos de Cenizar; Rescoldo pide 1 insignia por bioma y 2 Esencias');
+  ok(dt.mn.items.map(i => i.ids[0]).join() === 'yeti_mayor,ventisquero' && dt.mn.parts.rare === 1 && dt.escT.join() === 'hidra,planidera', 'talisman de minijefe: 2 insignias del bioma + 1 Esencia; Colgante del olvido: Letea');
+  ok(dt.glaC.parts.frost === Math.ceil(30 * 0.5) && dt.glaC.parts.plate === 12 && dt.glaC.brasas === 440 && dt.glaC.parts.rare === 1, 'coste Placa glacial (T4): Escarcha x0,5, Placa, 440 Brasas y 1 Esencia (' + JSON.stringify(dt.glaC.parts) + ')');
+  ok(dt.jalHr3.items[0].n === 2 && dt.jalHr3.parts.rare === 1, 'refuerzo +3 de Jalea: 2 trofeos del jefe y 1 Esencia');
+  // estadisticas de los sets nuevos
+  const st = await E(pg, () => {
+    const A = G.Armor, D = G.ArmorData, f = (sid, n) => { const eq = [null, null, null, null], rf = {}; D.ofSet(sid).forEach(p => { eq[p.slot] = p.id; rf[p.id] = n; }); return A.calc(eq, id => rf[id] != null ? rf[id] : -1); };
+    const bra = f('brasa', 0), gla = f('glacial', 0), jal = f('jalea', 0), esc = f('escama', 0), mn = A.calc(['mn_cripta', null, null, null], () => 0);
+    return { bra: [bra.def, bra.set4.ultima, bra.res.big, bra.dmg.lightning], gla: [gla.def, gla.set4.hoguera, gla.cold, gla.dmg.ice], jal: [jal.set4.reina, jal.honey, jal.dmg.blood], esc: [esc.set4.pantano, esc.res.ranged], mn: [mn.def, mn.util.heart, mn.sets] };
+  });
+  ok(Math.abs(st.bra[0] - 42) < 1e-9 && st.bra[1] && Math.abs(st.bra[2] - (0.10 + 0.03)) < 1e-9 && Math.abs(st.bra[3] - 0.10) < 1e-9, 'Brasa Primera T6: DEF 42, Ultima brasa, res. big 13 %, Rayo +10 % (tope) ' + JSON.stringify(st.bra));
+  ok(Math.abs(st.gla[0] - 30) < 1e-9 && st.gla[1] && st.gla[2] === 0.15 && Math.abs(st.gla[3] - 0.09) < 1e-9, 'Pelaje Glacial T4: DEF 30, bono 4 Hoguera, Frio -15 %');
+  ok(st.jal[0] === true && st.jal[1] === 0.25 && st.esc[0] === true && Math.abs(st.esc[1] - 0.13) < 1e-9, 'Jalea (miel -25 %, Reina) y Escama (Pantano; res. ranged 5 % + 8 %)');
+  ok(Math.abs(st.mn[0] - 6 * 0.4) < 1e-9 && st.mn[1] === 1 && Object.keys(st.mn[2]).length === 0, 'talisman de minijefe: DEF x0,4 (2,4), +1 HP por corazon, no cuenta como set');
+  await done(pg, 'armor2-datos');
+  // zoneDmg por defecto en todos los biomas, perillas
+  pg = await mk(b, 'reset=1&nosw=1');
+  const z = await E(pg, () => ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'].map(bi => { G.curBiome = bi; return G.Armor.zone(); }));
+  ok(z.join() === '1,1.1,1.18,1.26,1.34,1.44', 'zoneDmg por defecto en los 6 biomas: ' + z);
+  await done(pg, 'armor2-zona');
+  pg = await mk(b, 'reset=1&nosw=1&zdmgall=0');
+  const z0 = await E(pg, () => ['bosque', 'cripta', 'tundra'].map(bi => { G.curBiome = bi; return G.Armor.zone(); }));
+  ok(z0.join() === '1,1.1,1', '?zdmgall=0 deja zoneDmg solo en Bosque y Cripta (como el MVP): ' + z0);
+  await done(pg, 'armor2-zona0');
+  pg = await mk(b, 'reset=1&nosw=1&zdmg=1,1,2,1,1,1');
+  ok((await E(pg, () => { G.curBiome = 'asfodelo'; return G.Armor.zone(); })) === 2, '?zdmg= pone valores por bioma');
+  await done(pg, 'armor2-zdmg');
+  pg = await mk(b, 'reset=1&nosw=1&arm=0');
+  ok((await E(pg, () => { G.curBiome = 'crater'; return [G.Armor.zone(), G.Armor.coldMul(), G.Armor.honeyMul(), G.Armor.magnetMul(), G.Armor.lvHealAdd(), G.Armor.xpMul()]; })).join() === '1,1,1,1,0,1', '?arm=0: todos los ganchos neutros');
+  await done(pg, 'armor2-off');
+  // bonos de 4 piezas en partida
+  pg = await mk(b, 'reset=1&direct=1&nosw=1&hand=spark:1&armset=brasa:0&biome=crater');
+  const ub = await E(pg, () => { G.god = false; const p = G.player; G.Boss.noHurt = 0; G.Boss.intro = false; p.hurtT = 0; p.hp = 5; G.Player.hurt(p, 200, 0, 0, { src: 'worm' }); const a = [p.hp, p.dead, p.revived, p.hurtT]; return a; });
+  ok(ub[0] === 1 && ub[1] === false && ub[2] === true && ub[3] >= 1400, 'Ultima brasa: un golpe mortal deja a 1 HP, invulnerable 1,5 s (' + ub + ')');
+  const ub2 = await E(pg, () => { const p = G.player; p.hurtT = 0; p.hp = 1; G.Player.hurt(p, 200, 0, 0, { src: 'worm' }); return p.dead; });
+  ok(ub2 === true, 'la Ultima brasa solo se activa 1 vez por expedicion');
+  await done(pg, 'armor2-ultima');
+  pg = await mk(b, 'reset=1&direct=1&nosw=1&hand=spark:1&armset=jalea:0&biome=panal');
+  const rn = await E(pg, () => { const p = G.player, A = G.Armor; p.shield = 0; for (let i = 0; i < 20; i++) A.onKillCount(); return [p.shield, A.lvHealAdd(), A.honeyMul()]; });
+  ok(rn[0] === 6 && rn[1] === 0.05 && Math.abs(rn[2] - 0.75) < 1e-9, 'Reina de la colmena: escudo de 6 HP cada 20 bajas, cura de nivel +5 puntos; miel -25 %');
+  await done(pg, 'armor2-reina');
+  pg = await mk(b, 'reset=1&direct=1&nosw=1&hand=spark:1&armset=escama:0&biome=asfodelo');
+  const pn = await E(pg, () => { const p = G.player, A = G.Armor; p.hp = 50; A.onPoisonKill(); const h1 = p.hp; A.onPoisonKill(); return [h1, p.hp, A.bogMul()]; });
+  ok(pn[0] === 52 && pn[1] === 52 && pn[2] === 0.5, 'Piel de pantano: la 1.a baja con Veneno cura 2 HP (1 cada 20 s), charcos a la mitad');
+  await done(pg, 'armor2-pantano');
+  pg = await mk(b, 'reset=1&direct=1&nosw=1&hand=spark:1&armset=glacial:0&biome=tundra');
+  const gl = await E(pg, () => { const A = G.Armor; return [A.coldMul(), A.set4('hoguera'), G.Player.hurt.length >= 0]; });
+  ok(Math.abs(gl[0] - 0.85) < 1e-9 && gl[1] === true, 'Pelaje Glacial: el Frio sube un 15 % mas despacio; Corazon de hoguera activo');
+  await done(pg, 'armor2-glacial');
+  // bloqueo
+  pg = await mk(b, 'reset=1&direct=1&nosw=1&hand=spark:1&armset=esquila:3');
+  const bl = await E(pg, () => { G.god = false; const p = G.player; G.Boss.noHurt = 0; G.Boss.intro = false; p.hurtT = 0; G.Armor.run.lanaAt = -1e9; G.Player.hurt(p, 20, 0, 0, { src: 'worm' }); return [G.Armor.blockT > 0, typeof Assets.fxArmorBlock]; });
+  ok(bl[0] === true && bl[1] === 'function', 'efecto de bloqueo al recibir un golpe amortiguado (reduccion >= 20 %)');
+  await sleep(pg, 300); await done(pg, 'armor2-bloqueo');
+  // panel: lista con scroll, probar equipo, pausa en solo lectura, pedidos y Vesper, logros
+  pg = await mk(b, 'reset=1&smith=1&nosw=1&give=thread:80,feather:30,plate:80,wick:60,fang:20,brasas:4000,horn:4');
+  await sleep(pg, 400);
+  await E(pg, () => { G.Dialog.close(); const S = G.Save.data; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; G.Aldea.openPanel('armor'); G.Smith.ui.slot = 3; G.Smith.ui.tab = 1; });
+  await sleep(pg, 300);
+  const nl = await E(pg, () => G.ArmorData.ofSlot(3).length); ok(nl === 12, 'slot Talisman: 12 piezas (7 sets + 5 minijefes) -> lista con scroll');
+  await tap(pg, 592, 202); const sc = await E(pg, () => G.Smith.ui.scroll); ok(sc === 1, 'boton de scroll de la lista (' + sc + ')');
+  await E(pg, () => { G.Smith.ui.tab = 2; G.Smith.ui.scroll = 0; }); await sleep(pg, 150);
+  await tap(pg, 600 + 84 * 2 + 39, 81); await tap(pg, 14 + 556 - 120 + 56, 114 + 8 + 27);   // +2 y PROBAR del 1.er set (Aldeano)
+  const tr = await E(pg, () => ({ t: G.Armor.trial && G.Armor.trial.sid + ':' + G.Armor.trial.n, def: G.Armor.get().def }));
+  ok(tr.t === 'aldeano:2' && Math.abs(tr.def - 6 * 1.3) < 1e-9, 'probar equipo: set Aldeano +2 en memoria sin gastar (' + tr.t + ', DEF ' + tr.def + ')');
+  const tr2 = await E(pg, () => { G.Armor.trialView = false; G.Armor.dirty(); const d0 = G.Armor.get().def; G.mode = 'practice'; G.Armor.dirty(); const d1 = G.Armor.get().def; G.mode = 'run'; G.Armor.modeSet(); return [d0, d1, G.Armor.trial]; });
+  ok(tr2[1] > 0 && tr2[2] === null, 'el equipo de prueba solo cuenta en Practica y se retira al empezar una salida normal (' + tr2 + ')');
+  await E(pg, () => { G.Smith.close(); G.Aldea.setPanel(null); G.Panels.closeAll(); });
+  const ped = await E(pg, () => { const Q = G.Quests, S = G.Save.data; const d = Q.def('ped_p1'); S.armor.stats.crafts = 1; Q.accept('ped_p1'); const b0 = S.brasas, ready = Q.isReady(); const r = Q.claim(); const b1 = S.brasas; const again = G.Armor.pedClaim('p1'); return [!!d, ready, b1 - b0, S.armor.ped.p1, again, Q.feasible(d)]; });
+  ok(ped[0] && ped[1] && ped[2] === 60 && ped[3] === 1 && ped[4] === false && ped[5] === false, 'pedido de Carapa en el Tablon de Vesper: se cobra una sola vez (60 Brasas) y deja de ofrecerse: ' + ped);
+  const ped2 = await E(pg, () => { const Q = G.Quests, S = G.Save.data; Q.accept('ped_p4'); S.armor.owned.ald_helm = 1; const ok1 = Q.isReady(); const b0 = S.brasas; G.Armor.pedClaim('p4'); const b1 = S.brasas; const r = Q.claim(); return [ok1, b1 - b0, S.brasas - b1, Q.active() === null]; });
+  ok(ped2[0] && ped2[1] === 100 && ped2[2] === 0 && ped2[3], 'cobrado en Carapa, Vesper no paga de nuevo (' + ped2 + ')');
+  const ach = await E(pg, () => G.Ach.DEFS.filter(a => /^arm/.test(a.id)).map(a => a.id).sort().join());
+  ok(ach === 'arm1,arm4,armbare,armcol,armmos,armseal,armup', '7 logros de armadura: ' + ach);
+  await done(pg, 'armor2-panel');
+  // pausa: EQUIPO en solo lectura
+  pg = await mk(b, 'reset=1&smith=1&direct=1&nosw=1&hand=spark:1&god=1');
+  await sleep(pg, 500);
+  await E(pg, () => { G.Save.data.flags.smithMet = 1; G.state = 'paused'; G.Hud.pauseOpen(); });
+  await sleep(pg, 200);
+  await tap(pg, 480, 279); await sleep(pg, 200);
+  ok(await E(pg, () => G.Hud.eqOpen && G.Smith.ui.ro), 'boton EQUIPO en la pausa abre el panel en solo lectura');
+  const ro = await E(pg, () => { G.Smith.ui.tab = 1; G.Smith.ui.slot = 0; const before = G.Armor.get().def; const p = G.ArmorData.piece('ald_helm'); return before; });
+  await tap(pg, 926, 27); await sleep(pg, 150);
+  ok(await E(pg, () => !G.Hud.eqOpen && G.state === 'paused'), 'X vuelve a la pausa');
+  await done(pg, 'armor2-pausa');
+  // Marlo vestido y aldea
+  pg = await mk(b, 'reset=1&smith=1&nosw=1');
+  await sleep(pg, 800);
+  const mv = await E(pg, () => { G.Dialog.close(); return [typeof Assets.drawMarloArmor, typeof Assets.armorIcon('mini', 'carnero', 0), Assets.armorIcon('letea', 'yelmo', 0) && Assets.armorIcon('letea', 'yelmo', 0).width]; });
+  ok(mv[0] === 'function' && mv[1] === 'object' && mv[2] === 64, 'arte nuevo cargado (Marlo vestido, iconos de minijefe y sets T3-T6)');
+  await sleep(pg, 400); await done(pg, 'armor2-aldea'); await b.close();
+}
+
 (async () => {
-  const run = { armor, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
