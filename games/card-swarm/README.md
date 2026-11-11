@@ -65,6 +65,7 @@ Diseño: `DESIGN-v8-herrero.md` (decisiones del dueño: Carapa tras el Pastor, d
 - **Trofeos e insignias se gastan**: `trophies` / `insignias` son el saldo; `trophiesEver` / `insigniasEver` son el acumulado (Ruta de Grum, logros, Archivo y Lanudo leen de ahí).
 - **Grum**: título "Herrero de armas" en su panel, 3 líneas nuevas sobre Carapa y los refuerzos +2/+3 piden Rango II/III. Nada más cambia en su árbol, PF, Ruta ni anclas.
 - **Pedidos de Carapa (7) y logros (4)**: pedidos propios en la pestaña PEDIDOS (Tomar medidas, Costura doble, Mosaico, Refuerzo, Sin rasguños, Cazador de insignias, A pelo); logros Armero aficionado, Cuatro latidos, Refuerzo triple y Cordero sin lana.
+- **Desvíos del diseño (honestos)**: (1) los refuerzos gastan CUALQUIER trofeo del jefe del set (no el de la pieza concreta; la fabricación sí pide el trofeo concreto): recorta el riesgo de RNG sin pity; no hay pity de trofeos; (2) las insignias pasan a ser saldo gastable (`insignias`) con `insigniasEver` acumulado, igual que los trofeos; (3) los pedidos de Carapa tienen su lista propia (no pasan por `quests.js`) y los logros son 4 en vez de 7; (4) `zoneDmg` solo está activo por defecto en Bosque y Cripta; (5) Peto / Grebas del set Aldeano (T0) usan 2 % y 3 % (el doc no da T0); (6) no hay `fx_armor_block`, botón EQUIPO en la pausa (solo la línea de DEF) ni modo "probar equipo"; (7) el retroceso de la Tundra se escala con el Aplomo después de su propio multiplicador; (8) `BRASAS_MIN` 21 no está validado con bots (el bot no mide economía).
 - **Tiempo de juego**: `Save.data.stats.playMs` (ms reales con la página activa; se guarda cada 30 s) para medir las horas de verdad.
 - **Guardado v10** (`swarmhand.fusion.save`; copia `swarmhand.fusion.save.v9` al migrar): `armor { owned, equipped, seen, stats, ped }`, `trophiesEver`, `insigniasEver`, `stats.playMs`, `flags.smithMet / smithGift`, `loadouts[i].armor`. Migración sin pérdida: regala el set Aldeano y, por cada jefe ya vencido (Pastor, Karceron), el Peto de su set, y equipa lo mejor.
 - **Perillas por URL**: `?arm=0` (sin armadura, sin `zoneDmg` y `BRASAS_MIN` 18: simulación como antes), `?armk=120`, `?armcap=0.45`, `?zdmg=1,1.1,1.18,1.26,1.34,1.44` (valores por bioma; activa todos), `?zdmgall=1` (valores del doc en todos los biomas), `?armset=esquila:1[,carcelero:2]` o `?armtier=1&armref=1` (equipa ese set en memoria, sin tocar el guardado: para bots), `?armcost=1`, `?armhp=1`, `?armdmg=1`, `?smith=1` (Carapa desbloqueada), `?brasasmin=21`, `?give=horn:3,carnero:2` (trofeos e insignias; ids de `G.Boss.TROPHY` / `G.Minis.D`).
@@ -77,6 +78,25 @@ Diseño: `DESIGN-v8-herrero.md` (decisiones del dueño: Carapa tras el Pastor, d
 | `BRASAS_MIN` | 21 (antes 18; `?arm=0` o `?brasasmin=18` lo devuelven) |
 | DEFbase T0 / T1 / T2 | 2 / 4 / 6 (x peso 0,7 / 1 / 0,7 / 0,6) |
 | Refuerzo | +15 % de DEF y de la estadística por nivel |
+
+### Balance v8 medido (bots, `speed=4`, `PAR=4`, n=12 por celda, cuenta vacía con `?armset=` para equipar el set en memoria)
+Referencia sin armadura (`?arm=0`, idéntica bit a bit al código anterior): bosque 412 +- 38 s; la misma configuración por defecto (mismo código en la rama antigua) dio 380 +- 55 s: **el ruido entre lotes iguales es de ~+-30 s (ee 11-16)**, así que diferencias menores de ~40 s no son medibles.
+| Celda (play_bot, hasta el jefe a 450 s) | Supervivencia | Daño evitado | HP perdidos/min |
+|---|---|---|---|
+| Bosque `?arm=0` / por defecto (sin armadura, zoneDmg 1,00) | 412 +- 38 / 380 +- 55 s | 0 % | 34 / 30 |
+| Bosque Esquila +1 (DEF 13,8) | 412 +- 56 s | 20 % | 38 |
+| Bosque Esquila +3 (DEF 17,4) | 436 +- 40 s | 22 % | 44 |
+| Cripta `?arm=0` / sin armadura (zoneDmg 1,10) | 450 / 450 (12/12 llegan al jefe) | 0 % | 24 / 23 |
+| Cripta Carcelero +1 (DEF 20,7) / +3 (DEF 26,1) | 450 / 450 | 16 % / 20 % | 24 / 24 |
+| Cripta Esquila +1 (un tier menos) | 450 | 22 % | 22 |
+| Pelea (boss_fight.js, mano p50 y 4 poderes, `hp0=999`) | Peligro I | Peligro III |
+|---|---|---|
+| Pastor `?arm=0` / Esquila +1 / Esquila +3 | 11/12, minHp 31 / 11/12, minHp 49 / 12/12, minHp 42 | 8/12, minHp 16 / 10/12, minHp 25 / 9/12, minHp 20 |
+| Karceron `?arm=0` / sin armadura (x1,10) / Carcelero +1 / +3 | 10/12 / 11/12 / 11/12, minHp 51 / 12/12, minHp 52 | 8/12 / 7/12, minHp 13 / 8/12, minHp 17 / 8/12, minHp 29 (Aldeano solo: 7/12) |
+Lectura honesta:
+- Lo que SÍ se cumple: el daño evitado por armadura con el set del tier es del 16-22 % del bruto (objetivo 10-25 %); la vida mínima de la pelea sube (Pastor 31 -> 49, Karceron 34 -> 51 en Peligro I); con `?arm=0` la simulación es idéntica a la de antes y la cuenta vacía en el Bosque no cambia (380-412 s, mismo código).
+- Lo que NO se puede confirmar con este bot: (1) el ratio de supervivencia >= 1,25 con set del tier +1 frente a sin armadura: en el Bosque la referencia ya llega a ~400 de los 450 s posibles (tope de ratio ~1,14) y en la Cripta los 12 bots llegan siempre al jefe, así que la supervivencia está saturada; (2) la caída de >= 20 puntos de victorias sin armadura del tier: `zoneDmg` x1,10 en la Cripta no mueve el win-rate (Karceron 10-11/12 en Peligro I; 8/12 -> 7/12 en Peligro III, dentro del ruido de +-3 victorias con n=12); (3) el tope de +20 puntos con +3: nunca se pasa del 100 % porque la línea base ya es 83-92 % en Peligro I; en Peligro III +1 y +3 quedan en 8-10/12 frente a 8/12. El daño medio por minuto del bot (HP perdidos) tiene demasiada dispersión para ver un +10 % de `zoneDmg` (23 frente a 24 por min).
+- Por tanto los valores por defecto son los del diseño (sin retocar) y el equilibrio fino del reto (¿es `zoneDmg` 1,10 suficiente?) queda para una sesión humana en móvil; las perillas `?zdmg=`, `?armk=`, `?armcap=`, `?armdmg=` y `?armcost=` permiten ajustarlo sin recompilar. Con el bot no se midió Cripta con el set de un tier más ni Cenizar.
 
 ### Pruebas v8
 `node tools/card-swarm-bot/tests.js armor` (guardado v10 y migración, panel con toques en 844x390, fabricar / equipar / reforzar, trofeos gastables con `*Ever`, fórmula de defensa y tope, `?arm=0`, `zoneDmg`, `playMs`, escena de Carapa). `all` = 218 comprobaciones, 0 errores de consola. Regresión: con Math.random sembrado y reloj sintético, 12 puntos de control de una partida (jugador quieto, recibiendo daño) son idénticos bit a bit entre el commit anterior (207bd24) y esta versión con `?arm=0`, y también con los valores por defecto en una cuenta vacía.

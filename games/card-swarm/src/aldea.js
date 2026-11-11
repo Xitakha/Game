@@ -62,6 +62,7 @@
       A.timeMode = (S.runs > 0 && S.runs % 5 === 0) || (S.lossStreak || 0) >= 3 ? 'noche' : G.won ? 'dia' : 'ocaso';
       flash(G.won ? 'Rescoldo celebra tu regreso.' : A.timeMode === 'noche' ? 'Cae la noche sobre Rescoldo. El fuego te espera.' : 'Rescoldo te espera junto al fuego.');
       react = { t: 0, won: !!G.won, at: Date.now() }; bark = null; barkAt = {}; near = {};
+      try { var nr = G.Armor.smithOn() && G.Save.data.flags.smithMet ? G.Armor.readyCount() : 0; if (nr > 0) flash('Carapa tiene ' + nr + ' pieza' + (nr > 1 ? 's' : '') + ' lista' + (nr > 1 ? 's' : '') + '.'); } catch (eC) { /* armadura */ }
       if (nAv > 0) flash('Grum tiene ' + nAv + ' mejora' + (nAv > 1 ? 's' : '') + ' lista' + (nAv > 1 ? 's' : '') + ' para forjar.');
     } else if (!M.opened) { react = null; if (nAv > 0) flash('Grum tiene ' + nAv + ' mejora' + (nAv > 1 ? 's' : '') + ' lista' + (nAv > 1 ? 's' : '') + ' para forjar.'); }
     M.opened = true;
