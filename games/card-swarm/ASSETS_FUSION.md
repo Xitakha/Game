@@ -43,3 +43,8 @@ Poderes: `vapor plasma gas sed tormenta escarcha pacto iman forja filo hemo desc
 | descarga | gota + rayo | cast | - | `strike(big)` por envenenado + `impact('descarga')` | poison |
 
 Pendiente: variantes distintas de Nv2 (solo se escala radio/cantidad desde la lógica); ids antiguos (vapor, plasma, gas, sed) mantienen sus funciones de `assets_fusion.js` (`cloud`, `beam`, `dagger`, `nade`).
+
+## Audio fusiones 13-15 (`src/sfx_fusion3.js`)
+
+Cargar DESPUÉS de `sfx_fusion2.js` (`<script src="src/sfx_fusion3.js">`). Ids: `cristal` (ward), `zancada` (dash), `virote` (bolt). Mismo API: `G.Snd.play('fx_<id>[_hit|_zone|_ready|_fuse]', pitch)` o `G.Snd.fx2(id, 'cast'|'hit'|'zone'|'ready'|'fuse', pitch)`. 15 sonidos, añadidos a `S.fx2names` (y `S.fx3names`). ROOT: cristal 1,26, zancada 0,95, virote 0,67. Volumen máx. 0,18.
+Duraciones: cristal 0,4 / hit 0,35 / zone 0,3 (bucle ~450 ms); zancada 0,3 / hit 0,1 / zone 0,25 (bucle ~450 ms); virote 0,35 / hit 0,25 / zone = eco suave de hit (no se usa, sin campo). `_ready` ~0,3 s, `_fuse` ~0,9 s. Verificado en Chromium: 0 errores.
