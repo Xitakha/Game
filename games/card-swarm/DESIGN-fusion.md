@@ -205,3 +205,122 @@ Recursos para `asset-scout` / `audio-designer` (v1): iconos 32x32 de 12 poderes 
 3. **Parejas sin receta (Sangre+Hielo, Sangre+Rayo, Veneno+Acero).** ¿Sin fusión, "fusión inestable" con activo genérico, o crear 3 poderes más?
 4. **Subida de Nv de activos.** Re-fusión (propuesta) frente a pagar Ceniza (~60) con una carta de la etiqueta. La segunda da un uso nuevo a la Ceniza.
 5. **Meta de cuenta.** ¿El prototipo parte de cuenta vacía (propuesta) o conserva árbol y Rango de forja? Con ellos, el balance es más difícil de leer.
+
+## 14. Fusiones 13-15 (las 3 parejas que faltaban)
+
+Cierra la decisión abierta nº 3 con la opción "crear 3 poderes más": pasan a ser 15 recetas = las 15 parejas posibles (6 etiquetas). Mismas reglas de la sección 3 (se consumen las dos cartas, Nv2 por re-fusión, 4 slots, sin fusión triple). Cifras = base ANTES de `?pmul` (x3 por defecto) y `?pcd` (x0,6), igual que la tabla de la sección 4; el `cd` se guarda en la receta como los demás (`lv:[{...cd}]`).
+
+Hueco de diseño que rellenan (los 12 actuales son casi todos "daño + estado" sobre enemigos): **defensa activa (escudo)**, **movimiento activo (embestida)** y **debilitar a un objetivo (vulnerabilidad)**. Ninguno repite el `kind` de los 12 (`cloud beam gas orbit storm spores pact magnet axe fan mark discharge`).
+
+### 14.1 Tabla
+
+| # | Receta (`RKEY`) | Nombre / id | `kind` | Fantasía | Nv1 | Nv2 | CD base |
+|---|---|---|---|---|---|---|---|
+| 13 | `blood+ice` (a:'blood', b:'ice') | **Cristal de sangre** / `cristal` | `ward` | La sangre se cuaja en una coraza de cristal carmesí que te rodea; al romperse, estalla en esquirlas heladas. | Escudo 30 PV, 6 s. Los enemigos que te tocan sufren slow 30 %. Al romperse o caducar: onda r 100, daño 20 + 1,5 x PV absorbidos, slow 50 % 2 s y aturde 0,6 s (no jefes). | Escudo 45, 8 s, onda r 120, daño 30 + 1,5 x absorbido. | 17 s |
+| 14 | `blood+lightning` (a:'blood', b:'lightning') | **Zancada carmesí** / `zancada` | `dash` | Un latido eléctrico te lanza en línea recta, sangre y chispas tras de ti. | Embestida de 180 px hacia donde te mueves (si estás quieto, hacia el enemigo más cercano; si no hay, no se lanza). Invulnerable 0,25 s. Daño 24 a hasta 10 enemigos del trayecto + 1 salto de rayo (-20 %). Estela eléctrica 2,5 s (ancho 30, 8 de daño por tick de 400 ms, aturde 0,3 s a no jefes). Cura 1 PV por enemigo normal golpeado (máx. 4 por uso). | Distancia 240 y **2 cargas** (la 2.ª en 2,5 s sin coste extra). Daño 30, cura máx. 6. | 15 s |
+| 15 | `poison+steel` (a:'poison', b:'steel') | **Virote corrosivo** / `virote` | `bolt` | Un virote pesado de ballesta con punta envenenada que oxida la armadura del enemigo. | Dispara al enemigo de más vida en alcance 440 (prioridad jefe/élite). Atraviesa hasta 3 en línea (largo 300): 55 de daño al 1.º, -20 % por cada siguiente. Aplica 2 stacks de veneno y **Corrosión**: el objetivo recibe +20 % de daño de TODAS tus fuentes 6 s (jefes/élites: +10 %, dentro del tope x1,25). El veneno de los atravesados se propaga a 2 vecinos (r 60). | 5 atravesados, 80 de daño, Corrosión 8 s y +25 % (jefes +12 %). | 12 s |
+
+Reglas de detalle:
+
+- **Cristal de sangre**: el escudo es `p.shield` (el mismo del set Sangre 4+ / Reina). Se aplica DESPUÉS de la Defensa (`Armor.reduce`) y antes de bajar PV. Tope temporal 45 (el tope 20 del set no lo recorta); al terminar se retira solo lo que quede del escudo del poder, no el del set. Recastear con el escudo activo está bloqueado (`s.st` activo). El daño de la onda cuenta el escudo REALMENTE absorbido (tope 45 -> máx. 87 de daño base antes de `pmul`). Jefes: sin aturdimiento ni slow doble; tope por uso `bossCap`.
+- **Zancada carmesí**: respeta paredes y límites del mapa (se corta en la colisión). Invulnerabilidad = `p.hurtT = 250` (no toca la Defensa). No se puede lanzar durante telegrafía letal del jefe en modo auto. La estela es un `field` (cuenta en `maxFields` = 4 y en el tope de 2 zonas de activo). Daño de la embestida y de la estela: etiqueta dinámica `pickTag(['blood','lightning'])`.
+- **Virote corrosivo**: Corrosión = nuevo estado `e.corrodeT` / `e.corrodeMul`, aplicado como factor final en `hitE` y en `F.basicHit` (el básico y las infusiones también se benefician). No se acumula (se refresca la duración). En jefes el factor se suma a la debilidad y el total sigue topado en x1,25 (por eso su uso estrella son las fases SIN debilidad activa). No aplica veneno a inmunes (Melaria) pero sí Corrosión. No rompe escudos frontales ni placas (eso es de Forja).
+
+### 14.2 Cómo se diferencian de los 12 existentes
+
+| Nuevo | Parecidos | Por qué no duplica |
+|---|---|---|
+| Cristal | Pacto (paga PV y buff), Sed (cura), Imán (supervivencia) | Único poder que da **escudo** y que convierte el daño recibido en daño infligido; no cura ni sube daño. Imán desvía/tira; Cristal absorbe. |
+| Zancada | Imán (supervivencia), Forja (línea) | Único poder que **mueve al jugador** (reposicionamiento + i-frames). Forja es un proyectil; Zancada es el propio jugador. |
+| Virote | Forja (perfora), Hemotoxina (marca), Descarga (consume veneno) | Daño directo secundario; su valor es la **vulnerabilidad global** que potencia a los otros poderes y al básico. No es DoT ni marca de curación y no consume stacks. |
+
+### 14.3 Balance (mismo criterio que la sección 8)
+
+| Poder | DPS efectivo orientativo (Nv1, con `pmul` 3) | Ciclo útil (cd x `pcd` 0,6) | Riesgo / contrapeso |
+|---|---|---|---|
+| Cristal | Onda ~(20+45) x 3 = ~195 al romper (peor caso con escudo lleno) | 17 s x 0,6 = ~10 s, escudo 6 s (60 % de uptime si se usa al llegar el golpe) | Defensivo: 30 PV son 30 % de la vida base; no se acumula con otro escudo. Sin objetivo cercano no suma daño. Con el ciclo de 10 s sobreescala si hay Reloj de arena: respetar tope -25 %. |
+| Zancada | 24 x 3 = 72 por enemigo en línea; hasta ~720 en horda densa + estela ~60 dps | 15 s x 0,6 = 9 s | Daño alto solo en pasillos de horda; la cura (4 PV) está topada. Con 2 cargas (Nv2) no puede lanzarse sin cooldown por defecto. |
+| Virote | 55 x 3 = 165 al 1.º; el valor real es +20 % durante 6 s | 12 s x 0,6 = 7,2 s (Corrosión ~83 % de uptime en un único objetivo, jefe: ~+10 %) | Poco daño propio; si se apilan Virote + Plasma + Hemo en un jefe el tope x1,25 lo contiene. Perilla de pruebas: `?corr=<f>` (defecto 1) escala el % de Corrosión. |
+
+Meta: con `?actives=cristal,zancada,virote` el bot de balance no debe superar +10 puntos de victoria sobre una mano de 3 poderes existentes (Vapor, Plasma, Forja). Los tres suben el uso de `F.stats.uses` pero `F.stats.dmg` de Cristal/Zancada/Virote se espera MENOR que el de Plasma/Forja (son de utilidad); es correcto. Cada uno mantiene el tope por uso (`perTargetCap` 400, `bossCap` 3 %).
+
+### 14.4 Interacción con debilidades por tag y sets
+
+| Jefe | Cristal (blood+ice) | Zancada (blood+lightning) | Virote (poison+steel) |
+|---|---|---|---|
+| Letea (Sangre F1-2 x1,25, Rayo x1,1, Hielo x0,8; F3 Veneno x1,25) | Sangre x1,25 | Sangre x1,25 (F1-2) | Veneno x1,25 (F3); Acero neutral en F1-2 |
+| Karceron (Hielo F1-2 / Rayo F3 x1,25; resiste Fuego y Veneno) | Hielo x1,25 (F1-2) | Rayo x1,25 (F3) | Veneno x0,5: usa Acero (neutral); su Corrosión es útil aquí |
+| Melaria (Fuego/Hielo; Veneno inmune, Rayo x0,8) | Hielo x1,25 (F2-3) | Sangre neutral | Acero neutral; sin veneno; Corrosión funciona |
+| Yarlak (Fuego/Rayo; resiste Hielo x0,6) | Sangre neutral (evita el Hielo) | Rayo x1,25 (F3-4) | Acero neutral; Veneno x0,8 |
+| Pastor (Fuego F1-2, Acero F3) | Neutral | Neutral | Acero x1,25 (F3) |
+
+(`pickTag` elige siempre la mejor de las dos etiquetas, así que ninguno es peor que su mitad. Revisar Cenizar: su tabla cambia por fase.)
+
+Sets: Sangre 4+ (+10 escudo cada 3 muertes) convive con Cristal (escudo en `p.shield`); Hielo 4+ (Cripta, ralentizado <15 % muere congelado) sinergia con el slow de Cristal; Veneno 4+ (Epidemia) sinergia con la propagación de Virote. Defensa: Zancada no pasa por `Armor.reduce` (i-frames) y Cristal sí se resta después de ella, de modo que el tope de reducción global 45 % no se rompe. Set Acero 4+ (Filo eterno) no afecta (los poderes no critican).
+
+### 14.5 Cambios de código previstos en `fusion.js` (informativo, no se escriben aquí)
+
+- 3 entradas nuevas en `F.recipes` (`id`, `name`, `short`: 'Cristal', 'Zancada', 'Virote'; `a/b/color/kind/sfx/desc/lv[2]`); `RKEY` y `C.combos` se rellenan solos.
+- `CAST.ward / CAST.dash / CAST.bolt`; el estado de `ward` y `dash` vive en `slot.st` (como `beam`/`orbit`); la estela de `dash` como `field`.
+- `autoOK`: `ward` -> HP < 70 % y >= 2 enemigos a 120 px, o jefe presente con ataque inminente; `dash` -> HP < 50 % y >= 3 enemigos a 120 px (escape) o >= 5 enemigos alineados; `bolt` -> jefe/élite en alcance, o >= 2 enemigos si no hay jefe.
+- `fire()`: añadir `'cristal','zancada','virote'` a la lista de `addFx cast`. `?actives=cristal,zancada2,virote` ya funciona con el parser actual (`[a-z]+?` con sufijo 2).
+- `F.endText`, `snapshot`, botones, chips, `drawHud`: sin cambios (usan `RBY`).
+- Pool de ofertas: las 3 parejas pasan a ofrecer "FUSIÓN" (ya no hay parejas sin receta; quitar la fila "Parejas sin receta" de la sección 3).
+- Bots: `?actives=` acepta los ids nuevos; el boss-bot dispara Virote al abrirse una ventana de vulnerabilidad y Cristal antes de un ataque telegrafiado, nunca Zancada durante telegrafía letal.
+
+### 14.6 Contrato para arte (`asset-scout`, vía `assets_fusion*.js`) 
+
+Procedural por código, sin imágenes (misma convención que `assets_fusion2.js`: `save/restore`, tragar errores, `G.time` para animar, `G.fg` para calidad plana, 0 asignaciones por frame). Entregar como `src/assets_fusion3.js`, cargado DESPUÉS de `assets_fusion2.js`, que extiende `G.FusionArt2` y envuelve `G.FusionArt.icon` igual que `assets_fusion2.js` (conjunto `NEW` ampliado). Actualizar `ASSETS_FUSION.md`.
+
+| Función (en `G.FusionArt2`) | Tamaño / duración | Descripción |
+|---|---|---|
+| `icon(c,'cristal',x,y,s)` | s = 11 (HUD), 22 (oferta), 0,55 x radio del botón (38) | Gota de sangre dentro de un cristal hexagonal azul hielo con aristas blancas; brillo suave aditivo. Colores: `#d02048` + `#6ac8ff` sobre contorno `#0c0814`. |
+| `icon(c,'zancada',x,y,s)` | igual | Silueta en carrera con estela en zigzag (rayo) rojo y amarillo `#ffe45a`; 2 gotas de sangre saliendo. |
+| `icon(c,'virote',x,y,s)` | igual | Virote de ballesta horizontal con punta metálica `#c8d0e0` y 2 gotas verdes `#7be34a` que gotean y corroen (puntitos). |
+| `ward(c,x,y,r,t,alpha,u)` | r 56 (Nv1) / 66 (Nv2); `u` = fracción de escudo restante 0..1 | VFX en bucle alrededor del jugador: 6-8 esquirlas de cristal carmesí-azul en órbita lenta; se agrietan al bajar `u`; parpadeo en el último segundo. Se dibuja en `drawAir` mientras `s.st` esté activo. |
+| `shatter(c,x,y,r,u)` | r 100 / 120, ~450 ms | Onda: anillo de esquirlas que salen disparadas (`kind` nuevo de `nova`: llamar `nova(c,x,y,r,u,'shatter')`). Rojo oscuro -> azul hielo. Va en `drawGround`. |
+| `trail(c,x0,y0,x1,y1,u)` | largo 180/240, ancho 30, ~2,5 s, `u` 0..1 | Estela de la Zancada: línea con chispas amarillas y gotas rojas que se desvanece; reutilizar `zig` y `bolt` internos. Va en `drawGround` (como campo). |
+| `dashGhost(c,x,y,ang,u)` | ~250 ms | 3 postimágenes rojas del jugador desvaneciéndose a lo largo de la embestida (`addFx` kind `dash`). |
+| `virote(c,x,y,ang,u)` | 40 x 8 px, vuelo ~180 ms | Proyectil del Virote con halo verde; rastro corto. Impacto con `impact(c,'virote',x,y,u,14)` (chispas verdes y grises, ~200 ms). |
+| `status(c,'corrode',x,y,s,t)` | s = radio del enemigo; bucle | Marca de Corrosión sobre el enemigo: 3 gotas verdes que goteando y una línea punteada naranja-oxido bajo el sprite. Estado nuevo (`G.FusionArt2.states` +`corrode`). |
+| `cast(c,id,x,y,u)` e `impact(c,id,...)` | ~0,3 s / ~0,2 s | Añadir los 3 ids con su color (`cristal` `#d86a98`, `zancada` `#ff6a7a`, `virote` `#9ad05a`). |
+| `btn(c,id,...)` | radio 38 (`BTN`) | Sin cambios de API: solo necesita que `icon` conozca los 3 ids. |
+
+Entradas de datos: ampliar `COL` con `cristal`, `zancada`, `virote` (mismos colores) y `ids` (15 en total). Las capas siguen el orden actual: suelo (`shatter`, `trail`) y aire (`ward`, `dashGhost`, `virote`, `status`).
+
+### 14.7 Contrato para audio (`audio-designer`, vía `sfx_fusion*.js`)
+
+Convención de `sfx_fusion2.js`: funciones `V.fx_<id>[_tipo](p)` con `tone`/`hiss` de `G.Snd` y `p` = factor de tono. Entregar como `src/sfx_fusion3.js`, cargado DESPUÉS de `sfx_fusion2.js`; añadir los ids a `S.fx2names` (regex) y a `ROOT` para `_ready` y `_fuse` (tonos propios, sin chocar con los existentes: `cristal` 1,26, `zancada` 0,95, `virote` 0,67; ya usados 0,7-1,19).
+
+| Id de sonido | Cuándo | Duración | Descripción |
+|---|---|---|---|
+| `fx_cristal` | Lanzar | ~0,4 s | Tintineo de vidrio ascendente (triangle 1600 -> 2400 Hz) + gota grave (sine 90 -> 60 Hz) + brillo `hiss highpass`. |
+| `fx_cristal_hit` | Romperse (onda) | ~0,35 s | Estallido de cristal: ruido `highpass` 6000 -> 3000 + notas dispersas cortas + golpe grave sordo. |
+| `fx_cristal_zone` | Bucle mientras dura el escudo (cada ~450 ms) | ~0,3 s | Zumbido cristalino muy suave (sine ~2800 Hz, vol 0,02) + latido grave (sine 70 Hz, doble pulso). |
+| `fx_cristal_ready` / `_fuse` | Cooldown listo / fusión | ~0,3 / ~0,9 s | Generados por el bucle `ROOT` (k = 1,26). |
+| `fx_zancada` | Embestida | ~0,3 s | Latigazo: `hiss bandpass` 1500 -> 4000 + chasquido eléctrico (sawtooth 1800 -> 90) + golpe sordo de sangre (sine 110 -> 55). |
+| `fx_zancada_hit` | Cada enemigo golpeado (throttle 90 ms en código) | ~0,1 s | Chispa corta + impacto carnoso (`lowpass` 600). |
+| `fx_zancada_zone` | Estela, bucle cada ~450 ms | ~0,25 s | Crepitar (square 800/1100 Hz, vol 0,025) + `hiss highpass` suave. |
+| `fx_zancada_ready` / `_fuse` | idem | idem | `ROOT` k = 0,95. |
+| `fx_virote` | Disparo | ~0,35 s | Cuerda de ballesta (tone triangle 300 -> 120 Hz, 0,1 s) + silbido de virote (`hiss bandpass` 2500 -> 900) + toc metálico grave. |
+| `fx_virote_hit` | Impacto + Corrosión | ~0,25 s | Clang metálico (triangle 900 -> 400) + siseo ácido (`hiss lowpass` 1400 -> 300) que continúa unas décimas. |
+| `fx_virote_zone` | No se usa (no hay campo); definir vacío o como alias de `_hit` bajo volumen por si el programador lo llama | - | - |
+| `fx_virote_ready` / `_fuse` | idem | idem | `ROOT` k = 0,67. |
+
+Genéricos: reutilizar `fx_btn_ready`, `fx_btn_cancel` ("sin objetivo"), `fx_replace`, `fx_fusion` y el stinger `fuse`. Volumen: Cristal y Zancada por debajo de Pacto/Plasma (0,22 máx.); Virote ~0,15 el disparo; nada por encima de 0,28 para no tapar la música ni los avisos de telegrafía de jefes.
+
+### 14.8 Recursos para `asset-scout` y `audio-designer` (lista)
+
+- Arte (3 iconos 32x32 vectoriales por código: `cristal`, `zancada`, `virote`; 5 VFX: `ward`, `shatter`, `trail`/`dashGhost`, `virote` en vuelo + impacto, estado `corrode`). Si el scout encuentra hojas de sprites, usar solo como referencia de estilo; el contrato manda el procedural (paleta de `COL`).
+- Audio (9 SFX nuevos: `fx_cristal`, `_hit`, `_zone`; `fx_zancada`, `_hit`, `_zone`; `fx_virote`, `_hit`; más 3 `_ready` y 3 `_fuse` por el bucle `ROOT`). Prioridad si hay poco tiempo: lanzamiento y `_hit` de cada uno (6).
+
+### 14.9 Criterios de éxito adicionales
+
+| Métrica | Umbral |
+|---|---|
+| Aparición de las 3 nuevas | Cada una entre 5 % y 25 % de las partidas (como las 12) |
+| Uso por partida | >= 10 usos manuales de media por poder fusionado; ninguno < 10 % del total |
+| Cristal | Absorbe >= 15 PV por uso de media (si no, es decorativo) |
+| Zancada | >= 1 de cada 3 usos con >= 2 enemigos golpeados; sin muertes del jugador por quedarse "atrapado" tras la embestida |
+| Virote | Sube el daño total del resto de poderes y del básico >= 8 % medido en jefes; no más de +10 % de victoria del bot (ver 14.3) |
+| Rendimiento | Sin caída bajo 55 fps con Zancada (estela) + 1 nube + Plasma activos |
