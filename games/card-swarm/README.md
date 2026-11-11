@@ -2,7 +2,7 @@
 
 **Este es el juego publicado en https://xitakha.github.io/Game/card-swarm/** (el dueño aprobó el prototipo Fusión y sustituyó a la versión anterior). La versión clásica (mano de 5 cartas con combos pasivos, v5.6) quedó archivada en `../card-swarm-clasico/` (no se despliega; también en la rama remota `archive/card-swarm-clasico-v5.6`; su README: `../card-swarm-clasico/README-clasico.md`). Diseño de partida: `DESIGN-fusion.md`.
 Los `DESIGN-v*.md`, `GDD.md`, `MOVIL.md`, etc. de esta carpeta son heredados del clásico (llevan una nota arriba); donde hablan de combos pasivos no aplican.
-Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2.js` (contrato en `ASSETS_FUSION.md`).
+Arte y audio de los poderes nuevos: `src/assets_fusion2.js` / `src/sfx_fusion2.js` (8 poderes) y `src/assets_fusion3.js` / `src/sfx_fusion3.js` (fusiones 13-15); contrato en `ASSETS_FUSION.md`.
 
 ## Qué es
 - **Ataque básico automático** del jugador: 10 de daño cada 500 ms (v1: 650) al enemigo más cercano (alcance 440). **Volley (v2)**: +1 disparo extra (80 % de daño) a otro objetivo, prefiriendo arqueros / brujos, por cada 4 niveles de infusión sumados (cada poder activo cuenta 2 por nivel); tope +3.
@@ -11,7 +11,7 @@ Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2
   Dos cartas iguales = **REFUERZO** de Nv. Los talentos de las cartas proyectil del árbol (Pavesa, Ráfaga, Perforante, Escarcha densa, Dosis doble, Punta afilada) pasan a sus infusiones.
 - **Pool completo (v1)**: las 28 cartas originales (con el desbloqueo de la forja). Las cartas que NO son proyectil (Bola de brasa, Nova, Chispazo, Tormenta, Colmillo, Sangría, Charco, Daga, Hacha, Bobina, Murciélago y las orbitales / auras: Anillo ardiente, Escudo de púas, Ventisca, Nube pútrida) conservan además su **arma original como auxiliar**: dispara cada `1,5x` su cooldown y al `60 %` de daño (`?auxmul=`, `?auxcd=`, `?aux=0` las apaga) y su infusión da solo la mitad de bono (+10 / +17,5 / +25 %). Así hay variedad sin duplicar el daño de las armas del original.
   Pasivas: todas las del original (Lana, Pezuñas, Imán, Alforja, Reloj y las de etiqueta: Manto, Cristal, Cascabel, Bilis, Afilar) se mantienen con su efecto original, que aquí actúa sobre la etiqueta de cada golpe (básico, poderes y armas auxiliares). El Reloj de arena baja el cooldown de poderes un 6 % por nivel (tope global -25 %).
-- **Fusión**: dos cartas de ataque de etiquetas distintas con receta crean un **PODER ACTIVO** (máx. **4 slots**) con enfriamiento. Re-fusionar la misma receta = Nv2 (tope). Las 12 recetas (los 12 combos pasivos del original, 1:1):
+- **Fusión**: dos cartas de ataque de etiquetas distintas con receta crean un **PODER ACTIVO** (máx. **4 slots**) con enfriamiento. Re-fusionar la misma receta = Nv2 (tope). Las **15 recetas** (las 15 parejas de las 6 etiquetas: los 12 combos pasivos del original, 1:1, y 3 nuevas):
 
 | Receta | Poder | Efecto Nv1 | Nv2 | CD |
 |---|---|---|---|---|
@@ -28,7 +28,9 @@ Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2
 | Sangre + Veneno | **Hemotoxina** | marca hasta 6 enemigos 6 s: sangrado + veneno x3; los marcados que mueren curan (máx. 2 HP por uso) y propagan veneno | 9 marcados, máx. 3 HP | 13 s |
 | Veneno + Rayo | **Descarga tóxica** | rayo sobre todos los envenenados visibles: consume el veneno (12 + 8 por stack); sin envenenados aplica 1 stack a 5 enemigos | 12 por stack | 12 s |
 
-  Sin receta (la UI no las ofrece): **Sangre+Hielo, Sangre+Rayo, Veneno+Acero**.
+| Sangre + Hielo | **Cristal de sangre** | escudo propio de 30 PV 6 s (se resta tras la Defensa y el escudo del set; no se acumula con el del set, tope 45); quien te toca sufre slow 30 %; al romperse o caducar: onda r100, 20 + 1,5 x PV absorbidos, slow 50 % 2 s y aturde 0,6 s (no jefes) | 45 PV, 8 s, onda r120, 30 + 1,5 x absorbido | 17 s |
+| Sangre + Rayo | **Zancada carmesí** | embestida de 180 px hacia donde te mueves (quieto: al enemigo más cercano; sin enemigos no se lanza), invulnerable 0,25 s, 24 de daño a hasta 10 enemigos + 1 salto de rayo, estela 2,5 s (8 por 400 ms, aturde 0,3 s), cura 1 PV por enemigo (máx. 4); respeta paredes y obstáculos | 240 px, **2 cargas** (la 2.ª en 2,5 s), 30, cura máx. 6 | 15 s |
+| Veneno + Acero | **Virote corrosivo** | virote al enemigo de más vida (jefe/élite primero, alcance 440): atraviesa 3 (55, -20 % por cada uno), 2 stacks de veneno que se propaga a 2 vecinos y **Corrosión** (+20 % de daño de TODAS tus fuentes 6 s; jefes/élites +10 %, con la debilidad por etiqueta el total no pasa de x1,25). `?corr=<f>` escala el % | 5 atravesados, 80, 8 s, +25 % (jefes +12 %) | 12 s |
 - Etiqueta dinámica: cada impacto del básico y de los poderes usa, de las etiquetas que lo componen, la que mejor multiplica contra ese objetivo (debilidades / resistencias de jefes y materiales). Los poderes no reciben bonos de Nv de carta.
 - **Topes por uso**: 400 de daño base por objetivo y uso; contra un jefe, 3 % de su vida máxima por uso (`?bosscap=`; se mide en daño base, antes de `cmul`/`bossmul`/debilidades). Los poderes hacen x3 de daño (`?pmul`) y recargan un 40 % antes (`?pcd`).
 
@@ -37,7 +39,7 @@ Arte y audio de los 8 poderes nuevos: `src/assets_fusion2.js` y `src/sfx_fusion2
 - Botón `FUSIONAR CARTAS DE LA MANO` (en la oferta) para fusionar dos cartas que ya tienes; no gasta la elección.
 - **1.ª fusión ayudada**: solo se consume la carta ofrecida; la carta inicial (ancla 1) se conserva. Desde la 2.ª se consumen las dos. La 1.ª oferta tras el inicio garantiza una carta que forme receta.
 - Con 4 poderes, un 5.º pide **confirmar cuál reemplazar** (o cancelar); el reemplazado da +20 Ceniza.
-- Los 12 combos pasivos del original están **desactivados** (son las recetas). `C.combos` solo se usa como lista informativa (Base, Archivo, consejos de Lanudo, misiones "Alquimista" / "Maestro de mezclas" = crear 5 / 12 fusiones).
+- Los 12 combos pasivos del original están **desactivados** (son las recetas). `C.combos` solo se usa como lista informativa (Base, Archivo, consejos de Lanudo, logros "Alquimista" / "Maestro de mezclas" / "Alquimista completo" = crear 5 / 12 / 15 fusiones distintas).
 
 ## Controles
 | | Móvil (844x390) | Escritorio |

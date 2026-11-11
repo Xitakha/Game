@@ -122,37 +122,102 @@ async function flow() {
   s = await E(pg, () => G.Fusion.snapshot());
   ok(s.actives[1].id === 'plasma' && s.actives[1].lvl === 2, 'misma receta otra vez -> Nv2');
   ok((await E(pg, () => G.Fusion.handPairs().every(p => p.recipe.id !== 'plasma'))), 'Nv2 es el tope: la receta deja de ofrecerse');
-  // parejas sin receta
-  ok((await E(pg, () => G.Fusion.recipeFor('ice', 'blood') === null && G.Fusion.recipeFor('poison', 'steel') === null)), 'parejas sin receta (hielo+sangre, veneno+acero) no fusionan');
+  // las 15 parejas tienen receta (fusiones 13-15)
+  ok((await E(pg, () => G.Fusion.recipeFor('ice', 'blood').id === 'cristal' && G.Fusion.recipeFor('lightning', 'blood').id === 'zancada' && G.Fusion.recipeFor('poison', 'steel').id === 'virote')), 'hielo+sangre, rayo+sangre y veneno+acero fusionan (cristal, zancada, virote)');
   await done(pg, 'flow'); await b.close();
 }
 
 async function powers() {
-  console.log('--- poderes: los 12 disparan, dañan / aplican su efecto y entran en enfriamiento (Nv1 y Nv2)');
+  console.log('--- poderes: los 15 disparan, dañan / aplican su efecto y entran en enfriamiento (Nv1 y Nv2)');
   const b = await launch();
-  const IDS = ['vapor', 'plasma', 'gas', 'sed', 'tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'];
+  const IDS = ['vapor', 'plasma', 'gas', 'sed', 'tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga', 'cristal', 'zancada', 'virote'];
   for (const lv of [1, 2]) for (const id of IDS) {
-    if (lv === 2 && !['tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].includes(id)) continue;
+    if (lv === 2 && !['tormenta', 'escarcha', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga', 'cristal', 'zancada', 'virote'].includes(id)) continue;
     const pg = await mk(b, `reset=1&god=1&direct=1&all=1&speed=3&nointro=1&actives=${id}${lv === 2 ? '2' : ''}&hand=spark:1,shard:1&bcd=60000&aux=0`);
     await autoSkip(pg); await sleep(pg, 600); await E(pg, () => { G.player.hp = 60; });
     await E(pg, () => { for (let i = 0; i < 16; i++) { const a = i * 0.4; G.Enemies.spawn('worm', G.player.x + Math.cos(a) * (70 + i * 7), G.player.y + Math.sin(a) * (70 + i * 7)); } });
     await sleep(pg, 900);
     await E(pg, id => { G.enemies.forEach(e => { e.hp = e.maxHp = 600; if (id === 'descarga') G.Combat.poison(e, 3); if (id === 'filo' || id === 'tormenta') G.Combat.slow(e, 0.3, 6000); }); G.player.actives[0].cd = 0; }, id);
     const hp0 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0));
-    await pg.keyboard.press('KeyQ'); await sleep(pg, ['filo', 'descarga'].includes(id) ? 20 : 100);
+    await pg.keyboard.press('KeyQ'); await sleep(pg, ['filo', 'descarga', 'virote'].includes(id) ? 20 : 100);
     let st = await E(pg, () => { const s = G.Fusion.snapshot(); return { s, fields: G.Fusion.fields.length, axes: G.Fusion.axes.length, fxs: G.Fusion.fxs.length, on: !!G.player.actives[0].st, marks: G.enemies.filter(e => e.hemoT > 0).length, buff: G.player.fusBuffT > 0 }; });
     const tag = `${id}${lv === 2 ? ' Nv2' : ''}`;
-    ok(st.s.actives[0].uses === 1 && st.s.actives[0].cd > 5000, `${tag}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
+    ok(st.s.actives[0].uses === 1 && (st.s.actives[0].cd > 5000 || (id === 'zancada' && lv === 2 && st.s.actives[0].cd > 0)), `${tag}: Q lo dispara y entra en cooldown (${st.s.actives[0].cd} ms)`);
     ok(st.fields + st.axes + st.fxs > 0 || st.on || st.buff, `${tag}: efecto visible (campos ${st.fields}, hachas ${st.axes}, fx ${st.fxs}, canal ${st.on})`);
     if (id === 'hemo') ok(st.marks >= (lv === 2 ? 7 : 6), `${tag}: marca ${st.marks} enemigos`);
     if (id === 'pacto') ok(st.buff && (await E(pg, () => G.player.hp)) >= 20, `${tag}: buff activo y HP >= 20`);
-    await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6000 : id === 'tormenta' ? 4000 : 3200);
+    await sleep(pg, id === 'sed' ? 5000 : id === 'gas' ? 6000 : id === 'tormenta' ? 4000 : id === 'cristal' ? 6800 : 3200);
     const hp1 = await E(pg, () => G.enemies.reduce((a, e) => a + e.hp, 0)), sn = await E(pg, () => G.Fusion.snapshot());
     ok(sn.actives[0].dmg > 0 || id === 'hemo' || hp1 < hp0, `${tag}: ha hecho daño (${sn.actives[0].dmg}; vida enemiga ${Math.round(hp0)} -> ${Math.round(hp1)})`);
     if (id === 'descarga') ok(await E(pg, () => G.enemies.filter(e => e.poisonN > 0).length) < 16, 'descarga: consume el veneno');
-    await E(pg, () => { G.player.actives[0].cd = 20; G.player.actives[0].used = true; }); await sleep(pg, 80);
+    await E(pg, () => { const a = G.player.actives[0]; a.dash2 = 0; a.cd = 20; a.used = true; }); await sleep(pg, 80);
     ok((await E(pg, () => G.player.actives[0].readyT)) > 0, `${tag}: aviso de poder listo`);
     await done(pg, 'poder ' + tag);
+  }
+  // fusiones 13-15 (DESIGN-fusion.md sec. 14)
+  {
+    let pg = await mk(b, 'reset=1&god=1&direct=1&all=1&nointro=1&hand=spark:1&bcd=60000&aux=0');
+    const r15 = await E(pg, () => { const F = G.Fusion, tg = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel']; let n = 0, miss = []; for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) { if (F.recipeFor(tg[i], tg[j])) n++; else miss.push(tg[i] + '+' + tg[j]); } return { n, miss, rec: F.recipes.length, comb: G.Cards.combos.length }; });
+    ok(r15.n === 15 && r15.rec === 15 && r15.comb === 15, 'las 15 parejas de etiquetas tienen receta (' + JSON.stringify(r15) + ')');
+    const n3 = await E(pg, () => ['cristal', 'zancada', 'virote'].map(id => { const r = G.Fusion.recipe(id); return [r.kind, r.lv[0].cd, r.lv.length].join('/'); }).join(' '));
+    ok(n3 === 'ward/17000/2 dash/15000/2 bolt/12000/2', '3 recetas nuevas (kind/cd/niveles): ' + n3);
+    const q15 = await E(pg, () => G.Quests && (G.Quests.ACH || G.Quests.ACHS || []).length >= 0);
+    await done(pg, 'recetas-15');
+    // Cristal: escudo propio (no lo recorta el set Sangre), se resta tras el escudo del set; onda al romperse
+    pg = await mk(b, 'reset=1&direct=1&all=1&speed=2&nointro=1&actives=cristal2&hand=spark:1&bcd=60000&aux=0');
+    await sleep(pg, 500);
+    const cw = await E(pg, async () => {
+      const p = G.player; G.enemies.length = 0; for (let i = 0; i < 3; i++) { G.Enemies.spawn('worm', p.x + 60 + i * 20, p.y); } G.enemies.forEach(e => { e.spawnT = 0; e.hp = e.maxHp = 9999; });
+      p.hp = 100; p.hurtT = 0; p.actives[0].cd = 0; G.Fusion.fire(0);
+      const w0 = p.ward, locked = G.Fusion.fire(0);   // recastear con el escudo activo: bloqueado
+      p.shield = 10; G.Combat; p.hurtT = 0; G.Player.hurt(p, 25, p.x + 50, p.y, { src: 'worm' });   // 10 al escudo del set, 15 al cristal
+      const w1 = p.ward, hp1 = p.hp; p.hurtT = 0; G.Player.hurt(p, 100, p.x + 50, p.y, { src: 'worm' });   // rompe el cristal (30 restantes) y pasa el resto
+      const hp2 = p.hp, w2 = p.ward; await new Promise(r => setTimeout(r, 200));
+      const slow = G.enemies.some(e => e.slowT > 0 || e.stunT > 0 || e.hp < 9999);
+      return { w0, locked, sh: p.shield, w1, hp1, hp2, w2, slow, abs: G.Fusion.stats.absorbed, on: !!p.actives[0].st };
+    });
+    ok(cw.w0 === 45 && cw.locked === false, 'cristal Nv2: escudo 45 y no se recastea activo (' + cw.w0 + ')');
+    ok(cw.sh === 0 && cw.w1 === 30 && cw.hp1 === 100, 'cristal: tras el escudo del set (10) absorbe el resto (' + JSON.stringify([cw.sh, cw.w1, cw.hp1]) + ')');
+    ok(cw.w2 === 0 && cw.hp2 < 100 && cw.hp2 > 20 && cw.abs === 45, 'cristal: se rompe, el sobrante pasa a la vida y cuenta lo absorbido (' + JSON.stringify([cw.w2, cw.hp2, cw.abs]) + ')');
+    ok(cw.slow && !cw.on, 'cristal: al romperse estalla en onda (daño / slow / aturdimiento) y termina el estado');
+    const cap = await E(pg, () => { const p = G.player; p.ward = 0; p.actives[0].st = null; p.actives[0].cd = 0; G.Fusion.fire(0); p.ward = 999; p.shield = 0; return G.Fusion.recipe('cristal').lv[1].shield; });
+    ok(cap === 45, 'cristal: tope de escudo temporal 45 en la receta');
+    await done(pg, 'cristal');
+    // Zancada: desplaza, invulnerable, cura tope, 2 cargas en Nv2
+    pg = await mk(b, 'reset=1&direct=1&all=1&speed=2&nointro=1&actives=zancada2&hand=spark:1&bcd=60000&aux=0');
+    await sleep(pg, 500);
+    const zd = await E(pg, async () => {
+      const p = G.player; G.enemies.length = 0; p.x = 600; p.y = 400; p.hp = 50; p.hurtT = 0;
+      for (let i = 0; i < 4; i++) { G.Enemies.spawn('worm', p.x + 70 + i * 40, p.y); } G.enemies.forEach(e => { e.spawnT = 0; e.hp = e.maxHp = 9999; });
+      const x0 = p.x; p.actives[0].cd = 0; const f1 = G.Fusion.fire(0); const x1 = p.x, inv = p.hurtT;
+      const c1 = p.actives[0].cd; await new Promise(r => setTimeout(r, 700)); const f2 = G.Fusion.fire(0), x2 = p.x, c2 = p.actives[0].cd;
+      const f3 = G.Fusion.fire(0); const hit = G.enemies.filter(e => e.hp < 9999).length; const hp = p.hp;
+      p.x = 40; p.y = 400; G.enemies.length = 0; p.actives[0].cd = 0; p.actives[0].dash2 = 0; p.hurtT = 0; G.Enemies.spawn('worm', 20, 400); G.enemies[0].spawnT = 0; const f4 = G.Fusion.fire(0); const x4 = p.x;
+      return { f1, f2, f3, f4, dx1: x1 - x0, dx2: x2 - x1, inv, c1, c2, hit, hp, x4 };
+    });
+    ok(zd.f1 && zd.dx1 > 200 && zd.inv >= 200, 'zancada: embiste hacia el enemigo (' + Math.round(zd.dx1) + ' px) e invulnerable (' + zd.inv + ' ms)');
+    ok(zd.c1 < 600 && zd.f2 && Math.abs(zd.dx2) > 100 && zd.c2 > 5000 && zd.f3 === false, 'zancada Nv2: 2 cargas (2.ª sin esperar), luego cooldown completo (' + zd.c1 + ' / ' + Math.round(zd.c2) + ')');
+    ok(zd.hit >= 1 && zd.hp > 50 && zd.hp <= 60, 'zancada: golpea y cura con tope (hp ' + Math.round(zd.hp) + ', golpeados ' + zd.hit + ')');
+    ok(zd.x4 >= 28, 'zancada: respeta los límites del mapa (x=' + Math.round(zd.x4) + ')');
+    await done(pg, 'zancada');
+    // Virote: corrosión (x1,2 normal; jefe topado x1,25), propaga veneno, afecta a otras fuentes
+    pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=2&nointro=1&actives=virote&hand=spark:1&bcd=60000&aux=0');
+    await sleep(pg, 500);
+    const vr = await E(pg, async () => {
+      const p = G.player; G.enemies.length = 0; for (let i = 0; i < 4; i++) G.Enemies.spawn('worm', p.x + 120 + i * 30, p.y + (i % 2) * 8); G.enemies.forEach(e => { e.spawnT = 0; e.hp = e.maxHp = 9999; });
+      G.Enemies.spawn('worm', p.x + 130, p.y + 90); const sp = G.enemies[G.enemies.length - 1]; sp.spawnT = 0; sp.hp = sp.maxHp = 9999;
+      const t = G.enemies[0]; const before = G.Combat.deal(t, 10, { tag: 'neutral' }); t.hp = 9999;
+      p.actives[0].cd = 0; const ok1 = G.Fusion.fire(0);
+      const cor = G.enemies.filter(e => e.corrodeT > 0), c0 = cor[0];
+      let after = 0; if (c0) { c0.hp = 9999; after = G.Combat.deal(c0, 10, { tag: 'neutral' }); c0.hp = 9999; }
+      const F = G.Fusion; const fake = (w) => ({ type: 'boss', phase: 1, corrodeMul: 0.1, def: { weak: w, resist: [] } });
+      return { ok1, n: cor.length, ratio: after / before, mul: c0 && c0.corrodeMul, pois: G.enemies.filter(e => e.poisonN > 0).length, fb0: F.corrode(fake([]), 'poison'), fb1: F.corrode(fake([{ tag: 'poison', mul: 1.25, phases: [1] }]), 'poison'), fb2: F.corrode(fake([{ tag: 'poison', mul: 1.15, phases: [1] }]), 'poison'), dot: G.Fusion.P.corr };
+    });
+    ok(vr.ok1 && vr.n >= 1 && vr.n <= 3 && Math.abs(vr.mul - 0.2) < 1e-6, 'virote: oxida hasta 3 objetivos con +20 % (' + vr.n + ', mul ' + vr.mul + ')');
+    ok(Math.abs(vr.ratio - 1.2) < 0.05, 'virote: el daño de otras fuentes sube x1,2 al corroído (' + vr.ratio.toFixed(2) + ')');
+    ok(vr.pois >= 3, 'virote: veneno a los atravesados y propagado a vecinos (' + vr.pois + ')');
+    ok(Math.abs(vr.fb0 - 1.1) < 1e-6 && Math.abs(vr.fb1 - 1) < 1e-6 && Math.abs(vr.fb2 - 1.25 / 1.15) < 1e-6, 'virote: jefe +10 % y total con la debilidad topado en x1,25 (' + [vr.fb0, vr.fb1, vr.fb2].map(v => v.toFixed(3)) + ')');
+    await done(pg, 'virote');
   }
   // reglas especiales
   let pg = await mk(b, 'reset=1&direct=1&all=1&speed=2&nointro=1&actives=pacto&hand=spark:1');

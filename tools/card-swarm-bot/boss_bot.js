@@ -44,7 +44,7 @@ const BOT = () => {
       try {
       const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];
       pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
-      const q = (bo === 'cenizar' ? 'assault=1' : 'boss=' + bo) + '&nointro=1&prep=0&noprep=1&direct=1&all=1&reset=1&speed=' + SPEED + '&hand=' + S.hand + (NOACT ? '' : '&actives=' + S.act) + EXTRA;
+      const q = (bo === 'cenizar' ? 'assault=1' : 'boss=' + bo) + '&nointro=1&prep=0&noprep=1&direct=1&all=1&reset=1&speed=' + SPEED + '&hand=' + S.hand + (NOACT ? '' : '&actives=' + (process.env.ACT || S.act)) + EXTRA;
       await pg.goto(`${base}/index.html?nosw=1&${q}`); await pg.waitForTimeout(500);
       await pg.evaluate(n => { window.__noact = n; }, NOACT); await pg.evaluate(BOT);
       const t0 = Date.now(); let r = null;

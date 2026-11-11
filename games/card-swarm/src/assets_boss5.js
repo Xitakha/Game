@@ -23,7 +23,7 @@
 
   // ---- paleta: ceniza #3a3440, brasa #ff6a1a, nucleo blanco-amarillo #fff2b0 (DESIGN-v7 sec. 1)
   var C = {
-    ash: '#3a3440', ashS: '#241f2b', ashH: '#5c5468', ashD: '#16111c', ember: '#ff6a1a', emberS: '#b8380a', emberH: '#ffa04a', core: '#fff2b0', coreS: '#ffc94a',
+    ash: '#554c62', ashS: '#2e2738', ashH: '#9488a6', ashD: '#16111c', ember: '#ff6a1a', emberS: '#b8380a', emberH: '#ffa04a', core: '#fff2b0', coreS: '#ffc94a',
     smoke: '#4a4352', smokeS: '#2e2936', smokeH: '#6e6578', dead: '#8a8294', deadS: '#5c5668', deadH: '#b4aec0', glass: '#17121d', glassS: '#0e0a13', glassH: '#2a2234', wax: '#fff3d6', waxS: '#d9bf8c'
   };
   // ojos por fase: F1 brasa, F2 violeta (Pastor), F3 naranja (Karceron), F4 turquesa (Letea), F5 azul hielo (Yarlak), F6 ambar (Melaria), F7 blanco-amarillo. Nunca rojo
@@ -70,6 +70,8 @@
         var g = x.createRadialGradient(54, 62, 2, 54, 54, 28); g.addColorStop(0, 'rgba(255,242,176,0.95)'); g.addColorStop(0.45, 'rgba(255,150,40,0.7)'); g.addColorStop(1, 'rgba(255,106,26,0)'); x.fillStyle = g; x.beginPath(); x.ellipse(56, 46, 17, 28, 0, 0, TAU); x.fill();
         x.strokeStyle = OLC; x.lineWidth = 2.2; x.beginPath(); x.ellipse(56, 46, 17, 28, 0, 0, TAU); x.stroke();
       }
+      x.strokeStyle = f === 3 ? 'rgba(255,255,255,0.35)' : 'rgba(255,140,60,0.42)'; x.lineWidth = 4.2; x.lineJoin = 'round'; x.beginPath(); S(x); x.stroke();   // filo calido interior: despega la silueta del suelo
+      var ug = x.createLinearGradient(0, 56, 0, 94); ug.addColorStop(0, 'rgba(255,106,26,0)'); ug.addColorStop(1, 'rgba(255,106,26,0.3)'); x.fillStyle = ug; x.fillRect(0, 56, 112, 40);
       x.restore();
       // costillas de brasa
       var gap = f === 2 ? 20 : 0;
@@ -104,6 +106,8 @@
       v.part(Ppoly([[12, 34], [36, 34], [32, 45 + jaw], [16, 45 + jaw]]), C.ashS, { lw: 1.5, sh: C.ashD, hi: C.ash, so: 0.5 });
       if (f === 1) { x.fillStyle = '#10080e'; x.beginPath(); x.moveTo(14, 36); x.lineTo(34, 36); x.lineTo(31, 43); x.lineTo(17, 43); x.closePath(); x.fill(); var g = x.createLinearGradient(0, 36, 0, 46); g.addColorStop(0, 'rgba(255,200,90,0.9)'); g.addColorStop(1, 'rgba(255,106,26,0.5)'); x.fillStyle = g; x.fillRect(16, 37, 16, 5); }
       else emberLine(v, [[14, 37], [19, 39], [24, 37], [29, 39], [34, 37]], 1.1, f);
+      v.part(Ppoly([[7, 15.5], [25, 21.4], [43, 15.5], [40, 22.6], [25, 24.6], [10, 22.6]]), C.ashD, { lw: 1.3, sh: '#0a060e', hi: C.ashS, so: 0.4 });   // ceno fruncido: mirada de furia
+      emberLine(v, [[9, 30], [13, 33], [11, 38]], 0.9, f); emberLine(v, [[39, 30], [35, 33], [37, 38]], 0.9, f);
       v.part(Pblob(25, 26, 13.4, 5.4, 1102, 0.03, 9), '#0d0812', { lw: 1.3, sh: '#07040a', so: 0.4 });   // visor/cuenca (el color lo pone boss_cenizar_eyes)
       if (f === 2) { x.strokeStyle = '#ffffff'; x.lineWidth = 0.9; x.beginPath(); x.moveTo(30, 13); x.lineTo(27, 20); x.lineTo(31, 26); x.lineTo(28, 33); x.stroke(); }
       if (f === 3) { x.strokeStyle = C.emberH; x.lineWidth = 1.3; x.lineCap = 'round'; x.beginPath(); [[17, 24], [26, 29], [26, 24], [17, 29]].forEach(function (p, k) { x.moveTo(p[0], p[1]); }); x.stroke(); }
@@ -124,6 +128,25 @@
     };
   }
   addV('boss_cenizar_eyes', 24, 10, [0, 1, 2, 3, 4, 5, 6].map(eyesDraw), { lw: 0.6 }, { phase1: { f: [0], fps: 1 }, phase2: { f: [1], fps: 1 }, phase3: { f: [2], fps: 1 }, phase4: { f: [3], fps: 1 }, phase5: { f: [4], fps: 1 }, phase6: { f: [5], fps: 1 }, phase7: { f: [6], fps: 1 } });
+
+
+  // ---- EVOLUCION VISIBLE (rediseno visual): cuernos de ceniza en los hombros y penacho de llamas tras la cabeza; crecen y cambian de color con la fase
+  // cuerno 28x48 (final 56x96), base abajo-centro (14,46), apunta arriba; penacho 80x72 (final 160x144), 4 frames de llama
+  addV('boss_cenizar_horn', 28, 48, [function (v) {
+    var x = v.ctx, i;
+    v.part(Ppoly([[3, 47], [4, 32], [8, 16], [18, 2], [16, 15], [19, 30], [25, 47]]), C.ash, { lw: LW, sh: C.ashS, hi: C.ashH, so: 1.4 });
+    for (i = 0; i < 4; i++) v.line(6 + i * 0.4, 40 - i * 8, 20 - i * 1.4, 37 - i * 8, 1, i % 2 ? C.emberS : C.ember);
+    emberLine(v, [[13, 44], [13.6, 30], [16, 12]], 1, 0);
+  }], { lw: LW }, { rest: { f: [0], fps: 1 } });
+  function plumeDraw(f) {
+    return function (v) {
+      var x = v.ctx, i, ph = f * PI / 2;
+      v.part(Ppoly([[12, 70], [8, 44], [14, 24 + sin(ph + 2) * 3], [20, 40], [26, 14 - sin(ph) * 3], [36, 34], [40, 0 + sin(ph) * 3], [46, 32], [56, 10 + sin(ph + 1) * 3], [60, 38], [68, 20], [70, 46], [68, 70]]), C.ember, { lw: LW * 0.9, sh: C.emberS, hi: C.emberH, so: 1.6 });
+      v.part(Ppoly([[22, 70], [22, 52], [30, 38 - sin(ph + 1) * 2], [36, 50], [41, 22 + sin(ph) * 3], [47, 48], [54, 34], [58, 52], [58, 70]]), C.emberH, { lw: 0.8, ol: C.ember, sh: C.ember, hi: '#ffd89a', so: 0.8 });
+      v.part(Ppoly([[32, 70], [34, 56], [40, 40 - sin(ph) * 2], [46, 56], [48, 70]]), C.core, { lw: 0.7, ol: C.coreS, sh: C.coreS, hi: '#ffffff', so: 0.4 });
+    };
+  }
+  addV('boss_cenizar_plume', 80, 72, [0, 1, 2, 3].map(plumeDraw), { lw: LW }, { burn: { f: [0, 1, 2, 3], fps: 8 } });
 
   // ---- brazos: 40x64 (final 80x128). Pivote del hombro (20,8) base = (40,16) final; mano en (20,56) base. 0 reposo, 1 ataque (mano abierta, garras), 2 roto (agrietado, apagado)
   function armDraw(f, far) {
@@ -596,6 +619,17 @@
     x.translate(R.OX + shx, R.OY - P.hover + shy); if (f < 0) x.scale(-1, 1);
     extR(R, -300, -270 - P.hover, 300, 170 - P.hover);
     x.save(); x.translate(0, P.by); x.rotate(P.tilt);
+    // halo de fase detras del cuerpo (luz propia: contraste contra el suelo oscuro) + penacho + cuernos que crecen con la fase
+    var dead0 = dying && dt > 300;
+    if (!dead0) {
+      glowAt(x, 0, -34, 150 + 8 * ph, PHC[ph - 1], 0.3 + 0.03 * ph + 0.05 * P.glow, 118);
+      var pk = A.sprite('boss_cenizar_plume', Math.floor(t / 110) % 4), pks = (0.5 + 0.1 * ph) * (1 + 0.04 * sin(t / 170)), pw = pk.width * pks, phh = pk.height * pks;
+      x.save(); x.globalAlpha = 0.95; x.drawImage(pk, 12 - pw / 2, -88 - phh + 22, pw, phh); x.restore();
+      var hk = 0.7 + 0.1 * ph, hth = 0.3 + 0.03 * ph, hsp = A.sprite('boss_cenizar_horn', 0);
+      [-1, 1].forEach(function (sd) {
+        x.save(); x.translate(sd * 88, -62); x.rotate(sd * hth); x.scale(sd * hk, hk); x.drawImage(hsp, -28, -92, 56, 96); x.restore();
+      });
+    }
     // capa de humo (detras)
     var cl = A.sprite('boss_cenizar_cloak', Math.floor(t / 200) % 4);
     x.save(); x.translate(-14, -2); if (P.cloak) { x.translate(110, 30); x.rotate(P.cloak * 0.55); x.scale(1 + Math.abs(P.cloak) * 0.25, 1); x.translate(-110, -30); } x.drawImage(cl, -96, 0); x.restore();
@@ -646,6 +680,7 @@
       ['cayado', 'ojo', 'colmillo', 'corona'].forEach(function (id) { var st = relicSt(s, id); if (st === 'off' || st === 'broken') return; var an = id === 'cayado' ? L.staff : L[id], col = id === 'ojo' ? '79,240,208' : (id === 'colmillo' ? '191,228,255' : (id === 'corona' ? '255,210,120' : '255,160,60')); glowAt(x, an.x, an.y, (st === 'active' ? 30 : 22) + 3 * sin(t / 170 + RELIC_LINK[id]), col, st === 'active' ? 0.6 : 0.32); });
       if (ph >= 7 && !br.core) glowAt(x, L.core.x, L.core.y, 30 + (s.exposed ? 12 : 0) + 3 * sin(t / 120), '255,242,176', s.exposed ? 0.95 : 0.6);
     }
+    if (!dead0) { var hk2 = 0.7 + 0.1 * ph, hth2 = 0.3 + 0.03 * ph; [-1, 1].forEach(function (sd) { var tpH = T(P, sd * 88 + sd * sin(hth2) * 86 * hk2, -62 - cos(hth2) * 86 * hk2); glowAt(x, tpH.x, tpH.y, 12 + 2 * ph + 2 * sin(t / 130 + sd), PHC[ph - 1], 0.55 + 0.05 * ph); }); }
     for (i = 0; i < P.crownLit && !dying; i++) glowAt(x, L.tips[i].x, L.tips[i].y + 2, 11, '255,255,255', 0.35);
     x.globalCompositeOperation = 'source-over';
     return { R: R, P: P, L: L };
@@ -993,9 +1028,11 @@
     } else return false;
     ctx.save(); ctx.lineJoin = 'round';
     if (kind !== 'faros') { ctx.fillStyle = 'rgba(' + col.f + ',' + (0.12 + 0.28 * p).toFixed(3) + ')'; ctx.fill(path, 'evenodd'); ctx.fillStyle = 'rgba(' + col.f + ',0.20)'; ctx.fill(prog, 'evenodd'); } else { ctx.fillStyle = 'rgba(255,120,40,0.05)'; ctx.fill(path); }
+    if (kind !== 'faros') { ctx.save(); ctx.clip(path, 'evenodd'); ctx.strokeStyle = 'rgba(' + col.f + ',' + (0.1 + 0.2 * p).toFixed(3) + ')'; ctx.lineWidth = 5; ctx.beginPath(); var hx0 = x - 700, hOff = ((t / 60) % 28); for (var hq = -40; hq < 60; hq++) { ctx.moveTo(hx0 + hq * 28 + hOff, y + 700); ctx.lineTo(hx0 + hq * 28 + hOff + 700, y - 700); } ctx.stroke(); ctx.restore(); }   // rayado diagonal de peligro dentro de la zona
     if (o.sig) { ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 9; ctx.stroke(path); }
     ctx.strokeStyle = 'rgba(27,17,36,0.45)'; ctx.lineWidth = (fix ? 3.4 : 2.6) + 2.6; ctx.stroke(path);
     ctx.strokeStyle = col.s; ctx.globalAlpha = 0.9; ctx.lineWidth = fix ? 3.4 : 2.6; if (!fix) { ctx.setLineDash([11, 8]); ctx.lineDashOffset = -t / 40; } ctx.stroke(path); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,' + (fix ? 0.75 : 0.35).toFixed(2) + ')'; ctx.lineWidth = 1.1; ctx.stroke(path);   // filo blanco fino: borde nitido sobre el suelo del Crater
     if (extra) extra();
     ctx.restore(); return true;
   }
