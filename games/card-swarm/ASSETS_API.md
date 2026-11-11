@@ -1381,6 +1381,21 @@ Atajo: `G.Snd.armor(tipo, arg, pitch)`; `G.Snd.armornames` lista todos los ids.
 
 `pitch` (2.o argumento de `play`, 3.o del atajo) multiplica la frecuencia (defecto 1). Verificado en Chromium headless: carga sin errores, renderizado offline de los 34 sonidos sin silencio ni clipping.
 
+### Armadura v8, sets nuevos y extras: `src/sfx_armor2.js` (cargar DESPUES de `sfx_armor.js`; el programador anade el `<script>`)
+Procedural, no toca `sfx_armor.js`. Atajo `G.Snd.armor2(tipo, arg, pitch)`; `G.Snd.armor2names` (32 ids) y tambien anadidos a `G.Snd.armornames`. `set` = `letea|yarlak|melaria|cenizar`; `arg` de equip/set/upgrade acepta `'letea'`, `'letea:2'` (nivel) o `{set,lvl}`.
+
+| Id | Atajo | Uso |
+|---|---|---|
+| `a2_equip_<set>` | `armor2('equip', set)` | equipar pieza del set: letea burbujas de pantano, yarlak cristal de hielo, melaria cera/miel, cenizar brasa y ceniza |
+| `a2_upgrade_<set>_1/2/3` | `armor2('upgrade', 'set:n')` | mejora +1/+2/+3 (2, 3, 4 notas con escala propia por set; +3 con brillo y cola) |
+| `a2_set_<set>` | `armor2('set', set)` | set completo, stinger distinto por set (~0,8 s) |
+| `a2_talisman_mini` | `armor2('talisman')` | talisman de minijefe obtenido (campanilla mistica + pulso grave) |
+| `a2_hit_<mat>` | `armor2('hit', mat)` | golpe amortiguado con `hurt`; mat = `leather|metal|charm|letea|yarlak|melaria|cenizar` (otro -> metal) |
+| `a2_equipo_open` / `a2_equipo_close` / `a2_equipo_try` | `armor2('open'/'close'/'try')` | boton EQUIPO: abrir, cerrar y probar equipo |
+| `a2_achv` | `armor2('achv')` | logro de armadura (fanfarria ~0,9 s) |
+
+Verificado en Chromium headless (Playwright): carga sin errores y los 32 ids suenan sin excepciones.
+
 
 ---
 
