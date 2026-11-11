@@ -60,6 +60,7 @@ const BOT = () => {
       r = await pg.evaluate(() => ({ st: G.state, t: Math.round(G.runT / 1000), won: G.won, lvl: G.player.level, kills: G.kills, hp: Math.round(G.player.hp), boss: G.Enemies.boss() ? Math.round(G.Enemies.boss().hp / G.Enemies.boss().maxHp * 100) : null, snap: G.Fusion.snapshot(), log: window.__log }));
       if (r.st === 'gameover') break;
     }
+    r.arm = await pg.evaluate(() => ({ blocked: Math.round(G.Armor.run.blocked), raw: Math.round(G.Armor.run.raw), def: Math.round(G.Armor.get().def * 10) / 10, taken: Math.round(Object.values(window.__log.hb).reduce((a, x) => a + x, 0)) })).catch(() => ({ blocked: 0, raw: 0, def: 0, taken: 0 }));
     r.errs = errs.length; r.errsText = errs.slice(0, 2); res.push(r);
     const hb = Object.entries(r.log.hb).sort((a, c) => c[1] - a[1]).slice(0, 4).map(([k, v]) => k + ':' + Math.round(v)).join(',');
     console.log(`partida ${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s nv=${r.lvl} kills=${r.kills} bossHp=${r.boss}% 1ªfus=${r.snap.stats.firstFusionT} fusiones=${JSON.stringify(r.snap.stats.fusions.map(f => f.id + (f.lvl > 1 ? '2' : '') + '@' + f.t))} usos=${JSON.stringify(r.snap.stats.uses)} dmgPod=${JSON.stringify(r.snap.stats.dmg)} dano=${hb} cura=${JSON.stringify(Object.fromEntries(Object.entries(r.log.hl || {}).map(([k, v]) => [k, Math.round(v)])))} hp20s=${r.log.samples.map(x => x[1]).join("/")} n20s=${r.log.samples.map(x => x[4]).join("/")} lv20s=${r.log.samples.map(x => x[2]).join("/")} errs=${errs.length}`);
@@ -69,6 +70,7 @@ const BOT = () => {
   await Promise.all(Array.from({ length: Math.min(PAR, N) }, worker));
   const w = res.filter(x => x.won).length, ts = res.map(x => x.t), m = ts.reduce((a, x) => a + x, 0) / ts.length, sd = Math.sqrt(ts.reduce((a, x) => a + (x - m) * (x - m), 0) / Math.max(1, ts.length - 1));
   const f1 = res.map(x => x.snap.stats.firstFusionT).filter(x => x != null);
+  { const tk = res.map(x => x.arm.taken / Math.max(1, x.t / 60)), mk = tk.reduce((a, x) => a + x, 0) / tk.length, bl = res.reduce((a, x) => a + x.arm.blocked, 0), rw = res.reduce((a, x) => a + x.arm.raw, 0); console.log(`DANO recibido por min (hb): ${Math.round(mk)}  evitado por armadura ${rw ? Math.round(100 * bl / rw) : 0} % del bruto  DEF ${res[0].arm.def}`); }
   console.log(`RESUMEN cmul=${CM || 'defecto'} sinPoderes=${NOACT} all=${ALL}${EXTRA}: n=${res.length} victorias ${w}/${res.length}, tiempo ${Math.round(m)} +- ${Math.round(sd)}s (ee ${Math.round(sd / Math.sqrt(ts.length))}) min ${Math.min(...ts)} muertes<150s ${ts.filter(x => x < 150).length}, 1ª fusión media ${f1.length ? Math.round(f1.reduce((a, x) => a + x, 0) / f1.length) : '-'}s, errores ${res.reduce((a, x) => a + x.errs, 0)}`);
   await b.close();
 })();
