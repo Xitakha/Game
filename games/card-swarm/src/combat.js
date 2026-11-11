@@ -97,6 +97,7 @@
       if (tf.fundicion && (e.big || e.type === 'boss')) dmg *= 1.15;
     }
     if (tf.alientoCrater && e.type === 'boss') dmg *= 1.1;   // P7: 'Aliento del Cráter' (Ruta, 6 trofeos de Cenizar): +10 % de daño contra jefes (cualquier etiqueta)
+    if (G.Armor) { var ad = G.Armor.dmgMul(tag); if (ad !== 1) dmg *= ad; }   // v8: Afinidad del Talismán + bono de set 2
     if (m.tagMul[tag]) dmg *= m.tagMul[tag];   // Hielo / Rayo / Veneno / Sangre: pasivo del árbol y Resonancia (set)
     if (tag === 'steel') {
       dmg *= m.steelDmg;

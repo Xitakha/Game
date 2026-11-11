@@ -575,7 +575,7 @@
     // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
     G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 42, 10, '#c8a0ff', 'left');
     G.Minis.ALL.forEach(function (mid, k) {
-      var have = (S.insignias || {})[mid], ix = 686 + k * 26;
+      var have = (S.insigniasEver || {})[mid], ix = 686 + k * 26;
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
     // detalle de la carta

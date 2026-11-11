@@ -14,7 +14,7 @@
     spots: { marloStart: { x: 480, y: 432 }, portalReturn: { x: 862, y: 372 }, bonfire: { x: 480, y: 390 }, portal: { x: 900, y: 340 } },
     npcs: { grum: { name: 'Grum', x: 130, y: 330, color: '#a0522d' }, vesper: { name: 'Vesper', x: 300, y: 330, color: '#ff8a3c' },
       rufo: { name: 'Rufo', x: 650, y: 424, color: '#7a7f8a' }, ulalume: { name: 'Ulalume', x: 780, y: 330, color: '#8a5ac0' },
-      lanudo: { name: 'Abuelo Lanudo', x: 430, y: 400, color: '#e8dcb0' }, castana: { name: 'Tía Castaña', x: 560, y: 312, color: '#e89aa8' } },
+      lanudo: { name: 'Abuelo Lanudo', x: 430, y: 400, color: '#e8dcb0' }, castana: { name: 'Tía Castaña', x: 560, y: 312, color: '#e89aa8' }, carapa: { name: 'Carapa', x: 262, y: 452, color: '#3a7a86' } },
     colliders: [{ x: 462, y: 376, w: 36, h: 26 }, { x: 596, y: 384, w: 108, h: 30 }]
   };
   var Lay = null, M = { x: 480, y: 432, dir: 1, t: 0, moving: false };
@@ -22,10 +22,12 @@
   var react = null, bark = null, barkAt = {}, near = {};
   A.timeMode = 'dia';
   var NPC_ORDER = ['grum', 'vesper', 'rufo', 'ulalume', 'lanudo', 'castana'];
-  var COL = { grum: '#c0602a', vesper: '#e8741c', rufo: '#6a7080', ulalume: '#8a5ac0', lanudo: '#b8a878', castana: '#d0708a' };
+  var COL = { grum: '#c0602a', vesper: '#e8741c', rufo: '#6a7080', ulalume: '#8a5ac0', lanudo: '#b8a878', castana: '#d0708a', carapa: '#3a7a86' };
 
+  function syncOrder() { if (NPC_ORDER.indexOf('carapa') < 0 && G.Armor && G.Armor.smithOn()) NPC_ORDER.push('carapa'); }   // v8: Carapa llega al vencer al Pastor
   function layout() {
     var V = window.Assets && Assets.VILLAGE;
+    syncOrder();
     Lay = V && V.npcs && V.spots ? { walk: V.walk || FALLBACK.walk, spots: V.spots, npcs: V.npcs, colliders: V.colliders || [] } : FALLBACK;
     A.layout = Lay;
   }
@@ -89,7 +91,8 @@
     rufo: ['Para ti, hoy, precio de amigo. Siempre es hoy.', 'Todo se vende, hasta lo que no sabías que tenías.', 'Hebra por aquí, plumas por allá... negocio redondo.'],
     ulalume: ['Tus cartas susurran. Algunas mienten.', 'Cinco cartas, un destino. Más o menos.'],
     lanudo: ['El Pastor era el mejor de nosotros...', 'Si te rodean, no corras en línea recta.', 'Dos fuegos y un hielo hacen vapor, decía mi abuela.'],
-    castana: ['¿Has comido algo? Se te ve flaco, corderito.', 'Un plato caliente vale más que un cuerno de jefe.']
+    castana: ['¿Has comido algo? Se te ve flaco, corderito.', 'Un plato caliente vale más que un cuerno de jefe.'],
+    carapa: ['Todo se mide. Hasta el valor, con cinta métrica.', 'Costura doble: lo que yo coso, aguanta.', 'Grum pega fuerte; yo me ocupo de que a ti te peguen menos.', 'Has crecido tres dedos desde el mes pasado.']
   };
   // Líneas que cambian con los jefes vencidos y con el progreso
   function chatLines(id) {
@@ -99,7 +102,7 @@
       vesper: { pastor: 'Cobré la apuesta por el Pastor. Ahora apuesto por Karceron.', karceron: 'Karceron, vencido. Me debes una cacería, y yo a ti un favor.', letea: 'Letea cayó. Me quedé sin bestias que apostar. Qué aburrimiento tan bonito.' },
       rufo: { pastor: 'Los trofeos del Pastor... ¡cómo se cotizan! Pero los guardas, ¿verdad?', karceron: 'Me han ofrecido un grillete de Karceron. Lo quiero, y no lo vendo. Raro en mí.', letea: 'Con el agua de Letea se podría hacer negocio. Pero me da miedo olvidar la cuenta.' },
       ulalume: { pastor: 'Desde el Pastor, las cartas susurran más fuerte.', karceron: 'Karceron ha caído y hasta las cartas de Hielo y Rayo suspiran.', letea: 'Letea ha callado. Por primera vez, oigo todas mis cartas a la vez.' },
-      lanudo: {}, castana: { pastor: 'Con esos cuernos del Pastor se hace un caldo... no, mejor no.', karceron: 'Un carcelero menos y más pan en la mesa, cielo.', letea: 'Dicen que Letea se comía los recuerdos. Yo guardo los míos en la olla.' }
+      carapa: {}, lanudo: {}, castana: { pastor: 'Con esos cuernos del Pastor se hace un caldo... no, mejor no.', karceron: 'Un carcelero menos y más pan en la mesa, cielo.', letea: 'Dicen que Letea se comía los recuerdos. Yo guardo los míos en la olla.' }
     };
     X.vesper.yarlak = 'Yarlak cayó. Nadie apostaba por el mamut. Yo sí, pero no se lo digas a nadie.'; X.grum.yarlak = 'Ese marfil helado... pásame un colmillo y te hago algo que no se derrita.'; X.castana.yarlak = 'Con tanto frío, un caldo de brasa es lo mínimo, cielo.';
     X.vesper.melaria = 'Melaria cayó. La Reina, de rodillas. Y yo con la apuesta ganada otra vez.'; X.grum.melaria = 'Esa ala translúcida... y ese aguijón. Con eso sí que puedo trabajar, chaval.'; X.castana.melaria = 'Jalea real, cielo. Con eso se cura hasta el mal de amores.';
@@ -112,6 +115,13 @@
       if (seen.discharge) out.push('Veneno y Rayo juntos... una descarga que huele a hierba quemada.');
       if (seen.frenzy) out.push('Sangre y Acero. Frenesí. Me gusta cuando las cartas pierden la compostura.');
       if (!S.runs) out.push('Aún no has salido, y las cartas ya hablan de ti.');
+    }
+    if (id === 'grum' && G.Armor && G.Armor.smithOn()) out.push('Fina, la Carapa. Mucha costura, poco martillo.', 'Yo pego fuerte y ella cose. Si quieres refuerzos, el metal se templa aquí: Rango de forja II y III.', 'Eso aguantará, lo que cose Carapa. Casi tanto como lo que forjo yo.');   // v8: 3 líneas de Grum sobre la Armera
+    if (id === 'carapa') {
+      var ar = G.Armor, rdy = ar.readyCount();
+      if (rdy) out.unshift('Tengo ' + rdy + ' pieza' + (rdy > 1 ? 's' : '') + ' lista' + (rdy > 1 ? 's' : '') + '. Ven a probártelas.');
+      if (k.karceron) out.push('Las cadenas de Karceron dan un forro excelente, por cierto.');
+      if (G.curBiome === 'tundra' && !ar.equippedCount()) out.push('¿La Tundra con un chaleco? El frío no perdona.');
     }
     if (id === 'rufo' && S.brasas > 400) out.push('Veo Brasas en tu bolsillo, cordero. Mi carro tiene huecos...');
     return out;
@@ -142,7 +152,7 @@
     if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
     try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
-      if ((S.insignias || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
+      if ((S.insigniasEver || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
     }); } catch (eI) { /* sin minijefes */ }
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });
     if (unseen.length) { var cb = unseen[(S.flags.tip_combo || 0) % unseen.length]; S.flags.tip_combo = (S.flags.tip_combo || 0) + 1; out.push('¿Has probado ' + G.TAGS[cb.a].name + ' con ' + G.TAGS[cb.b].name + '? Dicen que da ' + cb.name + ': ' + cb.desc); }
@@ -193,12 +203,31 @@
     D.say(w, [line], [{ label: 'Cocinar', fn: function () { openPanel('cook'); } }, { label: 'Charlar', fn: function () { chat(it); } }, bye]);
   }
 
+  // v8: Carapa, la Armera (panel de armaduras en smith.js)
+  function talkCarapa(it) {
+    var S = G.Save.data, w = who(it, '#3a7a86'), AR = G.Armor, bye = { label: 'Adiós', fn: function () {} }, first = !flag('carapa'), line, rdy = AR.readyCount();
+    w.voice = true;
+    if (first) line = 'Coge aire. Voy a medirte; has crecido.';
+    else if (rdy > 0) line = 'Tengo ' + rdy + ' pieza' + (rdy > 1 ? 's' : '') + ' lista' + (rdy > 1 ? 's' : '') + '. Aguantarán lo que tú no.';
+    else if (!Object.keys(S.parts).some(function (k) { return S.parts[k] > 0; })) line = 'Sin partes no hay coraza. Yo coso, no hago milagros.';
+    else line = 'Siéntate, que te tomo medidas.';
+    D.say(w, [line], [{ label: 'Taller', fn: function () { smithVisit = false; openPanel('armor'); } }, { label: 'Charlar', fn: function () { chat(it); } }, bye]);
+  }
+  var smithVisit = false, sceneDone = false;
+  A.onCrafted = function () { smithVisit = true; };
+  function startScene() {
+    var S = G.Save.data, it = ints().filter(function (i) { return i.id === 'carapa'; })[0]; if (!it) return;
+    sceneDone = true; var had = !!S.flags.smithGift, w = who(it, '#3a7a86'); w.voice = true;
+    D.say(w, ['Soy Carapa. Cosí mi primer yelmo a los siete años.', 'Llegué con la caravana. Vi cómo vencías al Pastor.', 'Grum afila lo que pega. Yo coso lo que aguanta.', had ? 'Ya te dejé ropa: tus piezas de Aldeano y algún peto.' : 'Toma el set de Aldeano, de regalo. Todo se mide.'], [{ label: 'Gracias', fn: function () {} }], function () { });
+    S.flags.smithMet = 1; G.Armor.gift(); G.Save.save(); flash('Carapa abre su taller (habla con ella).');
+  }
   function talk(it) {
     var S = G.Save.data, w = who(it), Q = G.Quests, L = G.Loot;
     if (it.id === 'portal') { panel = 'portal'; mode = 'panel'; G.Panels.open('portal'); G.sfx('whoosh', { vol: 0.5 }); return; }
     if (it.id === 'estatua') { talkStatue(it); return; }
     if (it.id === 'lanudo') { talkLanudo(it); return; }
     if (it.id === 'castana') { talkCastana(it); return; }
+    if (it.id === 'carapa') { talkCarapa(it); return; }
     var bye = { label: 'Adiós', fn: function () { /* cierra */ } }, ch = { label: 'Charlar', fn: function () { chat(it); } };
     if (it.id === 'grum') {
       var first = !flag('grum'), noPF = G.Tree.pfFree() <= 0 && G.Tree.availableCount() === 0, nAv = G.Tree.availableCount();
@@ -279,6 +308,8 @@
       return;
     }
     // modo caminar
+    syncOrder(); if (!sceneDone && !G.Save.data.flags.smithMet && G.Armor.smithOn() && !fade) { startScene(); return; }
+    var pc = npcPos('carapa'); if (NPC_ORDER.indexOf('carapa') >= 0 && Math.hypot(pc.x - M.x, pc.y - M.y) < 170 && time - (A._amb || -9999) > 1800) { A._amb = time; if (G.Armor) G.Armor.snd('amb'); }
     move(dt);
     updateBarks();
     var tg = target();
@@ -296,6 +327,7 @@
     if (id === 'ulalume') return S.runs > 0 && !S.loadouts.some(Boolean) ? '¿Guardamos un mazo?' : null;
     if (id === 'castana') return G.Cook.anyAffordable() ? '¡Ven a comer algo, corderito!' : null;
     if (id === 'lanudo') return G.Ach.unseen().length ? '¡Tengo una memoria nueva!' : null;
+    if (id === 'carapa') { var rc = G.Armor.readyCount(); return rc > 0 ? 'Tengo ' + rc + ' pieza' + (rc > 1 ? 's' : '') + ' lista' + (rc > 1 ? 's' : '') + '.' : null; }
     return null;
   }
   function updateBarks() {
@@ -321,7 +353,7 @@
     c.restore();
   }
   // Emotes al volver de una expedición (corazón, '!', '?', nota, '...', moneda, destello, gota): frames de Assets 'emote'
-  var EMO_WIN = { grum: 0, vesper: 3, rufo: 5, ulalume: 6, lanudo: 0, castana: 0 }, EMO_LOSS = { grum: 4, vesper: 2, rufo: 5, ulalume: 4, lanudo: 7, castana: 2 };
+  var EMO_WIN = { carapa: 0, grum: 0, vesper: 3, rufo: 5, ulalume: 6, lanudo: 0, castana: 0 }, EMO_LOSS = { carapa: 4, grum: 4, vesper: 2, rufo: 5, ulalume: 4, lanudo: 7, castana: 2 };
   function drawEmotes(c, now) {
     if (!react || mode === 'panel' || D.active()) return;
     NPC_ORDER.forEach(function (id) {
@@ -340,6 +372,7 @@
 
   function closePanel() {
     var was = panel; panel = null; mode = 'walk'; G.Panels.closeAll();
+    if (was === 'armor' && smithVisit) { smithVisit = false; var ci = ints().filter(function (i) { return i.id === 'carapa'; })[0]; if (ci) { var cw = who(ci, '#3a7a86'); cw.voice = true; D.say(cw, ['Costura doble. Aguantará lo que tú no.']); } }
     if (was === 'forge' && forgedVisit) { forgedVisit = false; var it = ints()[0]; D.say(who(it), ['Eso aguantará.']); }
   }
 
@@ -374,11 +407,26 @@
     NPC_ORDER.forEach(function (id) {
       var p = npcPos(id), d = Math.hypot(p.x - M.x, p.y - M.y), ov = null;
       if (d < 120) { ov = { flip: M.x < p.x }; if (id === 'lanudo') ov.flip = M.x < p.x; }
+      if (id === 'carapa' && !npcDrawn()) { /* el placeholder no usa overrides */ }
       if (dlg && tg && tg.id === id) { ov = ov || {}; ov.anim = 'talk'; }
       else if (react && react.won && react.t < 5200 && react.t > NPC_ORDER.indexOf(id) * 220 && (id === 'grum' || id === 'castana' || id === 'lanudo' || id === 'ulalume')) { ov = ov || {}; ov.anim = 'happy'; }   // celebran tu victoria
       if (ov) o[id] = ov;
     });
+    if (NPC_ORDER.indexOf('carapa') < 0) o.carapa = { hidden: true };   // antes de que llegue la Armera no se dibuja
     return o;
+  }
+  function npcDrawn() { return !!(window.Assets && Assets.NPC_NAMES && Assets.NPC_NAMES.indexOf('carapa') >= 0 && Assets.VILLAGE && Assets.VILLAGE.npcs.carapa); }
+  // Sin el arte de assets_armor.js: toldo y armadilla de relleno (solo formas, para poder jugar)
+  function drawCarapaFallback(c, now) {
+    if (NPC_ORDER.indexOf('carapa') < 0 || npcDrawn()) return;
+    var p = npcPos('carapa'), bob = Math.sin(now / 400) * 1.5;
+    c.save(); c.strokeStyle = '#1b1124'; c.lineWidth = 3;
+    c.fillStyle = '#e8dcb0'; c.fillRect(p.x - 46, p.y - 92, 92, 10); c.strokeRect(p.x - 46, p.y - 92, 92, 10);
+    c.fillStyle = '#3a7a86'; for (var i = 0; i < 4; i++) c.fillRect(p.x - 46 + i * 23, p.y - 82, 11, 8);
+    c.fillStyle = '#3a7a86'; c.beginPath(); c.ellipse(p.x, p.y - 20 + bob, 17, 22, 0, 0, 6.283); c.fill(); c.stroke();
+    c.fillStyle = '#e8dcb0'; for (var j = 0; j < 3; j++) c.fillRect(p.x - 12, p.y - 32 + j * 9 + bob, 24, 3);
+    c.beginPath(); c.arc(p.x + 8, p.y - 38 + bob, 8, 0, 6.283); c.fillStyle = '#6aa0a8'; c.fill(); c.stroke();
+    c.restore(); G.txt(c, 'Carapa', p.x, p.y + 12, 11, '#e8dcb0', 'center');
   }
 
   // P6.5: brasero de la plaza (arde al vencer a Melaria). P7: tras vencer a Cenizar lo sustituye la estatua del Hogar (Assets.drawHearthStatue, assets_p7.js)
@@ -404,7 +452,7 @@
       catch (e) { haveArt = false; }
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
-    drawBrasero(c, now);
+    drawBrasero(c, now); drawCarapaFallback(c, now);
     drawMarks(c, now, tg);
     drawEmotes(c, now); drawBark(c);
     if (mode !== 'panel') drawTopHud(c);
@@ -423,6 +471,7 @@
       else if (id === 'vesper') { var mk = Q.mark(); kind = mk === 'ready' ? 'green' : mk === 'new' ? 'gold' : null; }
       else if (id === 'lanudo') { if (G.Ach.unseen().length) kind = 'gold'; }
       else if (id === 'castana') { if (G.Cook.anyAffordable()) kind = 'gold'; }
+      else if (id === 'carapa') { if (G.Armor.readyCount() > 0) kind = 'green'; else if (G.Armor.newSets() > 0 || G.Armor.pedReadyCount() > 0) kind = 'gold'; }
       if (!kind || D.active() || mode === 'panel' || (tg && tg.id === id)) return;
       var p = npcPos(id), cv = anim(kind === 'green' ? 'ui_mark_green' : 'ui_mark_gold', 'shine', now), by = Math.sin(now / 300) * 3;
       if (cv) c.drawImage(cv, Math.round(p.x - cv.width / 2), Math.round(p.y - 112 + by));

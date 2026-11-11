@@ -285,7 +285,7 @@
   // =============================================================== LOGROS (Abuelo Lanudo)
   // Cada logro desbloquea un recuerdo que Lanudo cuenta. Sin recompensa material (la economía no cambia).
   var A = G.Ach = {};
-  function insN(s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
+  function insN(s) { return Object.keys(s.insigniasEver || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
   A.DEFS = [
     { id: 'first', name: 'Primera salida', desc: 'Termina tu primera expedición.', ok: function (s) { return s.runs >= 1; },
       lore: 'Tu primera salida... Yo volví de la mía sin la mitad del bigote. Tú pareces entero.' },

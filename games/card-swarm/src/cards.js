@@ -91,7 +91,7 @@
     m.cdMul = 1 - 0.1 * lv('hourglass'); m.speed = (1 + 0.12 * lv('hooves')) * (rb.speed ? 1.08 : 1);
     m.magnet = lv('magnet') > 0 ? 2 : 1; m.xpMul = (1 + 0.2 * lv('magnet')) * (rb.xp ? 1.1 : 1);
     m.ashMul = 1 + 0.5 * lv('satchel'); m.rerollDisc = lv('satchel') > 0 ? 5 : 0;
-    p.maxHp = G.B.player.hp + 30 * lv('heart') + (tf.jalea ? 10 : 0) + (rb.hp || 0); p.hp = Math.min(p.hp, p.maxHp);   // P7: 'Jalea de reserva' (Ruta) +10 y 'Caldo del Hogar Reencendido' +12
+    p.maxHp = G.B.player.hp + 30 * lv('heart') + (tf.jalea ? 10 : 0) + (rb.hp || 0) + (G.Armor ? G.Armor.hp() : 0); p.hp = Math.min(p.hp, p.maxHp);   // P7: 'Jalea de reserva' (Ruta) +10 y 'Caldo del Hogar Reencendido' +12
     C.active = {};   // FUSION: los combos pasivos ya no se activan (son las recetas de fusión)
 
   };

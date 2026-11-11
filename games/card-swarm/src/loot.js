@@ -71,7 +71,7 @@
   // Brasas v5 (antes 12 % / 10 por min / 40 / jefe 150+40 por parte): una run de 7 min pasa de ~540 a ~340 Brasas; los crafts cuestan x1,5, así que
   // 1 craft ~ 20-25 % de las Brasas de una run (el resto: Tónico 80, Imán 120, partes de Rufo 24, reespecializar).
   L.BRASAS_ASH = 0.015;      // Brasas = 1,5 % de la Ceniza sobrante...
-  L.BRASAS_MIN = 18;         // ... + 18 por minuto de run (reloj de la run, se congela con el jefe) ...
+  L.BRASAS_MIN = (function () { var m = /[?&]brasasmin=([\d.]+)/.exec(location.search); return m ? parseFloat(m[1]) : (G.Armor && !G.Armor.OFF ? 21 : 18); })(); /* v8: 18 -> 21 (+15 %, segundo sumidero de Brasas; ?arm=0 / ?brasasmin= lo vuelven a 18) */         // ... + 18 por minuto de run (reloj de la run, se congela con el jefe) ...
   L.BRASAS_GROW = 0.08;      // ... con un 8 % más por cada minuto acumulado: Brasas(m) = MIN * (m + GROW/2 * m^2); las runs largas rinden más que proporcionalmente
   L.BRASAS_WIN = 0;         // bonus por derrotar al Pastor
   // Jefes v4: Brasas y PF salen de la tabla del jefe (G.Boss.DEFS: 150 Brasas + 40 por parte rota; PF 2, 3 la 1.ª vez), x Peligro. Cada trofeo cuenta como 1 Esencia (parts.rare).
@@ -238,11 +238,11 @@
         if (hunt && !G.final) { var hr = G.Save.hunt(bs.id, P); hr.wins++; var tm = Math.round((bs.time || G.Boss.combatT) / 1000); if (!hr.best || tm < hr.best) hr.best = tm; }
       }
       brasas += bb;
-      if (bs.id === 'cenizar' && bs.won && !(S.insignias.brasa_primera > 0)) { S.insignias.brasa_primera = 1; S.flags.title_apagafuegos = 1; }   // Insignia 11 'Brasa Primera' y título
+      if (bs.id === 'cenizar' && bs.won && !(S.insignias.brasa_primera > 0)) { S.insignias.brasa_primera = 1; S.insigniasEver.brasa_primera = 1; S.flags.title_apagafuegos = 1; }   // Insignia 11 'Brasa Primera' y título
       if (bs.id === 'yarlak' && bs.won && G.cold && (G.cold.bossPeak || 0) < 50) S.flags.warm_heart = 1;   // P7: logro 'Cálido corazón' (Frío < 50 % durante toda la pelea)
       if (bs.id === 'melaria' && bs.won && !R.honeyBoss) S.flags.no_honey = 1;                              // P7: logro 'Ni una gota' (sin pisar miel contra la Reina)
       if (bs.id === 'cenizar' && bs.won && !(R.relics > 0)) S.flags.title_cenizas = 1;   // desafío: vencerlo sin romper ninguna Reliquia
-      R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; });
+      R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; S.trophiesEver[tr] = (S.trophiesEver[tr] || 0) + 1; });   // v8: trophies = saldo gastable (Carapa); trophiesEver = acumulado (Ruta, logros)
       binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && (!hunt || G.final) && kn === 0, final: !!G.final, relics: R.relics || 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
     }
     S.brasas += brasas; S.runs++; if (won && !hunt) S.wins++;
@@ -252,11 +252,12 @@
     R.clean = Math.max(R.clean || 0, G.time - (R.lastHit == null ? G.t0 : R.lastHit));
     var qdone = null, P0 = G.clamp(Math.round(G.peligro || 1), 1, 5);
     try { qdone = G.Quests.onRunEnd({ won: won && !hunt, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000), hitBy: R.hitBy || {}, peligro: P0, biome: G.curBiome, coldPeak: G.cold ? Math.max(G.cold.runPeak || 0, G.cold.peak || 0) : 0, coldBoss: G.cold ? G.cold.bossPeak || 0 : 0, honeyBoss: !!R.honeyBoss, honeyBest: R.honeyBest || 0 }); } catch (x) { /* encargos opcionales */ }
+    try { G.Armor.onRunEnd({ won: won, hunt: hunt, lastHit: R.lastHit, bossWon: !!(bs && bs.won), peligro: P0, ins: (R.insignias || []).length }); } catch (xa) { /* armadura opcional */ }
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
-    L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
+    L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, blocked: Math.round((G.Armor && G.Armor.run && G.Armor.run.blocked) || 0), rawDmg: Math.round((G.Armor && G.Armor.run && G.Armor.run.raw) || 0), won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
   };
   // Fin de una PRÁCTICA: ni botín ni progreso; solo el resumen de la pelea y el contador de victorias de práctica
   L.endPractice = function (won) {
@@ -267,5 +268,5 @@
     L.summary = { practice: true, parts: {}, total: 0, brasas: 0, rare: 0, newCards: [], won: won, kills: G.kills, quest: null, pfGained: 0,
       boss: { id: id, name: (G.Boss.DEFS[id] || {}).name || id, won: won, parts: be ? be.partsBroken.slice() : [], brasas: 0, pf: 0, trophies: [], time: G.Boss.combatT, hpFrac: won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), peligro: 1, mode: 'practice', tries: rec.tries, wins: rec.wins, phase: be ? be.phase : 1 } };
   };
-  L.beginRun = function () { L.resetRun(); L.startAff = L.affordable(); L.summary = null; };
+  L.beginRun = function () { L.resetRun(); if (G.Armor) G.Armor.beginRun(); L.startAff = L.affordable(); L.summary = null; };
 })();
