@@ -107,7 +107,7 @@
 
   // ------------------------------------------------------------- Estado
   F.fused = 0; F.auto = false; F.fields = []; F.fxs = []; F.timers = []; F.axes = []; F.stats = { fusions: [], uses: {}, dmg: {}, firstFusionT: null, basicShots: 0 };
-  var bT = 300, hitN = 0;
+  var bT = 300, hitN = 0, corrodeN = 0;
   function hand() { return G.player.hand; }
   F.reset = function () {
     var p = G.player; p.actives = []; for (var i = 0; i < NS; i++) p.actives.push(null);
@@ -446,9 +446,109 @@
       }
       fx.shake(3, 100);
       return true;
+    },
+    ward: function (slot, r, L, p) {   // Cristal de sangre: escudo propio p.ward (separado de p.shield: el set Sangre lo recortaría a 20)
+      if (!CB.nearest(p.x, p.y, 300) && !G.Enemies.boss()) return false;
+      p.ward = Math.min(45, L.shield);
+      slot.st = { t: L.dur, dur: L.dur, L: L, absorbed: 0, max: p.ward, tk: 0 };
+      fx.ring(p.x, p.y, 8, 60, 400, '#d86a98', 5); fx.burst(p.x, p.y, 12, '#6ac8ff', 140, 500, 3, { add: true });
+      return true;
+    },
+    dash: function (slot, r, L, p) {   // Zancada carmesí: embestida en línea recta (respeta paredes y obstáculos), invulnerable 0,25 s
+      var ang = dashAng(p); if (ang == null) return false;
+      var x0 = p.x, y0 = p.y, cx = Math.cos(ang), cy = Math.sin(ang), d = 0, stop = false;
+      while (d < L.dist && !stop) {
+        var st = Math.min(12, L.dist - d), ox = p.x, oy = p.y, ex = ox + cx * st, ey = oy + cy * st;
+        p.x = ex; p.y = ey;
+        G.Boss.collide(p, p.r); if (G.Tundra.on) G.Tundra.collide(p, p.r); if (G.Panal.on) G.Panal.collide(p, p.r);
+        p.x = G.clamp(p.x, G.WALL + p.r, G.AW - G.WALL - p.r); p.y = G.clamp(p.y, G.WALL + p.r, G.AH - G.WALL - p.r);
+        if (Math.hypot(p.x - ex, p.y - ey) > 2) { stop = true; if (Math.hypot(p.x - ox, p.y - oy) > st + 1) { p.x = ox; p.y = oy; } }
+        else d += st;
+      }
+      var tx = p.x, ty = p.y, len = Math.hypot(tx - x0, ty - y0);
+      if (len < 24) { p.x = x0; p.y = y0; return false; }
+      p.kx = p.ky = 0; p.hurtT = Math.max(p.hurtT, 250);
+      var hits = segEnemies(x0, y0, tx, ty, 14, 10), healed = 0, i;
+      for (i = 0; i < hits.length; i++) {
+        var e = hits[i];
+        hitE(e, slot, L.dmg, { kb: 30, ang: ang, noChain: true }, ['blood', 'lightning']);
+        if (!e.partOf && e.type !== 'boss' && !e.big && healed < L.heal && !p.dead) { healed++; G.Player.heal(p, 1, 'zancada'); }
+        sfx(r, 'hit', 90);
+      }
+      if (hits.length) { var nx = CB.nearest(hits[0].x, hits[0].y, 110, [hits[0]]); if (nx) CB.chain(hits[0].x, hits[0].y, nx, 1, L.dmg * 0.8 * P.pmul, 1, 110, 'lightning', { exclude: [hits[0]], id: 'zancada' }); }
+      addField({ kind: 'trail', x: (x0 + tx) / 2, y: (y0 + ty) / 2, r: len / 2 + 34, x0: x0, y0: y0, x1: tx, y1: ty, life: 2500, interval: 400, slot: slot, L: L, r0: r });
+      addFx({ kind: 'dash', x: tx, y: ty, ang: ang, dur: 250 }); fx.burst(x0, y0, 10, '#ff6a7a', 160, 400, 3, { add: true });
+      slot.hitN = hits.length;
+      return true;
+    },
+    bolt: function (slot, r, L, p) {   // Virote corrosivo: al enemigo de más vida (jefe / élite primero); atraviesa y oxida
+      var cand = CB.inRange(p.x, p.y, 440).filter(function (e) { return !e.partOf; }); if (!cand.length) return false;
+      var boss = G.Enemies.boss && G.Enemies.boss(), t = null, i;
+      if (boss && cand.indexOf(boss) >= 0) t = boss;
+      else { var big = cand.filter(function (e) { return e.big; }), pool = big.length ? big : cand; t = pool.reduce(function (a, b) { return b.hp > a.hp ? b : a; }); }
+      var ang = Math.atan2(t.y - p.y, t.x - p.x), dT = Math.hypot(t.x - p.x, t.y - p.y), len = dT + 300, cx = Math.cos(ang), cy = Math.sin(ang), hits = [];
+      var near = CB.inRange(p.x, p.y, len + 30);
+      for (i = 0; i < near.length; i++) {
+        var e = near[i]; if (e.partOf) continue;
+        var dx = e.x - p.x, dy = e.y - p.y, u = dx * cx + dy * cy; if (u < 0 || u > len + e.r || Math.abs(-dx * cy + dy * cx) > e.r + 8) continue;
+        hits.push({ e: e, u: u });
+      }
+      hits.sort(function (a, b) { return a.u - b.u; });
+      var list = hits.slice(0, L.n).map(function (h) { return h.e; });
+      if (list.indexOf(t) < 0) list[list.length - 1] = t;
+      list.forEach(function (e, k) {
+        hitE(e, slot, L.dmg * Math.pow(0.8, k), { poison: 2, noChain: true, kb: 0, ang: ang }, ['poison', 'steel']);
+        F.corrodeApply(e, L);
+        var sp = CB.inRange(e.x, e.y, 60), n = 0;
+        for (var j = 0; j < sp.length && n < 2; j++) if (sp[j] !== e && !sp[j].partOf && list.indexOf(sp[j]) < 0) { CB.poison(sp[j], 2); n++; }
+        addFx({ kind: 'impact', id: 'virote', x: e.x, y: e.y, dur: 220 }); sfx(r, 'hit', 90);
+      });
+      var last = list[list.length - 1];
+      addFx({ kind: 'bolt', x0: p.x, y0: p.y - 4, x1: last.x, y1: last.y, ang: ang, dur: 200 });
+      return true;
     }
   };
 
+  // Corrosión (Virote): el objetivo recibe +X % de TODAS tus fuentes. En jefes / élites el bono es menor y el total (con la debilidad por etiqueta) no pasa de x1,25
+  F.corrodeApply = function (e, L) {
+    var r = e.partOf || e, big = r.type === 'boss' || r.big;
+    r.corrodeT = L.dur; r.corrodeMul = (big ? L.corrBig : L.corr) * P.corr;
+  };
+  F.corrode = function (e, tag) {   // factor final de daño por Corrosión (lo llama Combat.deal / Combat.dot)
+    var f = 1 + (e.corrodeMul || 0);
+    if (e.type !== 'boss') return f;
+    var w = mulFor(e, tag); if (w <= 0) return f;
+    return Math.min(w * f, Math.max(w, 1.25)) / w;
+  };
+  // Escudo del Cristal: se resta DESPUÉS de la Defensa (Armor.reduce) y del escudo del set; devuelve el daño que pasa
+  F.wardAbsorb = function (p, dmg) {
+    if (!(p.ward > 0)) return dmg;
+    var a = p.actives, s = null; for (var i = 0; i < NS; i++) if (a[i] && a[i].id === 'cristal' && a[i].st) s = a[i];
+    if (!s) { p.ward = 0; return dmg; }
+    var ab = Math.min(p.ward, dmg); p.ward -= ab; s.st.absorbed += ab; F.stats.absorbed = (F.stats.absorbed || 0) + ab;
+    if (p.ward <= 0.01) { p.ward = 0; s.st.t = 0; }
+    return dmg - ab;
+  };
+  function moveDir(p) {
+    var ix = (inp.held('KeyD', 'ArrowRight') ? 1 : 0) - (inp.held('KeyA', 'ArrowLeft') ? 1 : 0), iy = (inp.held('KeyS', 'ArrowDown') ? 1 : 0) - (inp.held('KeyW', 'ArrowUp') ? 1 : 0);
+    if (inp.joy && inp.joy.active) { ix += inp.joy.x; iy += inp.joy.y; }
+    return Math.hypot(ix, iy) > 0.25 ? Math.atan2(iy, ix) : null;
+  }
+  function dashAng(p) {   // hacia donde te mueves; quieto: hacia el enemigo más cercano; sin enemigos: null
+    var a = moveDir(p); if (a != null) return a;
+    var t = CB.nearest(p.x, p.y, 460); return t ? Math.atan2(t.y - p.y, t.x - p.x) : null;
+  }
+  function segEnemies(x0, y0, x1, y1, pad, max) {   // enemigos (cuerpo) a menos de pad + radio del segmento, ordenados a lo largo
+    var dx = x1 - x0, dy = y1 - y0, ll = dx * dx + dy * dy || 1, list = CB.inRange((x0 + x1) / 2, (y0 + y1) / 2, Math.sqrt(ll) / 2 + pad + 30), out = [];
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i], u = Math.max(0, Math.min(1, ((e.x - x0) * dx + (e.y - y0) * dy) / ll));
+      if (Math.hypot(e.x - (x0 + dx * u), e.y - (y0 + dy * u)) <= pad + e.r) out.push({ e: e, u: u });
+    }
+    out.sort(function (a, b) { return a.u - b.u; });
+    return out.slice(0, max || 99).map(function (o) { return o.e; });
+  }
+
+  F.hasCorrode = function () { if (activeOf('virote') < 0) return 0; var n = 0; for (var i = 0; i < G.enemies.length; i++) if (G.enemies[i].corrodeT > 0) n++; return n; };
   F.hemoDeath = function (e) {   // enemigo marcado por Hemotoxina que muere: cura (con tope por uso) y propaga el veneno
     var s = e.hemoSlot, p = G.player; e.hemoT = 0;
     if (!s || !s.st || p.dead) return;
@@ -467,9 +567,12 @@
     s.use = {};
     if (!CAST[r.kind](s, r, L, p)) { if (!auto) { fx.num(p.x, p.y - 34, 'sin objetivo', '#9a8fb0'); snd('fx_btn_cancel', 120); } return false; }
     s.cdMax = Math.round(L.cd * cdMul() * P.pcd); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
+    if (r.kind === 'dash' && L.charges > 1) {   // Nv2: 2 cargas; la 2.ª en 2,5 s sin coste extra
+      if (s.dash2 > 0) s.dash2 = 0; else { s.dash2 = 2500; s.cdFull = s.cdMax; s.cd = s.cdMax = 500; }
+    }
     F.stats.uses[s.id] = (F.stats.uses[s.id] || 0) + 1;
     sfx(r, '', 0, 1); fx.shake(3, 100);
-    if (r.sfx !== r.id || ['tormenta', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga'].indexOf(r.id) >= 0) addFx({ kind: 'cast', id: r.id, dur: 320 });
+    if (r.sfx !== r.id || ['tormenta', 'pacto', 'iman', 'forja', 'filo', 'hemo', 'descarga', 'cristal', 'zancada', 'virote'].indexOf(r.id) >= 0) addFx({ kind: 'cast', id: r.id, dur: 320 });
     return true;
   };
   function autoOK(s, r, p) {   // modo AUTO: dispara cuando hay objetivo útil
@@ -483,6 +586,14 @@
     if (k === 'fan') return CB.inRange(p.x, p.y, 200).length >= 2 || (boss && CB.inRange(p.x, p.y, 220).length >= 1);
     if (k === 'mark') return CB.inRange(p.x, p.y, 200).length >= 2 || (boss && CB.inRange(p.x, p.y, 200).length >= 1);
     if (k === 'discharge') { var pz = 0; for (var i = 0; i < G.enemies.length; i++) { var e = G.enemies[i]; if (!e.dead && e.poisonN > 0 && !e.partOf && visible(e)) pz++; } return pz >= 2 || (boss && boss.poisonN > 0); }
+    if (k === 'ward') return (p.hp < p.maxHp * 0.7 && CB.inRange(p.x, p.y, 120).length >= 2) || !!(boss && boss.atk && CB.inRange(p.x, p.y, 400).length >= 1);
+    if (k === 'dash') {
+      if (boss && boss.atk) return false;   // nunca durante la telegrafía del jefe
+      if (p.hp < p.maxHp * 0.5 && CB.inRange(p.x, p.y, 120).length >= 3) return true;
+      var a = dashAng(p); if (a == null) return false;
+      return segEnemies(p.x, p.y, p.x + Math.cos(a) * r.lv[s.lvl - 1].dist, p.y + Math.sin(a) * r.lv[s.lvl - 1].dist, 14, 10).length >= 5;
+    }
+    if (k === 'bolt') { if (boss && CB.inRange(p.x, p.y, 440).indexOf(boss) >= 0) return true; var q = CB.inRange(p.x, p.y, 440); return q.some(function (e) { return e.big; }) || (!boss && q.length >= 2); }
     return false;
   }
 
@@ -492,7 +603,8 @@
     if (s.flash > 0) s.flash -= dt;
     if (s.press > 0) s.press -= dt;
     if (s.readyT > 0) s.readyT -= dt;
-    if (s.cd > 0) { s.cd -= dt; if (s.cd <= 0) { s.cd = 0; if (s.used) { s.readyT = 700; sfxFallback(r, 'ready', 'fx_ready'); snd('fx_btn_ready', 200); } } }
+    if (s.dash2 > 0) { s.dash2 -= dt; if (s.dash2 <= 0) { s.dash2 = 0; s.cdMax = s.cdFull; s.cd = s.cdFull; } }
+    if (s.cd > 0) { s.cd -= dt; if (s.cd <= 0) { s.cd = 0; if (s.used && !s.dash2) { s.readyT = 700; sfxFallback(r, 'ready', 'fx_ready'); snd('fx_btn_ready', 200); } } }
     var st = s.st; if (!st) return;
     st.t -= dt;
     if (r.kind === 'beam') {
@@ -523,10 +635,22 @@
       st.tk = (st.tk || 0) - dt;
       if (st.tk <= 0) { st.tk = 500; st.marks.forEach(function (e) { if (e.dead || !(e.hemoT > 0)) return; e.hemoT = Math.max(e.hemoT, st.t); CB.bleed(e); if (!(e.poisonT > 600)) e.poisonT = 900; }); }
     }
+    if (r.kind === 'ward') {
+      st.tk -= dt; if (st.tk <= 0) { st.tk = 250; var wn = CB.inRange(p.x, p.y, p.r + 22); for (var wi = 0; wi < wn.length; wi++) CB.slow(wn[wi], 0.3, 600); }
+      if (p.ward > 0 && st.t > 0 && (st.snd = (st.snd || 0) - dt) <= 0) { st.snd = 450; sfx(r, 'zone', 0); }
+    }
     if (st.t <= 0) {
+      if (r.kind === 'ward') wardBreak(s, r, p);
       if (r.kind === 'mark') st.marks.forEach(function (e) { e.hemoT = 0; });
       s.st = null;
     }
+  }
+  function wardBreak(s, r, p) {   // el escudo se rompe o caduca: onda con daño 20 + 1,5 x absorbido; se retira solo el escudo del poder
+    var L = s.st.L, dmg = L.dmg + L.per * s.st.absorbed, near = CB.inRange(p.x, p.y, L.r);
+    p.ward = 0;
+    for (var i = 0; i < near.length; i++) hitE(near[i], s, dmg, { slow: [0.5, 2000], stun: 600, noChain: true, kb: 40, ang: Math.atan2(near[i].y - p.y, near[i].x - p.x) }, ['blood', 'ice']);
+    addFx({ kind: 'nova', x: p.x, y: p.y, r: L.r, dur: 450, nk: 'shatter' }); sfx(r, 'hit', 0); fx.shake(4, 140);
+    fx.burst(p.x, p.y, 16, '#6ac8ff', 220, 500, 3, { add: true });
   }
   function updateAxes(dt, p) {
     for (var i = F.axes.length - 1; i >= 0; i--) {
@@ -578,6 +702,12 @@
       }
       if (f.tk <= 0) {
         f.tk = f.interval;
+        if (f.kind === 'trail') {
+          var tl = segEnemies(f.x0, f.y0, f.x1, f.y1, 15, 99);
+          for (j = 0; j < tl.length; j++) hitE(tl[j], f.slot, f.L.tdmg || 8, { noChain: true, kb: 0, stun: 300 }, ['blood', 'lightning']);
+          if (Math.random() < 0.7) { var tu = Math.random(); fx.dot(f.x0 + (f.x1 - f.x0) * tu, f.y0 + (f.y1 - f.y0) * tu, G.rnd(-30, 30), G.rnd(-50, -10), 400, '#ffe45a', 2, { add: true }); }
+          continue;
+        }
         list = CB.inRange(f.x, f.y, f.r);
         if (f.kind === 'storm') {
           var sl = list.filter(function (en) { return en.slowT > 0 && !en.partOf; }), pool = sl.length ? sl : normalFoes(list);
@@ -615,6 +745,7 @@
   }
   F.update = function (dt, base) {
     var p = G.player; if (p.dead) return;
+    corrodeN = F.hasCorrode();
     var i, s;
     for (i = F.timers.length - 1; i >= 0; i--) { F.timers[i].t -= dt; if (F.timers[i].t <= 0) { var fn = F.timers[i].fn; F.timers.splice(i, 1); fn(); } }
     for (i = F.fxs.length - 1; i >= 0; i--) { F.fxs[i].t += dt; if (F.fxs[i].t > F.fxs[i].dur) F.fxs.splice(i, 1); }
@@ -649,6 +780,9 @@
     for (var i = 0; i < F.fields.length; i++) {
       var f = F.fields[i], u = Math.min(1, f.life / 400, (f.max - f.life) / 250 + 0.2);
       if (f.kind === 'storm') { if (!art('storm', c, f.x, f.y, f.r, t, u)) G.FusionArt.cloud(c, f.x, f.y, f.r, t, 'vapor', u * 0.6); }
+      else if (f.kind === 'trail') {
+        if (!art('trail', c, f.x0, f.y0, f.x1, f.y1, 1 - f.life / f.max)) { c.save(); c.globalAlpha = Math.min(1, f.life / 600) * 0.7; c.strokeStyle = '#ff6a7a'; c.lineWidth = 12; c.lineCap = 'round'; c.beginPath(); c.moveTo(f.x0, f.y0); c.lineTo(f.x1, f.y1); c.stroke(); c.restore(); }
+      }
       else if (f.kind === 'magnet') { if (!art('magnet', c, f.x, f.y, f.r, t, u)) G.FusionArt.cloud(c, f.x, f.y, f.r, t, 'vapor', u * 0.5); }
       else {
         G.FusionArt.cloud(c, f.x, f.y, f.r, t, f.kind === 'gas' ? 'gas' : 'vapor', u);
@@ -665,6 +799,12 @@
     var p = G.player, i, j, a2 = A2();
     for (i = 0; i < F.fxs.length; i++) {   // efectos en vuelo
       var o = F.fxs[i], u = o.t / o.dur;
+      if (o.kind === 'dash') { if (!art('dashGhost', c, o.x, o.y, o.ang, u)) { c.save(); c.globalAlpha = 0.5 * (1 - u); c.fillStyle = '#ff6a7a'; for (j = 1; j <= 3; j++) { c.beginPath(); c.arc(o.x - Math.cos(o.ang) * j * 30, o.y - Math.sin(o.ang) * j * 30, 12, 0, 6.283); c.fill(); } c.restore(); } continue; }
+      if (o.kind === 'bolt') {
+        var bx = o.x0 + (o.x1 - o.x0) * Math.min(1, u * 1.6), by = o.y0 + (o.y1 - o.y0) * Math.min(1, u * 1.6);
+        if (!art('virote', c, bx, by, o.ang, u)) { c.save(); c.strokeStyle = '#9ad05a'; c.lineWidth = 4; c.globalAlpha = 1 - u; c.beginPath(); c.moveTo(bx - Math.cos(o.ang) * 30, by - Math.sin(o.ang) * 30); c.lineTo(bx, by); c.stroke(); c.restore(); }
+        continue;
+      }
       if (o.kind === 'nade') { var x = o.x0 + (o.x1 - o.x0) * u, y = o.y0 + (o.y1 - o.y0) * u - Math.sin(u * Math.PI) * 60; G.FusionArt.nade(c, x, y, u * 12); }
       else if (!a2) continue;
       else if (o.kind === 'cast') a2.cast(c, o.id, p.x, p.y, u);
@@ -681,10 +821,12 @@
       var s = p.actives && p.actives[i]; if (!s || !s.st) continue;
       var st = s.st;
       if (RBY[s.id].kind === 'beam') G.FusionArt.beam(c, st.x0, st.y0, st.x1, st.y1, st.L.w, G.time / 1000);
+      else if (RBY[s.id].kind === 'ward') { var wu = Math.max(0, p.ward / (st.max || 1)); if (!art('ward', c, p.x, p.y, s.lvl > 1 ? 66 : 56, G.time / 1000, 1, wu)) { c.save(); c.globalAlpha = 0.3 + 0.4 * wu; c.strokeStyle = '#d86a98'; c.lineWidth = 4; c.beginPath(); c.arc(p.x, p.y, 40, 0, 6.283); c.stroke(); c.restore(); } }
       else if (RBY[s.id].kind === 'orbit') for (j = 0; j < st.bodies.length; j++) G.FusionArt.dagger(c, st.bodies[j].x, st.bodies[j].y, st.bodies[j].a + Math.PI / 2);
       else if (RBY[s.id].kind === 'mark' && a2) for (j = 0; j < st.marks.length; j++) { var e = st.marks[j]; if (!e.dead && e.hemoT > 0) a2.mark(c, e.x, e.y, e.r + 4, G.time / 1000); }
     }
     for (i = 0; i < F.axes.length; i++) { var ax = F.axes[i]; if (a2) a2.axe(c, ax.x, ax.y, ax.t / 1000, 1); else { c.fillStyle = '#ff8a2a'; c.beginPath(); c.arc(ax.x, ax.y, 18, 0, 6.283); c.fill(); } }
+    if (corrodeN > 0) for (i = 0; i < G.enemies.length; i++) { var ce = G.enemies[i]; if (ce.corrodeT > 0 && !ce.dead && visible(ce) && !art('status', c, 'corrode', ce.x, ce.y, ce.r, G.time / 1000)) { c.save(); c.strokeStyle = '#9ad05a'; c.setLineDash([3, 4]); c.beginPath(); c.arc(ce.x, ce.y, ce.r + 3, 0, 6.283); c.stroke(); c.restore(); } }
     if (p.fusBuffT > 0 && a2) a2.aura(c, p.x, p.y, G.time / 1000, Math.min(1, p.fusBuffT / 500), 26);
   };
   function sweep(c, x, y, r, frac) {

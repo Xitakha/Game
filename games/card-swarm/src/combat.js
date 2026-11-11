@@ -138,7 +138,8 @@
     }
     if (e.expT > 0) dmg *= e.expMul;   // ventana de exposición de los minijefes (x1,5 / x1,4) desde cualquier ángulo
     if (e.dmgIn && e.dmgIn !== 1) dmg *= e.dmgIn;   // P4.5: herida abierta de la Hidra Joven (x1,3)
-    dmg = Math.max(1, dmg) * G.B.cardDmgMul;   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
+    dmg = Math.max(1, dmg) * G.B.cardDmgMul;
+    if (e.corrodeT > 0) dmg *= G.Fusion.corrode(e, tag);   // FUSION: Corrosión del Virote (+X % de todas las fuentes; jefes: tope x1,25 con la debilidad)   // multiplicador global de balance (sin redondeo: así -2 % cuenta también en golpes pequeños)
     if (e.type === 'boss') { dmg *= G.Fusion.P.bossMul; }   // FUSION: ?bossmul (el x3,5 global del bosque dejaba a los jefes en 30 s)
     if (e.type === 'boss') { dmg = G.Boss.mulIn(e, dmg, tag, o); if (dmg <= 0) return 0; }   // debilidades, Vellón, ventanas, deduplicado cuerpo+parte
     if (e.mini) { /* P4.5: la parte la gasta Minis.onHit */ }
@@ -187,6 +188,7 @@
   // Daño por estados (sin knockback ni efectos de combo de impacto)
   C.dot = function (e, n, tag) {
     n *= G.B.cardDmgMul;
+    if (e.corrodeT > 0) n *= G.Fusion.corrode(e, tag);
     if (e.mat) { e.mm = B.matMul(e, tag); n *= e.mm; }   // también los ticks de estados (A.8)
     if (e.type === 'boss') { n = G.Boss.mulIn(e, n, tag, { proj: true, dot: true }); if (n <= 0) return false; }
     if (e.expT > 0) n *= e.expMul;
@@ -220,6 +222,7 @@
     if (e.dotT > 0) e.dotT -= dt;
     if (e.slowT > 0) e.slowT -= dt;
     if (e.stunT > 0) e.stunT -= dt;
+    if (e.corrodeT > 0) e.corrodeT -= dt;
     if (e.burnT > 0) {
       e.burnT -= dt;
       if (Math.random() < 0.12) fx.flames(e.x, e.y - 4, 1, e.r * 0.6);

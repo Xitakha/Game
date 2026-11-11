@@ -50,6 +50,10 @@
     }
     try { G.Loot.noteHit(o.src); } catch (e) { /* racha sin daño */ }
     if (p.shield > 0) { var ab = Math.min(p.shield, dmg); p.shield -= ab; dmg -= ab; if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'escudo', '#ff9aa8', true); G.sfx('hit', { pitch: 1.6, vol: 0.5 }); return false; } }
+    if (p.ward > 0 && G.Fusion && G.Fusion.wardAbsorb) {   // Cristal de sangre: escudo del poder, tras la Defensa y el escudo del set (sin tope de 20)
+      dmg = G.Fusion.wardAbsorb(p, dmg);
+      if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'cristal', '#d86a98', true); G.sfx('hit', { pitch: 1.8, vol: 0.5 }); return false; }
+    }
     p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln + (AR ? AR.ims() : 0);
     if (eng) AR.onHit(p, o.soft);
     if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; if (G.Tundra.on) G.Tundra.hurtKb(p); G.fx.shake(7, 200); G.fx.hit(40); }   // Tundra: retroceso x1,6 en hielo con tope (B.1.2)

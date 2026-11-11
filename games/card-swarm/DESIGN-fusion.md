@@ -64,11 +64,10 @@ Reglas de daño del activo:
 | Dos cartas iguales | Como hoy: sube el Nv de la infusión (1-3) = "versión mejorada del ataque básico". Renombrar el texto "FUSIÓN Nv" a "REFUERZO Nv" para no confundir. |
 | 3.er activo | Si hay 2 activos, hay que elegir cuál reemplazar (confirmación). El reemplazado da +20 Ceniza. |
 | 3 etiquetas | NO existe fusión triple. Un activo no se vuelve a fusionar con una tercera carta. Con 3 etiquetas en mano, el jugador elige qué pareja fusionar. |
-| Parejas sin receta | Sangre+Hielo, Sangre+Rayo, Veneno+Acero: sin receta en v1 (la UI no las ofrece). Ver decisión 3. |
 | Combos pasivos actuales | **Se desactivan los 12** (`C.combos` vacío con flag): ya se convierten 1:1 en las 12 fusiones. Si no, doble pago. |
 | Resonancia / talentos del árbol / Rango de forja | Desactivados en el prototipo (`G.Tree.fx = {}`, `Loot.rm = 1`) para medir el diseño con "cuenta vacía". Guardado con otra clave de `localStorage` y otro `CACHE` en `sw.js`, para no tocar el progreso del juego real. |
 
-## 4. Tabla de fusiones (12 = los 12 combos actuales, 1:1)
+## 4. Tabla de fusiones (12 = los 12 combos actuales, 1:1; las 3 parejas restantes, secc. 14: 15 en total)
 
 Daño tras `cardDmgMul`. DPS aprox. a Nv1. Estados: `blind` (NUEVO: pierde objetivo/no dispara a distancia; en jefes/élites no aplica, sustituido por +20 % de daño recibido).
 
@@ -87,7 +86,7 @@ Daño tras `cardDmgMul`. DPS aprox. a Nv1. Estados: `blind` (NUEVO: pierde objet
 | 11 | Sangre+Veneno | **Hemotoxina** | Marca hasta 6 enemigos: sangrado + veneno x3; los marcados que mueren curan al jugador y propagan el veneno | sangrado 5 dps + veneno | 6 s, alcance 200 | 13 s | 9 marcados, cura máx. 3 HP por uso | bleed, poison | Letea (Sangre F1-2, Veneno F3: ideal). Débil contra Melaria/Karceron. |
 | 12 | Veneno+Rayo | **Descarga tóxica** | Rayo global sobre los envenenados visibles: consume el veneno (8 por stack). Sin envenenados: aplica 1 stack a 5 enemigos (no daña) | 12 + 8 por stack | pantalla visible | 12 s | 12 por stack | poison (consume) | Letea F3; combina con infusión de Veneno. Requiere preparación. |
 
-Validación de tu tabla: los 8 pares son coherentes y entran tal cual (cambios menores: Imán sin daño directo grande para ser táctico; Plasma limitado a 12 objetivos/tick). Se añaden 4 (Forja, Filo gélido, Hemotoxina, Descarga tóxica) porque son los combos pasivos actuales que de otro modo desaparecerían. Quedan sin receta 3 de las 15 parejas posibles.
+Validación de tu tabla: los 8 pares son coherentes y entran tal cual (cambios menores: Imán sin daño directo grande para ser táctico; Plasma limitado a 12 objetivos/tick). Se añaden 4 (Forja, Filo gélido, Hemotoxina, Descarga tóxica) porque son los combos pasivos actuales que de otro modo desaparecerían. Las 3 parejas restantes (Sangre+Hielo, Sangre+Rayo, Veneno+Acero) reciben receta en la sección 14.
 
 ### Infusiones de la mano (efecto en el ataque básico)
 
@@ -182,7 +181,7 @@ Meta de calibración: con el bot, supervivencia al jefe 40-60 % (igual a la refe
 |---|---|---|
 | v0 | Copia aislada; ataque básico + infusiones; 1 slot activo; 4 fusiones (Vapor, Plasma, Gas inflamable, Sed de hierro); disparo manual (botón móvil + `Q`); CD con círculo; inicio con 1 carta; primera fusión ayudada; combos pasivos desactivados. Sin auto, sin Nv2, sin bots. | 3-4 días |
 | v1 | 12 fusiones; 2 slots y reemplazo; Nv2 por re-fusión; modo auto; panel "PODERES"; ajuste de bots; calibración con `?cmul`; informe de métricas. | 4-5 días |
-| v2 (opcional) | Sonido/arte propios por activo, parejas sin receta, integración con la Base y el árbol si gusta. | según resultado |
+| v2 (opcional) | Sonido/arte propios por activo, integración con la Base y el árbol si gusta. | según resultado |
 
 Recursos para `asset-scout` / `audio-designer` (v1): iconos 32x32 de 12 poderes (o glifos procedurales en `assets`), VFX: nube, rayo continuo, zona de tormenta, granada, esporas, nova, tirón magnético, hacha, abanico de hielo, marcas, rayo global; ~12 SFX de lanzamiento (+ "listo" y "fusión" ya existen: `fuse`, `combo`), 1 sonido de botón. Prioridad v0: 4 iconos, 4 VFX y 4 SFX.
 
@@ -202,7 +201,7 @@ Recursos para `asset-scout` / `audio-designer` (v1): iconos 32x32 de 12 poderes 
 
 1. **Cartas con arma propia o solo infusión.** ¿Las cartas de la mano siguen disparando como hoy (conservador: menos riesgo, más caos de efectos) o se convierten en infusiones del básico (propuesta: lectura clara, más trabajo en `weapons.js`)? Recomendación: infusión.
 2. **Fuentes de la fusión.** ¿Se consumen las dos cartas (propuesta) o solo una? Consumir ambas da más tensión, pero hace más lenta la build.
-3. **Parejas sin receta (Sangre+Hielo, Sangre+Rayo, Veneno+Acero).** ¿Sin fusión, "fusión inestable" con activo genérico, o crear 3 poderes más?
+3. **Parejas sin receta (Sangre+Hielo, Sangre+Rayo, Veneno+Acero).** RESUELTA: se crearon 3 poderes más (sección 14, implementados).
 4. **Subida de Nv de activos.** Re-fusión (propuesta) frente a pagar Ceniza (~60) con una carta de la etiqueta. La segunda da un uso nuevo a la Ceniza.
 5. **Meta de cuenta.** ¿El prototipo parte de cuenta vacía (propuesta) o conserva árbol y Rango de forja? Con ellos, el balance es más difícil de leer.
 
@@ -222,7 +221,7 @@ Hueco de diseño que rellenan (los 12 actuales son casi todos "daño + estado" s
 
 Reglas de detalle:
 
-- **Cristal de sangre**: el escudo es `p.shield` (el mismo del set Sangre 4+ / Reina). Se aplica DESPUÉS de la Defensa (`Armor.reduce`) y antes de bajar PV. Tope temporal 45 (el tope 20 del set no lo recorta); al terminar se retira solo lo que quede del escudo del poder, no el del set. Recastear con el escudo activo está bloqueado (`s.st` activo). El daño de la onda cuenta el escudo REALMENTE absorbido (tope 45 -> máx. 87 de daño base antes de `pmul`). Jefes: sin aturdimiento ni slow doble; tope por uso `bossCap`.
+- **Cristal de sangre** (IMPLEMENTADO con `p.ward`, no `p.shield`: comprobado en `combat.js` que el set Sangre hace `p.shield = Math.min(20, p.shield + 10)`, que RECORTARÍA un escudo de 45 a 20, y la Reina suma sin tope; por eso el escudo del poder vive aparte y se resta tras `p.shield`). Se aplica DESPUÉS de la Defensa (`Armor.reduce`) y antes de bajar PV. Tope temporal 45 (el tope 20 del set no lo recorta); al terminar se retira solo lo que quede del escudo del poder, no el del set. Recastear con el escudo activo está bloqueado (`s.st` activo). El daño de la onda cuenta el escudo REALMENTE absorbido (tope 45 -> máx. 87 de daño base antes de `pmul`). Jefes: sin aturdimiento ni slow doble; tope por uso `bossCap`.
 - **Zancada carmesí**: respeta paredes y límites del mapa (se corta en la colisión). Invulnerabilidad = `p.hurtT = 250` (no toca la Defensa). No se puede lanzar durante telegrafía letal del jefe en modo auto. La estela es un `field` (cuenta en `maxFields` = 4 y en el tope de 2 zonas de activo). Daño de la embestida y de la estela: etiqueta dinámica `pickTag(['blood','lightning'])`.
 - **Virote corrosivo**: Corrosión = nuevo estado `e.corrodeT` / `e.corrodeMul`, aplicado como factor final en `hitE` y en `F.basicHit` (el básico y las infusiones también se benefician). No se acumula (se refresca la duración). En jefes el factor se suma a la debilidad y el total sigue topado en x1,25 (por eso su uso estrella son las fases SIN debilidad activa). No aplica veneno a inmunes (Melaria) pero sí Corrosión. No rompe escudos frontales ni placas (eso es de Forja).
 
