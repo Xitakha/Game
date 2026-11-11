@@ -1353,3 +1353,30 @@ Arte procedural mínimo, mismo estilo que la aldea (contorno `#1b1124`, color pl
 - `Assets.drawFog(ctx, w, h, tMs, { alpha, layers, view })`: con `view` ({x, y, w, h} del mundo visible) cada capa se pinta una vez en un lienzo que se repite cada 3 columnas y por fotograma se copian 1-2 trozos de la vista; sin `view` es el dibujo teselado de antes. `?fogc=0` fuerza el teselado.
 - `Assets.rthr(id, s, render)`: usada por `Assets.drawBoss` de los 6 jefes; repinta el lienzo del cuerpo como mucho cada 24 ms y reutiliza el resultado entre medias (no se aplica con `s.dying`). `?thr=0` la desactiva. El contrato del estado `s` no cambia.
 - `G.txt` cachea las cadenas con contorno que se repiten (lienzo pequeño por cadena + escala); `?txc=0` lo desactiva.
+
+
+---
+
+## Armadura y taller de Carapa (v8): `src/sfx_armor.js`
+Audio procedural (sin muestras). **Cargar tras `sfx_fusion2.js`** (necesita `G.Snd.V/tone/hiss`; si no existen, no hace nada). El programador anade el `<script>` y engancha. Todo suena con `G.Snd.play(nombre, pitch)` (respeta mute/volumen master, tope 4 voces por nombre). Los niveles estan medidos (pico 0,03-0,27 antes del master, sin saturar; ni `fuse` ni `card_select` quedan tapados).
+Atajo: `G.Snd.armor(tipo, arg, pitch)`; `G.Snd.armornames` lista todos los ids.
+
+| Id | Atajo | Uso |
+|---|---|---|
+| `smith_hammer1/2/3`, `smith_hammer` (aleatorio de los 3, con micro-variacion de tono) | `armor('hammer')` | martillazos al trabajar en el yunque (repetir cada 0,4-0,8 s) |
+| `armor_anvil` | `armor('anvil')` | yunque ligero, dos golpes agudos, al fabricar |
+| `smith_sparks` | `armor('sparks')` | chispas tras un martillazo |
+| `smith_quench` | `armor('quench')` | templar / enfriar (siseo, ~0,7 s) |
+| `smith_open` / `smith_close` | `armor('open')` / `armor('close')` | abrir / cerrar el panel del taller |
+| `armor_stitch` | `armor('stitch')` | costura (piezas de tela/Aldeano) |
+| `smith_voice1/2/3`, `smith_voice` | `armor('voice')` | tick-tick de Carapa; uno por letra o por palabra (muy corto) |
+| `armor_equip_leather` / `_metal` / `_charm` (alias `armor_equip_light` / `_heavy`) | `armor('equip','leather'\|'metal'\|'charm')` | equipar por slot: cuero (hebilla), metal (placa), talisman (campanilla) |
+| `armor_unequip_leather` / `_metal` / `_charm` | `armor('unequip', slot)` | desequipar, version mas seca y corta |
+| `armor_upgrade1/2/3` (`armor_upgrade` = +1) | `armor('upgrade', 1..3)` | mejora: golpe + campanilla ascendente (2, 3 y 4 notas); +3 con eco y brillo |
+| `armor_craft` | `armor('craft')` | fabricar pieza: martillazo + jingle de 3 notas (~0,3 s) |
+| `armor_set2` / `armor_set4` | `armor('set2')` / `armor('set4')` | stingers al activar bono de set de 2 / 4 piezas |
+| `armor_deny` | `armor('deny')` | error / no alcanza material (dos pulsos graves, sin estridencia) |
+| `armor_hit_soft` / `armor_hit` / `armor_hit_heavy` | `armor('hit', reduccion 0..1)` | golpe amortiguado que acompana a `hurt`: <20 % soft, 20-40 % normal, >=40 % heavy. Lanzar al mismo tiempo que `hurt` |
+| `workshop_amb` | `armor('amb')` | ambiente opcional de ~1,6 s (fuelle, martillo lejano, brasas), muy bajo; repetir cada ~1,8 s solo mientras Marlo este cerca del toldo |
+
+`pitch` (2.o argumento de `play`, 3.o del atajo) multiplica la frecuencia (defecto 1). Verificado en Chromium headless: carga sin errores, renderizado offline de los 34 sonidos sin silencio ni clipping.
