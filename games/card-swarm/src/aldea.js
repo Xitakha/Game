@@ -390,6 +390,12 @@
     c.scale(M.dir < 0 ? -K : K, K);
     if (cv) c.drawImage(cv, -cv.width / 2, -cv.height / 2);
     else { c.fillStyle = '#e8dcc0'; c.beginPath(); c.arc(0, 0, 12, 0, 6.283); c.fill(); }
+    try {   // v8.1: Marlo vestido con el casco y el peto equipados (assets_armor2.js)
+      if (window.Assets && Assets.drawMarloArmor && G.Armor && !G.Armor.OFF) {
+        var eqd = G.Save.data.armor.equipped, mp = [eqd[0], eqd[1]].map(function (id) { var p = id && G.ArmorData.piece(id); return p && p.set !== 'mini' ? SET_ART[p.set] : null; });
+        if (mp[0] || mp[1]) Assets.drawMarloArmor(c, 0, 0, time, { equip: { yelmo: mp[0], peto: mp[1] }, anim: M.moving ? 'walk' : 'idle', scale: 1 });
+      }
+    } catch (eM) { /* arte opcional */ }
     c.restore();
   }
 
@@ -419,10 +425,10 @@
     return o;
   }
   function npcDrawn() { return !!(window.Assets && Assets.drawWorkshop); }   // con assets_armor.js el taller entero (toldo, Carapa, maniquí) es un actor de drawVillage
-  var SET_ART = { aldeano: 'aldeano', esquila: 'pastor', carcelero: 'karceron' };
+  var SET_ART = { aldeano: 'aldeano', esquila: 'pastor', carcelero: 'karceron', escama: 'letea', glacial: 'yarlak', jalea: 'melaria', brasa: 'cenizar' };
   function workshopActor(now) {
     var eq = {}, ids = ['yelmo', 'peto', 'grebas', 'talisman'], A_ = G.Armor, open = NPC_ORDER.indexOf('carapa') >= 0;
-    try { A_.eq().forEach(function (id, i) { var p = id && G.ArmorData.piece(id); eq[ids[i]] = p ? { set: SET_ART[p.set] || 'aldeano', ref: Math.max(0, A_.ref(id)) } : null; }); } catch (e) { /* sin equipo */ }
+    try { G.Save.data.armor.equipped.forEach(function (id, i) { var p = id && G.ArmorData.piece(id); eq[ids[i]] = p && p.set !== 'mini' ? { set: SET_ART[p.set] || 'aldeano', ref: Math.max(0, A_.baseRef(id)) } : null; }); } catch (e) { /* sin equipo */ }
     var talk = D.active() && A.lastTarget && A.lastTarget.id === 'carapa';
     return { y: 452, draw: function (c) { try { Assets.drawWorkshop(c, now, { open: open, carapa: open ? (talk ? { anim: 'talk', flip: M.x < 262 } : { flip: Math.hypot(262 - M.x, 452 - M.y) < 120 && M.x < 262 }) : false, equip: eq, hammer: open && smithBusy > 0 }); } catch (e2) { /* arte */ } } };
   }

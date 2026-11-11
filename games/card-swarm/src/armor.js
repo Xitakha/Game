@@ -111,7 +111,7 @@
     dmg *= A.mult(m, fam, G.Tree.fx.bastion, rs && rs[fam] ? rs[fam] : 0);
     if (m.set4.lana && !soft && G.time - R.lanaAt >= 25000) { R.lanaAt = G.time; dmg *= 0.5; try { G.fx.num(G.player.x, G.player.y - 30, 'LANA', '#d8e0ec', true); } catch (e) { /* fx */ } }
     R.raw += raw; R.blocked += raw - dmg;
-    var red = raw > 0 ? 1 - dmg / raw : 0; if (red >= 0.2 && !soft) { var tp = A.topSet(); if (!(tp && A.ART[tp] && A.snd2('hit', A.ART[tp]))) A.snd('hit', red); A.blockT = 260; A.blockRed = red; }
+    var red = raw > 0 ? 1 - dmg / raw : 0; if (red >= 0.2 && !soft) { var tp = A.topSet(); if (!(tp && A.ART[tp] && A.snd2('hit', A.ART[tp]))) A.snd('hit', red); A.blockT = 300; A.blockRed = red; }
     return Math.max(1, dmg);
   };
   A.onHit = function (p, soft) {
@@ -256,7 +256,7 @@
   A.pedReadyCount = function () { return A.PED.filter(A.pedReady).length; };
   A.pedClaim = function (id) {
     var d = A.PED.filter(function (x) { return x.id === id; })[0], S = SV(); if (!d || !A.pedReady(d)) return false;
-    S.armor.ped[id] = 1; S.brasas += d.reward.brasas; for (var k in d.reward.parts) G.Save.add(k, d.reward.parts[k]); G.Save.save(); A.snd('upgrade', 1); return true;
+    S.armor.ped[id] = 1; try { var qa = G.Quests.active(); if (qa && qa.kind === 'armped' && qa.ped === id) S.quest.active = null; } catch (eq) { /* encargos */ } S.brasas += d.reward.brasas; for (var k in d.reward.parts) G.Save.add(k, d.reward.parts[k]); G.Save.save(); A.snd('upgrade', 1); return true;
   };
   A.rewardText = function (d) { return d.reward.brasas + ' Brasas' + Object.keys(d.reward.parts).map(function (k) { return ' + ' + d.reward.parts[k] + ' ' + G.Loot.part(k).short; }).join(''); };
   // Se llama desde Loot.endRun con el resultado de la expedición (flags de pedidos y logros)
@@ -271,8 +271,8 @@
   // Destello de bloqueo (Assets.fxArmorBlock si existe; si no, un arco simple)
   A.blockT = 0;
   A.drawBlock = function (c, x, y) {
-    var u = 1 - Math.max(0, A.blockT) / 260;
-    try { if (window.Assets && Assets.fxArmorBlock) { Assets.fxArmorBlock(c, x, y, u, { red: A.blockRed || 0.2 }); return; } } catch (e) { /* arte opcional */ }
+    var u = 1 - Math.max(0, A.blockT) / 300;
+    try { if (window.Assets && Assets.fxArmorBlock) { if (Assets.fxArmorBlock(c, x, y, 300 - A.blockT, { scale: 1 }) === false) A.blockT = 0; return; } } catch (e) { /* arte opcional */ }
     c.save(); c.globalAlpha = 0.8 * (1 - u); c.strokeStyle = '#8ae8f0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 14 + 8 * u, -2.2, -0.9); c.stroke(); c.beginPath(); c.arc(x, y, 14 + 8 * u, 0.9, 2.2); c.stroke(); c.restore();
   };
   A.init = function () { A.dirty(); };
