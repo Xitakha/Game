@@ -273,7 +273,7 @@
     return '';
   };
   // P7 (rama 'Ruta'): trofeos de jefe necesarios (se guardan en Save.data.trophies al soltarse; no se consumen)
-  T.trophiesHave = function (n) { var t = SV().trophies || {}; return (n.trophies || []).filter(function (k) { return t[k] > 0; }).length; };
+  T.trophiesHave = function (n) { var t = SV().trophiesEver || {}; return (n.trophies || []).filter(function (k) { return t[k] > 0; }).length; };
   function trophyOK(n) { return !n.trophies || T.trophiesHave(n) >= n.trophies.length; }
   T.trophyNames = function (n) { return (n.trophies || []).map(function (k) { return (G.Boss.TROPHY[k] || { name: k }).name; }); };
   // 'owned' | 'excluded' | 'locked' | 'avail'
@@ -555,7 +555,7 @@
     var S = SV(), m = inp.mouse, t = Date.now() / 1000, i;
     c.fillStyle = '#08040e'; c.fillRect(0, 0, G.W, G.H);
     // cabecera
-    G.txt(c, 'FORJA DE GRUM', 14, 22, 24, '#ffd27a', 'left');
+    G.txt(c, 'FORJA DE GRUM', 14, 22, 24, '#ffd27a', 'left'); G.txt(c, 'Herrero de armas', 14, 40, 11, '#c8a070', 'left');
     pfIcon(c, 262, 22, 11); G.txt(c, 'PF libres ' + T.pfFree(), 280, 22, 16, T.pfFree() > 0 ? '#ffd24a' : '#9a8fb0', 'left');
     G.txt(c, T.pfEarned() + '/' + L.PF_CAP + ' ganados', 280, 38, 10, '#9a8fb0', 'left');
     U.part(c, 'brasa', 430, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 446, 22, 16, '#ff9a3c', 'left');
@@ -646,7 +646,7 @@
     if (n.trophies) {   // P7: trofeos necesarios (iluminados si ya los tienes)
       G.txt(c, 'TROFEOS  ' + T.trophiesHave(n) + '/' + n.trophies.length, DET.x + 14, 330, 11, '#9a8fb0', 'left');
       n.trophies.forEach(function (k, j) {
-        var tr = G.Boss.TROPHY[k], have = (S.trophies[k] || 0) > 0, tx = DET.x + 14 + j * 46;
+        var tr = G.Boss.TROPHY[k], have = (S.trophiesEver[k] || 0) > 0, tx = DET.x + 14 + j * 46;
         try { c.save(); c.globalAlpha = have ? 1 : 0.3; c.drawImage(Assets.sprite(tr.spr, 0), tx, 340, 40, 40); c.restore(); } catch (e0) { c.restore(); }
         if (n.trophies.length === 1) G.txt(c, tr.name + (have ? '' : '  (aún no lo tienes)'), tx + 50, 360, 11, have ? '#9dffb4' : '#ff8a8a', 'left');
       });

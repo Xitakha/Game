@@ -316,12 +316,12 @@
   M.collectInsignia = function (g) {
     var S = G.Save.data; S.insignias = S.insignias || {};
     var id = g.ins, De = D[g.mid]; if (!De) return;
-    var first = !S.insignias[g.mid]; S.insignias[g.mid] = (S.insignias[g.mid] || 0) + 1;
+    var first = !(S.insigniasEver && S.insigniasEver[g.mid]); S.insignias[g.mid] = (S.insignias[g.mid] || 0) + 1; S.insigniasEver = S.insigniasEver || {}; S.insigniasEver[g.mid] = (S.insigniasEver[g.mid] || 0) + 1;
     try { var R = G.Loot.run; (R.insignias = R.insignias || []).push(g.mid); } catch (x) { /* run */ }
     try { G.Snd.play('gem', 2.2); G.Hud.banner('INSIGNIA: ' + De.ins.name.toUpperCase() + (first ? '  (¡NUEVA!)' : ''), 1800, '#e0c8ff'); } catch (x2) { /* hud */ }
     G.Save.save(); try { G.Ach.check(); } catch (x3) { /* logros */ }
   };
-  M.insigniaCount = function () { var S = G.Save.data.insignias || {}, n = 0; M.ALL.forEach(function (k) { if (S[k]) n++; }); return n; };   // P7: las 10 (8 + Avispón Real y Reina Joven)
+  M.insigniaCount = function () { var S = G.Save.data.insigniasEver || {}, n = 0; M.ALL.forEach(function (k) { if (S[k]) n++; }); return n; };   // P7: las 10 (8 + Avispón Real y Reina Joven)
 
   // ================================================================= MUERTE
   M.onDie = function (e, silent) {

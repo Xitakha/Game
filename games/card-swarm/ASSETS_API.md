@@ -1353,3 +1353,68 @@ Arte procedural mínimo, mismo estilo que la aldea (contorno `#1b1124`, color pl
 - `Assets.drawFog(ctx, w, h, tMs, { alpha, layers, view })`: con `view` ({x, y, w, h} del mundo visible) cada capa se pinta una vez en un lienzo que se repite cada 3 columnas y por fotograma se copian 1-2 trozos de la vista; sin `view` es el dibujo teselado de antes. `?fogc=0` fuerza el teselado.
 - `Assets.rthr(id, s, render)`: usada por `Assets.drawBoss` de los 6 jefes; repinta el lienzo del cuerpo como mucho cada 24 ms y reutiliza el resultado entre medias (no se aplica con `s.dying`). `?thr=0` la desactiva. El contrato del estado `s` no cambia.
 - `G.txt` cachea las cadenas con contorno que se repiten (lienzo pequeño por cadena + escala); `?txc=0` lo desactiva.
+
+
+---
+
+## Armadura y taller de Carapa (v8): `src/sfx_armor.js`
+Audio procedural (sin muestras). **Cargar tras `sfx_fusion2.js`** (necesita `G.Snd.V/tone/hiss`; si no existen, no hace nada). El programador anade el `<script>` y engancha. Todo suena con `G.Snd.play(nombre, pitch)` (respeta mute/volumen master, tope 4 voces por nombre). Los niveles estan medidos (pico 0,03-0,27 antes del master, sin saturar; ni `fuse` ni `card_select` quedan tapados).
+Atajo: `G.Snd.armor(tipo, arg, pitch)`; `G.Snd.armornames` lista todos los ids.
+
+| Id | Atajo | Uso |
+|---|---|---|
+| `smith_hammer1/2/3`, `smith_hammer` (aleatorio de los 3, con micro-variacion de tono) | `armor('hammer')` | martillazos al trabajar en el yunque (repetir cada 0,4-0,8 s) |
+| `armor_anvil` | `armor('anvil')` | yunque ligero, dos golpes agudos, al fabricar |
+| `smith_sparks` | `armor('sparks')` | chispas tras un martillazo |
+| `smith_quench` | `armor('quench')` | templar / enfriar (siseo, ~0,7 s) |
+| `smith_open` / `smith_close` | `armor('open')` / `armor('close')` | abrir / cerrar el panel del taller |
+| `armor_stitch` | `armor('stitch')` | costura (piezas de tela/Aldeano) |
+| `smith_voice1/2/3`, `smith_voice` | `armor('voice')` | tick-tick de Carapa; uno por letra o por palabra (muy corto) |
+| `armor_equip_leather` / `_metal` / `_charm` (alias `armor_equip_light` / `_heavy`) | `armor('equip','leather'\|'metal'\|'charm')` | equipar por slot: cuero (hebilla), metal (placa), talisman (campanilla) |
+| `armor_unequip_leather` / `_metal` / `_charm` | `armor('unequip', slot)` | desequipar, version mas seca y corta |
+| `armor_upgrade1/2/3` (`armor_upgrade` = +1) | `armor('upgrade', 1..3)` | mejora: golpe + campanilla ascendente (2, 3 y 4 notas); +3 con eco y brillo |
+| `armor_craft` | `armor('craft')` | fabricar pieza: martillazo + jingle de 3 notas (~0,3 s) |
+| `armor_set2` / `armor_set4` | `armor('set2')` / `armor('set4')` | stingers al activar bono de set de 2 / 4 piezas |
+| `armor_deny` | `armor('deny')` | error / no alcanza material (dos pulsos graves, sin estridencia) |
+| `armor_hit_soft` / `armor_hit` / `armor_hit_heavy` | `armor('hit', reduccion 0..1)` | golpe amortiguado que acompana a `hurt`: <20 % soft, 20-40 % normal, >=40 % heavy. Lanzar al mismo tiempo que `hurt` |
+| `workshop_amb` | `armor('amb')` | ambiente opcional de ~1,6 s (fuelle, martillo lejano, brasas), muy bajo; repetir cada ~1,8 s solo mientras Marlo este cerca del toldo |
+
+`pitch` (2.o argumento de `play`, 3.o del atajo) multiplica la frecuencia (defecto 1). Verificado en Chromium headless: carga sin errores, renderizado offline de los 34 sonidos sin silencio ni clipping.
+
+
+---
+
+# Armaduras v8 "Carapa" (src/assets_armor.js, cargar DESPUES de assets_village.js; solo arte, sin logica)
+MVP: Carapa + 12 piezas (sets Aldeano, Pastor y Karceron x slots Yelmo/Peto/Grebas/Talisman). Mismo estilo que la aldea (contorno `#1b1124`, rasterizado x2, `t` en ms). Todas las funciones son SEGURAS: con ids desconocidos o sin `Assets._h` devuelven/dibujan una reserva simple y nunca lanzan (un `console.warn` unico). No toca `index.html` ni `sw.js`: el programador anade `<script src="src/assets_armor.js">` (y a la lista de `sw.js`).
+
+## 1) Ids aceptados
+- `setId`: `'aldeano'` (T0, cuero/lana tostado `#b8a878`), `'pastor'` (alias `'esquila'`, T1, acero `#9aa4b0` con lana y cuernos), `'karceron'` (alias `'carcelero'`, T2, hierro oscuro con brasa `#ff6a1a`). Desconocido -> `'aldeano'`.
+- `slot`: `'yelmo'`, `'peto'`, `'grebas'`, `'talisman'` (alias en ingles `helmet|chest|legs|charm`, y con tilde). Desconocido -> `'yelmo'`.
+- Silueta por slot: Yelmo = cupula (aldeano gorro con borla / pastor casco con cuernos de carnero / karceron yelmo con rejilla de brasa y pinchos); Peto = torso con hombros (jubon con cordones / placas con cuello de lana / coraza con nucleo de brasa y cadena); Grebas = DOS piernas con bota (cuero / acero con rodillera y lana / pinchos y grillete); Talisman = colgante en cordon (amuleto con casita / cuerno curvo con cascabel / llave de la cripta).
+- `Assets.ARMOR_ART` = `{ready, sets, slots, setAlias, slotAlias, rarityColors[5], rarityNames[5], refColors[4], setColors, defaultRarity, normSet(id), normSlot(id), pieceCanvas(set,slot)}`.
+
+## 2) Iconos de pieza (32x32 base = 64x64 final)
+- `Assets.armorIcon(setId, slot, refuerzo=0, {rarity, locked})` -> `canvas 64x64` **cacheado** (no modificar; es seguro dibujarlo con `drawImage`/`textures.addCanvas('armor_<set>_<slot>_<n>', c)`). 12 piezas x 4 refuerzos = 48 variantes, creadas en 1ª peticion (~0,005 ms al dibujar, ya cacheado).
+- `Assets.drawArmorIcon(ctx, setId, slot, x, y, size=32, {ref, rarity, locked, alpha})`: x,y = esquina sup. izq. Con `size<64` suaviza.
+- Capas: fondo degradado del color del set (tan / azul acero / rojo brasa) + pieza + **marco de rareza** (borde 1,5 px: 0 comun `#8f8898`, 1 poco comun `#4ac86a`, 2 raro `#4a9aff`, 3 epico `#b06aff`, 4 legendario `#ffb030`; por defecto aldeano 0, pastor 1, karceron 2; `rarity` lo sobrescribe) + **refuerzo**: +0 nada; +1 filete bronce `#c98a4a` y chapita "+1"; +2 plata `#dfe6f4` y "+2"; +3 oro `#ffd23a`, "+3" y destellos. `locked:true` = oscurecido (sin fabricar/sin tener).
+- `Assets.armorSlotIcon(slot, {hot})` -> canvas 64x64 cacheado: **slot vacio** (silueta tenue sobre casilla discontinua; `hot` = resaltado al arrastrar/seleccionar). `Assets.drawArmorSlotIcon(ctx, slot, x, y, size=32, {hot})`.
+- Defensa/HUD: sprite `icon_def` (escudo azul petroleo con aspa y gema dorada; 24x24 base = 48x48 final, 1 frame) y `Assets.drawDefIcon(ctx, x, y, size=24, {alpha})` (legible desde 16 px). Para HP de armadura / Aplomo / Afinidad reusar `icon_hp`/`icon_hp_armor` existentes o las piezas; no hay iconos nuevos de esos stats en el MVP.
+
+## 3) Carapa (NPC)
+- Sprite `npc_carapa`: 40x42 base = **80x84 final**, pies en (40,80), mira a la DERECHA (igual que los demas NPC). Armadilla azul petroleo `#3a7a86` con caparazon en bandas, hocico largo, gafas de taller en la frente, cinta metrica al cuello, delantal de cuero y martillito.
+- Frames: 0 idle, 1 idle2 (inspira), 2 parpadeo, **3-5 martillar** (3 alza, 4 golpe, 5 golpe con chispas), 6 sorpresa, 7 hablar (boca pequena), 8 hablar (boca abierta), 9 feliz.
+- Anims (`Assets.animFrame('npc_carapa', anim, t)`): `idle` (4 fps, respira + parpadeo ~5 s), `work` = martillar (6 fps; el martillo cae hacia la derecha-abajo: yunque a su derecha), `talk` (8 fps), `happy`, `surprise`.
+- `Assets.drawCarapa(ctx, x, y, t, {anim='idle', flip, scale, shadow, alpha})`: x,y = PIES (defecto sugerido 262,452). `Assets.drawNPC(ctx,'carapa',x,y,t,{anim})` tambien funciona (esta registrada en `Assets.VILLAGE.npcs.carapa` = `{name:'Carapa', title:'Armera', x:262, y:452, flip:false, color:'#3a7a86', top:66, sw:22}`; `top` para burbuja/marca `!` en y-top-8).
+- **NO se anade a `Assets.NPC_NAMES`**: `drawVillage` NO la pinta sola; la logica decide cuando aparece (tras vencer al Pastor) y la dibuja con `drawWorkshop`/`drawCarapa`.
+- Retrato: sprite `portrait_carapa` 48x48 base = **96x96 final** (marco incluido; frames 0 neutro, 1 feliz, 2 hablando; anims `neutral`, `happy`, `talk` 7 fps). `Assets.drawCarapaPortrait(ctx, x, y, {mood:0|1|2, size:96})` o `Assets.drawPortrait(ctx,'carapa',x,y,{mood})`.
+
+## 4) Taller-toldo (decor) y maniqui
+Sprites (ancla = bottom-center, tamanos finales): `vil_workshop` **192x144** (frames 0 abierto, 1-2 parpadeo del farolillo, 3 CERRADO con lona y cartel "VUELVO PRONTO"; anims `lamp` 4 fps y `closed`) | `vil_mannequin` 56x96 (base de madera + torso de tela, 1 frame) | `vil_armorrack` 80x112 (perchero con escudo, gorro y peto de cuero, 1 frame). El yunque es el `vil_anvil` de la aldea (44x28).
+- `Assets.ARMOR_WORKSHOP` (px del canvas 960x540): `carapa` (datos NPC), `workshop {x:262,y:440,sort:440}`, `mannequin {212,455}`, `rack {310,452}`, `anvil {292,454}` (golpe del martillo cae en `hammerTarget {291,436}`, chispas en `sparks {298,437}`), `colliders [{id,x,y,w,h}]` (toldo base `166,410,192x30`, maniqui, perchero, yunque), `lights [{x:342,y:340,...}]` opcional para `VILLAGE.lights`. Nota: la cumbre del toldo (y 296-308) tapa ~12 px el pie del tablon de misiones (300,308); es intencional (profundidad), no hay colision ahi.
+- `Assets.drawMannequin(ctx, x, y, equip, t, {scale})`: x,y = base-centro. `equip = {yelmo, peto, grebas, talisman}` con cada valor `'aldeano'|'pastor'|'karceron'` o `{set, ref}` o `null` (vacio). Superpone las siluetas de pieza sobre el maniqui.
+- `Assets.drawWorkshop(ctx, t, {open=true, carapa=true|false|{anim,flip}, equip, hammer=false, sparks=true})`: dibuja TODO el taller ordenado por y en coords de aldea. Pensado como UN actor de `drawVillage`: `actors:[{y:452, draw:c=>Assets.drawWorkshop(c,t,{open:bossKills.pastor>0, equip, hammer:crafting})}]`. `open:false` = toldo cerrado "Vuelvo pronto" (sin Carapa/maniqui/perchero). `hammer:true` (o `carapa:{anim:'work'}`) martilla con chispas; `carapa:{anim:'talk'}` mientras dialoga. Marlo debe ordenar con sus pies (y>452 queda delante).
+
+## 5) Fallbacks y rendimiento
+- Sin `Assets` o `_h`: `armorIcon`/`armorSlotIcon` devuelven cuadro 64x64 con letra del slot y "+n"; `drawCarapa`/`drawDefIcon` dibujan rectangulos; `drawWorkshop`/`drawMannequin` no pintan. Con `Assets` pero sin `assets_village`, `Assets.VILLAGE` puede faltar (se omite el registro de datos).
+- Coste: se crean 3 sprites NPC/retrato + 4 de decor (~25 canvases) al cargar; los iconos son perezosos y cacheados. Probado en Chromium: 0 errores; 500 `drawArmorIcon` = ~2 ms.
+- Pendiente (fuera del MVP): `fx_armor_block`, `vil_trophy_wall`, iconos `icon_set_*`/`icon_aplomo`/`icon_afinidad`, sets Letea/Yarlak/Melaria/Cenizar, overlay completo de Marlo vestido.

@@ -29,13 +29,14 @@
   P.open = function (name) {
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
     if (name === 'forge') G.Tree.open();
+    if (name === 'armor') G.Smith.open();
     if (name === 'rufo') st.rt = 0;
     if (name === 'portal') st.pv = null;
     if (name === 'vesper') { G.Quests.seen(); st.vt = st.vt || 0; huntFix(); }
     if (name === 'logros') { st.lsel = 0; st.lscroll = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
   };
-  P.closeAll = function () { cur = null; };
+  P.closeAll = function () { cur = null; st.armorFrom = null; };
   P.vesperTab = function (n) { st.vt = n; huntFix(); };   // 0 = Tablón, 1 = Cacería (lo usa el diálogo de Vesper)
   P.current = function () { return cur; };
   P.lastMsg = function () { return msg; };   // último aviso en pantalla (pruebas)
@@ -43,6 +44,7 @@
   P.update = function (dt) {
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
     if (cur === 'forge') return G.Tree.update(dt);
+    if (cur === 'armor') { var ra = G.Smith.update(dt); if (ra && st.armorFrom === 'portal') { st.armorFrom = null; cur = 'portal'; return false; } return ra; }
     var esc = inp.hit('Escape'), cl = onR(R_CLOSE);
     if (cur === 'archive' && st.edit) { updEdit(); return false; }   // renombrar un loadout: Esc/Enter terminan la edición, no cierran el panel
     if (cur === 'menu') { if (esc) return true; }
@@ -61,6 +63,7 @@
   };
   P.draw = function (c) {
     if (cur === 'forge') return G.Tree.draw(c);
+    if (cur === 'armor') return G.Smith.draw(c);
     if (cur === 'vesper') drawVesper(c);
     else if (cur === 'rufo') drawRufo(c);
     else if (cur === 'portal') drawPortal(c);
@@ -348,7 +351,9 @@
     if (i >= 0) a.splice(i, 1); else { a.push(id); if (a.length > G.B.anchorSlots) a.shift(); }
     G.Save.save(); G.sfx('card_select', { vol: 0.5 });
   }
+  var R_EQUIP = { x: 752, y: 4, w: 136, h: 46 };
   function updPortal() {
+    if (G.Armor.smithOn() && onR(R_EQUIP)) { st.armorFrom = 'portal'; P.open('armor'); G.sfx('flip', { vol: 0.5 }); return false; }
     var S = SV(), i, list = unlockedList();
     for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
@@ -385,6 +390,11 @@
   function drawPortal(c) {
     var S = SV(), list = unlockedList(), i, Q = G.Quests;
     bg(c, '¿LISTO, MARLO?'); header(c, 360);
+    if (G.Armor.smithOn()) {   // v8: defensa recomendada del destino y acceso al taller sin caminar
+      var AR = G.Armor, cbi = effBiome(), rec = AR.recDef(cbi.id), my = Math.round(AR.OFF ? 0 : AR.get().def), col = my >= rec ? '#7dff9a' : my >= rec * 0.7 ? '#ffd24a' : '#ff8a6a';
+      G.txt(c, 'DEF ' + my + ' / recomendada ' + rec, 520, 24, 13, AR.OFF ? '#7a7086' : col, 'left');
+      U.button(c, R_EQUIP, 'EQUIPO', { size: 16, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: AR.readyCount() ? AR.readyCount() + ' listas' : null });
+    }
     G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 94, 12, '#9a8fb0', 'left');
     drawHand(c);
     G.txt(c, G.B.anchorSlots + ' anclas fijas; el resto se llena al subir de nivel.', 20, 236, 11, '#9a8fb0', 'left');
@@ -484,7 +494,7 @@
   }
   P.anchorCombos = function (ids) { return comboNames(ids).map(function (cb) { return cb.k; }); };   // para pruebas
   function saveLoadout(i) {
-    var S = SV(); S.loadouts[i] = { name: (S.loadouts[i] && S.loadouts[i].name) || 'LOADOUT ' + (i + 1), anchors: S.anchors.slice(), dish: S.pending.dish || null, len: S.len };
+    var S = SV(); S.loadouts[i] = { name: (S.loadouts[i] && S.loadouts[i].name) || 'LOADOUT ' + (i + 1), anchors: S.anchors.slice(), dish: S.pending.dish || null, len: S.len, armor: S.armor.equipped.slice() };
     G.Save.save(); G.sfx('card_select', { vol: 0.6 }); say('Loadout ' + (i + 1) + ' guardado: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas') + ', ' + S.len + ' min.');
   }
   function applyLoadout(i) {
@@ -497,6 +507,10 @@
       if (cur && cur.id === lo.dish) extra = '  Plato ya preparado.';
       else if (cur) extra = '  (Ya hay otro plato preparado.)';
       else { var r = G.Cook.cook(lo.dish); extra = '  ' + r.msg; }
+    }
+    if (lo.armor && Array.isArray(lo.armor)) {   // v8: equipa las piezas del loadout si existen; avisa de las que faltan
+      var miss = 0; lo.armor.forEach(function (id, sl) { if (!id) return; if (G.Armor.owned(id)) S.armor.equipped[sl] = id; else miss++; }); G.Armor.dirty();
+      if (miss) extra += '  (Faltan ' + miss + ' pieza' + (miss > 1 ? 's' : '') + ' de armadura.)';
     }
     G.Save.save(); G.sfx('card_select', { vol: 0.7 });
     say('Loadout "' + lo.name + '" aplicado: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas') + ', ' + S.len + ' min.' + extra);
@@ -575,7 +589,7 @@
     // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
     G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 42, 10, '#c8a0ff', 'left');
     G.Minis.ALL.forEach(function (mid, k) {
-      var have = (S.insignias || {})[mid], ix = 686 + k * 26;
+      var have = (S.insigniasEver || {})[mid], ix = 686 + k * 26;
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
     // detalle de la carta

@@ -19,6 +19,7 @@
   // Ralentiza al jugador (no apila: se queda con el mayor % y refresca la duración al máximo)
   P.slow = function (p, pct, ms) {
     if (p.dead) return;
+    var ap = G.Armor && G.Armor.apl(); if (ap) { pct *= 1 - ap; ms *= 1 - ap; }   // v8 Aplomo (Grebas): menos potencia y duración de ralentizaciones
     p.slowPct = Math.max(p.slowT > 0 ? p.slowPct : 0, pct); p.slowT = Math.max(p.slowT, ms);
   };
 
@@ -26,6 +27,7 @@
   // (weapons.js lo aplica como factor al avance del cooldown; los jefes no lo usan).
   P.cdSlow = function (p, pct, ms) {
     if (p.dead) return;
+    var ap = G.Armor && G.Armor.apl(); if (ap) { pct *= 1 - ap; ms *= 1 - ap; }
     p.cdSlowPct = Math.min(0.4, Math.max(p.cdSlowT > 0 ? p.cdSlowPct : 0, pct)); p.cdSlowT = Math.min(2000, Math.max(p.cdSlowT, ms));
   };
 
@@ -36,14 +38,20 @@
     if (G.Boss.noHurt > 0 || G.Boss.intro) return false;   // intro del jefe y victoria: invulnerable
     if (o.slow) P.slow(p, o.slow[0], o.slow[1]);
     var a = Math.atan2(p.y - sy, p.x - sx), k = 12 * (o.kb != null ? o.kb : 1);
+    if (G.Armor && G.Armor.apl()) k *= 1 - G.Armor.apl();   // Aplomo: menos retroceso
     if (G.dbg) { var D = G.dbg.dmg; D[o.src || '?'] = (D[o.src || '?'] || 0) + dmg; }
     if (G.god) { p.hurtT = 300; return false; }
     // Fase 2b: Bastión (Acero, -10 %), platos de Tía Castaña (resistencia por familia de enemigo), escudo de Sed (set Sangre)
+    var AR = G.Armor, eng = AR && AR.engaged();
+    if (eng) dmg = AR.reduce(dmg, o.src, o.soft);   // v8: zoneDmg + armadura + Bastión + platos con tope global (0,55 de multiplicador mínimo)
+    else {
     if (G.Tree.fx.bastion) dmg *= 0.9;
     var rs = G.runBuff && G.runBuff.fx && G.runBuff.fx.res; if (rs) { var fam = P.family(o.src); if (rs[fam]) dmg *= 1 - rs[fam]; }
+    }
     try { G.Loot.noteHit(o.src); } catch (e) { /* racha sin daño */ }
     if (p.shield > 0) { var ab = Math.min(p.shield, dmg); p.shield -= ab; dmg -= ab; if (dmg <= 0.01) { p.hurtT = o.soft ? 250 : 400; G.fx.num(p.x, p.y - 18, 'escudo', '#ff9aa8', true); G.sfx('hit', { pitch: 1.6, vol: 0.5 }); return false; } }
-    p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln;
+    p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln + (AR ? AR.ims() : 0);
+    if (eng) AR.onHit(p, o.soft);
     if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; if (G.Tundra.on) G.Tundra.hurtKb(p); G.fx.shake(7, 200); G.fx.hit(40); }   // Tundra: retroceso x1,6 en hielo con tope (B.1.2)
     else G.fx.shake(2, 80);
     G.fx.num(p.x, p.y - 18, Math.round(dmg), '#ff5a5a', true);

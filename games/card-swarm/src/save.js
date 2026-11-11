@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v10 (v8 Herrero): armor { owned, equipped, seen, stats, ped }, trophiesEver / insigniasEver (acumulado: Ruta, logros y Archivo; trophies / insignias pasan a ser saldo gastable), loadouts[i].armor, stats.playMs, flags.smithMet / smithGift. Migración v9 -> v10 con copia en swarmhand.fusion.save.v9: regala set Aldeano + Peto de cada jefe vencido.
    v9 (P7, Integración): portalSeen { destino: 1 } (destinos ya vistos abiertos en el Portal: los recién desbloqueados se marcan 'NUEVO'); la rama 'Ruta' del árbol usa nodos normales (nodes) y los trofeos ya guardados (trophies);
    los platos nuevos y las misiones nuevas no necesitan datos propios (shop.dish / pending.dish / quest). Migración v8 -> v9 con copia en swarmhand.save.v8: los destinos que ya tenías abiertos salen como vistos.
    v8 (P6.5, Cenizar): peligro.cenizar, endingSeen (cinemática final vista), trofeos de Cenizar; el Cráter se abre al vencer a los 5 jefes. Migración v7 -> v8 con copia en swarmhand.save.v7.
@@ -16,7 +17,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.fusion.save', VERSION = 9;
+  var KEY = 'swarmhand.fusion.save', VERSION = 10;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -34,12 +35,14 @@
       quest: { active: null, prog: {}, done: {} },
       shop: { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 }, pending: { tonic: 0, magnet: 0, dish: null },
       flags: {},
+      trophiesEver: {}, insigniasEver: {}, stats: { playMs: 0 }, armor: freshArmor(),
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
       peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
+  function freshArmor() { return { owned: {}, equipped: [null, null, null, null], seen: {}, stats: { blocked: 0, crafts: 0 }, ped: {} }; }
   var warned = false;
   S.save = function () {
     try { localStorage.setItem(KEY, JSON.stringify(S.data)); S.ok = true; }
@@ -86,6 +89,19 @@
       if (['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(function (b) { return bk8[b] > 0; })) d.portalSeen.crater = 1;
       d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated9 = 1;
     }
+    if (d.v === 9) {   // v8 Herrero: trofeos / insignias acumulados, armadura vacía y regalo de bienvenida (Aldeano + Peto por jefe vencido)
+      d.v = 10; var cp = function (o) { var r = {}; if (o && typeof o === 'object') for (var k in o) r[k] = o[k]; return r; };
+      d.trophiesEver = cp(d.trophies); d.insigniasEver = cp(d.insignias); d.stats = { playMs: 0 }; d.armor = freshArmor();
+      d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated10 = 1;
+      var bk9 = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {};
+      if (bk9.pastor > 0) {
+        var a = d.armor, SETS = [['aldeano', null, 0], ['esquila', 'pastor', 1], ['carcelero', 'karceron', 2]];
+        ['ald_helm', 'ald_chest', 'ald_boots', 'ald_amulet'].forEach(function (id) { a.owned[id] = 0; });
+        a.equipped = ['ald_helm', 'ald_chest', 'ald_boots', 'ald_amulet'];
+        SETS.forEach(function (st) { if (st[1] && bk9[st[1]] > 0) { var pid = st[0] === 'esquila' ? 'esq_chest' : 'car_chest'; a.owned[pid] = 0; a.equipped[1] = pid; } });
+        d.flags.smithGift = 1;
+      }
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -107,7 +123,11 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen', 'trophiesEver', 'insigniasEver', 'stats', 'armor'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    var ar = d.armor; ['owned', 'seen', 'stats', 'ped'].forEach(function (k) { if (!ar[k] || typeof ar[k] !== 'object') ar[k] = freshArmor()[k]; });
+    if (!Array.isArray(ar.equipped) || ar.equipped.length !== 4) ar.equipped = [null, null, null, null];
+    if (typeof ar.stats.blocked !== 'number') ar.stats.blocked = 0; if (typeof ar.stats.crafts !== 'number') ar.stats.crafts = 0;
+    if (typeof d.stats.playMs !== 'number') d.stats.playMs = 0;
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
@@ -175,6 +195,8 @@
         if (id === 'brasas') S.data.brasas += n;
         else if (id === 'all') G.Loot.PARTS.forEach(function (p) { S.add(p.id, n); });
         else if (G.Loot.part(id)) S.add(id, n);
+        else if (G.Boss.TROPHY[id]) { S.data.trophies[id] = (S.data.trophies[id] || 0) + n; S.data.trophiesEver[id] = (S.data.trophiesEver[id] || 0) + n; }   // v8: ?give=horn:3
+        else if (G.Minis && G.Minis.D[id]) { S.data.insignias[id] = (S.data.insignias[id] || 0) + n; S.data.insigniasEver[id] = (S.data.insigniasEver[id] || 0) + n; }
       });
     }
     if ((m = /[?&]pf=(\d+)/.exec(q))) S.data.pf.earned = Math.min(G.Loot.PF_CAP, S.data.pf.earned + parseInt(m[1], 10));

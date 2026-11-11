@@ -56,6 +56,51 @@ Vuelve a estar activo: **aldea** (`?direct=1` salta directo a la partida, para p
 - **Textos del árbol (v2)**: los talentos de Chispa / Esquirla / Dardo dicen ahora que actúan sobre la infusión del básico y los 5 sets de Resonancia avisan de que valen para básico, poderes y armas auxiliares y que fusionar gasta cartas. Doble pago revisado: los 12 combos pasivos siguen apagados (`C.active = {}`), Pacto no suma el pasivo del original; la Resonancia (+25 % por etiqueta con 3 cartas) sí multiplica poderes de esa etiqueta, pero fusionar consume cartas y suele romper el set, así que es una decisión y no un doble cobro acumulable (no se ha medido con el bot).
 - **Queda abierto**: los efectos de plato / Ruta sobre "combos" no existen en el original; no se ha jugado a mano una campaña completa (aldea -> 6 jefes -> Cráter) con el nuevo sistema, solo humo con bots (ver Balance).
 
+## v8: Carapa, la Armera (MVP del Herrero de armaduras)
+Diseño: `DESIGN-v8-herrero.md` (decisiones del dueño: Carapa tras el Pastor, defensa DEF/(DEF+120) con tope global 45 %, `zoneDmg` creciente por bioma, sin PF en los costes, Marlo vestido en fase posterior, Grum casi igual, meta ~16 h). Arte `src/assets_armor.js`, audio `src/sfx_armor.js` (contratos en `ASSETS_API.md`).
+- **Qué hay**: NPC Carapa y su taller en la aldea (aparece al volver de vencer al Pastor con una escena de 4 burbujas y el regalo del set Aldeano; las cuentas con el Pastor vencido la ven en la primera apertura tras actualizar), panel del taller (`src/smith.js`: EQUIPO / FABRICAR / SETS / PEDIDOS, comparación de DEF / HP / Aplomo / bonos antes de equipar, auto-equipar, doble toque = equipar, refuerzos +1..+3, Q/E o deslizar para pestañas, 1-4 slots), chip EQUIPO y "DEF X / recomendada Y" en el Portal, loadouts de Ulalume con `armor`, línea de DEF en la pausa y "Daño evitado por armadura" en el botín.
+- **Piezas (12)**: 4 slots (Yelmo +HP, Peto resistencia de familia, Grebas Aplomo + ms de invulnerabilidad, Talismán Afinidad = +% de daño de la etiqueta del set) x 3 sets: Aldeano (T0, bono 2 = +4 HP), Esquila de Hierro (T1, Acero, melee; 4 piezas = Lana gruesa, cada 25 s el siguiente golpe -50 %), Carcelero de Brasa (T2, Fuego, explosiones; 4 piezas = Grilletes ardientes, pulso r70 de 20 de daño cada 6 s). Los sets de Letea, Yarlak, Melaria y Cenizar son solo datos nuevos en `src/armor_data.js`.
+- **Defensa**: `DEF_total = sum(DEFbase[tier] x peso_slot x (1 + 0,15 x refuerzo))`, `RD = DEF/(DEF+K)` (K 120), `mult = max(0,55, (1-RD)(1-res familia)(1-Bastión)(1-plato))`. Esquila +1 completo = DEF 13,8 = 10,3 %. Mínimo por golpe >= 1. Topes: HP de armadura +25, Aplomo 40 %, +100 ms de invulnerabilidad, +10 % de daño por etiqueta, resistencia de familia (Peto + bono) 15 %.
+- **Costes**: sin PF. Brasas + parte principal (x `TREE_PART_MUL` de la etiqueta) + secundaria + trofeo (Yelmo / Peto / Grebas) o las 2 insignias del bioma (Talismán), por tier T0 80 / T1 140 / T2 220 Brasas (Peto-unidad; Yelmo y Grebas x0,7, Talismán x0,6). Refuerzo +1 = 20 % de las Brasas y partes x0,5 y 1 trofeo; +2 = 30 %, x0,6, 1 trofeo, Rango de forja II (nodo R2 de Grum) y haber vencido al jefe en Peligro II; +3 = 40 %, x0,8, 2 trofeos, 1 Esencia, Rango III y Peligro III. Aldeano solo llega a +1.
+- **Trofeos e insignias se gastan**: `trophies` / `insignias` son el saldo; `trophiesEver` / `insigniasEver` son el acumulado (Ruta de Grum, logros, Archivo y Lanudo leen de ahí).
+- **Grum**: título "Herrero de armas" en su panel, 3 líneas nuevas sobre Carapa y los refuerzos +2/+3 piden Rango II/III. Nada más cambia en su árbol, PF, Ruta ni anclas.
+- **Pedidos de Carapa (7) y logros (4)**: pedidos propios en la pestaña PEDIDOS (Tomar medidas, Costura doble, Mosaico, Refuerzo, Sin rasguños, Cazador de insignias, A pelo); logros Armero aficionado, Cuatro latidos, Refuerzo triple y Cordero sin lana.
+- **Desvíos del diseño (honestos)**: (1) los refuerzos gastan CUALQUIER trofeo del jefe del set (no el de la pieza concreta; la fabricación sí pide el trofeo concreto): recorta el riesgo de RNG sin pity; no hay pity de trofeos; (2) las insignias pasan a ser saldo gastable (`insignias`) con `insigniasEver` acumulado, igual que los trofeos; (3) los pedidos de Carapa tienen su lista propia (no pasan por `quests.js`) y los logros son 4 en vez de 7; (4) `zoneDmg` solo está activo por defecto en Bosque y Cripta; (5) Peto / Grebas del set Aldeano (T0) usan 2 % y 3 % (el doc no da T0); (6) no hay `fx_armor_block`, botón EQUIPO en la pausa (solo la línea de DEF) ni modo "probar equipo"; (7) el retroceso de la Tundra se escala con el Aplomo después de su propio multiplicador; (8) `BRASAS_MIN` 21 no está validado con bots (el bot no mide economía).
+- **Tiempo de juego**: `Save.data.stats.playMs` (ms reales con la página activa; se guarda cada 30 s) para medir las horas de verdad.
+- **Guardado v10** (`swarmhand.fusion.save`; copia `swarmhand.fusion.save.v9` al migrar): `armor { owned, equipped, seen, stats, ped }`, `trophiesEver`, `insigniasEver`, `stats.playMs`, `flags.smithMet / smithGift`, `loadouts[i].armor`. Migración sin pérdida: regala el set Aldeano y, por cada jefe ya vencido (Pastor, Karceron), el Peto de su set, y equipa lo mejor.
+- **Perillas por URL**: `?arm=0` (sin armadura, sin `zoneDmg` y `BRASAS_MIN` 18: simulación como antes), `?armk=120`, `?armcap=0.45`, `?zdmg=1,1.1,1.18,1.26,1.34,1.44` (valores por bioma; activa todos), `?zdmgall=1` (valores del doc en todos los biomas), `?armset=esquila:1[,carcelero:2]` o `?armtier=1&armref=1` (equipa ese set en memoria, sin tocar el guardado: para bots), `?armcost=1`, `?armhp=1`, `?armdmg=1`, `?smith=1` (Carapa desbloqueada), `?brasasmin=21`, `?give=horn:3,carnero:2` (trofeos e insignias; ids de `G.Boss.TROPHY` / `G.Minis.D`).
+
+### Valores por defecto (v8 MVP)
+| Palanca | Valor |
+|---|---|
+| `K` (defensa) / tope de reducción | 120 / 45 % (mult. mín. 0,55) |
+| `zoneDmg` | Bosque x1,00, Cripta x1,10 (activos); Asfodelo 1,18, Tundra 1,26, Panal 1,34, Cráter 1,44 solo con `?zdmgall=1` o `?zdmg=` (aún no hay set de esos tiers) |
+| `BRASAS_MIN` | 21 (antes 18; `?arm=0` o `?brasasmin=18` lo devuelven) |
+| DEFbase T0 / T1 / T2 | 2 / 4 / 6 (x peso 0,7 / 1 / 0,7 / 0,6) |
+| Refuerzo | +15 % de DEF y de la estadística por nivel |
+
+### Balance v8 medido (bots, `speed=4`, `PAR=4`, n=12 por celda, cuenta vacía con `?armset=` para equipar el set en memoria)
+Referencia sin armadura (`?arm=0`, idéntica bit a bit al código anterior): bosque 412 +- 38 s; la misma configuración por defecto (mismo código en la rama antigua) dio 380 +- 55 s: **el ruido entre lotes iguales es de ~+-30 s (ee 11-16)**, así que diferencias menores de ~40 s no son medibles.
+| Celda (play_bot, hasta el jefe a 450 s) | Supervivencia | Daño evitado | HP perdidos/min |
+|---|---|---|---|
+| Bosque `?arm=0` / por defecto (sin armadura, zoneDmg 1,00) | 412 +- 38 / 380 +- 55 s | 0 % | 34 / 30 |
+| Bosque Esquila +1 (DEF 13,8) | 412 +- 56 s | 20 % | 38 |
+| Bosque Esquila +3 (DEF 17,4) | 436 +- 40 s | 22 % | 44 |
+| Cripta `?arm=0` / sin armadura (zoneDmg 1,10) | 450 / 450 (12/12 llegan al jefe) | 0 % | 24 / 23 |
+| Cripta Carcelero +1 (DEF 20,7) / +3 (DEF 26,1) | 450 / 450 | 16 % / 20 % | 24 / 24 |
+| Cripta Esquila +1 (un tier menos) | 450 | 22 % | 22 |
+| Pelea (boss_fight.js, mano p50 y 4 poderes, `hp0=999`) | Peligro I | Peligro III |
+|---|---|---|
+| Pastor `?arm=0` / Esquila +1 / Esquila +3 | 11/12, minHp 31 / 11/12, minHp 49 / 12/12, minHp 42 | 8/12, minHp 16 / 10/12, minHp 25 / 9/12, minHp 20 |
+| Karceron `?arm=0` / sin armadura (x1,10) / Carcelero +1 / +3 | 10/12 / 11/12 / 11/12, minHp 51 / 12/12, minHp 52 | 8/12 / 7/12, minHp 13 / 8/12, minHp 17 / 8/12, minHp 29 (Aldeano solo: 7/12) |
+Lectura honesta:
+- Lo que SÍ se cumple: el daño evitado por armadura con el set del tier es del 16-22 % del bruto (objetivo 10-25 %); la vida mínima de la pelea sube (Pastor 31 -> 49, Karceron 34 -> 51 en Peligro I); con `?arm=0` la simulación es idéntica a la de antes y la cuenta vacía en el Bosque no cambia (380-412 s, mismo código).
+- Lo que NO se puede confirmar con este bot: (1) el ratio de supervivencia >= 1,25 con set del tier +1 frente a sin armadura: en el Bosque la referencia ya llega a ~400 de los 450 s posibles (tope de ratio ~1,14) y en la Cripta los 12 bots llegan siempre al jefe, así que la supervivencia está saturada; (2) la caída de >= 20 puntos de victorias sin armadura del tier: `zoneDmg` x1,10 en la Cripta no mueve el win-rate (Karceron 10-11/12 en Peligro I; 8/12 -> 7/12 en Peligro III, dentro del ruido de +-3 victorias con n=12); (3) el tope de +20 puntos con +3: nunca se pasa del 100 % porque la línea base ya es 83-92 % en Peligro I; en Peligro III +1 y +3 quedan en 8-10/12 frente a 8/12. El daño medio por minuto del bot (HP perdidos) tiene demasiada dispersión para ver un +10 % de `zoneDmg` (23 frente a 24 por min).
+- Por tanto los valores por defecto son los del diseño (sin retocar) y el equilibrio fino del reto (¿es `zoneDmg` 1,10 suficiente?) queda para una sesión humana en móvil; las perillas `?zdmg=`, `?armk=`, `?armcap=`, `?armdmg=` y `?armcost=` permiten ajustarlo sin recompilar. Con el bot no se midió Cripta con el set de un tier más ni Cenizar.
+
+### Pruebas v8
+`node tools/card-swarm-bot/tests.js armor` (guardado v10 y migración, panel con toques en 844x390, fabricar / equipar / reforzar, trofeos gastables con `*Ever`, fórmula de defensa y tope, `?arm=0`, `zoneDmg`, `playMs`, escena de Carapa). `all` = 218 comprobaciones, 0 errores de consola. Regresión: con Math.random sembrado y reloj sintético, 12 puntos de control de una partida (jugador quieto, recibiendo daño) son idénticos bit a bit entre el commit anterior (207bd24) y esta versión con `?arm=0`, y también con los valores por defecto en una cuenta vacía.
+
 ## Cómo probarlo
 ```
 python3 tools/serve.py card-swarm 8811      # desde la raíz del repo -> http://localhost:8811/index.html
@@ -63,7 +108,7 @@ python3 tools/serve.py card-swarm 8811      # desde la raíz del repo -> http://
 Parámetros de balance v2 (todos sin recompilar, valores por defecto entre paréntesis): `?cmul=` (3,5 daño global) `?bossmul=` (0,2 daño a jefes, encima de cmul) `?bosscap=` (0,03 tope de vida del jefe por uso de poder, en daño base) `?pmul=` (3 daño de poderes) `?pcd=` (0,6 factor de cooldown de poderes) `?pinf=` (0,25 bono del básico por nivel de poder activo) `?infmul=` (0,7 bono de las infusiones) `?bcd=` (500 ms cadencia del básico) `?bdmg=` (10) `?vstep=` (4 niveles por disparo extra; 0 = sin volley) `?vmax=` (3) `?vdmg=` (0,8) `?vpow=` (2) `?lvheal=` (0,20 cura de vida máx. al subir de nivel) `?fuseheal=` (25 PV al fusionar) `?xpfirst=` (6) `?xpmul=` (1) `?auxmul=` (0,4 daño de armas auxiliares) `?auxcd=` (1,5). Otros: `?direct=1` (sin aldea), `?all=1` (todas las cartas desbloqueadas), `?actives=vapor,plasma,forja2,hemo` (poderes de inicio; sufijo 2 = Nv2; ids: vapor plasma gas sed tormenta escarcha pacto iman forja filo hemo descarga), `?hand=spark:1,shard:1`, `?boss=pastor&nointro=1&prep=0`, `?assault=1` (Cenizar), `?god=1`, `?speed=4`, `?cmul=` (daño global), `?aux=0&auxmul=&auxcd=`, `?fuseAsh=`, `?bosscap=`, `?nosw=1`, `?reset=1`.
 
 Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swarm-bot/`):
-- `node tools/card-swarm-bot/tests.js [all|iso|flow|powers|ui|village|touch|boss|balance]` (0 errores de consola en cada una; `iso` ahora comprueba PWA: manifest, caché `fusionhand-*`, precache completo, guardado `swarmhand.fusion.*`).
+- `node tools/card-swarm-bot/tests.js [all|iso|flow|powers|ui|village|touch|boss|balance|armor]` (0 errores de consola en cada una; `iso` ahora comprueba PWA: manifest, caché `fusionhand-*`, precache completo, guardado `swarmhand.fusion.*`).
 - `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` mismo bot sobre el clásico (`python3 tools/serve.py card-swarm-clasico 8812`); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
 
 ## Balance

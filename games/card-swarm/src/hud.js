@@ -176,6 +176,7 @@
     if (G.mode === 'practice') U.button(c, PB.redo, 'REINICIAR PRÁCTICA', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     var ask = quitAsk > now;
     U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a' });
+    if (G.Armor && !G.Armor.OFF && G.Armor.get().any) { var am = G.Armor.get(); G.txt(c, 'DEF ' + Math.round(am.def) + '  =  ' + Math.round(am.rd * 1000) / 10 + ' % de reducción   HP +' + am.hp + '   Aplomo ' + Math.round(am.apl * 100) + ' %', G.W / 2, 372, 12, '#6ac8d8', 'center'); }
     G.txt(c, 'Conservas las partes recogidas', G.W / 2, 388, 12, '#ffb347', 'center');
     if (G.Sys.isTouch()) {
       G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 424, 14, '#d8cfe8', 'center');

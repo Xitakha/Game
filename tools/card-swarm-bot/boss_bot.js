@@ -36,9 +36,12 @@ const BOT = () => {
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const all = {};
-  for (const bo of BOSSES) {
-    const S = SET[bo]; all[bo] = [];
-    for (let g = 0; g < N; g++) {
+  const jobs = []; for (const bo of BOSSES) { all[bo] = []; for (let g = 0; g < N; g++) jobs.push([bo, g]); }
+  let nj = 0;
+  async function worker() {
+    while (nj < jobs.length) {
+      const [bo, g] = jobs[nj++], S = SET[bo];
+      try {
       const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];
       pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
       const q = (bo === 'cenizar' ? 'assault=1' : 'boss=' + bo) + '&nointro=1&prep=0&noprep=1&direct=1&all=1&reset=1&speed=' + SPEED + '&hand=' + S.hand + (NOACT ? '' : '&actives=' + S.act) + EXTRA;
@@ -50,10 +53,14 @@ const BOT = () => {
         r = await pg.evaluate(() => { const e = G.Enemies.boss(); return { st: G.state, t: Math.round(G.runT / 1000), won: G.won, hp: Math.round(G.player.hp), boss: e ? Math.round(e.hp / e.maxHp * 100) : null, uses: G.Fusion.stats.uses }; });
         if (r.st === 'gameover') break;
       }
+      r.arm = await pg.evaluate(() => ({ blocked: Math.round(G.Armor.run.blocked), raw: Math.round(G.Armor.run.raw) })).catch(() => ({ blocked: 0, raw: 0 }));
       all[bo].push(r); console.log(`${bo} #${g + 1}: ${r.st === 'gameover' ? (r.won ? 'VICTORIA' : 'muerte') : 'sin fin'} t=${r.t}s bossHp=${r.boss}% usos=${JSON.stringify(r.uses)} errs=${errs.length}`);
       await pg.close(); await ctx.close();
+      } catch (ex) { console.log('ERR', bo, g, ex.message); }
     }
   }
+  await Promise.all(Array.from({ length: Math.min(+process.env.PAR || 1, jobs.length) }, worker));
+  BOSSES.forEach(bo => { const a = all[bo], ts = a.map(x => x.t), m = ts.reduce((x, y) => x + y, 0) / ts.length, bl = a.reduce((x, y) => x + y.arm.blocked, 0), rw = a.reduce((x, y) => x + y.arm.raw, 0); console.log(`  ${bo}: victorias ${a.filter(x => x.won).length}/${a.length}, t medio ${Math.round(m)}s, evitado ${rw ? Math.round(100 * bl / rw) : 0} %`); });
   console.log('RESUMEN jefes (sinPoderes=' + NOACT + '): ' + BOSSES.map(bo => bo + ' ' + all[bo].filter(x => x.won).length + '/' + N).join('  '));
   await b.close();
 })();

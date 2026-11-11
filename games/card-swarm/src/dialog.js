@@ -50,7 +50,7 @@
     var s = st; if (!s) return;
     var prev = s.n;
     s.n = Math.min(pageLen(s), s.n + CPS * dt / 1000);
-    if (Math.floor(s.n / 3) !== Math.floor(prev / 3) && !done(s)) G.sfx('hit', { pitch: 2.4 + (s.who.pitch || 0), vol: 0.05, vary: 0.2 });
+    if (Math.floor(s.n / 3) !== Math.floor(prev / 3) && !done(s)) { if (s.who.voice && G.Armor) G.Armor.snd('voice'); else G.sfx('hit', { pitch: 2.4 + (s.who.pitch || 0), vol: 0.05, vary: 0.2 }); }
     var m = inp.mouse, click = inp.hit('Mouse0'), i;
     if (inp.hit('Escape')) { if (!s.choices.length || true) { st = null; } return; }
     if (done(s) && lastPage(s) && s.choices.length) {

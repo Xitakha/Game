@@ -285,7 +285,7 @@
   // =============================================================== LOGROS (Abuelo Lanudo)
   // Cada logro desbloquea un recuerdo que Lanudo cuenta. Sin recompensa material (la economía no cambia).
   var A = G.Ach = {};
-  function insN(s) { return Object.keys(s.insignias || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
+  function insN(s) { return Object.keys(s.insigniasEver || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
   A.DEFS = [
     { id: 'first', name: 'Primera salida', desc: 'Termina tu primera expedición.', ok: function (s) { return s.runs >= 1; },
       lore: 'Tu primera salida... Yo volví de la mía sin la mitad del bigote. Tú pareces entero.' },
@@ -326,6 +326,14 @@
       lore: 'Crampones, humo, guantes... Cada bioma pide su abrigo. Tú ya los llevas todos.' },
     { id: 'aliento', name: 'Aliento del Cráter', desc: 'Reúne los 6 trofeos de Cenizar y forja el Aliento del Cráter.', ok: function () { return G.Tree.owned('RT7'); },
       lore: 'Seis trofeos de un incendio. Ahora el Cráter respira contigo, no contra ti.' },
+    { id: 'arm1', name: 'Armero aficionado', desc: 'Fabrica tu primera pieza de armadura (Carapa).', ok: function (s) { return s.armor && s.armor.stats.crafts >= 1; },
+      lore: 'Carapa dice que cosiste bien. Ella nunca dice eso. Cuídalo, chaval.' },
+    { id: 'arm4', name: 'Cuatro latidos', desc: 'Equipa 4 piezas del mismo set.', ok: function (s) { var m = G.Armor && G.Armor.get(); return !!m && Object.keys(m.sets).some(function (k) { return m.sets[k] >= 4; }) || !!(s.flags && s.flags.arm_set4); },
+      lore: 'Cuatro piezas a juego. Se te ve el porte de un pastor... o de un carcelero.' },
+    { id: 'armup', name: 'Refuerzo triple', desc: 'Lleva una pieza a +3.', ok: function (s) { return !!s.armor && Object.keys(s.armor.owned).some(function (k) { return s.armor.owned[k] >= 3; }); },
+      lore: 'Una pieza a +3. Grum templó el metal y Carapa cosió la última puntada. Eso sí que aguanta.' },
+    { id: 'armbare', name: 'Cordero sin lana', desc: 'Vence a un jefe en Peligro II sin armadura equipada.', ok: function (s) { return !!(s.flags && s.flags.arm_bare); },
+      lore: 'Sin una sola pieza. Carapa se tapó los ojos; yo no pude dejar de mirar.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Crea 5 fusiones distintas.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Crea las 12 fusiones.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

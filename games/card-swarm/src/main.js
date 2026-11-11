@@ -514,6 +514,7 @@
   G.resetClock = function () { last = performance.now(); acc = 0; };   // tras una pausa del navegador: sin saltos de tiempo
   function frame(t) {
     var raw = t - last, d = Math.min(100, raw); last = t; acc += d * G.speed;
+    try { var sv = G.Save.data.stats; sv.playMs += d; if (sv.playMs - (G._pmSaved || 0) > 30000) { G._pmSaved = sv.playMs; G.Save.save(); } } catch (ep) { /* contador de tiempo de juego (stats.playMs) */ }
     G.Sys.frame(raw);
     var n = 0, maxN = Math.ceil(6 * G.speed);
     while (acc >= G.STEP && n < maxN) { step(); acc -= G.STEP; n++; }
