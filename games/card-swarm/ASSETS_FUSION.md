@@ -48,3 +48,19 @@ Pendiente: variantes distintas de Nv2 (solo se escala radio/cantidad desde la l�
 
 Cargar DESPUÉS de `sfx_fusion2.js` (`<script src="src/sfx_fusion3.js">`). Ids: `cristal` (ward), `zancada` (dash), `virote` (bolt). Mismo API: `G.Snd.play('fx_<id>[_hit|_zone|_ready|_fuse]', pitch)` o `G.Snd.fx2(id, 'cast'|'hit'|'zone'|'ready'|'fuse', pitch)`. 15 sonidos, añadidos a `S.fx2names` (y `S.fx3names`). ROOT: cristal 1,26, zancada 0,95, virote 0,67. Volumen máx. 0,18.
 Duraciones: cristal 0,4 / hit 0,35 / zone 0,3 (bucle ~450 ms); zancada 0,3 / hit 0,1 / zone 0,25 (bucle ~450 ms); virote 0,35 / hit 0,25 / zone = eco suave de hit (no se usa, sin campo). `_ready` ~0,3 s, `_fuse` ~0,9 s. Verificado en Chromium: 0 errores.
+
+## Fusiones 13-15 (`src/assets_fusion3.js`)
+Cristal de sangre (`cristal`), Zancada carmesí (`zancada`), Virote corrosivo (`virote`). Cargar DESPUÉS de `assets_fusion2.js` (el programador añade el `<script>`). Extiende `G.FusionArt2` (envuelve las funciones previas; los ids viejos siguen igual) y `G.FusionArt.icon`. Mismas garantías: save/restore, errores en `lastError`, `G.time`, `G.fg`. Probado en Chromium: 0 errores, ~0,56 ms por galería completa (captura `studio/docs/capturas-herrero/arte_fusion3_galeria.jpg`).
+
+`ids` pasa a 15; `states` incluye `corrode`; `COLORS`: `cristal #d86a98`, `zancada #ff6a7a`, `virote #9ad05a`.
+
+| Función | Capa | Uso |
+|---|---|---|
+| `icon(c,id,x,y,s)` / `btn(c,id,...)` | HUD | Los 3 ids nuevos (s 11 / 22 / 0,55 x r38). `btn` mantiene su API (para estos ids usa una copia propia, porque el `btn` de fusion2 no los conoce). |
+| `ward(c,x,y,r,t,alpha,u)` | aire | Bucle alrededor del jugador, r 56 / 66; `t` seg; `u` = escudo restante 0..1 (8 esquirlas, 6 bajo 0,5; grietas bajo 0,6; parpadea con `u<0.2`, que equivale al último segundo: pasar `u` real o `1 - tRestante/dur`). |
+| `shatter(c,x,y,r,u)` = `nova(c,x,y,r,u,'shatter')` | suelo | Onda de rotura r 100 / 120, `u` 0..1 en ~450 ms (rojo oscuro a azul hielo). |
+| `trail(c,x0,y0,x1,y1,u)` | suelo | Estela de Zancada, `u` = edad 0..1 (2,5 s), ancho 30; se desvanece con `u`. Llamar una vez por campo. |
+| `dashGhost(c,x,y,ang,u)` | aire | 3 postimágenes rojas detrás de (x,y) en dirección `ang`; ~250 ms (`addFx` kind `dash`). |
+| `virote(c,x,y,ang,u)` | aire | Proyectil 40x8 con halo verde y rastro; vuelo ~180 ms. Impacto: `impact(c,'virote',x,y,u,14)`. |
+| `status(c,'corrode',x,y,s,t)` | aire | Corrosión: 3 gotas verdes que caen + línea punteada óxido bajo el enemigo (`s` = radio, `t` seg). |
+| `cast(c,id,x,y,u)` / `impact(c,id,x,y,u,s)` | - | Aceptan `cristal`, `zancada`, `virote`. |
