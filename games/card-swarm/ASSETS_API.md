@@ -1489,3 +1489,24 @@ Assets.cine.list  // [{id,name,dur}]  ;  Assets.cine.ids ; Assets.cine.dur(id)
 - **Espacio**: cada escena se compone en un espacio virtual de 540 px de alto (ancho = `w/h*540`), asi que sirve igual para 960x540 que para 844x390. Los textos/globos los pone el motor de logica ENCIMA (franja inferior, ~y > 70 % de `h`, queda sombra para legibilidad).
 - **Memoria y rendimiento**: capas de fondo (cielo, lejano, medio, suelo, primer plano) cacheadas en offscreen, recortadas en vertical y las lejanas a menor resolucion; cache LRU de 2 escenas (+ titulo): ~6-9 MB por escena a 960x540. `preload(id,w,h,opts)` construye las capas con antelacion (llamar durante la vineta anterior; construir tarda 5-25 ms en CPU lenta, ~1 ms en GPU). `free()` vacia todas las caches (llamar al terminar la intro). Cada fotograma: unas pocas docenas de drawImage + glows cacheados (sin `shadowBlur`, sin `filter`); medido en Chromium sin GPU (software) 6-10 ms por fotograma con lectura forzada, 0 errores en 148 llamadas (calm/lite/bars).
 - Notas: Marlo se dibuja con el sprite real `player` (mapache); el primer plano de la vineta `bufanda` es un busto vectorial propio. Los personajes se oscurecen por codigo (cache por fotograma) con luz de fogata para encajar con el tono. Capturas: `studio/docs/capturas-herrero/cine-1.jpg`, `cine-2.jpg`, `cine-3.jpg`.
+
+---
+
+# Audio de entradas de jefe v9 - FASE 2 (src/sfx_cine2.js; cargar DESPUES de sfx_cine.js)
+Solo audio procedural (WebAudio), contexto propio que sigue desbloqueo, mute, volumen y suspend de Assets. No usa `G.rng` ni toca la simulacion. Seguro (try/catch; sin audio devuelve `false`). Tono oscuro. Sin pistas: son SFX.
+
+## `G.Snd.cine2(tipo, bossId, opts, pitch)` (tambien `Assets.cine2`) -> true si sono
+`bossId` = `pastor | karceron | letea | yarlak | melaria | cenizar` (desconocido = pastor). `pitch` (defecto 1) multiplica las frecuencias.
+| tipo | opts | Uso | Contenido |
+|---|---|---|---|
+| `'appear'` | `{short:true}` = ~1,6 s (resto de veces); sin opts = ~4,5 s (1.a vez) | Lanzar UNA vez en **t = 0** de la intro del jefe (a la vez que `S.spawn` pone `mode='intro'`) | Presagio + aparicion con firma propia: Pastor (silbido de caida, zampona disonante, cencerros torcidos), Karceron (rumor de lava, cadenas, yunque), Letea (goteo, 3 cabezas con 3 notas disminuidas, siseo), Yarlak (ventisca, 3 pasos con crujido, vaho, campana de hielo), Melaria (enjambre estereo, cera, descenso), Cenizar (5 chispas = 5 notas, rugido) |
+| `'plate'` | - | Golpe de cartel con el nombre (~1,4-2,8 s con cola); un tono por jefe | Impacto grave + tono/campana del jefe. Larga: lanzarlo a ~1,0 s; corta: a ~0,2 s |
+| `'preroll'` | `bossId` ignorado | Prerrollo de Cenizar (6 s, solo 1.a vez, antes de `S.spawn`) | 0-2 s aire y latido lejano; 2-4 s cinco grietas con el timbre de Pastor, Karceron, Letea, Yarlak y Melaria (cada 0,38 s) + latido acelerado y crescendo; 3,5-4,0 succion y corte a negro; 4,1 golpe de cartel "CENIZAR"; cola que muere hacia 6 s |
+| `'stop'` | - | Al saltar la cinematica: fundido de 150 ms de todo lo de cine2 | Luego el motor ejecuta los efectos de estado como siempre |
+
+## Encaje con `boss.js` (para no pisar la pista de combate)
+- La energia de `appear` se concentra antes de `0,69 x len` (la pista `S.track` y `stg_<jefe>_intro` entran ahi): impacto/rugido en `0,51 x len` (2,3 s larga / 0,8 s corta, igual que el hito `roar`), y despues solo cola baja (RMS < 5 % del cuerpo en la larga). El stinger `stg_<jefe>_intro` y el `sfx('boss_roar')` existentes se pueden mantener; `appear` no los sustituye ni los duplica en frecuencias graves: si se quiere limpiar, quitar `boss_roar` en la entrada larga.
+- Aterrizaje del Pastor ~1,0 s (larga) / 0,36 s (corta).
+- Re-disparo del mismo sonido < 300 ms se ignora. Maximo 6 reproducciones vivas (para `stop`).
+- Nombres internos (para `renderSfx`/visor): `cine2_appear_<id>_long|short`, `cine2_plate_<id>`, `cine2_preroll_cenizar`; metadatos en `Assets.sfxCine2` (`len`, `dur`).
+- Pruebas: Playwright+Chromium, 0 errores; las 19 definiciones se renderizan offline (sin NaN, pico <= 0,93).
