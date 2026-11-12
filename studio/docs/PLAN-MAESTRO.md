@@ -237,3 +237,275 @@ Formato de cada tarea: **objetivo y por qué** · **pasos** · **archivos** · *
 
 Resumen: F0 con 13 tareas, F1 con 11, F2 con 8, F3 con 10, F4 con 6. Total: 48.
 
+### F0. Limpieza y deudas (13 tareas)
+
+Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas vuelvan a correr y protejan cada despliegue, y que el estudio trabaje sobre documentación cierta.
+
+#### T-F0-01 Reparar las herramientas de prueba (ruta del navegador)
+- **Objetivo y por qué.** Hoy ninguna prueba ni bot arranca en el contenedor actual. Sin pruebas no se puede tocar nada con seguridad; es la base de todo lo demás.
+- **Pasos.** (1) Crear `tools/lib/browser.js` que exporte `launch()` y resuelva el ejecutable en este orden: variable `PW_CHROME`, `/opt/pw-browsers/chromium`, el navegador por defecto de Playwright. (2) Sustituir la ruta fija en los 57 archivos de `tools/` que la contienen. (3) Hacer que `tests.js` no ejecute `stamp.py` sobre el repo: que trabaje sobre una copia temporal. (4) Pasar `tests.js all` y anotar el número real de comprobaciones.
+- **Archivos.** `tools/lib/browser.js` (nuevo), `tools/card-swarm-bot/*.js`, `tools/card-swarm-iso/*.js`, `tools/fx2-lab/*.js`, `tools/card-swarm-clasico-*/**`.
+- **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo bajo (el diseño del ayudante es corto; la sustitución es mecánica y puede delegarse en Haiku). Apoyo: `qa-tester` (Haiku) pasa la batería.
+- **Dependencias.** Ninguna.
+- **Aceptación.** `grep -r "chromium-1194" tools/` devuelve 0; `tests.js all` termina con 0 fallos; tras pasarla, `git status` está limpio.
+- **Pruebas.** La propia batería; una comprobación nueva que falle si `sw.js` cambia durante las pruebas.
+- **Riesgo y reversión.** Bajo. Revertir el commit.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F0-02 Pruebas automáticas en cada PR y puerta antes de desplegar
+- **Objetivo y por qué.** `pages.yml` publica cualquier push a `main` sin comprobar nada. Un error llega directo al móvil del dueño y, más adelante, a los jugadores.
+- **Pasos.** (1) Nuevo workflow `tests.yml`: instala Playwright con Chromium en el runner, levanta `tools/serve.py`, ejecuta `tests.js all` en PR y en push a `main`. (2) En `pages.yml`, hacer que el despliegue dependa de ese trabajo. (3) Guardar el registro como artefacto. (4) Quitar la línea `rm -f _site/card-swarm/src/assets_village_tmp.js`.
+- **Archivos.** `.github/workflows/tests.yml` (nuevo), `.github/workflows/pages.yml`.
+- **Responsable.** `release-manager` con Sonnet 5.5, esfuerzo medio. Apoyo: `tools-engineer`.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Un PR con un fallo deliberado queda en rojo y no despliega; uno correcto despliega; duración del trabajo por debajo de 15 minutos.
+- **Pruebas.** PR de prueba con un fallo forzado, que luego se cierra sin fusionar.
+- **Riesgo y reversión.** Pruebas inestables que bloqueen despliegues: permitir un reintento y marcar las inestables. Revertir el workflow.
+- **Tamaño.** M. **Decisión del dueño.** Aceptar que un despliegue tarde unos minutos más.
+
+#### T-F0-03 Retirar la inmortalidad por defecto y cerrar los parámetros de depuración
+- **Objetivo y por qué.** El juego publicado es inmortal salvo `?god=0` (`src/main.js:20`). Mientras siga así, nadie juega el reto real y el balance no se puede validar. Además `?give`, `?pf`, `?cmul`, `?reset=1` funcionan en producción.
+- **Pasos.** (1) `G.god` pasa a valer 0 por defecto. (2) Todos los parámetros que alteran progreso o dificultad solo se leen si la URL lleva `?dev=1` o el host es `localhost`. (3) `?reset=1` pide confirmación. (4) Los bots añaden `dev=1`.
+- **Archivos.** `src/main.js`, `src/save.js`, `src/armor.js`, `src/fusion.js`, `src/cine.js`, `tools/card-swarm-bot/*.js`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo bajo. Revisión: `qa-tester` (Sonnet).
+- **Dependencias.** T-F0-01. Conviene hacerla después de T-F0-12, para que el dueño acabe sus pruebas actuales.
+- **Aceptación.** En URL limpia `G.god === false`; `?give=all:30` sin `dev=1` no cambia el guardado; la batería pasa.
+- **Pruebas.** Grupo nuevo `dev` en `tests.js`: 6 comprobaciones, una por parámetro sensible, con y sin `dev=1`.
+- **Riesgo y reversión.** Que el dueño pierda su modo de prueba: conserva `?dev=1&god=1`. Revertir el commit.
+- **Tamaño.** S. **Decisión del dueño.** Fecha a partir de la cual quiere jugar sin inmortalidad.
+
+#### T-F0-04 Deshacer la doble definición de `Assets.cine3`
+- **Objetivo y por qué.** Audio y arte escriben la misma propiedad y funciona por orden de carga. Un cambio de orden (por ejemplo al empaquetar en T-F0-10) dejaría el epílogo sin arte o sin sonido.
+- **Pasos.** (1) El audio queda solo en `G.Snd.cine3` y `Assets.sfxCine3`. (2) Borrar `A.cine3 = cine3` de `src/sfx_cine3.js:150`. (3) Quitar las guardas `typeof ... === 'object'` que ya no hacen falta.
+- **Archivos.** `src/sfx_cine3.js`, `src/aldea.js`, `src/ending.js`, `ASSETS_API.md`.
+- **Responsable.** `programmer` con Haiku 5.5, esfuerzo bajo (cambio mecánico con especificación cerrada). Revisión: `audio-designer`.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Solo `assets_cine3.js` asigna `Assets.cine3`; el grupo `cine` de la batería pasa.
+- **Pruebas.** Una comprobación: `typeof Assets.cine3 === 'object' && typeof G.Snd.cine3 === 'function'`.
+- **Riesgo y reversión.** Mínimo. Revertir.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F0-05 Simulación reproducible con `?seed` y dificultad igual en todos los dispositivos
+- **Objetivo y por qué.** Sin reproducibilidad no hay balance fiable, ni reto diario, ni récords comparables. Y hoy el móvil juega con menos enemigos que el PC (`src/mobile.js:24-26`, `src/waves.js:145`).
+- **Pasos.** (1) Auditar qué lee la simulación fuera de `G.rng` y de `G.time`: reloj real, `G.Q.enemyMul`, `G.Q.projCap`, topes de partículas, `performance.now()`. (2) Separar "calidad visual" de "reglas": `enemyMul` y `projCap` dejan de depender de la calidad o se compensan de forma que el reto sea equivalente. (3) Modo de prueba que avance por pasos fijos (`G.step`) sin reloj real. (4) Prueba: dos ejecuciones con la misma semilla y las mismas entradas dan el mismo estado en 12 puntos de control.
+- **Archivos.** `src/main.js`, `src/mobile.js`, `src/waves.js`, `src/enemies.js`, `src/fx.js`, `tools/card-swarm-bot/tests.js`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo alto. Diseño y revisión: `balance-designer` con Fable 5.2 (decide cómo se compensa la calidad BAJA; es una decisión de reto). Apoyo: `performance-engineer`.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Misma semilla y mismas entradas: estado idéntico (vida, bajas, posición, nivel) a los 60, 180 y 420 s, en ALTA y en BAJA.
+- **Pruebas.** Grupo nuevo `seed` (al menos 12 puntos de control por calidad).
+- **Riesgo y reversión.** Quitar la reducción de enemigos puede bajar los fps en móviles modestos: medir con T-F2-07 y, si hace falta, compensar con enemigos más duros en vez de menos. Revertir por commit.
+- **Tamaño.** M. **Decisión del dueño.** Si acepta que un móvil lento vea menos enemigos pero más resistentes, o prefiere el mismo número aunque baje la fluidez.
+
+#### T-F0-06 Quitar las pistas de teclado en pantallas táctiles
+- **Objetivo y por qué.** "E", "Tab", "Q/E" y "Enter" en un teléfono confunden y dan aspecto de port sin terminar.
+- **Pasos.** (1) Inventario con grep de todos los textos de ayuda con nombres de tecla. (2) Función única `G.hint(tecla, textoTactil)` que elige según `G.Sys.isTouch()`. (3) Sustituir los textos. (4) Capturas antes y después en 844x390.
+- **Archivos.** `src/panels.js`, `src/aldea.js`, `src/base.js`, `src/hud.js`, `src/fusion.js`, `src/smith.js`, `src/tree.js`, `src/manual.js`.
+- **Responsable.** `ux-designer` con Haiku 5.5 para el inventario y la lista de textos; `programmer` con Sonnet 5.5, esfuerzo bajo, para el cambio.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** En modo táctil, ninguna de las pantallas del inventario muestra nombres de tecla; en escritorio siguen saliendo.
+- **Pruebas.** Ampliar `textcheck.js` con una lista negra de nombres de tecla en modo táctil.
+- **Riesgo y reversión.** Bajo. Revertir.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F0-07 Marlo: mapache o corderito
+- **Objetivo y por qué.** El protagonista se dibuja como mapache y el guion lo llama corderito. La identidad del personaje es parte de la marca.
+- **Pasos.** (1) El dueño elige. (2a) Si es mapache: reescribir las líneas que dicen "cordero" o "corderito" y la frase de la intro. (2b) Si es cordero: rediseñar el sprite de Marlo y sus variantes con armadura.
+- **Archivos.** (2a) `src/cine_intro.js`, `src/aldea.js`, `DESIGN-v9-cinematicas.md`. (2b) `src/assets.js`, `src/assets_armor*.js`, `src/assets_cine*.js`.
+- **Responsable.** (2a) `game-designer` con Sonnet 5.5, esfuerzo bajo, para los textos y `programmer` con Haiku para aplicarlos. (2b) `art-director` con Opus 5.5, esfuerzo alto.
+- **Dependencias.** Decisión del dueño.
+- **Aceptación.** Ningún texto contradice al sprite; `textcheck` pasa.
+- **Pruebas.** Comprobación de que las cadenas antiguas ya no aparecen (2a) o capturas aprobadas por el dueño (2b).
+- **Riesgo y reversión.** (2b) es cara y toca muchas piezas. Revertir por commit.
+- **Tamaño.** S (2a) o L (2b). **Decisión del dueño.** Sí: qué es Marlo.
+
+#### T-F0-08 Aprobar los nombres de los créditos
+- **Objetivo y por qué.** Los créditos llevan nombres cómicos sin aprobar; es la firma del estudio.
+- **Pasos.** (1) Listar los textos de `CRED` en `src/assets_cine3.js:568`. (2) El dueño los aprueba o cambia. (3) Aplicar.
+- **Archivos.** `src/assets_cine3.js`, `src/ending.js`.
+- **Responsable.** `marketing-manager` con Haiku 5.5, esfuerzo bajo.
+- **Dependencias.** Ninguna.
+- **Aceptación.** Lista firmada por el dueño en el PR.
+- **Pruebas.** `textcheck` sobre la pantalla de créditos.
+- **Riesgo y reversión.** Nulo.
+- **Tamaño.** S. **Decisión del dueño.** Sí: los nombres.
+
+#### T-F0-09 Poner al día la documentación del estudio
+- **Objetivo y por qué.** `STUDIO.md` y `programmer.md` hablan de Phaser, `ceo.md` no conoce a todo el equipo, el README cita conteos de pruebas antiguos. Los agentes leen esto al empezar y heredan los errores.
+- **Pasos.** (1) Corregir la mención a Phaser por "Canvas 2D sin librerías". (2) Añadir a `ceo.md` la lista completa de agentes. (3) Actualizar los conteos del README con el resultado de T-F0-01. (4) Marcar con una cabecera los documentos heredados del clásico. (5) Decidir si `games/card-swarm-clasico` sale de `main` (ya existe la rama de archivo).
+- **Archivos.** `studio/STUDIO.md`, `.claude/agents/ceo.md`, `.claude/agents/programmer.md`, `games/card-swarm/README.md`, `games/card-swarm/*.md`.
+- **Responsable.** `release-manager` con Haiku 5.5, esfuerzo bajo.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Ninguna mención a Phaser como stack del juego; conteos coinciden con la batería.
+- **Pruebas.** Ninguna automática.
+- **Riesgo y reversión.** Nulo.
+- **Tamaño.** S. **Decisión del dueño.** Permiso para editar `ceo.md` y `programmer.md`; si se retira el clásico de `main`.
+
+#### T-F0-10 Empaquetado para producción (un solo archivo minificado)
+- **Objetivo y por qué.** 92 peticiones y 3,4 MB de JS sin minificar penalizan la primera carga, que es donde se pierde al jugador de portal. Además deja el juego listo para los límites de los portales.
+- **Pasos.** (1) Script `tools/build/build.py` o `build.js` que lea el orden de `index.html`, concatene, minifique sin renombrar globales y genere `dist/` con un `index.html` de una sola etiqueta. (2) `stamp.py` trabaja sobre `dist/`. (3) El desarrollo sigue con los 92 archivos. (4) `pages.yml` despliega `dist/`. (5) Medir antes y después.
+- **Archivos.** `tools/build/` (nuevo), `tools/card-swarm-pwa/stamp.py`, `.github/workflows/pages.yml`.
+- **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo medio. Apoyo: `performance-engineer` mide; `release-manager` integra.
+- **Dependencias.** T-F0-02, T-F0-04.
+- **Aceptación.** La batería pasa contra `dist/`; peticiones de script <= 3; tamaño transferido con compresión al menos un 40 % menor que hoy (estimación a confirmar con la medición).
+- **Pruebas.** La batería acepta `base=` apuntando a `dist/`; CI la pasa en ambos modos.
+- **Riesgo y reversión.** Un minificador puede romper código que depende de nombres: usar solo eliminación de espacios y comentarios al principio. `pages.yml` puede volver a publicar la carpeta sin empaquetar.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F0-11 Registro de errores en el dispositivo
+- **Objetivo y por qué.** Si el juego falla en el móvil del dueño o de un jugador, hoy no queda rastro.
+- **Pasos.** (1) `window.onerror` y `unhandledrejection` guardan los últimos 20 errores (mensaje, archivo, línea, estado del juego, versión) en `localStorage`. (2) Botón "Copiar informe" en Ajustes. (3) Aviso discreto tras un error.
+- **Archivos.** `src/main.js` o `src/diag.js` (nuevo), `src/panels.js`, `index.html`, `sw.js` vía `stamp.py`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo bajo.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Un error provocado aparece en el informe con archivo y línea; el juego no se queda en negro.
+- **Pruebas.** 3 comprobaciones nuevas: captura, límite de 20, copia.
+- **Riesgo y reversión.** Bajo. Revertir.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F0-12 Sesión guiada en el móvil del dueño
+- **Objetivo y por qué.** Nada se ha probado en teléfono real: rendimiento, textos, instalación, uso sin conexión. Es la mayor incógnita del proyecto y solo el dueño puede despejarla.
+- **Pasos.** (1) `qa-tester` prepara una hoja de 20 minutos: instalar, jugar 2 expediciones (una con `?god=0`), prueba térmica de `MOVIL.md` sección 7, modo avión, lista de 15 textos que leer en voz alta, alcance de los 4 botones. (2) El dueño la rellena y pega el JSON de `?perf=1`. (3) `ux-designer` y `performance-engineer` convierten el resultado en tareas.
+- **Archivos.** `studio/docs/PRUEBA-MOVIL.md` (nuevo).
+- **Responsable.** `qa-tester` con Haiku 5.5, esfuerzo bajo, para la hoja; `ux-designer` con Opus 5.5 para leer los resultados.
+- **Dependencias.** Ninguna.
+- **Aceptación.** Hoja rellena con modelo de móvil, fps, p95 y lista de textos ilegibles.
+- **Pruebas.** No aplica.
+- **Riesgo y reversión.** Ninguno.
+- **Tamaño.** S. **Decisión del dueño.** Sí: dedicar 20 minutos.
+
+#### T-F0-13 Ember Flock en el sitio público
+- **Objetivo y por qué.** El índice de Pages enlaza un juego sin controles táctiles. Quien entre desde el móvil se lleva mala impresión del estudio.
+- **Pasos.** (1) Elegir: retirarlo del índice, marcarlo "solo escritorio" o darle joystick. (2) Aplicar en `tools/site/index.html` y, si procede, en `pages.yml`.
+- **Archivos.** `tools/site/index.html`, `.github/workflows/pages.yml`, `games/survival-lamb/`.
+- **Responsable.** `release-manager` con Haiku 5.5, esfuerzo bajo (retirar o etiquetar). Si se le dan controles: `programmer` con Sonnet 5.5.
+- **Dependencias.** Ninguna.
+- **Aceptación.** Desde un móvil no se llega a un juego injugable.
+- **Pruebas.** Comprobación manual.
+- **Riesgo y reversión.** Nulo.
+- **Tamaño.** S. **Decisión del dueño.** Sí: qué hacer con Ember Flock.
+
+### F1. Retención y primera sesión (11 tareas)
+
+Meta de la fase: que un jugador nuevo esté combatiendo en menos de un minuto, entienda qué hacer, quiera otra partida y tenga un motivo para volver mañana. Y poder medirlo.
+
+#### T-F1-01 Analítica mínima y respetuosa
+- **Objetivo y por qué.** Sin datos, la retención y el balance se ajustan a ciegas, y ningún portal ni tienda se puede evaluar.
+- **Pasos.** (1) `monetization-analyst` define el esquema: `session_start`, `intro_end`, `run_start`, `level_up`, `fusion`, `run_end` (causa, tiempo, bioma, Peligro), `boss_start`, `boss_end`, `craft`, `quit_point`. (2) Capa `G.Track(evento, datos)` que siempre guarda un resumen local y, si hay consentimiento y proveedor, lo envía en lotes. (3) Sin identificadores personales: un id aleatorio por instalación. (4) Panel "Mis estadísticas" con el resumen local.
+- **Archivos.** `src/track.js` (nuevo), llamadas en `src/main.js`, `src/loot.js`, `src/cards.js`, `src/fusion.js`, `src/boss.js`, `src/panels.js`.
+- **Responsable.** `monetization-analyst` con Opus 5.5, esfuerzo medio (esquema, privacidad). Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F0-03.
+- **Aceptación.** Una partida completa genera la secuencia esperada de eventos; sin consentimiento no sale ninguna petición de red; el resumen local sobrevive a recargar.
+- **Pruebas.** Grupo `track`: 10 comprobaciones de secuencia y una de "cero red sin consentimiento".
+- **Riesgo y reversión.** Privacidad: empezar solo con el modo local. Un interruptor apaga el envío.
+- **Tamaño.** M. **Decisión del dueño.** Sí: solo local, o envío a un servicio (cuál) con aviso de privacidad.
+
+#### T-F1-02 Primera sesión: combate en menos de 60 segundos
+- **Objetivo y por qué.** Hoy hay ~27 s de intro obligatoria y luego una aldea con 7 NPC antes de jugar. El jugador debe sentir el juego antes de leer.
+- **Pasos.** (1) `ux-designer` especifica el flujo nuevo: título, toque, 6-8 s de intro abreviada (el resto se ve al volver), primera expedición directa en el Bosque. (2) Tres avisos contextuales dentro de esa partida: moverse, recoger gemas, elegir carta; el cuarto llega con la primera fusión. (3) Al volver, la aldea se presenta por pasos: primero Lanudo y el Portal; el resto de NPC aparece con las salidas 2, 3 y 4. (4) La intro completa queda en el Archivo.
+- **Archivos.** `src/cine_intro.js`, `src/cine.js`, `src/aldea.js`, `src/hud.js`, `src/cards.js`, `src/save.js` (flags nuevos, sin subir de versión si solo son `flags`).
+- **Responsable.** `ux-designer` con Opus 5.5, esfuerzo alto (especificación con guion de pantallas). Implementa `programmer` con Sonnet 5.5, esfuerzo alto. Apoyo: `game-designer`, `art-director`.
+- **Dependencias.** T-F0-06, T-F1-01 (para medir el antes y el después).
+- **Aceptación.** En cuenta nueva, del primer toque al primer enemigo pasan menos de 60 s; el embudo `session_start` → `run_start` se mide; las cuentas con progreso no ven nada nuevo.
+- **Pruebas.** Grupo `fte` (primera vez): tiempos, avisos mostrados una sola vez, cuentas antiguas intactas.
+- **Riesgo y reversión.** Tocar el arranque puede romper la migración de cuentas existentes: probar con guardados v9-v12. Un flag devuelve el flujo antiguo.
+- **Tamaño.** L. **Decisión del dueño.** Sí: si acepta acortar la intro la primera vez.
+
+#### T-F1-03 Ritmo de los primeros 90 segundos de la expedición
+- **Objetivo y por qué.** El primer minuto es plano (medido). Hay que dar acción y una primera decisión pronto, sin bajar el reto del resto de la partida.
+- **Pasos.** (1) Medir con bot recolector: instante de cada subida de nivel y enemigos vivos por tramo de 10 s. (2) Proponer cambios solo en el arranque: más enemigos débiles en los primeros 45 s, primera subida antes del segundo 20, radio de recogida inicial mayor que decae. (3) Comprobar que la curva a partir del minuto 2 no cambia.
+- **Archivos.** `src/main.js` (tabla `G.B`: `bp`, `cap`, `xp.first`, `player.pickup`), `src/waves.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto (es balance del bucle central). Implementa `programmer` con Sonnet 5.5. Apoyo: `tools-engineer` para el bot.
+- **Dependencias.** T-F0-05.
+- **Aceptación.** Con bot recolector y semilla fija: primera oferta de carta antes del segundo 20, al menos 12 enemigos vivos en el segundo 30, y nivel en el minuto 3 dentro de +-1 respecto a hoy.
+- **Pruebas.** Punto de control nuevo en el grupo `balance`.
+- **Riesgo y reversión.** Regalar poder temprano trivializa el Bosque: por eso se fija el nivel del minuto 3. Las cifras son perillas; revertir es cambiar la tabla.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna si se respeta el criterio; se le enseña el antes y el después.
+
+#### T-F1-04 Pantalla de fin que empuja a la siguiente partida
+- **Objetivo y por qué.** El momento de la derrota es donde se decide "otra más" o cerrar. Hoy solo se informa del botín.
+- **Pasos.** (1) Especificar tres bloques: récord personal de esa ruta (tiempo, vida que le quedaba al jefe), "te falta poco" (los 2 objetivos más cercanos: una carta, un nodo, un logro, un encargo) y consejo según la causa de muerte (ya se cuenta el daño por fuente con `G.dbg`). (2) Implementar con datos que ya existen en `L.summary`.
+- **Archivos.** `src/base.js`, `src/hud.js`, `src/loot.js`, `src/quests.js`, `src/save.js` (récords por ruta en `stats`).
+- **Responsable.** `ux-designer` con Opus 5.5, esfuerzo medio. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F1-01.
+- **Aceptación.** Tras cualquier derrota se muestra al menos un objetivo alcanzable en 1-2 partidas; todo texto >= 12 px lógicos.
+- **Pruebas.** 8 comprobaciones: récord nuevo, sin objetivos, cuenta completa, práctica.
+- **Riesgo y reversión.** Sobrecargar la pantalla: máximo 3 líneas nuevas. Revertir.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F1-05 Reto diario con semilla
+- **Objetivo y por qué.** Es el gancho de regreso más barato y honesto: una partida igual para todos cada día, con su marca.
+- **Pasos.** (1) Semilla = fecha UTC; bioma, anclas y duración fijados por la semilla entre lo que el jugador tiene desbloqueado. (2) Un intento con recompensa al día; reintentos sin recompensa. (3) Marcador local de los últimos 30 días. (4) Texto para compartir el resultado. (5) Dejar preparado el dato para una tabla en línea futura.
+- **Archivos.** `src/daily.js` (nuevo), `src/panels.js` (Portal o Tablón), `src/save.js` (campo `daily`, migración v13), `src/loot.js`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo medio, para reglas y recompensa. Implementa `programmer` con Sonnet 5.5, esfuerzo alto (toca guardado: revisión con Opus). Apoyo: `balance-designer` para la recompensa.
+- **Dependencias.** T-F0-05.
+- **Aceptación.** Dos dispositivos con la misma fecha reciben las mismas ofertas y oleadas; la recompensa se cobra una vez; cambiar la hora del sistema hacia atrás no la repite.
+- **Pruebas.** Grupo `daily`: semilla por fecha, un cobro, migración v12 → v13 con copia.
+- **Riesgo y reversión.** Migración de guardado: copia previa como en las anteriores. El modo se puede ocultar con un flag.
+- **Tamaño.** L. **Decisión del dueño.** Sí: qué da el reto diario (Brasas, PF, cosmético).
+
+#### T-F1-06 Objetivos diarios y semanales con racha amable
+- **Objetivo y por qué.** Dar un motivo corto para abrir el juego cada día sin castigar al que falta.
+- **Pasos.** (1) Tres objetivos diarios generados a partir de los encargos existentes y uno semanal. (2) Racha de visitas con un día de gracia: no se pierde por faltar una vez. (3) Recompensas modestas y con tope. (4) Indicador en la aldea.
+- **Archivos.** `src/quests.js`, `src/aldea.js`, `src/panels.js`, `src/save.js`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo medio. Implementa `programmer` con Sonnet 5.5. Apoyo: `balance-designer` para los topes.
+- **Dependencias.** T-F1-05 (comparte la migración v13).
+- **Aceptación.** Un jugador que entra 5 de 7 días conserva la racha; la suma semanal de recompensas no supera el botín de 2 expediciones normales.
+- **Pruebas.** 10 comprobaciones con fecha simulada.
+- **Riesgo y reversión.** Inflación de la economía: por eso el tope. Flag de apagado.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna si se respeta el tope.
+
+#### T-F1-07 Presentar la economía por pasos
+- **Objetivo y por qué.** Siete recursos de golpe abruman. Hay que enseñarlos cuando hacen falta.
+- **Pasos.** (1) Mapa de "primera vez que importa" de cada recurso. (2) Ocultar en HUD, botín y Portal lo que aún no se puede usar. (3) Una línea de explicación la primera vez que aparece cada uno. (4) Revisar si algún recurso puede fusionarse con otro sin perder profundidad, solo como propuesta.
+- **Archivos.** `src/aldea.js`, `src/base.js`, `src/panels.js`, `src/hud.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo medio, para el mapa y la propuesta; `ux-designer` con Opus 5.5 para la presentación; `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F1-02.
+- **Aceptación.** En las 3 primeras salidas de una cuenta nueva no se muestran más de 3 recursos distintos.
+- **Pruebas.** Comprobaciones de visibilidad por número de salidas.
+- **Riesgo y reversión.** Esconder algo que el jugador necesita: el Archivo siempre lo muestra todo. Flag.
+- **Tamaño.** M. **Decisión del dueño.** Solo si se propone eliminar o fusionar un recurso.
+
+#### T-F1-08 Legibilidad y uso de la pantalla en móvil
+- **Objetivo y por qué.** Textos de 6 a 9 px reales y un 18 % de pantalla en negro. Si no se lee, no se juega.
+- **Pasos.** (1) Con los datos de T-F0-12, fijar mínimos reales: 11 px CSS en menús y 9 px CSS en combate a 844x390. (2) Elegir la vía: (a) ancho lógico variable (de 960 a ~1170) para llenar 19,5:9, o (b) mantener 960x540 y sacar joystick y botones a las franjas. (3) Incluir una fuente propia con licencia libre para que las métricas sean iguales en todos los dispositivos. (4) Rehacer las rejillas densas (árbol, Archivo) con zoom o paginación.
+- **Archivos.** `src/mobile.js`, `src/main.js`, `src/hud.js`, `src/fusion.js`, `src/boss.js`, `src/tree.js`, `src/panels.js`, `index.html`, `studio/assets/ASSETS.md`.
+- **Responsable.** `ux-designer` con Opus 5.5, esfuerzo alto (sube a Fable si se elige la vía a, que toca todo el HUD). Implementa `programmer` con Sonnet 5.5, esfuerzo alto. Apoyo: `asset-scout` (Haiku) busca la fuente; `performance-engineer` vigila el coste.
+- **Dependencias.** T-F0-12.
+- **Aceptación.** `textcheck` no encuentra texto por debajo de los mínimos en ninguna pantalla a 844x390 y 740x360; el dueño lee las 15 frases de la hoja sin acercar el móvil.
+- **Pruebas.** Ampliar `textcheck.js` a combate y a dos tamaños de pantalla.
+- **Riesgo y reversión.** La vía (a) puede romper posiciones fijas en muchas pantallas: hacerla detrás de un ajuste y por pantallas. Revertir por commit.
+- **Tamaño.** L. **Decisión del dueño.** Sí: vía (a) o (b).
+
+#### T-F1-09 Respuesta física y sonora en los momentos clave
+- **Objetivo y por qué.** Subir de nivel, fusionar y romper una parte de jefe deben sentirse. Es barato y aumenta el placer del bucle.
+- **Pasos.** (1) Vibración corta opcional (`navigator.vibrate`) en golpe recibido, fusión y parte rota, con ajuste. (2) Revisar que cada uno de esos momentos tenga destello, sonido y pausa breve coherentes. (3) Respetar "reducir destellos".
+- **Archivos.** `src/fx.js`, `src/player.js`, `src/fusion.js`, `src/boss.js`, `src/panels.js`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo bajo. Apoyo: `audio-designer`, `art-director`.
+- **Dependencias.** Ninguna.
+- **Aceptación.** Ajuste de vibración visible solo donde existe la API; apagado por defecto en "reducir destellos".
+- **Pruebas.** 4 comprobaciones con `navigator.vibrate` simulado.
+- **Riesgo y reversión.** Molestia: ajuste para apagarlo.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F1-10 Evaluar una expedición corta para sesiones de móvil
+- **Objetivo y por qué.** La partida mínima dura 7 minutos más la aldea. En portales y en móvil, muchas sesiones son de 3-5 minutos.
+- **Pasos.** (1) Diseñar una "Incursión" de 4 minutos con jefe reducido o minijefe y botín proporcional. (2) Simular su efecto en la economía. (3) Prototipo detrás de `?len=4`. (4) Decidir con datos de T-F1-01.
+- **Archivos.** `src/loot.js` (`L.DUR`), `src/main.js`, `src/boss.js`, `src/panels.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo medio. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F0-05, T-F1-01.
+- **Aceptación.** Botín por minuto de la Incursión entre el 85 % y el 100 % del de la Rápida; no desbloquea Peligro.
+- **Pruebas.** Fila nueva en las pruebas de duraciones.
+- **Riesgo y reversión.** Convertirse en la forma óptima de farmear: por eso el tope de botín por minuto. Es una fila de tabla.
+- **Tamaño.** M. **Decisión del dueño.** Sí: si quiere un modo corto.
+
+#### T-F1-11 Guardado a prueba de pérdidas
+- **Objetivo y por qué.** Perder el progreso es la forma más segura de perder al jugador. Hoy depende de un único `localStorage`.
+- **Pasos.** (1) Copia rotativa: 3 instantáneas (última, de ayer, de la semana). (2) Segunda copia en IndexedDB. (3) Recordatorio de exportar cada 10 salidas y aviso específico en iOS sin instalar. (4) Validación de rangos al importar. (5) Documentar cómo viajaría el guardado a otro dominio.
+- **Archivos.** `src/save.js`, `src/pwa.js`, `src/panels.js`.
+- **Responsable.** `programmer` con Opus 5.5, esfuerzo medio (el guardado es código delicado: se sube un escalón). Revisión: `qa-tester` con Sonnet 5.5.
+- **Dependencias.** T-F0-01.
+- **Aceptación.** Borrar la clave principal y recargar recupera la última instantánea; un guardado corrupto no deja el juego en blanco.
+- **Pruebas.** Grupo `save2`: 12 comprobaciones de recuperación, corrupción e importación fuera de rango.
+- **Riesgo y reversión.** Un error aquí pierde partidas: nunca se sobrescribe sin copia previa. Revertir por commit.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
