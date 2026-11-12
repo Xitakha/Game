@@ -56,7 +56,7 @@
     ['RUFO', 'El mejor trato de mi vida: cero monedas y un invierno menos.'],
     ['ULALUME', 'Las cartas lo dicen, Marlo: la mano ganadora eres tú.']
   ];
-  var T_MUSIC = 6200, T_FIRE = T_MUSIC + 16000, T_GIVE = T_FIRE - 1600, T_DLG = T_FIRE + 400;   // pista cine_epilogo (35 s): el fuego prende a los 16 s de pista
+  var T_MUSIC = 6200, T_FIRE = T_MUSIC + 16000, T_GIVE = T_FIRE - 1600, T_DLG = 26400;   // pista cine_epilogo (35 s): el fuego prende a los 16 s de pista
   var PMAP = [[0, 0], [T_FIRE, 0.14], [T_FIRE + 8800, 0.45], [T_FIRE + 14800, 0.7], [T_FIRE + 19800, 0.9], [T_FIRE + 21800, 1]];
   var WHO = [   // amigos: nombre de NPC (Assets.drawNPC), x final, lado, llegada (ms)
     ['lanudo', 80, false], ['carapa', 178, false], ['vesper', 276, false], ['castana', 660, true], ['rufo', 750, true], ['grum', 836, true], ['ulalume', 918, true]
@@ -64,11 +64,24 @@
   function pOf(t) { for (var i = 1; i < PMAP.length; i++) if (t <= PMAP[i][0]) return lerp(PMAP[i - 1][1], PMAP[i][1], (t - PMAP[i - 1][0]) / (PMAP[i][0] - PMAP[i - 1][0])); return 1; }
   function dlgTracks() {
     var out = [], at = T_DLG, i;
-    for (i = 0; i < LINES.length; i++) { var d = Math.round(LINES[i][1].length * 31 + 1100); out.push({ at: at, type: 'dlg', who: LINES[i][0], color: VOICE[LINES[i][0]], text: LINES[i][1], dur: d }); at += d + 150; }
+    for (i = 0; i < LINES.length; i++) { var d = Math.round(LINES[i][1].length * 31 + 800); out.push({ at: at, type: 'dlg', who: LINES[i][0], color: VOICE[LINES[i][0]], text: LINES[i][1], dur: d }); at += d + 150; }
     out.end = at; return out;
   }
   var DT = dlgTracks();
-  var EP_LEN = Math.max(T_FIRE + 21800, DT.end + 2200);
+  // Arte de assets_cine3.js (Assets.cine3.epilogue): se usan 5 de sus 6 viñetas (la 1.a, 'victoria', es la victoria in-world de este motor) con duraciones estiradas para casar con la pista cine_epilogo (el fuego prende a los 16 s de pista)
+  var AM = DT.end - 4200, SEG = [['apagado', 800, 9000], ['brasa', 9000, 21000], ['renace', 21000, 26000], ['reunidos', 26000, AM], ['amanecer', AM, AM + 6000]];
+  var EP_LEN = Math.max(T_FIRE + 21800, AM + 6200);
+  function epArt(c, t) {
+    var A3 = art3('epilogue'); if (!A3) return false;
+    for (var i = 0; i < SEG.length; i++) {
+      var sg = SEG[i]; if (t >= sg[1] && (t < sg[2] || i === SEG.length - 1)) {
+        var p = cl((t - sg[1]) / (sg[2] - sg[1]), 0, 1), nx = SEG[i + 1];
+        if (nx && !SEG[i].pre && sg[2] - t < 1800) { SEG[i].pre = 1; try { Assets.cine3.preload(nx[0], W, H, { calm: C.cfg().calm }); } catch (e0) { /* arte */ } }
+        try { return A3(sg[0], c, W, H, p * (Assets.cine3.dur ? Assets.cine3.dur(sg[0]) : 6000), { p: p, calm: C.cfg().calm, bars: 0, vignette: false }) !== false; } catch (e) { return false; }
+      }
+    }
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, H); return true;
+  }
 
   function npcDraw(c, name, x, y, t, sc, flip, al) {
     try { if (window.Assets && Assets.drawNPC) { Assets.drawNPC(c, name, x, y, t, { scale: sc, flip: flip, alpha: al }); return; } } catch (e) { /* arte */ }
@@ -85,8 +98,8 @@
 
   var HX = 420, FL = 421, FEET = 480, MX = 560;   // posiciones en la escena del arte (hogar a x 420, suelo a y 421)
   function epScene(c, p, t) {
-    var done = false, A3 = art3('hearth');
-    if (A3) { try { done = A3(c, W, H, pOf(t), { t: t, calm: C.cfg().calm, noFriends: true }) !== false; } catch (e) { done = false; } }
+    var done = epArt(c, t);
+    if (done) { epText(c, t); return; }
     if (!done) { try { Assets.drawEndingScene(c, W, H, pOf(t), { t: t, noFriends: true }); done = true; } catch (e2) { c.fillStyle = '#07040a'; c.fillRect(0, 0, W, H); } }
     // brasa mansa: sale de la bufanda de Marlo y cae en la chimenea (halo cálido, SIN destello blanco)
     var calm = C.cfg().calm, walkU = ease((t - 2500) / 11000), mx = lerp(-60, MX, walkU), walking = t > 2500 && t < 13500;
@@ -108,8 +121,10 @@
       var dir = w[2] ? 1 : -1, x = w[1] + dir * 70 * (1 - u);
       npcDraw(c, w[0], Math.round(x), FEET + (i % 2) * 6, t, 1.6, w[2], u);
     }
-    // marcas de texto
-    var dw = T_FIRE + 17500;
+    epText(c, t);
+  }
+  function epText(c, t) {
+    var dw = SEG[4][1] + 600;
     if (t > dw) { c.save(); c.globalAlpha = Math.min(1, (t - dw) / 1200) * (1 - cl((t - (EP_LEN - 1500)) / 1200, 0, 1)); G.txt(c, 'Amanece en Rescoldo.', W / 2, 150, 28, '#fff0c8', 'center'); c.restore(); }
     if (t < 1800) {   // negro inicial: "Cenizar se apaga..." (el silencio de 1 s antes del stinger)
       c.fillStyle = 'rgba(0,0,0,' + (t < 1000 ? 1 : 1 - (t - 1000) / 800) + ')'; c.fillRect(0, 0, W, H);
@@ -139,7 +154,9 @@
     [20800, 4800, 'GRACIAS POR JUGAR', []]
   ];
   En.CREDITS = CREDITS;
+  var credArt = false;
   function credOver(c, t) {
+    if (credArt) return;   // con el arte (créditos con scroll de assets_cine3.js) no hacen falta las tarjetas de reserva
     c.fillStyle = 'rgba(6,3,12,' + (0.5 * Math.min(1, t / 1500)) + ')'; c.fillRect(0, 0, W, H);
     for (var i = 0; i < CREDITS.length; i++) {
       var k = CREDITS[i], u = (t - k[0]) / k[1]; if (u < 0 || u > 1) continue;
@@ -156,12 +173,12 @@
     }
   }
   function credScene(c, p, t) {
-    var A3 = art3('hearth'), done = false;
-    if (A3) { try { done = A3(c, W, H, 0.88, { t: t + 40000, calm: C.cfg().calm }) !== false; } catch (e) { done = false; } }
+    var A3 = art3('credits'), done = false; credArt = false;
+    if (A3) { try { done = A3(c, W, H, t, { p: cl(t / 25600, 0, 1), dur: 25600, calm: C.cfg().calm, fadeOut: true }) !== false; credArt = done; } catch (e) { done = false; } }
     if (!done) { try { Assets.drawEndingScene(c, W, H, 0.88, { t: t + 40000 }); } catch (e2) { c.fillStyle = '#10080c'; c.fillRect(0, 0, W, H); } }
   }
   var CRED = { id: 'credits', len: 25600, over: credOver, scenes: [{ at: 0, dur: 25600, draw: credScene }],
-    tracks: [{ at: 0, type: 'fade', from: 1, to: 0, dur: 700 }, { at: 0, type: 'music', track: 'cine_creditos', intensity: 0.3 }, { at: 24800, type: 'fade', from: 0, to: 1, dur: 800 }] };
+    tracks: [{ at: 0, type: 'music', track: 'cine_creditos', intensity: 0.3 }, { at: 24800, type: 'fade', from: 0, to: 1, dur: 800 }] };
   C.CREDITS_SCRIPT = CRED;
 
   // ---------------------------------------------------------------- Reproducción y marcas del guardado
@@ -169,17 +186,17 @@
   function markCredits() { var S = G.Save.data; if (S.cine) S.cine.creditsSeen = true; G.Save.save(); }
   /* opts: { replay (galería: saltable, no escribe en el guardado), returnState, onEnd() } */
   En.playEpilogue = function (opts, then) {
-    opts = opts || {}; var first = !opts.replay;
+    opts = opts || {}; var first = !opts.replay; EPILOGUE.dlgTop = !art3('epilogue');   // con el arte el diálogo va en la franja inferior; sin él, arriba (la reserva ocupa el suelo)
     var ok = C.play(EPILOGUE, { mode: 'full', first: first, skippable: !first, calm: C.cfg().calm, returnState: opts.returnState || 'gameover', stopMusic: false,
       onSkip: function () { C.snd3('stop'); try { Assets.music.stop(); } catch (e) { /* audio */ } },
-      onEnd: function (r) { if (!opts.replay && (r === 'end' || r === 'skip')) markEpilogue(); if (then) then(r); } });
+      onEnd: function (r) { try { Assets.cine3.free(); } catch (e) { /* arte */ } if (!opts.replay && (r === 'end' || r === 'skip')) markEpilogue(); if (then) then(r); } });
     return ok;
   };
   En.playCredits = function (opts, then) {
     opts = opts || {};
     return C.play(CRED, { mode: 'full', skippable: false, skipAfter: 3000, calm: C.cfg().calm, returnState: opts.returnState || 'gameover',
       onSkip: function () { C.snd3('stop'); },
-      onEnd: function (r) { try { Assets.music.stop(); } catch (e) { /* audio */ } if (!opts.replay && (r === 'end' || r === 'skip')) markCredits(); if (then) then(r); } });
+      onEnd: function (r) { try { Assets.music.stop(); } catch (e) { /* audio */ } try { Assets.cine3.free(); } catch (e2) { /* arte */ } if (!opts.replay && (r === 'end' || r === 'skip')) markCredits(); if (then) then(r); } });
   };
   En.playAll = function (opts) {   // epílogo + créditos; opts.onEnd al final
     opts = opts || {};

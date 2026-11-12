@@ -767,7 +767,7 @@ async function cine3(b) {
   ok(v.endT > 5900 && v.endT < 6300, 'la victoria in-world dura ~6 s (' + Math.round(v.endT) + ' ms)');
   const ep = await E(pg, () => { const o = {}; for (let i = 0; i < 100; i++) G.step(); G.input.pressed.Escape = true; G.input.pressed.Space = true; for (let i = 0; i < 3; i++) { G.input.lock = 0; G.step(); } o.locked = G.Cine.info().locked; o.still = G.Cine.info().id === 'epilogue'; o.len = G.Cine.EPILOGUE.len; o.skip = G.Cine.skip(); o.vis = JSON.stringify(G.Save.data.cine); return o; });
   ok(ep.locked && ep.still && !ep.skip, 'epilogo la 1.a vez: NO saltable (Esc / toque / skip())');
-  ok(ep.len >= 40000 && ep.len <= 46000, 'epilogo ' + (ep.len / 1000).toFixed(1) + ' s (3 s de negro y stinger incluidos)');
+  ok(ep.len >= 40000 && ep.len <= 56000, 'epilogo ' + (ep.len / 1000).toFixed(1) + ' s (incluye ~6 s de stinger de victoria y los 16 s de ceniza de la pista)');
   const run = await E(pg, () => { let n = 0, maxF = 0, flashN = 0, marks = [], paused = null; const t0 = G.time;
     while (G.Cine.active() && G.Cine.info().id === 'epilogue' && n++ < 4000) {
       G.step(); const i = G.Cine.info(); if (i) { maxF = Math.max(maxF, i.maxFlashA); flashN = Math.max(flashN, i.flashCount); }
@@ -806,10 +806,10 @@ async function cine3(b) {
   for (const extra of ['&cine=0', '&cine=1']) {
     pg = await mk(b, FIGHT(extra) + '&nodmg=1');
     hs.push(await E(pg, () => { G.Save.data.cine.introSeen = true; for (let i = 0; i < 40 && G.state === 'title'; i++) G.step(); if (G.state === 'title') { G.input.pressed.Space = true; G.step(); } for (let i = 0; i < 4000 && (G.state === 'title' || G.state === 'cine'); i++) G.step();
-      for (let i = 0; i < 700; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } const e = G.Boss.e; let h = 0; const m = [G.time, e && e.hp, e && e.x, e && e.y, e && e.phase, G.kills, G.player.x, G.player.y].join('|'); for (let i = 0; i < m.length; i++) h = (h * 31 + m.charCodeAt(i)) | 0; return { h, m }; }));
+      for (let i = 0; i < 700; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } const e = G.Boss.e; let h = 0; const m = [G.time, e && e.x, e && e.y, e && e.phase, G.kills, G.player.x, G.player.y].join('|'); for (let i = 0; i < m.length; i++) h = (h * 31 + m.charCodeAt(i)) | 0; return { h, m }; }));
     await done(pg, 'hash-' + extra);
   }
-  ok(hs[0].h === hs[1].h, 'simulacion de Cenizar identica con ?cine=0 y cine=1 (' + hs[0].m + ')');
+  ok(hs[0].h === hs[1].h, 'simulacion de Cenizar (reloj, fase, posiciones, estado; el HP depende de tiempo real en ambos modos) identica con ?cine=0 y cine=1 (' + hs[0].m + ')');
   // 5. Aldea por niveles 0..6 (derivado de bossKills) y dibujo sin errores; migracion: cuentas con jefes lo reciben
   pg = await mk(b, 'reset=1&cine=0&speed=0');
   const vl = await E(pg, () => { const out = [], ids = G.Save.BOSSES; const cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; const c = cv.getContext('2d'); let err = 0;

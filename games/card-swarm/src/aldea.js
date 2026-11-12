@@ -41,7 +41,7 @@
   A.level = function () { var S = G.Save.data, k = S.bossKills || {}, n = G.Save.BOSSES.filter(function (b) { return (k[b] || 0) > 0; }).length; return ((k.cenizar || 0) > 0 || S.endingSeen) ? 6 : n; };   // tras Cenizar queda completa
   var LV_TXT = ['', 'Farolillos nuevos en la plaza.', 'Vallado nuevo y la leña en orden.', 'Flores junto al vallado.', 'Las chimeneas vuelven a humear.', 'Banderines sobre Rescoldo.', 'Amanece en Rescoldo. El Hogar está completo.'];
   A.levelText = function (n) { return LV_TXT[n] || ''; };
-  var lvSeen = -1, dawnT = 0;
+  var lvSeen = -1, dawnT = 0, lvAt = -1e9;
   function ints() {
     var out = NPC_ORDER.map(function (id) { var p = npcPos(id); return { id: id, x: p.x, y: p.y, name: npcName(id), npc: true }; });
     var sp = Lay.spots.portal; out.push({ id: 'portal', x: sp.x, y: sp.y, name: 'Portal', npc: false });
@@ -75,6 +75,7 @@
       try { if (G.Cine) G.Cine.snd3('village', lv); } catch (eL) { /* audio */ }
       flash('Rescoldo mejora: ' + LV_TXT[lv]);
     }
+    if (lv !== lvSeen && lvSeen >= 0) lvAt = Date.now();   // la mejora recién alcanzada aparece animada
     lvSeen = lv;
     if (fromRun && G.Ending && G.Ending.dawn) { G.Ending.dawn = false; dawnT = 4200; A.timeMode = 'dia'; }   // tras el final: cartel "Amanece en Rescoldo"
     M.opened = true;
@@ -471,11 +472,11 @@
     if (done) { c.fillStyle = '#ffd24a'; c.beginPath(); c.arc(x + 46, y - 20, 9 + Math.sin(now / 200), 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#6a6078'; c.fillRect(x + 38, y - 10, 16, 12); c.strokeRect(x + 38, y - 10, 16, 12); }
     c.restore();
   }
-  // v9 F3: mejoras acumulativas de la aldea. Si existe arte (Assets.cine3.villageUpgrades de assets_cine3.js) se usa; si no, esta capa sencilla sobre el decorado.
+  // v9 F3: mejoras acumulativas de la aldea. Arte: Assets.cine3.villageRebuild (assets_cine3.js) se usa; si no, esta capa sencilla sobre el decorado.
   function lamp(c, x, y, now, k) { c.fillStyle = '#1b1124'; c.fillRect(x - 1, y - 10, 2, 10); c.fillStyle = '#ffb347'; c.globalAlpha = 0.85 + 0.15 * Math.sin(now / 300 + k); c.beginPath(); c.arc(x, y + 3, 5, 0, 6.283); c.fill(); c.globalAlpha = 1; }
   function drawUpgrades(c, now, lv) {
     if (lv <= 0) return;
-    try { var U3 = window.Assets && Assets.cine3 && typeof Assets.cine3 === 'object' && Assets.cine3.villageUpgrades; if (U3 && U3(c, now, { level: lv, time: A.timeMode })) return; } catch (e) { /* reserva */ }
+    try { var U3 = window.Assets && Assets.cine3 && typeof Assets.cine3 === 'object' && Assets.cine3.villageRebuild; if (U3 && U3(c, lv, now, { calm: !!(G.Cine && G.Cine.cfg().calm), fresh: Math.min(1, (now - lvAt) / 2500), time: A.timeMode === 'noche' ? 1 : A.timeMode === 'ocaso' ? 0.5 : 0 })) return; } catch (e) { /* reserva */ }
     var i, x;
     c.save(); c.lineWidth = 2; c.strokeStyle = '#1b1124';
     if (lv >= 1) {   // farolillos colgantes entre la fragua y la plaza
@@ -503,6 +504,7 @@
     }
     c.restore();
   }
+  function villageNpcs(now) { try { var a = window.Assets && Assets.cine3; return a && typeof a === 'object' && a.villageNpcs ? a.villageNpcs(A.level(), now) || {} : {}; } catch (e) { return {}; } }   // aldeanos animados según el nivel
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;
@@ -510,7 +512,7 @@
     var haveArt = window.Assets && Assets.drawVillage;
     c.imageSmoothingEnabled = false;
     if (haveArt) {
-      try { Assets.drawVillage(c, now, { time: A.timeMode, actors: actors, npcs: npcOverrides(talkTg || tg) }); }
+      try { Assets.drawVillage(c, now, { time: A.timeMode, actors: actors, npcs: Object.assign({}, villageNpcs(now), npcOverrides(talkTg || tg)) }); }
       catch (e) { haveArt = false; }
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
