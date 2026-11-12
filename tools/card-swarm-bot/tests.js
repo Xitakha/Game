@@ -783,7 +783,7 @@ async function cine2(b) {
     const ri = await runIntro(pg);
     const gi = await E(pg, () => { const v = G.rng(); G.rngSeed(78); return v; });
     const h0 = await bossHash(pg, 0), hh = await bossHash(pg, 25);
-    hh.h0 = h0.hash;
+    hh.h0 = h0.hash; hh.g0 = h0.g;
     res[k] = Object.assign({ imode: st.mode, gi }, ri, hh);
     await done(pg, 'entrada-' + k);
   }
@@ -793,7 +793,7 @@ async function cine2(b) {
   for (const k of Object.keys(res)) ok(res[k].cad === 1200 && res[k].mode === 'fight' && !res[k].frozen && res[k].noHurtAll && res[k].roared && res[k].music && res[k].seen, `${k}: al acabar cadT=1200, mundo libre, invulnerable todo el rato, rugido (cullHorde) y musica hechos, entrySeen marcada`);
   ok(res.off.dtime === res.long.dtime && res.off.dtime === res.short.dtime, `G.time avanza igual en la intro (${res.off.dtime} / ${res.long.dtime} / ${res.short.dtime}): la simulacion recibe los mismos pasos`);
   const same = f => ['long', 'short', 'short2'].every(k => res[k][f] === res.off[f]);
-  ok(same('h0') && same('hash') && same('g') && same('gi'), 'hash de estado IDENTICO al acabar la entrada y 25 ticks despues con ?cine=0, larga y corta; G.rng consume lo mismo (' + res.off.h0 + ' / ' + res.off.hash + ')');   // (la pelea en si no es bit-identica entre dos corridas ni con ?cine=0: hay Math.random en el combate, ajeno a esto)
+  ok(same('h0') && same('hash') && same('g0') && same('gi'), 'hash de estado IDENTICO al acabar la entrada y 25 ticks despues con ?cine=0, larga y corta; G.rng consume lo mismo (' + res.off.h0 + ' / ' + res.off.hash + ')');   // (la pelea en si no es bit-identica entre dos corridas ni con ?cine=0: hay Math.random en el combate, ajeno a esto)
   // 2. Saltar: la corta desde 800 ms (no antes); la larga (1.a vez) nunca; tras saltar el estado final es el de siempre
   pg = await mk(b, BOSS_URL('pastor', '&cine=short'));
   await toIntro(pg);
