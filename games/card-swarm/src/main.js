@@ -412,7 +412,8 @@
       case 'play':
         if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; G.Hud.pauseOpen(); break; }
         if (G.fx.hitstop > 0) { G.fx.hitstop -= dt; G.fx.updateShake(dt); break; }
-        updateWorld(dt);
+        var wn = G.Boss.introGate(dt);   // v9: entrada de jefe con cine (presagio = 0 pasos de mundo; entrada corta = varios pasos de STEP); sin cine siempre 1
+        for (var wi = 0; wi < wn; wi++) { updateWorld(dt); if (!G.Boss.intro || G.state !== 'play') break; }
         break;
       case 'paused':
         if (G.Hud.eqOpen) { if (G.Smith.update(dt)) { G.Hud.eqOpen = false; G.Smith.close(); } break; }   // v8.1: EQUIPO (solo lectura) dentro de la pausa
