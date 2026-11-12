@@ -28,6 +28,7 @@
 
   P.open = function (name) {
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
+    if (name === 'manual') G.Manual.open('panel');
     if (name === 'forge') G.Tree.open();
     if (name === 'armor') G.Smith.open();
     if (name === 'rufo') st.rt = 0;
@@ -43,6 +44,7 @@
 
   P.update = function (dt) {
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
+    if (cur === 'manual') { if (G.Manual.update(dt)) { G.Manual.close(); cur = st.manBack || 'menu'; } return false; }
     if (cur === 'forge') return G.Tree.update(dt);
     if (cur === 'armor') { var ra = G.Smith.update(dt); if (ra && st.armorFrom === 'portal') { st.armorFrom = null; cur = 'portal'; return false; } return ra; }
     var esc = inp.hit('Escape'), cl = onR(R_CLOSE);
@@ -68,6 +70,7 @@
   P.draw = function (c) {
     if (cur === 'forge') return G.Tree.draw(c);
     if (cur === 'armor') return G.Smith.draw(c);
+    if (cur === 'manual') return G.Manual.draw(c);
     if (cur === 'vesper') drawVesper(c);
     else if (cur === 'rufo') drawRufo(c);
     else if (cur === 'portal') drawPortal(c);
@@ -810,6 +813,7 @@
     if (onR(R_CLOSE) || onR(MB(3))) return true;
     if (onR(MB(0))) { G.Aldea.fromMenu = true; cur = 'archive'; st.csel = 0; }
     else if (onR(MB(1))) { cur = 'settings'; }
+    else if (onR(MB(4))) { st.manBack = 'menu'; P.open('manual'); }
     else if (onR(MB(2))) {
       if (confirm === 'del') { G.Save.reset(); G.Aldea.open(false); say('Progreso borrado.'); return false; }
       confirm = 'del'; confirmT = 4000; say('Pulsa otra vez para BORRAR todo el progreso (no se puede deshacer; exporta antes si dudas).');
@@ -824,6 +828,7 @@
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
     U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
+    U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
   var CB = { calm: { x: 290, y: 130, w: 380, h: 56 }, intro: { x: 290, y: 200, w: 380, h: 56 }, entries: { x: 290, y: 270, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
@@ -876,7 +881,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    man: { x: 770, y: 64, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -896,6 +901,7 @@
     if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
+    if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
   }
@@ -919,6 +925,7 @@
     U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
+    U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
     U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');

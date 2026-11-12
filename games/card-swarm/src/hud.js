@@ -141,7 +141,7 @@
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
     drawBanner(c);
     G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
-    if (G.state === 'paused') { G.minFont = G.MIN_UI; drawPause(c); if (H.eqOpen) G.Smith.draw(c); }
+    if (G.state === 'paused') { G.minFont = G.MIN_UI; drawPause(c); if (H.eqOpen) G.Smith.draw(c); if (G.Manual.isOpen()) G.Manual.draw(c); }
     if (p.hurtT > 300) { c.fillStyle = 'rgba(255,0,0,' + (0.18 * (p.hurtT - 300) / 300) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };
 
@@ -151,7 +151,8 @@
     qual: { x: 300, y: 194, w: 176, h: 50 },
     snd:  { x: 484, y: 194, w: 176, h: 50 },
     redo: { x: 300, y: 254, w: 360, h: 50 },
-    quit: { x: 300, y: 314, w: 360, h: 56 }
+    quit: { x: 300, y: 314, w: 360, h: 56 },
+    man:  { x: 672, y: 194, w: 190, h: 50 }
   };
   var quitAsk = 0;
   H.eqOpen = false;   // v8.1: botón EQUIPO de la pausa (panel de Carapa en solo lectura)
@@ -161,6 +162,7 @@
   H.pauseClick = function (m) {
     var U = G.UI, now = performance.now();
     if (G.Armor && G.Armor.smithOn() && U.inR(eqRect(), m)) { H.eqOpen = true; G.Smith.open(true); G.Armor.snd2('open') || G.Armor.snd('open'); return; }
+    if (U.inR(PB.man, m)) { G.Manual.open('pause'); G.sfx('flip', { vol: 0.5 }); return; }
     if (U.inR(PB.go, m)) { G.state = 'play'; G.input.lock = 150; G.resetClock(); }
     else if (U.inR(PB.qual, m)) { G.Sys.cycleQuality(); }
     else if (U.inR(PB.snd, m)) { G.Sys.toggleMute(); }
@@ -177,6 +179,7 @@
     U.button(c, PB.go, 'CONTINUAR', { size: 24, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     U.button(c, PB.qual, 'GRÁFICOS: ' + G.Sys.qualityLabel(), { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, PB.snd, G.Sys.muted ? 'SONIDO: NO' : 'SONIDO: SÍ', { size: 14, color: G.Sys.muted ? '#7a3a3a' : '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, PB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas y fusiones' });
     if (G.Armor && G.Armor.smithOn()) U.button(c, eqRect(), 'EQUIPO', { size: 18, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: G.Armor.OFF ? 'apagado' : 'DEF ' + Math.round(G.Armor.get().def) });
     if (G.mode === 'practice') U.button(c, redoRect(), G.Sys.isTouch() ? 'REINICIAR' : 'REINICIAR PRÁCTICA', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     var ask = quitAsk > now;

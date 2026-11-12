@@ -28,8 +28,8 @@
   // Pantalla de fin (v: textos). Rejilla vertical: título 30, subtítulo 62, columnas de y = 84 a 444, botones de y = 456. Texto >= 12 px lógicos con interlineado >= 1,3, fondo opaco
   // (no se transparenta la arena) y filas que se reparten solas: si una fila "izquierda + derecha" no cabe en el ancho del panel, la derecha baja a una línea propia.
   var PN_X = 500, PN_Y = 84, PN_W = 440, PN_H = 360, IN_X = 516, IN_W = 408;
-  function infoRows(c, y, rows, size) {   // rows: [[izq, colIzq, der, colDer], ...]; devuelve la y siguiente
-    size = size || 13; var lh = Math.round(size * 1.5);
+  function infoRows(c, y, rows, size, lhh) {   // rows: [[izq, colIzq, der, colDer], ...]; devuelve la y siguiente
+    size = size || 13; var lh = lhh || Math.round(size * 1.5);
     rows.forEach(function (r) {
       if (!r || (!r[0] && !r[2])) return;
       c.font = 'bold ' + size + 'px "Courier New", monospace';
@@ -98,48 +98,46 @@
     // ---- panel del botín
     U.panel(c, PN_X, PN_Y, PN_W, PN_H, { border: '#8a6a30' });
     G.txt(c, 'BOTÍN  (+' + sm.total + ' partes)', IN_X, 108, 18, '#ffd27a', 'left');
-    var L = G.Loot, shown = 0, GY = 140, GP = 32;
+    var L = G.Loot, shown = 0, GY = 140, GP = 30, nItems = L.PARTS.filter(function (P) { return sm.parts[P.id]; }).length + (bi ? bi.trophies.length : 0), COLS = nItems > 9 ? 4 : 3, CW = Math.floor(IN_W / COLS);
     L.PARTS.forEach(function (P) {
       var n = sm.parts[P.id] || 0; if (!n) return;
-      var col = shown % 3, row = Math.floor(shown / 3), x = IN_X + col * 136, y = GY + row * GP;
-      U.part(c, P.id, x + 12, y, 12);
-      G.txt(c, '+' + n, x + 30, y, 17, P.rare ? '#e0a8ff' : '#fff', 'left');
-      G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + 66, y + 1, 12, '#b4a8c8', 'left');
+      var col = shown % COLS, row = Math.floor(shown / COLS), x = IN_X + col * CW, y = GY + row * GP;
+      U.part(c, P.id, x + 11, y, 11);
+      G.txt(c, '+' + n, x + 27, y, COLS === 4 ? 15 : 17, P.rare ? '#e0a8ff' : '#fff', 'left');
+      G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + (COLS === 4 ? 62 : 66), y + 1, 12, '#b4a8c8', 'left');
       shown++;
     });
     if (bi && bi.trophies.length) bi.trophies.forEach(function (tk) {   // trofeos de jefe: cuentan como Esencia
       var T = G.Boss.TROPHY[tk]; if (!T) return;
-      var col2 = shown % 3, row2 = Math.floor(shown / 3), x2 = IN_X + col2 * 136, y2 = GY + row2 * GP;
-      c.drawImage(Assets.sprite(T.spr, 0), x2, y2 - 14, 28, 28); G.txt(c, '+1 ' + T.name.split(' ')[0], x2 + 32, y2, 13, '#ffd27a', 'left');
+      var col2 = shown % COLS, row2 = Math.floor(shown / COLS), x2 = IN_X + col2 * CW, y2 = GY + row2 * GP;
+      c.drawImage(Assets.sprite(T.spr, 0), x2, y2 - 12, 24, 24); G.txt(c, '+1 ' + T.name.split(' ')[0], x2 + 28, y2, 12, '#ffd27a', 'left');
       shown++;
     });
     if (!shown) G.txt(c, 'Sin partes esta vez', IN_X, GY, 14, '#b4a8c8', 'left');
-    var y = GY + Math.max(1, Math.ceil(shown / 3)) * GP + 6;
+    var y = GY + Math.max(1, Math.ceil(shown / COLS)) * GP + 4;
     c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(IN_X, y - 12, IN_W, 1);
-    U.part(c, 'brasa', IN_X + 10, y + 8, 10);
-    G.txt(c, '+' + sm.brasas + ' Brasas', IN_X + 28, y + 8, 17, '#ff9a3c', 'left');
-    G.txt(c, 'total ' + S.brasas, IN_X + IN_W, y + 8, 13, '#ffc890', 'right');
-    y += 32;
+    U.part(c, 'brasa', IN_X + 10, y + 6, 10);
+    G.txt(c, '+' + sm.brasas + ' Brasas', IN_X + 28, y + 6, 17, '#ff9a3c', 'left');
+    G.txt(c, 'total ' + S.brasas, IN_X + IN_W, y + 6, 13, '#ffc890', 'right');
+    y += 30;
+    var pfTxt = sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '';
     var rows = [];
     if (bi) rows.push(['Jefe +' + bi.brasas + (bi.peligro > 1 ? ' (P' + G.Boss.ROMAN[bi.peligro] + ')' : '') + (bi.mode === 'hunt' ? '' : '   Expedición +' + (sm.brasas - bi.brasas)), '#e0b888']);
-    rows = rows.map(function (r) { return [r[0], r[1]]; });
-    if (sm.rare) rows.push(['¡Esencia rara conseguida!', '#e0a8ff', sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '', '#ffd24a']);
-    else rows.push(['Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', '#b4a8c8', sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '', '#ffd24a']);
+    rows.push([sm.rare ? '¡Esencia rara conseguida!' : 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', sm.rare ? '#e0a8ff' : '#b4a8c8', pfTxt, '#ffd24a']);
     if (bi && bi.unlocked) rows.push(['¡PELIGRO ' + G.Boss.ROMAN[bi.unlocked] + ' DESBLOQUEADO!', '#9dffb4']);
-    if (sm.blocked > 0) rows.push(['Daño evitado por armadura: ' + sm.blocked + ' (' + Math.round(100 * sm.blocked / Math.max(1, sm.rawDmg)) + ' %)', '#7fd8e8']);
-    y = infoRows(c, y, rows, 13);
-    if (sm.quest) { y += 2; y = wrapLines(c, y, 'Encargo: ' + sm.quest, 2, 13, '#ffe9a0', IN_X, IN_W); }
-    // nuevas cartas forjables / recordatorio de PF, y duración, pegados al fondo del panel
-    var by = PN_Y + PN_H - 12;
+    y = infoRows(c, y, rows, 13, 18);
+    // pie del panel: cartas nuevas (o recordatorio de PF) anclado abajo; lo opcional (armadura, encargo, duración) entra solo si queda sitio
+    var bot = PN_Y + PN_H - 10, foot = sm.newCards.length ? 92 : 20, free = function (h) { return y + h <= bot - foot; };
+    if (sm.blocked > 0 && free(18)) y = infoRows(c, y, [['Daño evitado por armadura: ' + sm.blocked + ' (' + Math.round(100 * sm.blocked / Math.max(1, sm.rawDmg)) + ' %)', '#7fd8e8']], 13, 18);
+    if (sm.quest) { var ql = U.wrap(c, 'Encargo: ' + sm.quest, IN_W, 13).slice(0, 2); while (ql.length && !free(ql.length * 18)) ql.pop(); ql.forEach(function (ln) { G.txt(c, ln, IN_X, y, 13, '#ffe9a0', 'left'); y += 18; }); }
     if (sm.dur) {
       var dtx = 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : '');
-      var dl = U.wrap(c, dtx, IN_W, 12); by -= (dl.length - 1) * 17; dl.forEach(function (ln, k) { G.txt(c, ln, IN_X, by + k * 17, 12, '#b4a8c8', 'left'); });
-      by -= 22;
+      var dl = U.wrap(c, dtx, IN_W, 12).slice(0, 2); if (free(dl.length * 16)) dl.forEach(function (ln) { G.txt(c, ln, IN_X, y, 12, '#b4a8c8', 'left'); y += 16; });
     }
     if (sm.newCards.length) {
-      by -= 66; G.txt(c, 'NUEVAS CARTAS YA FORJABLES', IN_X, by - 14, 13, '#9dffb4', 'left');
-      sm.newCards.slice(0, 8).forEach(function (id, k) { G.Cards.drawCard(c, { id: id, lvl: 0 }, IN_X + k * 52, by, 46, 60, { nocd: true, glow: '#9dffb4' }); });
-    } else G.txt(c, 'PF libres ' + G.Tree.pfFree() + '   -   nodos comprables ' + G.Tree.availableCount(), IN_X, by, 13, '#b4a8c8', 'left');
+      var cy = bot - 66; G.txt(c, 'NUEVAS CARTAS YA FORJABLES', IN_X, cy - 12, 13, '#9dffb4', 'left');
+      sm.newCards.slice(0, 6).forEach(function (id, k) { G.Cards.drawCard(c, { id: id, lvl: 0 }, IN_X + k * 68, cy, 62, 66, { nocd: true, glow: '#9dffb4' }); });
+    } else G.txt(c, 'PF libres ' + G.Tree.pfFree() + '   -   nodos comprables ' + G.Tree.availableCount(), IN_X, bot - 6, 13, '#b4a8c8', 'left');
     drawEndButtons(c, S);
   };
   function drawEndButtons(c, S) {

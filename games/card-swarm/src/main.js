@@ -445,6 +445,7 @@
         for (var wi = 0; wi < wn; wi++) { updateWorld(dt); if (!G.Boss.intro || G.state !== 'play') break; }
         break;
       case 'paused':
+        if (G.Manual && G.Manual.isOpen()) { if (G.Manual.update(dt)) { G.Manual.close(); G.input.lock = 150; } break; }   // Manual abierto desde la pausa
         if (G.Hud.eqOpen) { if (G.Smith.update(dt)) { G.Hud.eqOpen = false; G.Smith.close(); } break; }   // v8.1: EQUIPO (solo lectura) dentro de la pausa
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
         else if (inp.hit('KeyB')) G.finish(false);   // abandonar: conserva las partes recogidas y va al botín
@@ -501,6 +502,7 @@
     if (G.state === 'cine') { G.Cine.draw(ctx); return; }
     if (G.state === 'ending') { G.Ending.draw(ctx); G.Sys.drawBar(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
+    if (G.state === 'gameover') { G.Hud.draw(ctx); return; }   // la pantalla de fin es opaca: no se pinta el mundo detrás (ahorra trabajo y evita textos flotantes fuera de sitio)
     var off = G.fx.offset();
     ctx.save();
     var zm = G.cam.zoom || 1, P = G.Proj, i, TN = G.Tundra.on, PN = G.Panal.on;
