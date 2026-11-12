@@ -27,10 +27,10 @@
     var sc = o.scale || (fe && fe.sc) || 1, r = d.r * sc, mg = G.WALL + r;
     var e = {
       type: type, x: G.clamp(x, mg, G.AW - mg), y: G.clamp(y, mg, G.AH - mg), r: r, hp: hp, maxHp: hp, spd: d.spd, dmg: dmg, sc: sc,
-      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, spdBase: d.spd * spdK, spr: spr, skin: fbSkin || (fe && fe.skin) || null, fe: fe || null, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: Math.random() * 1000,
+      spawnT: o.spawnT != null ? o.spawnT : B.spawnTelegraph, spdBase: d.spd * spdK, spr: spr, skin: fbSkin || (fe && fe.skin) || null, fe: fe || null, flash: 0, kx: 0, ky: 0, dead: false, st: 'move', t: 0, face: 1, anim: G.rng() * 1000,
       hitCd: 0, burnT: 0, burnDps: 0, poisonT: 0, poisonN: 0, bleedT: 0, slowT: 0, slowPct: 0, stunT: 0, vaporCd: 0,
       acc: { fire: 0, poison: 0, blood: 0 }, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, boomDepth: 0, lastTag: 'neutral', summoned: !!o.summoned, src: o.src || null,
-      shootT: G.rnd(1200, 2600), sumT: G.rnd(2500, 6000), atkT: 2000, ai: 0, strafe: Math.random() < 0.5 ? 1 : -1, fa: 0
+      shootT: G.rnd(1200, 2600), sumT: G.rnd(2500, 6000), atkT: 2000, ai: 0, strafe: G.rng() < 0.5 ? 1 : -1, fa: 0
     };
     e.spawnMax = e.spawnT; if (fe && fe.nosep) e.nosep = true;
     if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
@@ -82,7 +82,7 @@
     for (i = 0; i < ps.length; i++) { pd = ps[i]; if (pondCount(pd, type, e) < lim) c.push({ pd: pd, far: G.dist(pd.x, pd.y, p.x, p.y) }); }
     if (!c.length) c = ps.map(function (q) { return { pd: q, far: G.dist(q.x, q.y, p.x, p.y) }; });
     // prefiere los charcos a 200-650 px del jugador (lo bastante lejos para no brotar encima y lo bastante cerca para que importen); si no hay, el más cercano a >= 120 px
-    var far = c.filter(function (q) { return q.far >= 200 && q.far <= 650; }), pick = far.length ? far[Math.floor(Math.random() * far.length)] : c.filter(function (q) { return q.far >= 120; }).sort(function (a, b) { return a.far - b.far; })[0] || c[0];
+    var far = c.filter(function (q) { return q.far >= 200 && q.far <= 650; }), pick = far.length ? far[Math.floor(G.rng() * far.length)] : c.filter(function (q) { return q.far >= 120; }).sort(function (a, b) { return a.far - b.far; })[0] || c[0];
     e.pond = pick.pd; e.x = pick.pd.x + G.rnd(-8, 8); e.y = pick.pd.y + G.rnd(-4, 4);
   }
   function nearestPond(p, e) {   // charco más cercano al jugador con hueco para esta sanguijuela
@@ -110,8 +110,8 @@
       if (z.arm > 0) { z.arm -= dt; if (z.arm <= 0) { z.arm = 0; if (z.kind !== 'fire') fx.ring(z.x, z.y, z.r * 0.4, z.r, 250, z.kind === 'olvido' ? '#7fffe0' : '#9bff4a', 3); } continue; }
       z.life -= dt;
       if (z.life <= 0) { G.zones.splice(i, 1); continue; }
-      if (z.kind !== 'fire' && Math.random() < 0.1) fx.dot(z.x + G.rnd(-z.r, z.r) * 0.7, z.y + G.rnd(-z.r, z.r) * 0.7, 0, -30, 600, z.kind === 'olvido' ? '#7fffe0' : '#9bff4a', 3, { drag: 1 });
-      if (z.kind === 'fire' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-8, 8), z.y, 0, -40, 400, '#ff9a3c', 3, { add: true });
+      if (z.kind !== 'fire' && Math.random() < 0.1) fx.dot(z.x + G.rndFx(-z.r, z.r) * 0.7, z.y + G.rndFx(-z.r, z.r) * 0.7, 0, -30, 600, z.kind === 'olvido' ? '#7fffe0' : '#9bff4a', 3, { drag: 1 });
+      if (z.kind === 'fire' && Math.random() < 0.08) fx.dot(z.x + G.rndFx(-8, 8), z.y, 0, -40, 400, '#ff9a3c', 3, { add: true });
       if (p.dead) continue;
       if (G.dist(z.x, z.y, p.x, p.y) <= z.r) {
         var bog = (G.Armor && (z.kind === 'acid' || z.kind === 'olvido' || z.cd)) ? G.Armor.bogMul() : 1;   // v8.1: Piel de pantano reduce a la mitad charcos y Lirio
@@ -524,7 +524,7 @@
       } else if (e.t >= e.dashMs) { e.st = 'rec'; e.t = 0; fx.dust(e.x, e.y, 3); }
     } else if (e.st === 'rec') {
       e.t += dt;
-      if (e.t >= DG.rec) { e.st = 'move'; e.orbT = G.rnd(DG.orbMs[0], DG.orbMs[1]); e.orR = G.rnd(170, 200); e.strafe = Math.random() < 0.5 ? 1 : -1; }
+      if (e.t >= DG.rec) { e.st = 'move'; e.orbT = G.rnd(DG.orbMs[0], DG.orbMs[1]); e.orR = G.rnd(170, 200); e.strafe = G.rng() < 0.5 ? 1 : -1; }
     }
   }
 
@@ -634,7 +634,7 @@
       e.t += dt;
       if (e.t < B.tele.leech.ms - 200) e.ang = a;   // el rumbo se fija en los últimos 200 ms
       e.face = Math.cos(e.ang) >= 0 ? 1 : -1;
-      if (Math.random() < 0.25) fx.dot(e.x + G.rnd(-12, 12), e.y + G.rnd(-6, 6), 0, -45, 500, '#cfeff0', 3, { drag: 1 });
+      if (Math.random() < 0.25) fx.dot(e.x + G.rndFx(-12, 12), e.y + G.rndFx(-6, 6), 0, -45, 500, '#cfeff0', 3, { drag: 1 });
       if (e.t >= B.tele.leech.ms) {
         e.st = 'lunge'; e.t = 0; e.hidden = false; e.untarget = false; e.hitDone = false; e.len = G.clamp(d + 20, LE.lungeMin, LE.lungeMax);
         fx.ring(e.x, e.y, 6, 30, 260, '#bfeaff', 3); fsfx(e, 'lunge', { vol: 0.8 });
@@ -649,7 +649,7 @@
     } else if (st === 'flee') {
       dx = e.pond.x - e.x; dy = e.pond.y - e.y; dd = Math.hypot(dx, dy);
       moveTo(e, Math.atan2(dy, dx), e.crawl ? LE.crawl : LE.flee, s); e.face = dx >= 0 ? 1 : -1;
-      if (dd < 8) { e.st = 'hidden'; e.hidden = e.untarget = true; e.coolT = e.crawl ? 1500 : LE.cool; e.crawl = false; e.tgtT = G.rnd(500, 2000); fx.ring(e.x, e.y, 4, 26, 300, '#9fd8d0', 2); }
+      if (dd < 8) { e.st = 'hidden'; e.hidden = e.untarget = true; e.coolT = e.crawl ? 1500 : LE.cool; e.crawl = false; e.tgtT = G.rndFx(500, 2000); fx.ring(e.x, e.y, 4, 26, 300, '#9fd8d0', 2); }
     }
   }
 
@@ -659,7 +659,7 @@
     var st = e.st, RG = e.fe && e.fe.regrow || { ms: 8000, hp: 0.6, max: 2 };
     if (st === 'emerge' || st === 'regrow') {
       if (e.t === 0) fsfx(e, st === 'emerge' ? 'tele' : 'regrow', { vol: 0.8 });
-      e.t += dt; if (Math.random() < 0.3) fx.dot(e.x + G.rnd(-14, 14), e.y + G.rnd(-6, 6), 0, -50, 500, '#cfeff0', 3, { drag: 1 });
+      e.t += dt; if (Math.random() < 0.3) fx.dot(e.x + G.rndFx(-14, 14), e.y + G.rndFx(-6, 6), 0, -50, 500, '#cfeff0', 3, { drag: 1 });
       if (e.t >= (st === 'emerge' ? B.tele.emerge.ms : HL.regrowTele)) {
         if (st === 'regrow') e.hp = e.maxHp * RG.hp;
         e.st = 'idle'; e.t = 0; e.untarget = false; e.immune = false; e.biteT = 600; e.face = 1;
@@ -762,7 +762,7 @@
   }
 
   // ---- Minijefes v5 (Coloso Escudero y Madre Colmena): bolsa de ataques, enrage al 50 %, parte rompible y ventanas de exposición.
-  function shuffleBag(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function shuffleBag(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   // exposición: el golpe de cualquier ángulo hace x mul durante ms (la lee Combat.deal)
   E.expose = function (e, ms, mul) { e.expT = Math.max(e.expT || 0, ms); e.expMul = mul; fx.ring(e.x, e.y, 10, e.r + 26, 350, '#ffe27a', 3); G.sfx('card_select', { pitch: 1.6, vol: 0.5 }); };
   function miniHeart(e) { G.Combat.dropGem(e.x + 20, e.y + 14, 'heart', B.player.heal); }
@@ -833,7 +833,7 @@
         if (n === 'bash') { e.st = 'wind'; e.t = 0; e.ang = a; }
         else if (n === 'stomp') { e.st = 'swind'; e.t = 0; e.ang = a; }
         else if (n === 'charge') { e.st = 'cwind'; e.t = 0; e.ang = a; e.cn = 0; chargeEnd(e); G.sfx('hit', { pitch: 0.6, vol: 0.5 }); }
-        else if (n === 'shields') { e.st = 'owind'; e.t = 0; e.orbN = e.enraged ? M.orbN2 : M.orbN; e.oa = Math.random() * 6.283; e.odir = Math.random() < 0.5 ? -1 : 1; G.sfx('wave_start', { pitch: 0.7, vol: 0.5 }); }
+        else if (n === 'shields') { e.st = 'owind'; e.t = 0; e.orbN = e.enraged ? M.orbN2 : M.orbN; e.oa = G.rng() * 6.283; e.odir = G.rng() < 0.5 ? -1 : 1; G.sfx('wave_start', { pitch: 0.7, vol: 0.5 }); }
       }
     } else if (e.st === 'enrage') {
       e.t += dt; if (e.t >= 900) { e.st = 'move'; e.atkT = 500; }
@@ -962,7 +962,7 @@
           G.sfx(e.variant === 'ventisquero' ? 'icicle_fall' : 'wave_start', { pitch: 1.1, vol: 0.5 });
         } else if (n === 'tide') {   // Marea ácida: 4 (5 enrage) charcos de ácido en anillo alrededor del jugador (se arman en 1 s)
           e.st = 'twind'; e.t = 0;
-          var tn = e.enraged ? M.tideN2 : M.tideN, a0 = Math.random() * 6.283;
+          var tn = e.enraged ? M.tideN2 : M.tideN, a0 = G.rng() * 6.283;
           for (var z = 0; z < tn; z++) {
             var za = a0 + z * 6.283 / tn, zx = G.clamp(p.x + Math.cos(za) * 115, G.WALL + 55, G.AW - G.WALL - 55), zy = G.clamp(p.y + Math.sin(za) * 115, G.WALL + 55, G.AH - G.WALL - 55);
             E.zone({ kind: e.variant === 'ventisquero' ? 'blizz' : 'acid', cold: e.variant === 'ventisquero' ? 14 : 0, x: zx, y: zy, r: M.tideR, arm: M.tideTele, life: 5500, dmg: hiveDmg(), tick: 500, slow: 0.15, owner: e, src: 'hive' });   // Ventisquero: Ventisca local (+14 % de Frío/s dentro)

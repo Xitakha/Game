@@ -1,5 +1,5 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
-   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
+   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?perf=1 (medidor de frame-time, src/perf.js), ?seed=<n> (RNG sembrado de la simulacion), ?biome=cripta,
    familias v5 (src/families.js): ?fam=0 (roster legado) | ?fam=1 (fuerza familias) ?mat=1|0 (tabla de debilidades por material),
    ?pf=<n> (Puntos de Forja), ?give=, Tundra (P3): ?biome=tundra [&nobos=1 sin jefe, &ice=0 sin hielo, &cold=0 sin Frío, &softice=1 &lightstorm=1 accesibilidad] (src/tundra.js), ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {
@@ -139,7 +139,17 @@
   };
 
   // ---------------------------------------------------------------- Utilidades
-  G.rnd = function (a, b) { return a + Math.random() * (b - a); };
+  // RNG de la SIMULACION (ofertas, hordas, botin, azar de combate/jefes). Sin ?seed= es Math.random tal cual (comportamiento identico a antes);
+  // con ?seed=<n> es mulberry32 (misma semilla + mismas entradas = misma partida). Particulas/fx usan Math.random (G.rndFx) y no consumen esta secuencia.
+  G.rng = Math.random; G.seed = null;
+  G.rngSeed = function (n) {
+    if (n == null) { G.rng = Math.random; G.seed = null; return; }
+    var a = (n >>> 0) || 1; G.seed = n;
+    G.rng = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  };
+  if (/[?&]seed=\d+/.test(location.search)) G.rngSeed(qnum('seed', 0));
+  G.rnd = function (a, b) { return a + G.rng() * (b - a); };
+  G.rndFx = function (a, b) { return a + Math.random() * (b - a); };
   G.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   G.dist = function (ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); };
   G.angDiff = function (a, b) { var d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -425,6 +435,8 @@
     }
     inp.pressed = {}; inp.swipe = 0; inp.dragY = 0;
   }
+
+  G.step = step;   // para tests deterministicos (con ?speed=0 el bucle no avanza solo)
 
   // ---------------------------------------------------------------- Render
   function buildGround(biome) {

@@ -114,7 +114,7 @@
   // ------------------------------------------------------------- Oferta
   // Solo cartas de TU colección (desbloqueadas en la Base) y que no estén ya a Nv3
   function pool() { return C.defs.filter(function (d) { var s = C.slotOf(d.id); return G.Fusion.unlockedCard(d.id) && (!s || s.lvl < 3); }); }   // FUSION: lo desbloqueado en la forja (o todo con ?all=1)
-  function rndOf(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function rndOf(a) { return a[Math.floor(G.rng() * a.length)]; }
   // FUSION: 'newCombos' devuelve las RECETAS que completaría una carta de esta etiqueta con las cartas de ataque de la mano (formato {k,name,a,b,desc,recipe,slot})
   C.newCombos = function (tag) {
     if (tag === 'neutral') return [];
@@ -124,15 +124,15 @@
   C.makeOffer = function (mode) {
     var P = pool(), out = [], full = C.count() >= SLOTS, F = G.Fusion;
     if (mode === 'start') {   // 3 cartas de etiquetas distintas
-      var tags = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'].filter(function (tg) { return P.some(function (d) { return d.type === 'attack' && d.tag === tg; }); }).sort(function () { return Math.random() - 0.5; }).slice(0, 3);
+      var tags = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'].filter(function (tg) { return P.some(function (d) { return d.type === 'attack' && d.tag === tg; }); }).sort(function () { return G.rng() - 0.5; }).slice(0, 3);
       return tags.map(function (tg) { return rndOf(P.filter(function (d) { return d.type === 'attack' && d.tag === tg; })).id; });
     }
     var syn = P.filter(function (d) { return d.type === 'attack' && !C.slotOf(d.id) && C.newCombos(d.tag).length > 0; });
     // al menos 1 carta de fusión por oferta mientras haya hueco de poder (siempre en la 1.ª tras el inicio); con los poderes llenos baja al 40 %
     var pf = F.fused === 0 || F.activeCount() < 2 ? 1 : 0.4;
-    if (syn.length && Math.random() < pf) out.push(rndOf(syn).id);
+    if (syn.length && G.rng() < pf) out.push(rndOf(syn).id);
     var dups = P.filter(function (d) { return C.slotOf(d.id) && out.indexOf(d.id) < 0; });
-    if (dups.length && Math.random() < (full ? 0.7 : 0.25)) out.push(rndOf(dups).id);
+    if (dups.length && G.rng() < (full ? 0.7 : 0.25)) out.push(rndOf(dups).id);
     var guard = 0;
     while (out.length < 3 && guard++ < 200) {
       var cand = P.filter(function (d) { return out.indexOf(d.id) < 0; });
@@ -143,11 +143,11 @@
         if (C.count() < 3 && d.type === 'passive') w *= 0.4;
         return w;
       });
-      var tot = ws.reduce(function (a, b) { return a + b; }, 0), r = Math.random() * tot, k = 0;
+      var tot = ws.reduce(function (a, b) { return a + b; }, 0), r = G.rng() * tot, k = 0;
       for (var i = 0; i < ws.length; i++) { r -= ws[i]; if (r <= 0) { k = i; break; } }
       out.push(cand[k].id);
     }
-    for (var j = out.length - 1; j > 0; j--) { var q = Math.floor(Math.random() * (j + 1)), t = out[j]; out[j] = out[q]; out[q] = t; }
+    for (var j = out.length - 1; j > 0; j--) { var q = Math.floor(G.rng() * (j + 1)), t = out[j]; out[j] = out[q]; out[q] = t; }
     return out;
   };
 

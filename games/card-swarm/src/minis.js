@@ -98,7 +98,7 @@
   M.snd = function (n, fb, o) { if (hasSfx(n)) G.sfx(n, o); else if (fb) G.sfx(fb, o); };
   M.stg = function (n) { try { if (hasSfx(n)) G.Snd.play(n, 1); } catch (x) { /* audio opcional */ } };
   function atkLog(e, n) { if (G.dbg) { var A = G.dbg.atk || (G.dbg.atk = {}), k = 'mini_' + e.mid + ':' + n; A[k] = (A[k] || 0) + 1; } }
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   M.hurt = function (e, p, dmg, name, kb, o) {
     if (p.dead) return false;
     dmg = Math.min(M.HIT_CAP, dmg * (e.D && e.D.dmgK || 1));   // dmgK: calibración con el bot (muertes <= 35 %)

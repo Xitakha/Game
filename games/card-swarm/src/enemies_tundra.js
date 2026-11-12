@@ -25,7 +25,7 @@
     if (!fe || !fe.tun) return;
     e.tai = !!E.TAI[e.type];
     switch (e.type) {
-      case 'frostwolf': e.st = 'surround'; e.cdT = G.rnd(600, 1800); e.rot = Math.random() * 6.283; break;
+      case 'frostwolf': e.st = 'surround'; e.cdT = G.rnd(600, 1800); e.rot = G.rng() * 6.283; break;
       case 'boar': e.atkT = G.rnd(1500, 3000); break;
       case 'shield': e.plateHp = fe.plate; e.bashT = G.rnd(2000, 4000); if (B.mat.on) e.mat = 'escarcha'; break;   // placa de hielo: cuenta como Escarcha hasta que se derrite con 30 de Fuego
       case 'moth': e.shootT = G.rnd(1500, 3000); break;
@@ -172,7 +172,7 @@
       if (st === 'crawl') { moveTo(e, a, SG.crawl, s); contact(e, dt, p, d, 1200, 'sower'); e.rearm -= dt; }
       if (!p.dead && d < SG.wake + p.r && (st === 'dormant' || e.rearm <= 0)) { e.st = 'tele'; e.t = 0; fsfx(e, 'tele', { vol: 0.9 }); }
     } else if (st === 'tele') {
-      e.t += dt; if (Math.random() < 0.2) fx.dot(e.x + G.rnd(-10, 10), e.y + 8, G.rnd(-20, 20), -30, 400, '#bfeaff', 2, { drag: 1 });
+      e.t += dt; if (Math.random() < 0.2) fx.dot(e.x + G.rndFx(-10, 10), e.y + 8, G.rndFx(-20, 20), -30, 400, '#bfeaff', 2, { drag: 1 });
       if (e.t >= B.tele.stalag.ms) {
         e.st = 'erupt'; e.t = 0; fx.shake(4, 140); fx.ring(e.x, e.y, 8, SG.ring + 8, 260, '#ffffff', 3); fx.burst(e.x, e.y, 10, '#bfeaff', 200, 400, 3, { add: true }); fsfx(e, 'erupt', { vol: 0.9 });
         if (stalagHit(e, p)) G.Player.hurt(p, e.dmg, e.x, e.y, { src: 'sower' });
@@ -316,7 +316,7 @@
   E.tunStalag = function (c, e) {
     var a = e.spawnT > 0 ? 0.25 + 0.4 * (1 - e.spawnT / (e.spawnMax || B.spawnTelegraph)) : 1;
     if (e.flash > 0) a = 1;
-    var wob = e.st === 'crawl' ? Math.sin(e.anim / 180) * 1.5 : e.st === 'tele' ? (Math.random() - 0.5) * 3 : 0;
+    var wob = e.st === 'crawl' ? Math.sin(e.anim / 180) * 1.5 : e.st === 'tele' ? (G.rng() - 0.5) * 3 : 0;
     T.drawPillar(c, e.x + wob, e.y - 10, { r: 22, eyes: true, t: e.anim, alpha: a, h: e.st === 'erupt' ? 66 : 58 });
     if (e.flash > 0) { c.save(); c.globalAlpha = 0.5; T.drawPillar(c, e.x, e.y - 10, { r: 22, alpha: 0.5, h: 58 }); c.restore(); }
     if (e.spawnT <= 0 && e.hp < e.maxHp && !e.untarget) { var w = 22, bx = Math.round(e.x - w / 2), by = Math.round(e.y - 52); c.fillStyle = '#1a0a12'; c.fillRect(bx - 1, by - 1, w + 2, 5); c.fillStyle = '#e04050'; c.fillRect(bx, by, Math.max(0, w * e.hp / e.maxHp), 3); }

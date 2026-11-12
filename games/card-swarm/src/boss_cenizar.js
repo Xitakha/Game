@@ -261,7 +261,7 @@
   // ================================================================= HOOKS DEL MOTOR
   var PILLARS = [[470, 300], [970, 300], [330, 520], [1110, 520], [590, 640], [850, 640]];
   function drawPillar(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
+    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
     if (typeof Assets.drawAshPillar === 'function' && G.hasSpr('obs_ash_pillar')) { Assets.drawAshPillar(c, Math.round(o.x + sh), Math.round(o.y), { hp: 1, struck: o.shake > 0 }); return; }
     c.save(); c.translate(Math.round(o.x + sh), Math.round(o.y)); c.lineJoin = 'round'; c.strokeStyle = OUT; c.lineWidth = 3;
     c.fillStyle = '#3a3440'; c.beginPath(); c.moveTo(-20, 10); c.lineTo(-16, -40); c.lineTo(-6, -50); c.lineTo(10, -42); c.lineTo(20, 10); c.closePath(); c.fill(); c.stroke();
@@ -404,7 +404,7 @@
     if (Z.tickB) Z.tickB(e, dt);
     if (Z.tickChain) Z.tickChain(e, dt);
     // adornos: brasas del cuerpo
-    if (Math.random() < 0.25 * (G.Q && G.Q.level === 'baja' ? 0.3 : 1)) fx.ember(e.x + G.rnd(-70, 70), e.y + G.rnd(-60, 60), 1, 20);
+    if (Math.random() < 0.25 * (G.Q && G.Q.level === 'baja' ? 0.3 : 1)) fx.ember(e.x + G.rndFx(-70, 70), e.y + G.rndFx(-60, 60), 1, 20);
   };
 
   // ================================================================= ASH (Ceniza viva)
@@ -456,7 +456,7 @@
   };
   ATK.c_barra = {   // rectángulo 60 x 520 que gira 100 grados en 1,4 s desde el jefe
     start: function (e, A0) {
-      A0.aim = angTo(e, PL()); A0.sgn = Math.random() < 0.5 ? -1 : 1; A0.sw = 100 * DEG; A0.len = 520 * geo('barra'); A0.w = 60 * geo('barra'); A0.fixAt = A0.tele * 0.5; A0.actMs = 1400; A0.rec = 600; A0.pose = 'barra'; A0.hit = false; A0.ashN = 0; A0.drawAct = true; faceTo(e, A0.aim);
+      A0.aim = angTo(e, PL()); A0.sgn = G.rng() < 0.5 ? -1 : 1; A0.sw = 100 * DEG; A0.len = 520 * geo('barra'); A0.w = 60 * geo('barra'); A0.fixAt = A0.tele * 0.5; A0.actMs = 1400; A0.rec = 600; A0.pose = 'barra'; A0.hit = false; A0.ashN = 0; A0.drawAct = true; faceTo(e, A0.aim);
     },
     tele: function (e, A0) { if (A0.t < A0.fixAt) { A0.aim = angTo(e, PL()); faceTo(e, A0.aim); } },
     cur: function (A0, t) { return A0.aim + A0.sgn * A0.sw * G.clamp(t / A0.actMs, 0, 1); },   // la barra EMPIEZA donde estaba el jugador al fijarse y barre 100 grados en el sentido de la flecha: retroceder (contra el giro) la esquiva; seguir el giro no
@@ -466,7 +466,7 @@
       var p = PL(), g = gnd(e), an = ATK.c_barra.cur(A0, A0.t), ca = Math.cos(an), sa = Math.sin(an), dx = p.x - g.x, dy = p.y - g.y, al = dx * ca + dy * sa, la = -dx * sa + dy * ca;
       if (!A0.hit && !p.dead && al > 0 && al < A0.len && Math.abs(la) < A0.w / 2 + p.r * 0.45) { A0.hit = true; hurtC(e, 22, 'boss_barra', { kb: 1.2 }); }
       if (A0.t / 280 > A0.ashN && A0.ashN < 5) { A0.ashN++; var dd = G.rnd(150, A0.len - 30); Z.ash(g.x + ca * dd, g.y + sa * dd, 30); }
-      if (Math.random() < 0.6) fx.burst(g.x + ca * G.rnd(60, A0.len), g.y + sa * G.rnd(60, A0.len), 1, '#ffb070', 60, 250, 3, { add: true });
+      if (Math.random() < 0.6) fx.burst(g.x + ca * G.rndFx(60, A0.len), g.y + sa * G.rndFx(60, A0.len), 1, '#ffb070', 60, 250, 3, { add: true });
       return A0.t >= A0.actMs;
     },
     draw: function (c, e, A0) {
@@ -488,7 +488,7 @@
     start: function (e, A0) {
       var P = pel(), room = addsCap(e) - addsAlive(), p = PL(), n = Math.min(2 + P.adds, room); A0.pose = 'llamada'; A0.actMs = 300; A0.rec = 600; A0.spots = [];
       for (var i = 0; i < n; i++) {
-        var a0 = Math.random() * TAU, cx, cy, tries = 0;
+        var a0 = G.rng() * TAU, cx, cy, tries = 0;
         do { a0 += 1.1; cx = e.x + Math.cos(a0) * 190; cy = e.y + 30 + Math.sin(a0) * 150; tries++; } while (G.dist(cx, cy, p.x, p.y) < 100 && tries < 8);
         var ad = spawnAdd('scorcher', cx, cy, A0.tele); A0.spots.push({ x: ad.x, y: ad.y });
       }
@@ -506,7 +506,7 @@
   ATK.c_extasis = {
     start: function (e, A0) {
       var br = e.broken.cayado;
-      A0.n = br ? 5 : (e.phase === 7 ? 5 : 7); A0.lane = !br; A0.a0 = Math.random() * TAU; A0.wi = 0; A0.pose = 'extasis'; A0.drawAct = true; A0.lanes = 0;
+      A0.n = br ? 5 : (e.phase === 7 ? 5 : 7); A0.lane = !br; A0.a0 = G.rng() * TAU; A0.wi = 0; A0.pose = 'extasis'; A0.drawAct = true; A0.lanes = 0;
       A0.t1 = 700; A0.actMs = 700 + (A0.n - 1) * 1300 + 1300; A0.rec = 2600; A0.fixAt = A0.tele * 0.7;
       A0.cx = e.x; A0.cy = e.y + 30; faceTo(e, angTo(e, PL())); sfx('lane_charge', { vol: 0.5 });
     },

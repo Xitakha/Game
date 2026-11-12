@@ -26,7 +26,7 @@
   L.durKey = function (min) { return min <= 7 ? 7 : min >= 10 ? 10 : 9; };
   L.dur = function (min) { return L.DUR[L.durKey(min == null ? G.RUN_LEN / 60000 : min)]; };
   // Número entero aleatorio con media n * mul (p. ej. 3 x 0,8 = 2,4 -> 2 o 3)
-  L.scaleN = function (n, mul) { var v = n * mul, f = Math.floor(v); return f + (Math.random() < v - f ? 1 : 0); };
+  L.scaleN = function (n, mul) { var v = n * mul, f = Math.floor(v); return f + (G.rng() < v - f ? 1 : 0); };
 
   L.PARTS = [
     { id: 'thread',  name: 'Hebra de larva',      short: 'Hebra',   color: '#e8dcb0', tag: 'neutral' },
@@ -191,17 +191,17 @@
       var DU = L.dur(), hunt0 = G.mode === 'hunt';
       for (var k in gt.parts) drop(e, k, hunt0 ? Math.ceil(gt.parts[k] * gm) : Math.max(t === 'boss' ? 1 : 0, L.scaleN(Math.ceil(gt.parts[k] * gm), DU.parts)));
       if (t === 'boss' && hunt0) return;
-      if (Math.random() < Math.min(1, gt.rare * (t === 'boss' ? 1 : DU.rare))) drop(e, 'rare', 1);
-      if (PD && PD.rare > 0 && Math.random() < Math.min(1, PD.rare * DU.rare)) drop(e, 'rare', 1);
+      if (G.rng() < Math.min(1, gt.rare * (t === 'boss' ? 1 : DU.rare))) drop(e, 'rare', 1);
+      if (PD && PD.rare > 0 && G.rng() < Math.min(1, PD.rare * DU.rare)) drop(e, 'rare', 1);
       return;
     }
     var d = (e.fe && e.fe.drop) || L.DROPS[t]; if (!d) return;   // v5 P2: una familia puede cambiar la parte que suelta un rol (entrada `drop: [parte, prob]`; p. ej. Perro pastor -> Mecha)
-    if (Math.random() < d[1] * L.DROP_MUL * L.dur().parts) drop(e, d[0], 1);
+    if (G.rng() < d[1] * L.DROP_MUL * L.dur().parts) drop(e, d[0], 1);
     // v5 P2: partes "huésped" (economía inicial): el Bosque perdió Escudero / Bomba / Espectro / Ascua, así que Placa, Mecha y Estática ya no caían; la familia puede declarar
     // `host: [[parte, prob], ...]` = tiradas extra por cada baja de enemigo normal que no sea el gusano (x DROP_MUL x duración). Medido en README "Economía v5 en los biomas con familia".
     var hf = B.famOf(), hs = hf && hf.host;
-    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (Math.random() < hs[hi][1] * L.DROP_MUL * L.dur().parts) drop(e, hs[hi][0], 1);
-    if (B.enemy[t].cost >= L.RARE_MIN_COST && Math.random() < pityP) drop(e, 'rare', 1);
+    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (G.rng() < hs[hi][1] * L.DROP_MUL * L.dur().parts) drop(e, hs[hi][0], 1);
+    if (B.enemy[t].cost >= L.RARE_MIN_COST && G.rng() < pityP) drop(e, 'rare', 1);
   };
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
   L.dropPart = drop;   // P4.5: la Hidra cauterizada suelta Placa extra

@@ -310,7 +310,7 @@
   // ---- Escupitajo ácido (cabeza verde): 3 charcos ácidos r 50 durante 6 s (Coro: r 65, 4 s)
   ATK.l_acido = {
     start: function (e, A0) {
-      var p = PL(), big = A0.big || 1, a0 = Math.random() * TAU, h = hd(A0.head); A0.pose = 'escupitajo'; A0.rec = 600; A0.actMs = 300; A0.r = 50 * big; A0.spots = []; A0.ox = h.x; A0.oy = h.y; A0.aim = angTo(h, p);
+      var p = PL(), big = A0.big || 1, a0 = G.rng() * TAU, h = hd(A0.head); A0.pose = 'escupitajo'; A0.rec = 600; A0.actMs = 300; A0.r = 50 * big; A0.spots = []; A0.ox = h.x; A0.oy = h.y; A0.aim = angTo(h, p);
       for (var i = 0; i < 3; i++) {
         var an = a0 + i * TAU / 3, d = G.rnd(55, 125) * big, x = clampX(p.x + Math.cos(an) * d, 60), y = clampY(p.y + Math.sin(an) * d, 60);
         A0.spots.push({ x: x, y: y });
@@ -332,7 +332,7 @@
     go: function (e, A0) { sfx('flame', { vol: 0.6, pitch: 1.6 }); fx.shake(3, 150); },
     act: function (e, A0, dt) {
       var p = PL();
-      if (Math.random() < 0.8) { var d = G.rnd(40, A0.reach); fx.burst(A0.ox + Math.cos(A0.aim) * d, A0.oy + Math.sin(A0.aim) * d, 1, '#bfeaff', 60, 400, 3, { add: true }); }
+      if (Math.random() < 0.8) { var d = G.rndFx(40, A0.reach); fx.burst(A0.ox + Math.cos(A0.aim) * d, A0.oy + Math.sin(A0.aim) * d, 1, '#bfeaff', 60, 400, 3, { add: true }); }
       if (!A0.hit && !p.dead) {
         var d2 = Math.hypot(p.x - A0.ox, p.y - A0.oy);
         if (d2 <= A0.reach + p.r && Math.abs(G.angDiff(Math.atan2(p.y - A0.oy, p.x - A0.ox), A0.aim)) <= A0.half && !crystalBlocks(A0.ox, A0.oy, p)) { A0.hit = true; hurt(e, A0.def.dmg, 'boss_aliento_helado', { slow: [0.35, 2000], kb: 0.6 }); }
@@ -356,7 +356,7 @@
         for (i = 0; i < n; i++) { var f = Math.max(60, dd - 200) + i * 80 * big; A0.bolts.push({ x: clampX(h.x + Math.cos(ang) * f, 40), y: clampY(h.y + Math.sin(ang) * f, 40), st: 0 }); }
       } else {
         A0.bolts.push({ x: clampX(p.x + G.rnd(-22, 22), 40), y: clampY(p.y + G.rnd(-22, 22), 40), st: 0 });
-        var a0 = Math.random() * TAU;
+        var a0 = G.rng() * TAU;
         for (i = 1; i < n; i++) { an = a0 + i * TAU / (n - 1) + G.rnd(-0.3, 0.3); A0.bolts.push({ x: clampX(p.x + Math.cos(an) * G.rnd(95, 130) * big, 40), y: clampY(p.y + Math.sin(an) * G.rnd(95, 130) * big, 40), st: 0 }); }
       }
       U.shuffle(A0.bolts);
@@ -430,8 +430,8 @@
     ok: function () { return !A().bands.length; },
     start: function (e, A0) {
       var rows = U.shuffle(PILLARS.map(function (q) { return q[1]; })), g1 = rows[0], g2 = rows[1], tries = 0;
-      while (Math.abs(g1 - g2) < 120 && tries++ < 8) g2 = rows[Math.floor(Math.random() * rows.length)];
-      A0.dir = Math.random() < 0.5 ? 1 : -1; A0.gaps = [g1, g2]; A0.x0 = A0.dir > 0 ? G.WALL - 10 : G.AW - G.WALL + 10; A0.w = 90; A0.v = 220; A0.pose = 'marea'; A0.actMs = 300; A0.rec = 600; A0.drawAct = false;
+      while (Math.abs(g1 - g2) < 120 && tries++ < 8) g2 = rows[Math.floor(G.rng() * rows.length)];
+      A0.dir = G.rng() < 0.5 ? 1 : -1; A0.gaps = [g1, g2]; A0.x0 = A0.dir > 0 ? G.WALL - 10 : G.AW - G.WALL + 10; A0.w = 90; A0.v = 220; A0.pose = 'marea'; A0.actMs = 300; A0.rec = 600; A0.drawAct = false;
     },
     go: function (e, A0) {
       A().bands.push({ x: A0.x0, dir: A0.dir, v: A0.v, w: A0.w, gaps: A0.gaps.slice(), hit: false });
@@ -448,7 +448,7 @@
   ATK.l_planideras = {
     ok: function () { return U.addsAlive() < pel().cap; },
     start: function (e, A0) {
-      var P = pel(), room = P.cap - U.addsAlive(), p = PL(), n = Math.max(0, Math.min(3 + P.adds, room)), a0 = Math.random() * TAU; A0.pose = 'plaideras'; A0.actMs = 300; A0.rec = 600; A0.spots = [];
+      var P = pel(), room = P.cap - U.addsAlive(), p = PL(), n = Math.max(0, Math.min(3 + P.adds, room)), a0 = G.rng() * TAU; A0.pose = 'plaideras'; A0.actMs = 300; A0.rec = 600; A0.spots = [];
       for (var i = 0; i < n; i++) {
         var an = a0 + i * TAU / 3, x = clampX(e.x + Math.cos(an) * 170, 50), y = clampY(e.y + Math.sin(an) * 140, 50);
         if (Math.hypot(x - p.x, y - p.y) < 90) { x = clampX(x + (x < p.x ? -110 : 110), 50); }
@@ -492,7 +492,7 @@
   // ------------------------------------------------------------------ intro: el estanque burbujea 800 ms y las 3 cabezas emergen una a una (300 ms de diferencia)
   H.intro = function (e, I, t) {
     e.alpha = 1; e.lift = 0; e.rise = G.clamp(t / 1800, 0, 1);
-    if (t < 800 && Math.random() < 0.35) fx.dot(e.x + G.rnd(-80, 80), e.y + G.rnd(10, 50), G.rnd(-10, 10), G.rnd(-60, -20), 700, '#bfeaff', G.rnd(2, 5), { add: true });
+    if (t < 800 && Math.random() < 0.35) fx.dot(e.x + G.rndFx(-80, 80), e.y + G.rndFx(10, 50), G.rndFx(-10, 10), G.rndFx(-60, -20), 700, '#bfeaff', G.rndFx(2, 5), { add: true });
     KEYS.forEach(function (k, i) {
       var h = hd(k), T = headTarget(e, k, G.time), u = ease((t - 800 - i * 300) / 700);
       h.x = e.x + (T.x - e.x) * u; h.y = e.y + (T.y - e.y) * u;
@@ -576,7 +576,7 @@
   };
 
   function drawCrystal(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
+    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
     if (ART()) { Assets.drawPillar(c, 'crystal', x, y, { hp: 1, t: G.time }); return; }
     c.save(); c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(x, y + 14, 28, 10, 0, 0, TAU); c.fill();
     c.fillStyle = '#8ad8ff'; c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';

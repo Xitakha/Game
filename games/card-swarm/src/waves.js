@@ -149,10 +149,10 @@
       W.starT = 60000;
       var fm = B.famOf(), sc = fm && fm.star, cand = types.filter(function (k) { return k !== 'worm' && (!sc || sc.indexOf(k) >= 0); });
       if (!cand.length) cand = types.filter(function (k) { return k !== 'worm'; });
-      W.star = cand.length ? cand[Math.floor(Math.random() * cand.length)] : null;
+      W.star = cand.length ? cand[Math.floor(G.rng() * cand.length)] : null;
     }
     // Pack: 15 % por pulso desde 2:45, en vez de un spawn suelto
-    if (!boss && vt >= 165000 && Math.random() < 0.15) {
+    if (!boss && vt >= 165000 && G.rng() < 0.15) {
       var packs = B.packsOf(), okp = packs.filter(function (pk) {
         var total = 0, ok = packCost(pk) <= W.budget;
         pk.parts.forEach(function (q) {
@@ -163,7 +163,7 @@
         return ok && alive + total <= cap;
       });
       if (okp.length) {
-        var pick = okp[Math.floor(Math.random() * okp.length)];
+        var pick = okp[Math.floor(G.rng() * okp.length)];
         spawnPack(pick); W.budget -= packCost(pick);
         return;
       }
@@ -177,7 +177,7 @@
       });
       if (!opts.length) break;
       var tot = 0; opts.forEach(function (k) { tot += wOf(k); });
-      var r = Math.random() * tot, pk2 = opts[0];
+      var r = G.rng() * tot, pk2 = opts[0];
       for (var i = 0; i < opts.length; i++) { r -= wOf(opts[i]); if (r <= 0) { pk2 = opts[i]; break; } }
       var pos = spawnPos();
       if (G.Panal.on && pk2 === 'bomb') G.Panal.spawnLarva(pos); else E.spawn(pk2, pos[0], pos[1]);   // Panal: las Larvas explosivas salen de los nidos

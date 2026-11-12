@@ -15,7 +15,7 @@
   function PL() { return G.player; }
   function ease(u) { u = G.clamp(u, 0, 1); return u * u * (3 - 2 * u); }
   function angTo(e, p) { return Math.atan2(p.y - e.y, p.x - e.x); }
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function sfx(n, o) { G.sfx(n, o); }
 
   // Stingers propios por jefe y fase (assets_peligro.js los registra en G.Snd); sin ese archivo no suena nada y no pasa nada
@@ -301,7 +301,7 @@
     var p = PL();   // salvavidas: 2 corazones
     var nh = (D.gateHearts || 2) + ((D.pelHeart && D.pelHeart[G.clamp(Math.round(G.peligro || 1), 1, 5)]) || 0) + ((G.runBuff && G.runBuff.fx && G.runBuff.fx.gate) || 0); /* P7: 'Caldo del Hogar Reencendido' +1 corazón */ for (var i = 0; i < nh; i++) G.Combat.dropGem(p.x + (i === 0 ? -50 : i === 1 ? 50 : 0), p.y + (i > 2 ? 20 + 28 * (i - 2) : 20), 'heart', B.player.heal);
     try { if (!(D.h && D.h.noIntensity)) Assets.music.setIntensity(D.phases[e.phase - 1].music); } catch (x) { /* audio */ }
-    if (e.id === 'pastor' && e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: Math.random() * 3000 }); }); }
+    if (e.id === 'pastor' && e.phase === 2) { BRIERS.forEach(function (b) { S.briers.push({ x: b[0], y: b[1], r: 46, t: G.rng() * 3000 }); }); }
     if (e.id === 'pastor' && e.phase === 3) { S.insetOn = true; S.insetT = 0; }
     for (var j = 0; j < G.enemies.length; j++) { var q = G.enemies[j]; if (!q.dead && q.type !== 'boss' && q.type !== 'bosspart' && !q.bossAdd) { q.noSpawnAdd = true; } }
   };
@@ -320,7 +320,7 @@
     S.stinger('despair', e);
     if (second) { var pl = PL(); for (var hi = 0; hi < 2; hi++) G.Combat.dropGem(pl.x + (hi ? 50 : -50), pl.y + 20, 'heart', B.player.heal); }   // Último aliento: 2 corazones (como en cada puerta de fase)
     if (hk(e, 'onDespair')) e.def.h.onDespair(e); else expose(e, 1.25, 9500, 'despair');
-    e.despAng = Math.random() * TAU;
+    e.despAng = G.rng() * TAU;
     try { if (!(e.def.h && e.def.h.noIntensity)) Assets.music.setIntensity(1); } catch (x) { /* audio */ }
   };
 
@@ -394,7 +394,7 @@
   // ---- 3. Pisotón sísmico: dos ondas anulares con hueco de 60 grados
   ATK.pisoton = {
     start: function (e, A) {
-      var a = angTo(e, PL()), sgn = Math.random() < 0.5 ? -1 : 1;
+      var a = angTo(e, PL()), sgn = G.rng() < 0.5 ? -1 : 1;
       A.ga = a + sgn * G.rnd(35, 95) * DEG; A.pose = 'pisoton'; A.actMs = 500; A.rec = 800; A.dmg = 20;
     },
     tele: function (e, A) { e.face = Math.cos(angTo(e, PL())) >= 0 ? 1 : -1; },
@@ -463,7 +463,7 @@
       var pool = worms ? ['worm'] : B.has('dog') ? ['fanner', 'dog', 'moth'] : ['fanner', 'shield', 'moth'];   // v5 A.7: el rebaño del Pastor (Zarzal mayor, Perro pastor, Polilla de lana)
       A.pose = 'llamada'; A.actMs = 300; A.rec = 600; A.spots = [];
       for (var i = 0; i < n; i++) {
-        var ty = pool[Math.floor(Math.random() * pool.length)], a0 = Math.random() * TAU, cx, cy, tries = 0;
+        var ty = pool[Math.floor(G.rng() * pool.length)], a0 = G.rng() * TAU, cx, cy, tries = 0;
         do { a0 += 1.1; cx = e.x + Math.cos(a0) * 130; cy = e.y + Math.sin(a0) * 120; tries++; } while (G.dist(cx, cy, p.x, p.y) < 90 && tries < 8);
         cx = G.clamp(cx, G.WALL + 30, G.AW - G.WALL - 30); cy = G.clamp(cy, G.WALL + 30, G.AH - G.WALL - 30);
         var ad = E.spawn(ty, cx, cy, { summoned: true, spawnT: A.tele }); ad.bossAdd = true; A.spots.push({ x: cx, y: cy });
@@ -479,7 +479,7 @@
   // ---- 7. Esporas del Rebaño (F2-F3)
   ATK.esporas = {
     start: function (e, A) {
-      var p = PL(), a0 = Math.random() * TAU; A.pose = 'esporas'; A.actMs = 200; A.rec = 500; A.spots = [];
+      var p = PL(), a0 = G.rng() * TAU; A.pose = 'esporas'; A.actMs = 200; A.rec = 500; A.spots = [];
       for (var i = 0; i < 3; i++) {
         var a = a0 + i * TAU / 3, d = G.rnd(140, 200), x = G.clamp(p.x + Math.cos(a) * d, G.WALL + 60, G.AW - G.WALL - 60), y = G.clamp(p.y + Math.sin(a) * d, G.WALL + 60, G.AH - G.WALL - 60);
         A.spots.push({ x: x, y: y });
@@ -807,7 +807,7 @@
     var D = S.dying; D.t += dt;
     if (D.hold > 0) { D.hold -= dt; return; }
     D.dt += dt;
-    if (DEFS[D.id].noFire) { if (S.flash > 0) S.flash -= dt / 500; if (Math.random() < 0.3) fx.burst(D.x + G.rnd(-60, 60), D.y + G.rnd(-20, 80), 1, '#e8f6ff', 60, 500, 3, { add: true }); return; }   // jefes de hielo: sin brasas
+    if (DEFS[D.id].noFire) { if (S.flash > 0) S.flash -= dt / 500; if (Math.random() < 0.3) fx.burst(D.x + G.rndFx(-60, 60), D.y + G.rndFx(-20, 80), 1, '#e8f6ff', 60, 500, 3, { add: true }); return; }   // jefes de hielo: sin brasas
     if (D.dt < 1800 && Math.random() < 0.4) fx.ember(D.x, D.y, 1, 50);
     if (D.dt > 1800 && D.dt < 3200 && Math.random() < 0.7) { fx.ember(D.x, D.y, 2, 60); fx.flames(D.x, D.y + 20, 1, 50); }
     if (S.flash > 0) S.flash -= dt / 500;
@@ -855,7 +855,7 @@
     if (S.e && S.e.def.h && S.e.def.h.items) S.e.def.h.items(list, S.e);
   };
   function drawLog(c, it) {
-    var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
+    var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
     c.drawImage(cv, Math.round(o.x - 32 + sh), Math.round(o.y - 40));
   }
   S.drawGround = function (c) {

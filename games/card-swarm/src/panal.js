@@ -148,7 +148,7 @@
     var c = cellAt(x, y), k = 0, i, list;
     if (!c) return 0;
     if (P.openCell(c, o)) k++;
-    list = c.nb.slice(); for (i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = list[i]; list[i] = list[j]; list[j] = t; }
+    list = c.nb.slice(); for (i = list.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), t = list[i]; list[i] = list[j]; list[j] = t; }
     for (i = 0; i < list.length && k < (n || 1); i++) if (P.openCell(list[i], o)) k++;
     return k;
   };
@@ -191,7 +191,7 @@
     if (!P.on) return null;
     var m = P.clampPt(x, y, 4);
     if (puddles.length >= D.puddleMax) puddles.shift();
-    var q = { x: m[0], y: m[1], r: r, life: ms, max: ms, t: 0, owner: (o && o.owner) || null, ph: Math.random() * 6 };
+    var q = { x: m[0], y: m[1], r: r, life: ms, max: ms, t: 0, owner: (o && o.owner) || null, ph: G.rng() * 6 };
     puddles.push(q); return q;
   };
 
@@ -223,7 +223,7 @@
     var S = D.smoke, tf = G.Tree && G.Tree.fx || {}, life = S.life * Math.max(tf.ahumador ? 1.4 : 1, G.runBuff && G.runBuff.fx && G.runBuff.fx.smoke ? 1.5 : 1),   /* P7: 'Té de humo' +50 % (no se suma al Ahumador) */ r = S.r * (tf.ahumador ? 50 / 36 : 1), i, q;
     for (i = 0; i < clouds.length; i++) { q = clouds[i]; if (Math.hypot(q.x - x, q.y - y) < 22) { q.life = life; q.max = life; return; } }   // un impacto sobre una nube existente la refresca (no se apila)
     if (clouds.length >= S.max) clouds.shift();
-    clouds.push({ x: x, y: y, r: r, life: life, max: life, ph: Math.random() * 6 });
+    clouds.push({ x: x, y: y, r: r, life: life, max: life, ph: G.rng() * 6 });
     pSfx('smoke_puff', null, { vol: 0.5 });
   };
   P.inSmoke = function (x, y, pad) {
@@ -580,7 +580,7 @@
 
   // Pilares (ordenados por y con el resto)
   function drawPillarItem(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
+    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
     if (typeof Assets.drawWaxPillar === 'function') { Assets.drawWaxPillar(c, o.x, o.y, { hp: o.dead ? 0 : o.hp / o.max, rebuild: o.dead ? G.clamp(o.t / D.pillarRegrow, 0, 1) : 0, struck: o.shake > 0 }); return; }
     if (artOK('obs_wax_pillar') && !o.dead) { var sp = Assets.sprite('obs_wax_pillar', o.hp < o.max * 0.5 ? 2 : o.shake > 0 ? 1 : 0); c.drawImage(sp, Math.round(o.x - sp.width / 2 + sh), Math.round(o.y + 12 - sp.height)); return; }
     if (o.dead) {   // aviso de reconstrucción: anillo punteado en los últimos 3 s

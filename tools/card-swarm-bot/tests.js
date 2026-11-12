@@ -571,8 +571,67 @@ async function armor2() {
   await sleep(pg, 400); await done(pg, 'armor2-aldea'); await b.close();
 }
 
+// ---------------------------------------------------------------- RNG con semilla (?seed=<n>)
+// Corre N ticks de simulacion con paso manual (?speed=0 detiene el bucle) y devuelve un hash del estado. Misma semilla => mismo hash.
+const simHash = (pg, ticks) => E(pg, (ticks) => {
+  const C = G.Cards;
+  if (G.state === 'cards') C.pick(0);
+  G.player.hp = G.player.maxHp;
+  for (let i = 0; i < ticks; i++) {
+    if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); if (G.state === 'cards') G.state = 'play'; } }
+    G.step();
+  }
+  const r = n => Math.round(n * 100);
+  let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+  mix(G.time); mix(G.kills); mix(G.runT); mix(G.enemies.length); mix(G.gems.length); mix(G.projectiles.length); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.ash); mix(G.player.xp);
+  G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
+  G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
+  G.player.hand.forEach(c => mix(c ? c.id + c.lvl : '-'));
+  return { hash: h, kills: G.kills, en: G.enemies.length, gems: G.gems.length, t: Math.round(G.runT) };
+}, ticks);
+async function seed() {
+  console.log('--- RNG con semilla: sin ?seed es Math.random; con ?seed misma partida');
+  const b = await launch(); const U = 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:1';
+  let pg = await mk(b, U);
+  ok(await E(pg, () => G.rng === Math.random && G.seed === null), 'sin ?seed: G.rng ES Math.random (comportamiento identico al de siempre)');
+  await done(pg, 'seed-off');
+  const TICKS = +process.env.SEED_TICKS || 4000, res = [];
+  for (const sd of [1234, 1234, 99]) {
+    pg = await mk(b, U + '&seed=' + sd);
+    const sane = await E(pg, () => typeof G.rng === 'function' && G.rng !== Math.random && G.seed);
+    res.push(Object.assign(await simHash(pg, TICKS), { sane }));
+    await done(pg, 'seed-' + sd);
+  }
+  console.log('       corridas:', JSON.stringify(res));
+  ok(res.every(r => r.sane) && res[0].kills > 0 && res[0].t > 30000, 'la partida con semilla avanza (' + res[0].kills + ' kills, ' + res[0].t + ' ms de run)');
+  ok(res[0].hash === res[1].hash, 'misma semilla (1234) + mismas entradas => mismo estado/hash tras ' + TICKS + ' ticks (' + res[0].hash + ')');
+  ok(res[0].hash !== res[2].hash, 'otra semilla (99) => otra partida');
+  pg = await mk(b, 'reset=1&seed=7&speed=0');
+  const seq = await E(pg, () => { const a = []; G.rngSeed(5); for (let i = 0; i < 3; i++) a.push(G.rng()); G.rngSeed(5); return a.concat([G.rng()]); });
+  ok(seq[0] === seq[3] && seq[0] !== seq[1] && seq.every(v => v >= 0 && v < 1), 'rngSeed(n) reinicia la secuencia mulberry32 ([0,1))');
+  await done(pg, 'seed-api'); await b.close();
+}
+
+// ---------------------------------------------------------------- Invariante de la mano (bot de acciones aleatorias con semilla)
+// Ver cards_bot_page.js. Uso: SEED=<n> ACTIONS=<n> node tests.js cards   (por defecto SEED=1, ACTIONS=12000)
+async function cards() {
+  console.log('--- invariante de la mano: bot aleatorio con semilla (modelo vs. juego tras cada accion)');
+  const SEED = +process.env.SEED || 1, ACTIONS = +process.env.ACTIONS || 12000;
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=0&seed=' + SEED);
+  await pg.addScriptTag({ content: fs.readFileSync(path.join(__dirname, 'cards_bot_page.js'), 'utf8') });
+  let r = null, n = 0;
+  while (n < ACTIONS) { const k = Math.min(1000, ACTIONS - n); r = await E(pg, ([s, k]) => window.__cardsBot(s, k), [SEED, k]); if (r.fail) break; n += k; }
+  if (r.fail) { console.log('       semilla ' + SEED + ', accion #' + r.fail.n + ' (' + r.fail.act + '); antes: ' + r.fail.before + '\n       ' + r.fail.bad.join('\n       ') + '\n       log: ' + r.fail.log.join(' | ')); }
+  ok(!r.fail, 'invariante de la mano/poderes se cumple en ' + (r.fail ? r.fail.n : ACTIONS) + ' acciones (semilla ' + SEED + ')');
+  if (!r.fail) {
+    const S = r.stat; console.log('       cobertura:', JSON.stringify(S));
+    ok(ACTIONS < 3000 || ((S.fuse || 0) >= 20 && (S['replace-power'] || 0) >= 3 && (S['fuse1-assisted-offered'] || 0) + (S['fuse1-assisted-hand'] || 0) >= 5 && (S.discard || 0) >= 20 && (S.skip || 0) >= 20 && (S.reinforce || 0) >= 20 && (S['replace-card'] || 0) >= 5), 'el bot cubre fusion (1.ª asistida/ancla), reemplazo del 5.º poder, descartar, omitir, reforzar y reemplazar carta');
+  }
+  await done(pg, 'cards'); await b.close();
+}
+
 (async () => {
-  const run = { armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { seed, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
