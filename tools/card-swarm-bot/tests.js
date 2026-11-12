@@ -612,8 +612,26 @@ async function seed() {
   await done(pg, 'seed-api'); await b.close();
 }
 
+// ---------------------------------------------------------------- Invariante de la mano (bot de acciones aleatorias con semilla)
+// Ver cards_bot_page.js. Uso: SEED=<n> ACTIONS=<n> node tests.js cards   (por defecto SEED=1, ACTIONS=12000)
+async function cards() {
+  console.log('--- invariante de la mano: bot aleatorio con semilla (modelo vs. juego tras cada accion)');
+  const SEED = +process.env.SEED || 1, ACTIONS = +process.env.ACTIONS || 12000;
+  const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=0&seed=' + SEED);
+  await pg.addScriptTag({ content: fs.readFileSync(path.join(__dirname, 'cards_bot_page.js'), 'utf8') });
+  let r = null, n = 0;
+  while (n < ACTIONS) { const k = Math.min(1000, ACTIONS - n); r = await E(pg, ([s, k]) => window.__cardsBot(s, k), [SEED, k]); if (r.fail) break; n += k; }
+  if (r.fail) { console.log('       semilla ' + SEED + ', accion #' + r.fail.n + ' (' + r.fail.act + '); antes: ' + r.fail.before + '\n       ' + r.fail.bad.join('\n       ') + '\n       log: ' + r.fail.log.join(' | ')); }
+  ok(!r.fail, 'invariante de la mano/poderes se cumple en ' + (r.fail ? r.fail.n : ACTIONS) + ' acciones (semilla ' + SEED + ')');
+  if (!r.fail) {
+    const S = r.stat; console.log('       cobertura:', JSON.stringify(S));
+    ok(ACTIONS < 3000 || ((S.fuse || 0) >= 20 && (S['replace-power'] || 0) >= 3 && (S['fuse1-assisted-offered'] || 0) + (S['fuse1-assisted-hand'] || 0) >= 5 && (S.discard || 0) >= 20 && (S.skip || 0) >= 20 && (S.reinforce || 0) >= 20 && (S['replace-card'] || 0) >= 5), 'el bot cubre fusion (1.ª asistida/ancla), reemplazo del 5.º poder, descartar, omitir, reforzar y reemplazar carta');
+  }
+  await done(pg, 'cards'); await b.close();
+}
+
 (async () => {
-  const run = { seed, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { seed, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
