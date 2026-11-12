@@ -142,6 +142,9 @@
     S.e = e; S.active = true; G.frozen = true;
     if (G.Loot.run) G.Loot.run.boss = { id: D.id, won: false, parts: [] };
     S.intro = { t: 0, landed: false, roared: false, music: false, seen: (!!(G.Save.data.bossSeen && G.Save.data.bossSeen[D.id]) || G.mode === 'practice') && !G.noSeen, skipped: false };
+    // v9 fase 2: capa de cinemática sobre la intro in-world. mode 'off' = intro de siempre (3,5 s); 'long' = 1 s de presagio (el mundo no corre) + la intro; 'short' = la misma intro en 1,6 s (varios pasos por tick)
+    S.intro.real = 0; S.intro.acc = 0; S.intro.mode = G.nointro ? 'off' : G.Cine && G.Cine.entryMode ? G.Cine.entryMode(D.id) : 'off';
+    if (S.intro.mode !== 'off') { S.intro.pre = S.intro.mode === 'long' ? G.Cine.PRE : 0; S.intro.len = S.intro.mode === 'long' ? G.Cine.PRE + 3500 : G.Cine.SHORT; try { G.Cine.entryStart(e, S.intro); } catch (xc) { S.intro.mode = 'off'; S.intro.pre = 0; } }
     if (G.nointro) { S.intro.t = 3490; S.intro.seen = true; S.intro.landed = S.intro.roared = S.intro.music = true; e.lift = 0; e.alpha = 1; e.rise = 1; }
     try { Assets.music.setIntensity(0.3); } catch (x1) { /* audio */ }
     return e;
@@ -742,9 +745,19 @@
   S.track = function (e) {   // pista propia del jefe si el audio la tiene ('boss_karceron'...), si no la genérica de jefe
     try { var tr = 'boss_' + e.id, has = Assets.music.tracks().indexOf(tr) >= 0; Assets.music.setTrack(has ? tr : 'boss'); Assets.music.setIntensity(e.def.phases[e.phase - 1].music); } catch (x) { /* audio */ }
   };
+  /* Pasos de mundo que corre main.js este tick (0 = presagio de la entrada larga; 2-3 = entrada corta; 1 = normal). La simulación recibe EXACTAMENTE los mismos pasos que sin cine:
+     el presagio no la avanza y la corta la acelera con varios pasos de STEP, así G.time / G.rng / cadT acaban idénticos (DESIGN-v9 5.6). */
+  S.introGate = function (dt) {
+    var I = S.intro; if (!I || I.mode === 'off') return 1;
+    I.real += dt; if (G.Cine.entryTick) G.Cine.entryTick(I, dt);
+    if (I.real <= I.pre) return 0;
+    if (I.mode === 'short') { I.acc += 3500 / I.len; var n = Math.floor(I.acc); I.acc -= n; return Math.max(1, n); }
+    return 1;
+  };
   function updIntro(e, dt) {
     var I = S.intro; I.t += dt;
-    if (I.seen && I.t > 1000 && I.t < 3490 && !I.skipped && G.input.hit('Space', 'Enter', 'KeyE', 'Mouse0')) { I.skipped = true; I.t = 3500; }   // ya vista: se salta pulsando Espacio / Enter / toque tras 1 s
+    if (I.mode === 'off' || !I.mode) { if (I.seen && I.t > 1000 && I.t < 3490 && !I.skipped && G.input.hit('Space', 'Enter', 'KeyE', 'Mouse0')) { I.skipped = true; I.t = 3500; } }   // ya vista: se salta pulsando Espacio / Enter / toque tras 1 s
+    else if (I.mode === 'short' && I.real >= 800 && I.t < 3490 && !I.skipped && G.input.hit('Space', 'Enter', 'KeyE', 'Mouse0')) { I.skipped = true; I.t = 3500; G.Cine.entrySkip(e, I); }   // entrada corta: saltable desde 800 ms; la larga (1.ª vez) NO
     var t = I.t;
     if (hk(e, 'intro')) e.def.h.intro(e, I, t, dt);   // Karceron surge del suelo, Letea emerge del estanque
     else {
@@ -763,11 +776,13 @@
     }
     if (t >= 1800 && t < 2500) { var u = (t - 1800) / 700; e.roar = u < 0.2 ? u / 0.2 : u > 0.75 ? (1 - u) / 0.25 : 1; } else e.roar = 0;
     S.barFill = I.roared ? G.clamp((t - 1800) / 600, 0, 1) : 0;
-    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); S.stinger('intro', e); if (pel().n >= 4) setTimeout(function () { S.stinger('peligro', e); }, 700); }
+    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); S.stinger('intro', e); if (pel().n >= 4 && I.mode !== 'short') setTimeout(function () { S.stinger('peligro', e); }, 700); }
     if (t >= 3500) {
       S.intro = null; e.mode = 'fight'; e.immune = false; e.lift = 0; e.alpha = 1; e.roar = 0; G.frozen = false; S.barFill = 1; e.cadT = 1200;
       if (!I.music) S.track(e);
-      G.Save.data.bossSeen = G.Save.data.bossSeen || {}; G.Save.data.bossSeen[e.id] = 1; G.Save.save();
+      G.Save.data.bossSeen = G.Save.data.bossSeen || {}; G.Save.data.bossSeen[e.id] = 1;
+      try { var cs = G.Save.data.cine; if (cs) { cs.entrySeen = cs.entrySeen || {}; cs.entrySeen[e.id] = 1; } if (G.Cine.entryEnd) G.Cine.entryEnd(e, I); } catch (xe) { /* cine opcional */ }
+      G.Save.save();
       if (G.dbgPhase > 1) { e.hp = e.maxHp * e.def.phases[Math.min(G.dbgPhase, nPh(e)) - 2].thr; for (var gi = 1; gi < G.dbgPhase; gi++) S.startGate(e); }
       if (G.dbgHp) e.hp = e.maxHp * G.dbgHp;
     }
@@ -1031,6 +1046,7 @@
   };
   function W() { return G.W; }
   function drawIntro(c, e, I) {
+    if (I.mode && I.mode !== 'off' && G.Cine.entryDraw && G.Cine.entryDraw(c, e, I)) return;   // v9: capa de cinemática (barras, presagio, cartel, subtítulo)
     var t = I.t, Wd = G.W, Hd = G.H, bar = 48;
     var inB = G.clamp(t / 300, 0, 1), outB = t > 2400 ? G.clamp((t - 2400) / 400, 0, 1) : 0, b = bar * (ease(inB) * (1 - ease(outB)));
     c.fillStyle = '#000'; c.fillRect(0, 0, Wd, b); c.fillRect(0, Hd - b, Wd, b);

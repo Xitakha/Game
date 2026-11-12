@@ -25,9 +25,13 @@
 
   function spawnBoss() {
     W.bossSpawned = true;
-    for (var i = 0; i < G.enemies.length; i++) if (B.enemy[G.enemies[i].type].elite) G.Enemies.kill(G.enemies[i], true);   // los élites desaparecen
-    G.Tundra.onBoss();   // P3: el Frío pasa a 20 % al aparecer el jefe (solo en la Tundra)
-    G.Boss.spawn(G.bossId || 'pastor');   // intro de 3,5 s, música de jefe y todo lo demás: boss.js
+    var go = function () {
+      for (var i = 0; i < G.enemies.length; i++) if (B.enemy[G.enemies[i].type].elite) G.Enemies.kill(G.enemies[i], true);   // los élites desaparecen
+      G.Tundra.onBoss();   // P3: el Frío pasa a 20 % al aparecer el jefe (solo en la Tundra)
+      G.Boss.spawn(G.bossId || 'pastor');   // intro de 3,5 s, música de jefe y todo lo demás: boss.js
+    };
+    if (G.Cine && G.Cine.prerollWanted && G.Cine.prerollWanted(G.bossId) && G.Cine.playPreroll({ onEnd: go })) return;   // v9: prerrollo de Cenizar (solo la 1.ª vez; cinemática aparte, no avanza la simulación)
+    go();
   }
 
   function spawnElite(type) {

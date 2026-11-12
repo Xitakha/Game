@@ -740,8 +740,120 @@ async function cine() {
   }
   console.log('      ', JSON.stringify(hs));
   ok(hs[0].hash === hs[1].hash && hs[0].kills === hs[1].kills, 'hash de simulacion IDENTICO con ?cine=0 y con titulo+intro (' + hs[0].hash + ')');
+  await cine2(b);
   await b.close();
 }
+
+// ---------------------------------------------------------------- Cinematicas v9 fase 2: entradas de jefe
+// Arranca una pelea de jefe (con o sin titulo) y avanza hasta que empieza la intro in-world (G.Boss.intro) o hasta una cinematica 'full'.
+const BOSS_URL = (id, extra) => `reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:1&seed=77&boss=${id}${extra}`;
+async function toIntro(pg, stopOnCine) {
+  await E(pg, () => { if (G.state !== 'title') return; for (let i = 0; i < 40; i++) G.step(); G.input.pressed.Space = true; G.step(); for (let i = 0; i < 4000 && (G.state === 'title' || (G.state === 'cine' && G.Cine.info() && G.Cine.info().id === 'intro')); i++) G.step(); });
+  return E(pg, stop => { for (let i = 0; i < 40000 && !G.Boss.intro && !(stop && G.state === 'cine'); i++) { if (G.state === 'cards') { const O = G.Cards.off; if (O) { O.modal = null; if (O.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); if (G.state === 'cards') G.state = 'play'; } } G.step(); } return { intro: !!G.Boss.intro, st: G.state, mode: G.Boss.intro && G.Boss.intro.mode }; }, !!stopOnCine);
+}
+// pasos hasta que acaba la intro; comprueba que el jugador es invulnerable todo el rato y devuelve datos de fin de intro
+const runIntro = (pg, o = {}) => E(pg, o => {
+  const e = G.Boss.e, I = G.Boss.intro, t0 = G.time; let n = 0, noHurtAll = true, skipped = false, lastReal = 0;
+  while (G.Boss.intro && n < 3000) {
+    if (!G.Boss.noHurtNow()) noHurtAll = false;
+    if (o.skipAt != null && !skipped && G.Boss.intro.real >= o.skipAt) { G.input.pressed.Space = true; skipped = true; }
+    lastReal = G.Boss.intro.real; G.step(); n++;
+  }
+  return { n, ms: Math.round(G.Boss.e && lastReal ? lastReal + G.STEP : n * G.STEP), dtime: Math.round(G.time - t0), cad: e.cadT, mode: e.mode, immune: e.immune, frozen: G.frozen, noHurtAll, roared: I.roared, music: I.music, seen: !!(G.Save.data.cine.entrySeen[e.id]), skipped: I.skipped };
+}, o);
+const bossHash = (pg, ticks) => E(pg, ticks => {
+  for (let i = 0; i < ticks; i++) { if (G.state === 'cards') { const O = G.Cards.off; if (O) { O.modal = null; if (O.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); if (G.state === 'cards') G.state = 'play'; } } G.player.hp = G.player.maxHp; G.step(); }
+  const r = n => Math.round(n * 100), e = G.Boss.e; let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+  mix(G.time); mix(G.kills); mix(G.enemies.length); mix(G.projectiles.length); mix(r(G.player.x)); mix(r(G.player.y)); mix(G.player.xp);
+  G.enemies.forEach(x => { mix(x.type); mix(r(x.x)); mix(r(x.y)); mix(r(x.hp)); });
+  if (e) { mix(e.phase); mix(e.mode); mix(Math.round(e.cadT)); mix(r(e.hp)); mix(e.atk && e.atk.name); }
+  return { hash: h, g: G.rng(), time: Math.round(G.time), kills: G.kills };
+}, ticks);
+
+async function cine2(b) {
+  console.log('--- cinematicas v9 fase 2: entradas de jefe (larga / corta / ?cine=0), prerrollo de Cenizar, galeria');
+  let pg;
+  // 1. Simulacion identica: ?cine=0 (intro de siempre), entrada larga (?cine=1 con el jefe sin ver) y corta (?cine=short)
+  const res = {};
+  for (const [k, extra, seenFirst] of [['off', '&cine=0', false], ['long', '&cine=1', false], ['short', '&cine=short', false], ['short2', '&cine=1', true]]) {
+    pg = await mk(b, BOSS_URL('pastor', extra));
+    if (seenFirst) await E(pg, () => { G.Save.data.cine.entrySeen.pastor = 1; });
+    const st = await toIntro(pg);
+    await E(pg, () => G.rngSeed(77));
+    const ri = await runIntro(pg);
+    const gi = await E(pg, () => { const v = G.rng(); G.rngSeed(78); return v; });
+    const h0 = await bossHash(pg, 0), hh = await bossHash(pg, 25);
+    hh.h0 = h0.hash; hh.g0 = h0.g;
+    res[k] = Object.assign({ imode: st.mode, gi }, ri, hh);
+    await done(pg, 'entrada-' + k);
+  }
+  console.log('      ', JSON.stringify(res));
+  ok(res.off.imode === 'off' && res.long.imode === 'long' && res.short.imode === 'short' && res.short2.imode === 'short', 'modos: ?cine=0 = intro de siempre, 1.a vez = larga, ya vista / ?cine=short = corta');
+  ok(Math.abs(res.off.ms - 3500) <= 100 && Math.abs(res.long.ms - 4500) <= 100 && Math.abs(res.short.ms - 1600) <= 100 && Math.abs(res.short2.ms - 1600) <= 100, `duracion: off ${res.off.ms}, larga ${res.long.ms}, corta ${res.short.ms} / ${res.short2.ms} ms (3500 / 4500 / 1600 +-100)`);
+  for (const k of Object.keys(res)) ok(res[k].cad === 1200 && res[k].mode === 'fight' && !res[k].frozen && res[k].noHurtAll && res[k].roared && res[k].music && res[k].seen, `${k}: al acabar cadT=1200, mundo libre, invulnerable todo el rato, rugido (cullHorde) y musica hechos, entrySeen marcada`);
+  ok(res.off.dtime === res.long.dtime && res.off.dtime === res.short.dtime, `G.time avanza igual en la intro (${res.off.dtime} / ${res.long.dtime} / ${res.short.dtime}): la simulacion recibe los mismos pasos`);
+  const same = f => ['long', 'short', 'short2'].every(k => res[k][f] === res.off[f]);
+  ok(same('h0') && same('hash') && same('g0') && same('gi'), 'hash de estado IDENTICO al acabar la entrada y 25 ticks despues con ?cine=0, larga y corta; G.rng consume lo mismo (' + res.off.h0 + ' / ' + res.off.hash + ')');   // (la pelea en si no es bit-identica entre dos corridas ni con ?cine=0: hay Math.random en el combate, ajeno a esto)
+  // 2. Saltar: la corta desde 800 ms (no antes); la larga (1.a vez) nunca; tras saltar el estado final es el de siempre
+  pg = await mk(b, BOSS_URL('pastor', '&cine=short'));
+  await toIntro(pg);
+  const sk0 = await runIntro(pg, { skipAt: 300 }), early = sk0.ms;
+  await done(pg, 'salto-corta-temprano');
+  pg = await mk(b, BOSS_URL('pastor', '&cine=short')); await toIntro(pg);
+  const sk1 = await runIntro(pg, { skipAt: 900 });
+  ok(early >= 1500, `corta: un toque antes de 800 ms no salta (acaba a ${early} ms)`);
+  ok(sk1.ms < 1300 && sk1.cad === 1200 && sk1.roared && sk1.music && !sk1.frozen && sk1.seen, `corta: salto a 900 ms (acaba a ${sk1.ms} ms) con rugido/cullHorde, musica, cadT=1200 y marca`);
+  await done(pg, 'salto-corta');
+  pg = await mk(b, BOSS_URL('karceron', '&cine=1')); await toIntro(pg);
+  const sk2 = await runIntro(pg, { skipAt: 1500 });
+  ok(Math.abs(sk2.ms - 4500) <= 100, `larga (1.a vez): NO se puede saltar (dura ${sk2.ms} ms con toques)`);
+  await done(pg, 'salto-larga');
+  // 3. Los 6 jefes: larga, luego corta (marca entrySeen); Cenizar con prerrollo
+  for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {
+    pg = await mk(b, BOSS_URL(id, '&cine=1')); const st = await toIntro(pg, true);
+    let info = null;
+    if (id === 'cenizar') {
+      info = await E(pg, () => { const i = G.Cine.info(); return { st: G.state, id: i && i.id, locked: i && i.locked, len: G.Cine.PREROLL.len, time: G.time, lines: G.Cine.PREROLL_LORE.length, boss: !!G.Boss.e }; });
+      ok(info.st === 'cine' && info.id === 'cenizar-preroll' && info.locked && !info.boss, 'Cenizar 1.a vez: prerrollo de 6 s bloqueado ANTES de S.spawn (sin jefe todavia)');
+      const pr = await E(pg, () => { const t0 = G.time; let n = 0; const ph = []; while (G.state === 'cine' && n < 2000) { G.input.pressed.Space = true; G.input.pressed.Mouse0 = true; G.step(); n++; } return { n, ms: Math.round(n * G.STEP), dt: Math.round(G.time - t0), st: G.state, intro: !!G.Boss.intro, mode: G.Boss.intro && G.Boss.intro.mode }; });
+      ok(Math.abs(pr.ms - 6000) <= 150 && pr.dt === 0 && pr.st === 'play' && pr.intro && pr.mode === 'long', `Cenizar: el prerrollo dura ${pr.ms} ms, no avanza G.time, y le sigue la entrada larga`);
+    } else ok(st.mode === 'long', id + ': entrada larga la 1.a vez');
+    const ri = await runIntro(pg);
+    ok(Math.abs(ri.ms - 4500) <= 100 && ri.cad === 1200 && ri.noHurtAll && ri.seen, `${id}: larga ${ri.ms} ms, cadT=1200, invulnerable, marcada`);
+    await done(pg, 'larga-' + id);
+    pg = await mk(b, BOSS_URL(id, '&cine=1'));
+    await E(pg, id => { G.Save.data.cine.entrySeen[id] = 1; }, id); const st2 = await toIntro(pg, true);
+    ok(st2.mode === 'short', id + ': la 2.a vez es la corta' + (id === 'cenizar' ? ' (sin prerrollo)' : ''));
+    const r2 = await runIntro(pg); ok(Math.abs(r2.ms - 1600) <= 100 && r2.cad === 1200 && r2.noHurtAll, `${id}: corta ${r2.ms} ms, cadT=1200, invulnerable`);
+    await done(pg, 'corta-' + id);
+  }
+  // 4. Perillas: URLs de prueba y bots apagadas por defecto (intro de siempre); practica = corta; Reducir destellos y sacudida
+  pg = await mk(b, BOSS_URL('pastor', ''));
+  const st3 = await toIntro(pg); ok(st3.mode === null || st3.mode === 'off', '?boss= sin ?cine: entrada apagada (intro de siempre de 3,5 s)');
+  await done(pg, 'perilla-boss');
+  pg = await mk(b, BOSS_URL('pastor', '&cine=1&nointro=1')); await toIntro(pg);
+  ok(await E(pg, () => !G.Boss.intro || G.Boss.intro.mode === 'off'), '?nointro=1 sigue omitiendo la entrada');
+  await done(pg, 'perilla-nointro');
+  pg = await mk(b, BOSS_URL('pastor', '&cine=1')); await toIntro(pg);
+  const cal = await E(pg, () => { G.Save.data.settings = G.Save.data.settings || { master: 0.8, music: 0.6, sfx: 0.8 }; G.Save.data.settings.cine = { calm: true, textSpeed: 1, soundCaps: true }; let ok2 = true, n = 0;
+    const cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; const c = cv.getContext('2d');
+    while (G.Boss.intro && n++ < 400) { G.step(); c.clearRect(0, 0, 960, 540); try { G.Boss.drawHud(c); } catch (e) { ok2 = false; } }
+    return { ok2, lore: G.Cine.LORE.pastor.length > 5, sub: Object.keys(G.Cine.LORE).length }; });
+  ok(cal.ok2 && cal.sub === 6, 'dibujo de la capa (con Reducir destellos) sin excepciones; lore para los 6 jefes');
+  await done(pg, 'calm');
+  // 5. Galeria: re-ver cada entrada, saltable, sin escribir en el guardado
+  pg = await mk(b, 'reset=1&cine=1&speed=0');
+  const gal = await E(pg, () => { const cs = G.Save.data.cine; cs.introSeen = true; const before = JSON.stringify(cs); const out = {};
+    for (const id of G.Cine.entryIds) { let r = null; G.Cine.playEntry(id, { onEnd: x => { r = x; } }); const a = G.Cine.info(); out[id] = a && a.id; let n = 0; while (G.Cine.active() && n++ < 600) G.step(); out[id + '_skipped'] = r; }
+    out.same = before === JSON.stringify(cs); return out; });
+  ok(['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(id => gal[id] === 'entry-' + id) && gal.cenizar === 'cenizar-preroll', 'galeria: arranca la cinematica de cada jefe (Cenizar empieza por el prerrollo)');
+  const gal2 = await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.entrySeen.pastor = 1; G.Cine.playEntry('pastor', {}); const i0 = G.Cine.info(); for (let i = 0; i < 40; i++) G.step(); const r = G.Cine.info().locked; const rc = G.Cine.skipRect(); G.input.mouse.x = rc.x + 5; G.input.mouse.y = rc.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { locked: r, active: G.Cine.active(), st: G.state, es: JSON.stringify(G.Save.data.cine.entrySeen) }; });
+  ok(!gal2.locked && !gal2.active && gal2.st === 'aldea', 'galeria: saltable con el boton SALTAR y vuelve a la aldea');
+  ok(gal.same, 'galeria: no escribe en el guardado');
+  const ui = await E(pg, () => { G.Aldea.open(false); G.Panels.open && G.Panels.open('menu'); return typeof G.Panels.current === 'function'; });
+  await done(pg, 'galeria');
+}
+
 
 (async () => {
   const run = { seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
