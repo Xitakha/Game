@@ -50,6 +50,7 @@
     if (cur === 'menu') { if (esc) return true; }
     else if (cur === 'settings') { if (esc || cl) { cur = 'menu'; return false; } }
     else if (cur === 'cine') { if (esc || cl) { cur = 'settings'; return false; } }
+    else if (cur === 'cine2') { if (esc || cl) { cur = 'cine'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
     else if (esc || cl) return true;
     if (cur === 'vesper') return updVesper();
@@ -61,6 +62,7 @@
     if (cur === 'menu') return updMenu();
     if (cur === 'settings') return updSettings();
     if (cur === 'cine') return updCine();
+    if (cur === 'cine2') return updCine2();
     return true;
   };
   P.draw = function (c) {
@@ -75,6 +77,7 @@
     else if (cur === 'menu') drawMenu(c);
     else if (cur === 'settings') drawSettings(c);
     else if (cur === 'cine') drawCine(c);
+    else if (cur === 'cine2') drawCine2(c);
   };
 
   // ============================================================= VESPER
@@ -806,7 +809,7 @@
     U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
-  var CB = { calm: { x: 290, y: 150, w: 380, h: 56 }, intro: { x: 290, y: 230, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
+  var CB = { calm: { x: 290, y: 130, w: 380, h: 56 }, intro: { x: 290, y: 200, w: 380, h: 56 }, entries: { x: 290, y: 270, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
   function updCine() {
     if (onR(CB.calm)) { G.Cine.setCalm(!G.Cine.cfg().calm); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(CB.intro) && !G.Cine.off) {
@@ -814,13 +817,37 @@
       G.Cine.playIntro({ replay: true, onEnd: function () { G.Aldea.open(false); } });
       return true;
     }
+    if (onR(CB.entries)) { cur = 'cine2'; return false; }
     if (onR(CB.back)) cur = 'settings';
     return false;
+  }
+  // ---- Ver entradas de jefe (galería): una por jefe; las que aún no viste salen bloqueadas
+  var EB = function (i) { return { x: 150 + (i % 2) * 340, y: 110 + Math.floor(i / 2) * 76, w: 320, h: 64 }; };
+  var EN_NAMES = { pastor: 'El Pastor', karceron: 'Karceron', letea: 'Letea', yarlak: 'Yarlak', melaria: 'Melaria', cenizar: 'Cenizar (con prerrollo)' };
+  function updCine2() {
+    var ids = G.Cine.entryIds;
+    for (var i = 0; i < ids.length; i++) if (onR(EB(i)) && !G.Cine.off && G.Cine.entrySeen(ids[i])) {
+      G.Panels.closeAll(); G.Aldea.setPanel(null);
+      G.Cine.playEntry(ids[i], { onEnd: function () { G.Aldea.open(false); } });
+      return true;
+    }
+    if (onR(CB.back)) cur = 'cine';
+    return false;
+  }
+  function drawCine2(c) {
+    bg(c, 'ENTRADAS DE JEFE'); var ids = G.Cine.entryIds;
+    for (var i = 0; i < ids.length; i++) {
+      var seen = G.Cine.entrySeen(ids[i]);
+      U.button(c, EB(i), seen ? EN_NAMES[ids[i]] : '???', { size: 18, off: !seen || G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagadas con ?cine=0' : seen ? 'se puede saltar' : 'aún no te has enfrentado a él' });
+    }
+    G.txt(c, 'Se ven a pantalla completa. No cambian nada de tus partidas.', 480, 360, 12, '#9a8fb0', 'center');
+    U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
   function drawCine(c) {
     bg(c, 'CINEMÁTICAS'); var cf = G.Cine.cfg();
     U.button(c, CB.calm, 'Reducir destellos: ' + (cf.calm ? 'SÍ' : 'NO'), { size: 16, color: cf.calm ? '#2a6aa8' : '#2c2438', sub: 'Destellos suaves y menos frecuentes' });
     U.button(c, CB.intro, 'Ver la intro', { size: 18, off: G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagada con ?cine=0' : 'se puede saltar' });
+    U.button(c, CB.entries, 'Ver entradas de jefe', { size: 18, off: G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagadas con ?cine=0' : 'galería, se pueden saltar' });
     G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 330, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }

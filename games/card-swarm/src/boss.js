@@ -749,7 +749,7 @@
      el presagio no la avanza y la corta la acelera con varios pasos de STEP, así G.time / G.rng / cadT acaban idénticos (DESIGN-v9 5.6). */
   S.introGate = function (dt) {
     var I = S.intro; if (!I || I.mode === 'off') return 1;
-    I.real += dt;
+    I.real += dt; if (G.Cine.entryTick) G.Cine.entryTick(I, dt);
     if (I.real <= I.pre) return 0;
     if (I.mode === 'short') { I.acc += 3500 / I.len; var n = Math.floor(I.acc); I.acc -= n; return Math.max(1, n); }
     return 1;
@@ -776,7 +776,7 @@
     }
     if (t >= 1800 && t < 2500) { var u = (t - 1800) / 700; e.roar = u < 0.2 ? u / 0.2 : u > 0.75 ? (1 - u) / 0.25 : 1; } else e.roar = 0;
     S.barFill = I.roared ? G.clamp((t - 1800) / 600, 0, 1) : 0;
-    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); S.stinger('intro', e); if (pel().n >= 4) setTimeout(function () { S.stinger('peligro', e); }, 700); }
+    if (t >= 2400 && !I.music) { I.music = true; S.track(e); sfx('special', { vol: 0.6 }); S.stinger('intro', e); if (pel().n >= 4 && I.mode !== 'short') setTimeout(function () { S.stinger('peligro', e); }, 700); }
     if (t >= 3500) {
       S.intro = null; e.mode = 'fight'; e.immune = false; e.lift = 0; e.alpha = 1; e.roar = 0; G.frozen = false; S.barFill = 1; e.cadT = 1200;
       if (!I.music) S.track(e);
