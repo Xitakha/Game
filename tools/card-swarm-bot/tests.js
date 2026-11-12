@@ -1,9 +1,10 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const { execSync } = require('child_process');
+const TC = require('./textcheck.js');
 const fs = require('fs'), path = require('path');
 const mode = process.argv[2] || 'all', base = process.argv[3] || 'http://localhost:8811';
 const ROOT = path.join(__dirname, '..', '..');
@@ -855,8 +856,129 @@ async function cine2(b) {
 }
 
 
+
+// ---------------------------------------------------------------- Texto: pantallas de victoria de los 6 jefes y menús sin solapes ni desbordes
+async function text() {
+  console.log('--- texto: victoria de los 6 jefes, derrota, pausa, Portal y paneles (844x390): sin solapes, desbordes ni fuentes < 11,5 px');
+  const b = await launch();
+  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
+  for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {
+    const pg = await mk(b, `reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&cine=0&hand=spark:3,shard:2,dart:1&boss=${id}`);
+    const st = await E(pg, () => { G.Save.data.bossKills.cenizar = 1; for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 600 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } return G.state; });
+    ok(st === 'gameover', `${id}: la victoria llega a la pantalla de botín`);
+    await report(pg, `victoria ${id}`);
+    // peor caso: botín enorme, trofeos, encargo largo, cartas nuevas, armadura, 4 poderes y jefe con muchas partes rotas
+    await E(pg, () => { const S = G.Save.data, sm = G.Loot.summary; ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'].forEach((k, i) => { sm.parts[k] = 12 + i; S.parts[k] = 1234; }); sm.total = 150; sm.brasas = 12345; S.brasas = 987654; sm.rare = 1; sm.pfGained = 4; sm.blocked = 987; sm.rawDmg = 1500;
+      sm.quest = 'Encargo cumplido: Apaga a los Perros pastores (40/40) y entrega la cabeza al Tablón de Vesper para cobrar'; sm.newCards = ['spark', 'shard', 'dart', 'dagger', 'fang', 'zap', 'ember', 'nova'];
+      if (sm.boss) { sm.boss.parts = ['cuernos', 'cayado', 'vellon', 'a', 'b']; sm.boss.peligro = 5; sm.boss.unlocked = 5; sm.boss.trophies = Object.keys(G.Boss.TROPHY).slice(0, 3); }
+      ['vapor', 'plasma', 'forja', 'hemo'].forEach(a => { try { G.Fusion.grant(a, 2); } catch (e) { /* receta ausente */ } }); });
+    await report(pg, `victoria ${id} (peor caso)`);
+    await done(pg, 'texto-' + id);
+  }
+  let pg = await mk(b, 'reset=1&direct=1&all=1&god=0&speed=0');
+  await E(pg, () => { G.god = false; G.player.hp = 0; G.player.dead = true; G.finish(false); }); await report(pg, 'derrota');
+  await done(pg, 'texto-derrota');
+  pg = await mk(b, 'reset=1&direct=1&all=1&speed=0');
+  await E(pg, () => { G.step(); G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa'); await done(pg, 'texto-pausa');
+  pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
+  for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor']) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel(n); }, pn); await sleep(pg, 150); await report(pg, 'panel ' + pn); }
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('portal'); G.Panels.portalTab(1); }); await sleep(pg, 150); await report(pg, 'panel portal (cartas)');
+  await done(pg, 'texto-paneles'); await b.close();
+}
+
+
+// ---------------------------------------------------------------- Manual de cartas y combinaciones (src/manual.js)
+async function manual() {
+  console.log('--- manual: desbloqueo gradual, 43 entradas con demo animada determinista, navegación táctil, buscador, accesos y texto');
+  const b = await launch();
+  // 1. cuenta nueva: solo lo descubierto
+  let pg = await mk(b, 'reset=1&speed=0');
+  const r1 = await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('menu'); const M = G.Manual, en = M.entries(); const cards = en.filter(e => e.k === 'card'), fx = en.filter(e => e.k === 'fx');
+    return { cards: cards.length, defs: G.Cards.defs.filter(d => d.id).length, fx: fx.length, kc: cards.filter(M.isKnown).length, kf: fx.filter(M.isKnown).length, starters: G.Save.STARTERS.length }; });
+  ok(r1.fx === 15 && r1.cards === r1.defs, `entradas: ${r1.cards} cartas y ${r1.fx} fusiones`);
+  ok(r1.kc === r1.starters && r1.kf === 0, `cuenta nueva: solo ${r1.kc} cartas iniciales conocidas y ${r1.kf} fusiones (el resto '???')`);
+  const r1b = await E(pg, () => { G.Save.data.combosSeen.vapor = 1; return G.Manual.isKnown(G.Manual.entries().find(e => e.id === 'vapor')); });
+  ok(r1b, 'una fusión creada (combosSeen) pasa a estar descubierta');
+  ok((await E(pg, () => G.Save.VERSION)) === 12, 'el guardado sigue en la versión 12 (manualSeen se normaliza sin subirla)');
+  await done(pg, 'manual-cuenta');
+  // 2. ?manual=all + demos
+  pg = await mk(b, 'reset=1&manual=all');
+  const r2 = await E(pg, () => { const M = G.Manual, en = M.entries(); G.Aldea.open(false); G.Aldea.openPanel('menu');
+    const cv = document.createElement('canvas'); cv.width = 440; cv.height = 248; const c = cv.getContext('2d');
+    let rnd = 0, tm = 0; const R0 = G.rng, MR = Math.random; G.rng = () => { rnd++; return R0(); }; Math.random = () => { tm++; return MR(); };
+    const gt = G.time, ne = G.enemies.length, np = G.projectiles.length, nz = G.zones.length; let bad = [], still = [], nondet = [], err = 0, caps = 0;
+    const sig = t => { c.clearRect(0, 0, 440, 248); M.lastError = null; const cap = M.renderDemo(c, e0, t); if (M.lastError) err++; if (cap) caps++; return cv.toDataURL(); };
+    let e0;
+    for (const e of en) { e0 = e; sig(0.6); const a = sig(0.6), a2 = sig(0.6), b2 = sig(2.4), d2 = sig(3.9); if (a !== a2) nondet.push(e.id); if (a === b2 && b2 === d2) still.push(e.id); }
+    G.rng = R0; Math.random = MR;
+    return { all: en.filter(M.isKnown).length, n: en.length, nondet, still, err, caps, rnd, tm, same: G.time === gt && G.enemies.length === ne && G.projectiles.length === np && G.zones.length === nz }; });
+  ok(r2.all === r2.n && r2.n === 43, `?manual=all: ${r2.all}/${r2.n} entradas visibles`);
+  ok(r2.err === 0 && r2.caps === r2.n * 5, `las 43 demos se dibujan sin excepciones y con leyenda (${r2.caps / 5})`);
+  ok(r2.nondet.length === 0, 'demos deterministas: mismo instante = mismos píxeles' + (r2.nondet.length ? ' (fallan ' + r2.nondet.join(',') + ')' : ''));
+  ok(r2.still.length === 0, 'todas las demos se animan (cambian entre 0,6 s, 2,4 s y 3,9 s)' + (r2.still.length ? ' (quietas: ' + r2.still.join(',') + ')' : ''));
+  ok(r2.rnd === 0 && r2.tm === 0 && r2.same, `la demo no usa G.rng (${r2.rnd}) ni Math.random (${r2.tm}) y no toca G.time / enemigos / proyectiles / zonas`);
+  // 3. navegación por toque, filtro, buscador, reloj propio
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('manual'); });
+  await sleep(pg, 400);
+  const st0 = await E(pg, () => G.Manual.state());
+  await tap(pg, 240, 468); await sleep(pg, 100);   // siguiente página
+  const st1 = await E(pg, () => G.Manual.state()); ok(st1.page === 1 && st1.sel === 5, `botón siguiente: página ${st0.page} -> ${st1.page}`);
+  await tap(pg, 100, 210 + 46 * 2 + 20); await sleep(pg, 100);
+  const st2 = await E(pg, () => G.Manual.state()); ok(st2.sel === 7, 'tocar una fila la selecciona (' + st2.sel + ')');
+  await E(pg, () => { G.input.swipe = -1; }); await sleep(pg, 150);
+  ok((await E(pg, () => G.Manual.state().sel)) === 8, 'deslizar a la izquierda = siguiente entrada');
+  await tap(pg, 100, 130); await sleep(pg, 100);
+  const st3 = await E(pg, () => G.Manual.state()); ok(st3.filter === 'fire' && st3.n < st0.n, `filtro por etiqueta (un toque): ${st3.filter}, ${st3.n} entradas`);
+  await tap(pg, 926, 27); await sleep(pg, 150);
+  ok(await E(pg, () => G.Panels.current() === 'menu' || G.Panels.current() === null), 'la X cierra el Manual y vuelve al menú');
+  await E(pg, () => { G.Panels.open('manual'); G.Manual.setFilter('all'); G.Manual.setTab(0); G.Manual.setQuery('veneno'); });
+  const qs = await E(pg, () => { const M = G.Manual; return { n: M.state().n, all: M.entries().filter(e => e.k === 'card').filter(e => (e.name + ' ' + e.def.desc).toLowerCase().indexOf('veneno') >= 0 || e.tag === 'poison').length }; });
+  ok(qs.n > 0 && qs.n <= qs.all, `buscador: 'veneno' deja ${qs.n} cartas`);
+  await E(pg, () => { G.Manual.setQuery('zzzz'); }); ok((await E(pg, () => G.Manual.state().n)) === 0, 'buscador sin resultados');
+  await E(pg, () => { G.Manual.setQuery(''); G.Manual.setTab(1); G.Manual.select(0); });
+  const t1 = await E(pg, () => G.Manual.state().demoT); await sleep(pg, 700); const t2 = await E(pg, () => G.Manual.state().demoT);
+  ok(t2 > t1 + 0.3, `el reloj de la demo avanza con el Manual abierto (${t1.toFixed(2)} -> ${t2.toFixed(2)} s)`);
+  await E(pg, () => { G.Manual.close(); G.Aldea.open(false); }); await sleep(pg, 100);
+  const t3 = await E(pg, () => G.Manual.state().demoT); await sleep(pg, 700); const t4 = await E(pg, () => G.Manual.state().demoT);
+  ok(t3 === t4, 'cerrado / fuera de pantalla la demo no avanza (pausa automática)');
+  // 4. 'visto en el manual'
+  const sn = await E(pg, () => { G.Save.data.manualSeen = {}; G.Aldea.open(false); G.Aldea.openPanel('manual'); G.Manual.setTab(1); G.Manual.select(0); return null; }); await sleep(pg, 300);
+  ok((await E(pg, () => !!G.Save.data.manualSeen.vapor)), "abrir una entrada la marca 'vista' (manualSeen)");
+  // 5. texto sin solapes en 8 entradas (844x390 lógico 960x540)
+  for (const [tab, i] of [[0, 0], [0, 3], [0, 9], [0, 27], [1, 0], [1, 4], [1, 12], [1, 14]]) {
+    await E(pg, ([tab, i]) => { G.Manual.setFilter('all'); G.Manual.setQuery(''); G.Manual.setTab(tab); G.Manual.select(i); }, [tab, i]); await sleep(pg, 250);
+    const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 11.5 });
+    ok(d.texts.length > 8 && iss.length === 0, `texto del Manual (${tab ? 'fusión' : 'carta'} ${i}): ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
+  }
+  await done(pg, 'manual-demos');
+  // 6. accesos: Ajustes, Menú y Pausa; Reducir destellos
+  pg = await mk(b, 'reset=1&manual=all');
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('menu'); }); await sleep(pg, 300);
+  await tap(pg, 480, 422 + 31); await sleep(pg, 200);
+  ok(await E(pg, () => G.Panels.current() === 'manual' && G.Manual.isOpen()), 'Menú de la aldea: botón MANUAL');
+  await E(pg, () => { G.input.pressed.Escape = true; }); await sleep(pg, 200);
+  ok(await E(pg, () => G.Panels.current() === 'menu' && !G.Manual.isOpen()), 'Esc vuelve al Menú');
+  await E(pg, () => { G.Panels.open('settings'); }); await sleep(pg, 300);
+  await tap(pg, 855, 88); await sleep(pg, 200);
+  ok(await E(pg, () => G.Panels.current() === 'manual'), 'Ajustes: botón MANUAL');
+  await E(pg, () => { G.input.pressed.Escape = true; }); await sleep(pg, 200);
+  ok(await E(pg, () => G.Panels.current() === 'settings'), 'Esc vuelve a Ajustes');
+  await E(pg, () => { G.Save.data.settings.cine = { calm: true, textSpeed: 1, soundCaps: true }; G.Panels.open('manual'); }); await sleep(pg, 300);
+  ok(await E(pg, () => G.Manual.state().paused), 'Reducir destellos: la demo arranca en pausa');
+  await done(pg, 'manual-accesos');
+  pg = await mk(b, 'reset=1&direct=1&all=1&god=1');
+  await E(pg, () => { G.step(); G.state = 'paused'; G.Hud.pauseOpen(); }); await sleep(pg, 300);
+  await tap(pg, 760, 219); await sleep(pg, 250);
+  ok(await E(pg, () => G.Manual.isOpen() && G.state === 'paused'), 'Pausa: botón MANUAL abre el Manual sin reanudar la partida');
+  const g0 = await E(pg, () => G.time); await E(pg, () => { for (let i = 0; i < 60; i++) G.step(); }); await sleep(pg, 300);
+  ok((await E(pg, () => G.time)) === g0, 'con el Manual abierto en pausa el mundo no avanza');
+  await E(pg, () => { G.input.pressed.Escape = true; }); await sleep(pg, 200);
+  ok(await E(pg, () => !G.Manual.isOpen() && G.state === 'paused'), 'Esc cierra el Manual y sigues en la pausa');
+  await done(pg, 'manual-pausa'); await b.close();
+}
+
 (async () => {
-  const run = { seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

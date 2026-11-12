@@ -17,7 +17,7 @@
   function onR(r) { return click() && U.inR(r, inp.mouse); }
   function common() { return L.PARTS.filter(function (p) { return !p.rare; }); }
   function bg(c, title) {
-    c.fillStyle = 'rgba(8,4,14,0.96)'; c.fillRect(0, 0, G.W, G.H);
+    c.fillStyle = 'rgb(10,5,16)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, title, 14, 24, 24, '#ffd27a', 'left');
     U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
     if (msgT > 0 && msg) G.txt(c, msg, 480, 56, 13, '#ffe9a0', 'center');
@@ -28,6 +28,7 @@
 
   P.open = function (name) {
     cur = name; msg = ''; msgT = 0; confirm = ''; st.csel = 0;
+    if (name === 'manual') G.Manual.open('panel');
     if (name === 'forge') G.Tree.open();
     if (name === 'armor') G.Smith.open();
     if (name === 'rufo') st.rt = 0;
@@ -43,6 +44,7 @@
 
   P.update = function (dt) {
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
+    if (cur === 'manual') { if (G.Manual.update(dt)) { G.Manual.close(); cur = st.manBack || 'menu'; } return false; }
     if (cur === 'forge') return G.Tree.update(dt);
     if (cur === 'armor') { var ra = G.Smith.update(dt); if (ra && st.armorFrom === 'portal') { st.armorFrom = null; cur = 'portal'; return false; } return ra; }
     var esc = inp.hit('Escape'), cl = onR(R_CLOSE);
@@ -68,6 +70,7 @@
   P.draw = function (c) {
     if (cur === 'forge') return G.Tree.draw(c);
     if (cur === 'armor') return G.Smith.draw(c);
+    if (cur === 'manual') return G.Manual.draw(c);
     if (cur === 'vesper') drawVesper(c);
     else if (cur === 'rufo') drawRufo(c);
     else if (cur === 'portal') drawPortal(c);
@@ -179,26 +182,25 @@
     var Q = G.Quests, act = Q.active(), list = Q.board();
     bg(c, 'VESPER'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
     ['TABLÓN', 'CACERÍA'].forEach(function (t, i) { U.button(c, tabRect(i), t, { size: 15, color: st.vt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.vt === i ? '#bfeaff' : '#6a5a80', sub: i === 1 && !P.huntAvailable() ? 'vence a un jefe' : null }); });
-    if (st.vt === 1) { drawHunt(c); G.txt(c, 'Esc: volver', 20, 522, 11, '#6f6480', 'left'); return; }
+    if (st.vt === 1) { drawHunt(c); return; }
     list.forEach(function (d, i) {
       var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
       U.panel(c, r.x, r.y, r.w, r.h, { border: ready ? '#7dff9a' : isA ? '#ffd24a' : '#4a3a66' });
       G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
       var tx = r.x + 24 + Math.min(430, d.name.length * 11.6 + 40);
-      G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 11, TIERC[d.tier], 'left');
-      if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 70, r.y + 20, 10, '#9dffb4', 'left');
-      if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx + (d.tutorial ? 140 : 70), r.y + 20, 10, '#9a8fb0', 'left');
-      var dl = U.wrap(c, d.desc, 700, 11);   // P7: las descripciones largas (Tundra, Panal, Cráter y varias anteriores) se salían por debajo del botón: 2 líneas de 11 px
-      dl.slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 16, r.y + 38 + k * 13, 11, '#d8cfe8', 'left'); });
-      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 68, 11, '#ffe9a0', 'left');
-      var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 80, bw, 9);
-      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 80, bw * G.clamp(prog / d.goal, 0, 1), 9);
-      G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 28, r.y + 85, 11, '#d8cfe8', 'left');
+      G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 12, TIERC[d.tier], 'left');
+      if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 80, r.y + 20, 12, '#9dffb4', 'left');
+      if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx + (d.tutorial ? 170 : 80), r.y + 20, 12, '#b4a8c8', 'left');
+      var dl = U.wrap(c, d.desc, 700, 12);   // P7: las descripciones largas (Tundra, Panal, Cráter y varias anteriores) se salían por debajo del botón: 2 líneas de 11 px
+      dl.slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 16, r.y + 40 + k * 16, 12, '#d8cfe8', 'left'); });
+      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 76, 12, '#ffe9a0', 'left');
+      var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 86, bw, 8);
+      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 86, bw * G.clamp(prog / d.goal, 0, 1), 9);
+      G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 28, r.y + 90, 12, '#d8cfe8', 'left');
       var label = ready ? 'ENTREGAR' : isA ? (confirm === 'q' + i ? 'SEGURO?' : 'ABANDONAR') : 'ACEPTAR';
       U.button(c, b, label, { size: 16, off: !isA && !!act, color: ready ? '#2a8a4a' : isA ? '#7a3a3a' : '#c4601c', hot: ready ? '#3aba66' : '#ff9a3c' });
     });
-    G.txt(c, 'El Tablón cambia cada día y tras cada expedición. Un encargo a la vez; el progreso se conserva. El enemigo objetivo pesa x2,5 y entra antes (máx. 2:30).', 20, 504, 10, '#9a8fb0', 'left');
-    G.txt(c, 'Esc: volver', 20, 522, 11, '#6f6480', 'left');
+    U.wrap(c, 'El Tablón cambia cada día y tras cada expedición. Un encargo a la vez; el progreso se conserva. El enemigo objetivo pesa x2,5 y entra antes (máx. 2:30).', 920, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 20, 502 + k * 16, 12, '#b4a8c8', 'left'); });
   }
 
   // ============================================================= RUFO
@@ -303,14 +305,17 @@
       G.txt(c, 'PARTE A COMPRAR', 14, 338, 12, '#9a8fb0', 'left');
       cm.forEach(function (p, k) { partTile(c, p, tile(k, 352), p.id === st.buy, ''); });
     }
-    G.txt(c, 'Q/E: pestaña  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Q/E: pestaña  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
   }
 
   // ============================================================= PORTAL
-  function handRect(i) { return { x: 20 + i * 84, y: 120, w: 72, h: 96 }; }
-  function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 262 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
-  function lenRect(i) { return { x: 650 + i * 98, y: 94, w: 92, h: 52 }; }
-  var R_GO = { x: 650, y: 482, w: 290, h: 52 };
+  // v (textos): el Portal se reparte en dos páginas para que nada se apelotone: SALIDA (destino, duración, Peligro, encargo y compras; la de siempre al abrir) y CARTAS (mano y anclas).
+  // El botón SALIR A LA EXPEDICIÓN está siempre visible abajo a la derecha. Tab / T / toque en la pestaña cambia de página.
+  function handRect(i) { return { x: 20 + i * 84, y: 130, w: 72, h: 96 }; }
+  function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 308 + Math.floor(i / 10) * 76, w: 56, h: 72 }; }
+  function lenRect(i) { return { x: 470 + i * 156, y: 118, w: 148, h: 52 }; }
+  var R_GO = { x: 470, y: 470, w: 470, h: 56 };
+  function ptabRect(i) { return { x: 20 + i * 150, y: 56, w: 142, h: 38 }; }
   // Destino (bioma): decide el jefe. Orden de desbloqueo en cadena (P7): Cripta con el Pastor, Asfódelo con Karceron, Tundra con Letea, Panal con Yarlak, Cráter con los cinco.
   // hint = pista del Portal ('Lleva Fuego' en Tundra y Panal); lock = requisito en texto corto (chip) y largo (panel de destino).
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor', hint: 'Sin requisitos. El Pastor sufre más con Fuego y Acero.' },
@@ -320,9 +325,9 @@
     { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', lockMsg: 'Bloqueado: vence a Yarlak, el Coloso Gélido, para abrir el Panal.', short: 'Yarlak', bid: 'melaria', fire: true, hint: 'LLEVA FUEGO: derrite la cera y carameliza la miel; el humo sedante duerme a las abejas.' },
     { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes', short: 'los 5', bid: 'cenizar', hint: 'ASALTO: 6 ofertas de carta, sin horda ni checkpoints. Cada fase cambia la debilidad: lleva de todo.' }];
   var BIOME_GRID = [0, 1, 2, 3, 4, 5];   // orden de lectura: 2 columnas x 3 filas
-  var DEST = { x: 440, y: 84, w: 200, h: 168 };
-  function biomeRect(i) { return { x: DEST.x + 4 + (i % 2) * 98, y: DEST.y + 18 + Math.floor(i / 2) * 49, w: 94, h: 46 }; }   // 6 destinos de 94 x 46 (antes 46 x 42 en una fila)
-  P.biomeRect = biomeRect; P.BIOMES = BIOMES;
+  var DEST = { x: 14, y: 100, w: 430, h: 154 };
+  function biomeRect(i) { return { x: DEST.x + 8 + (i % 3) * 138, y: DEST.y + 28 + Math.floor(i / 3) * 60, w: 132, h: 54 }; }
+  P.biomeRect = biomeRect; P.BIOMES = BIOMES; P.portalTab = function (n) { st.ptab = n; };
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
   // P7: lo que cambia de verdad en cada Peligro, por jefe (el Portal y la cacería lo muestran; los tests comprueban cada variante contra el código)
@@ -335,7 +340,7 @@
     cenizar: ['', 'Base: 7 fases, Rosario de 6 eslabones.', 'Daño +5 %, +1 add en Llamadas; telegrafías con suelo de esquiva.', 'Martillazo triple (F3), Eco de 3 s (F4) y 7.º eslabón Eco.', 'Furia 120 s, partes +30 %, 2.º Aviso fantasma de 1 s en el Rosario.', 'Último aliento: dos Cadenas Finales (6 % y 3 %), hasta 6 adds.']
   };
   P.pelText = function (bid, n) { return (PEL_BOSS[bid] || [])[n] || PEL_TXT[n]; };
-  function pelRect(i) { return { x: 650 + i * 58, y: 408, w: 54, h: 44 }; }
+  function pelRect(i) { return { x: 14 + i * 86, y: 372, w: 80, h: 44 }; }
   function biomeUnlocked(b, S) { S = S || SV(); return !b.need || (b.need === '*' ? G.Save.craterOpen() : (S.bossKills[b.need] || 0) > 0); }
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
     var S = SV(), id = S.biome || 'bosque', b = BIOMES.filter(function (x) { return x.id === id; })[0] || BIOMES[0], k = 0;
@@ -360,9 +365,17 @@
   var R_EQUIP = { x: 752, y: 4, w: 136, h: 46 };
   function updPortal() {
     if (G.Armor.smithOn() && onR(R_EQUIP)) { st.armorFrom = 'portal'; P.open('armor'); G.sfx('flip', { vol: 0.5 }); return false; }
-    var S = SV(), i, list = unlockedList();
+    var S = SV(), i, list = unlockedList(), pt = st.ptab || 0;
+    for (i = 0; i < 2; i++) if (onR(ptabRect(i))) { st.ptab = pt = i; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (inp.hit('Tab', 'KeyT')) { st.ptab = pt = 1 - pt; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (pt === 1) {   // página CARTAS: mano y anclas
+      for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
+      for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
+      G.launchReq = null;
+      if (onR(R_GO) || inp.hit('Enter')) { G.Base.launch(); }
+      return false;
+    }
     for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
     for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
       if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; S.portalSeen[BIOMES[i].id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
       else { st.pv = BIOMES[i].id; say(lockText(BIOMES[i])); G.sfx('discard', { vol: 0.4 }); }   // un destino cerrado se puede mirar: el panel dice qué hay que vencer
@@ -371,7 +384,6 @@
       var op = BIOMES.filter(biomeOpen), ci = op.indexOf(effBiome()), nx = op[(ci + (inp.hit('ArrowRight') ? 1 : op.length - 1)) % op.length];
       if (nx) { S.biome = nx.id; S.portalSeen[nx.id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     }
-    for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
     var bid = effBiome().bid;
     for (i = 0; i < 5; i++) if (onR(pelRect(i))) {
       if (i + 1 <= G.Save.pelMax(bid)) { G.Save.setPelSel(bid, i + 1); G.sfx('card_select', { vol: 0.5 }); }
@@ -387,92 +399,100 @@
     var S = SV(), i;
     for (i = 0; i < 5; i++) {
       var r = handRect(i), isAn = i < G.B.anchorSlots, id = S.anchors[i];
-      if (isAn && id) { G.Cards.drawCard(c, { id: id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true }); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y - 8, 10, '#ffd24a', 'center'); }
-      else if (isAn) { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '+'); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 10, 10, '#ffd24a', 'center'); }
-      else { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '?'); G.txt(c, 'ABIERTO', r.x + r.w / 2, r.y + r.h - 10, 10, '#6f6480', 'center'); }
+      if (isAn && id) { G.Cards.drawCard(c, { id: id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true }); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 14, 12, '#ffd24a', 'center'); }
+      else if (isAn) { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '+'); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 14, 12, '#ffd24a', 'center'); }
+      else { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '?'); G.txt(c, 'ABIERTO', r.x + r.w / 2, r.y + r.h + 14, 12, '#a89cc0', 'center'); }
     }
   }
   function fx(v) { return String(v).replace('.', ','); }
   function drawPortal(c) {
-    var S = SV(), list = unlockedList(), i, Q = G.Quests;
+    var S = SV(), list = unlockedList(), i, Q = G.Quests, pt = st.ptab || 0;
     bg(c, '¿LISTO, MARLO?'); header(c, 360);
     if (G.Armor.smithOn()) {   // v8: defensa recomendada del destino y acceso al taller sin caminar
       var AR = G.Armor, cbi = effBiome(), rec = AR.recDef(cbi.id), my = Math.round(AR.OFF ? 0 : AR.get().def), col = my >= rec ? '#7dff9a' : my >= rec * 0.7 ? '#ffd24a' : '#ff8a6a';
-      G.txt(c, 'DEF ' + my + ' / recomendada ' + rec, 520, 24, 13, AR.OFF ? '#7a7086' : col, 'left');
+      G.txt(c, 'DEF ' + my + ' / recomendada ' + rec, 540, 24, 13, AR.OFF ? '#b4a8c8' : col, 'left');
       U.button(c, R_EQUIP, 'EQUIPO', { size: 16, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: AR.readyCount() ? AR.readyCount() + ' listas' : null });
     }
-    G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 94, 12, '#9a8fb0', 'left');
-    drawHand(c);
-    G.txt(c, G.B.anchorSlots + ' anclas fijas; el resto se llena al subir de nivel.', 20, 236, 11, '#9a8fb0', 'left');
-    G.txt(c, 'TUS CARTAS  (toca para fijar / quitar como ancla)', 20, 254, 12, '#9a8fb0', 'left');
-    for (i = 0; i < list.length; i++) {
-      var r = ancRect(i), isA = S.anchors.indexOf(list[i].id) >= 0;
-      G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y + 8, r.w, r.h - 8, { nocd: true, glow: isA ? '#ffd24a' : null });
-      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 12, r.w, 12); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 6, 9, '#2a1a00', 'center', '#ffd24a'); }
+    ['SALIDA', 'CARTAS'].forEach(function (nm, k) { U.button(c, ptabRect(k), nm + (k === 1 ? '  (' + list.length + ')' : ''), { size: 16, color: pt === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: pt === k ? '#bfeaff' : '#6a5a80' }); });
+    G.txt(c, 'Tab: cambiar de página', 340, 75, 12, '#b4a8c8', 'left');
+    var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
+    if (pt === 1) {
+      G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 112, 13, '#b4a8c8', 'left');
+      drawHand(c);
+      G.txt(c, G.B.anchorSlots + ' anclas fijas; el resto se llena al subir de nivel.', 20, 262, 12, '#b4a8c8', 'left');
+      G.txt(c, 'TUS CARTAS  (toca para fijar / quitar como ancla)', 20, 284, 13, '#b4a8c8', 'left');
+      for (i = 0; i < list.length; i++) {
+        var r = ancRect(i), isA = S.anchors.indexOf(list[i].id) >= 0;
+        G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y + 8, r.w, r.h - 8, { nocd: true, glow: isA ? '#ffd24a' : null });
+        if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y - 6, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + 1, 12, '#2a1a00', 'center', '#ffd24a'); }
+      }
+      U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: 'Enter  -  ' + names });
+      return;
     }
-    G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 650, 84, 12, '#9a8fb0', 'left');
-    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 16, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
-    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; G.txt(c, D.name + ': ' + D.tag, 650, 157 + k * 11, 10, on ? '#ffe9a0' : '#7a7086', 'left'); });
-    var dd = L.DUR[S.len] || L.DUR[9], pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp;
-    G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 650, 191, 10, '#9dffb4', 'left');
-    G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 650, 202, 10, '#ffb08a', 'left');
-    // encargo y compras pendientes
-    U.panel(c, 650, 210, 290, 52);
-    G.txt(c, 'ENCARGO ACTIVO', 662, 222, 11, '#9a8fb0', 'left');
-    var ql = Q.statusLine();
-    var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 266, 12);
-    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 662, 236 + i * 13, 12, ql ? '#ffe9a0' : '#8a7f96', 'left');
-    var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
-    if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 930, 222, 10, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 930, 222, 10, '#9dffb4', 'right'); }
-    U.panel(c, 650, 266, 290, 56);
-    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 662, 278, 11, '#9a8fb0', 'left');
-    var dsh = G.Cook.pending(); G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 662, 309, 11, dsh ? '#ffd0dc' : '#8a7f96', 'left');
-    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 662, 293, 12, '#ffe9a0', 'left');
-    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 662, 293, 12, '#8a7f96', 'left');
     var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
-    G.txt(c, 'DESTINO  -  Jefe: ' + cb.boss, 650, 328, 11, '#9a8fb0', 'left');
-    // P7: panel de destinos (2 x 3 chips de 94 x 46, con icono, Peligro elegido, requisito y marca NUEVO); al lado de la mano, que deja libre ese hueco
+    // ---- columna derecha: duración, encargo y compras
+    G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 470, 106, 13, '#b4a8c8', 'left');
+    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 17, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
+    var dd = L.DUR[S.len] || L.DUR[9], pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp, yy = 192;
+    U.wrap(c, dd.name + ': ' + dd.tag, 460, 13).slice(0, 2).forEach(function (l) { G.txt(c, l, 470, yy, 13, '#ffe9a0', 'left'); yy += 19; });
+    G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 470, yy, 13, '#9dffb4', 'left'); yy += 19;
+    G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 470, yy, 13, '#ffb08a', 'left');
+    // encargo y compras pendientes
+    U.panel(c, 470, 272, 470, 78);
+    G.txt(c, 'ENCARGO ACTIVO', 484, 290, 13, '#b4a8c8', 'left');
+    var ql = Q.statusLine();
+    var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 440, 13);
+    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 484, 312 + i * 19, 13, ql ? '#ffe9a0' : '#b4a8c8', 'left');
+    var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
+    if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 926, 290, 12, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 926, 290, 12, '#9dffb4', 'right'); }
+    U.panel(c, 470, 358, 470, 82);
+    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 484, 376, 13, '#b4a8c8', 'left');
+    var dsh = G.Cook.pending();
+    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 484, 398, 13, '#ffe9a0', 'left');
+    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 484, 398, 13, '#b4a8c8', 'left');
+    G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 484, 420, 13, dsh ? '#ffd0dc' : '#b4a8c8', 'left');
+    // ---- columna izquierda: destinos (2 x 3 chips de 132 x 54), su información y el Peligro
     U.panel(c, DEST.x, DEST.y, DEST.w, DEST.h, { border: '#4a5a8a' });
-    G.txt(c, 'DESTINO  (toca uno)', DEST.x + 10, DEST.y + 11, 11, '#9a8fb0', 'left');
+    G.txt(c, 'DESTINO  (toca uno)  -  Jefe: ' + cb.boss, DEST.x + 12, DEST.y + 15, 13, '#b4a8c8', 'left');
     BIOMES.forEach(function (b, k) {
       var r = biomeRect(k), open = biomeOpen(b), on = cb.id === b.id, pv = st.pv === b.id, hov = U.inR(r, inp.mouse);
       c.fillStyle = on ? '#2a6aa8' : open ? (hov ? '#3a3050' : '#2c2438') : (pv ? '#2a1e32' : '#1a1422'); c.fillRect(r.x, r.y, r.w, r.h);
       c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(r.x, r.y, r.w, 8);
       c.strokeStyle = on ? '#bfeaff' : pv ? '#c0a060' : open ? '#6a5a80' : '#3a3046'; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3);
-      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 18, r.y + 20, 24, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 8, 20, 20); }
-      G.txt(c, b.name, r.x + 34, r.y + 16, 11, open ? '#fff' : '#7a7086', 'left');
-      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 6, r.y + 35, 10, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
+      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 22, r.y + 27, 28, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 12, 28, 28); }
+      G.txt(c, b.name, r.x + 42, r.y + 19, 13, open ? '#fff' : '#a89cc0', 'left');
+      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 42, r.y + 40, 12, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
       if (on && !SV().portalSeen[b.id]) { SV().portalSeen[b.id] = 1; G.Save.save(); }
-      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 32, r.y + 28, 29, 12); G.txt(c, 'NUEVO', r.x + r.w - 17.5, r.y + 34.5, 9, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
-      else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 10, r.y + 10, { size: 12 });   // pista: 'Lleva Fuego'
-      if (!open) { c.fillStyle = '#7a7086'; c.fillRect(r.x + r.w - 14, r.y + 8, 8, 6); c.strokeStyle = '#7a7086'; c.lineWidth = 2; c.strokeRect(r.x + r.w - 13, r.y + 3, 6, 6); }
+      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 44, r.y + 8, 40, 15); G.txt(c, 'NUEVO', r.x + r.w - 24, r.y + 15.5, 12, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
+      else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 14, r.y + 14, { size: 12 });   // pista: 'Lleva Fuego'
+      if (!open) { c.fillStyle = '#a89cc0'; c.fillRect(r.x + r.w - 16, r.y + 14, 8, 6); c.strokeStyle = '#a89cc0'; c.lineWidth = 2; c.strokeRect(r.x + r.w - 15, r.y + 9, 6, 6); }
     });
     // info del destino elegido (o del cerrado que se está mirando): chips de debilidades, pista y requisito
-    var ib = st.pv ? BIOMES.filter(function (x) { return x.id === st.pv; })[0] : cb, ln = ib && biomeOpen(ib) ? G.B.matLens(ib.id) : null;
+    var ib = st.pv ? BIOMES.filter(function (x) { return x.id === st.pv; })[0] : cb, ln = ib && biomeOpen(ib) ? G.B.matLens(ib.id) : null, iy = 270;
     if (ib && !biomeOpen(ib)) {
-      G.txt(c, ib.name + ' (' + ib.boss + ')', 650, 344, 11, '#ffb08a', 'left');
-      U.wrap(c, lockText(ib), 290, 10).slice(0, 3).forEach(function (l, k) { G.txt(c, l, 650, 358 + k * 12, 10, '#ff9a8a', 'left'); });
-      if (ib.need === '*') G.Save.FIVE.forEach(function (bk, k) { var got = (SV().bossKills[bk] || 0) > 0; c.fillStyle = got ? '#ffd24a' : '#3a3046'; c.beginPath(); c.arc(660 + k * 20, 392, 6, 0, 6.283); c.fill(); c.strokeStyle = '#1b1124'; c.lineWidth = 2; c.stroke(); });
+      G.txt(c, ib.name + ' (' + ib.boss + ')', 20, iy, 13, '#ffb08a', 'left'); iy += 20;
+      U.wrap(c, lockText(ib), 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, '#ff9a8a', 'left'); iy += 19; });
+      if (ib.need === '*') G.Save.FIVE.forEach(function (bk, k) { var got = (SV().bossKills[bk] || 0) > 0; c.fillStyle = got ? '#ffd24a' : '#3a3046'; c.beginPath(); c.arc(30 + k * 20, iy + 4, 6, 0, 6.283); c.fill(); c.strokeStyle = '#1b1124'; c.lineWidth = 2; c.stroke(); });
     } else if (ib) {
       if (ln) {   // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
-        var lx = 650, ly = 344;
-        G.txt(c, 'MEJOR', lx, ly + 6, 9, '#9dffb4', 'left'); lx += 38;
-        ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { size: 12 }); lx += 15; });
-        lx += 10; G.txt(c, 'PEOR', lx, ly + 6, 9, '#ff9a8a', 'left'); lx += 30;
-        ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, ly, { resist: true, size: 12 }); lx += 15; });
+        var lx = 20;
+        G.txt(c, 'MEJOR', lx, iy, 12, '#9dffb4', 'left'); lx += 48;
+        ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 6, { size: 12 }); lx += 17; });
+        lx += 14; G.txt(c, 'PEOR', lx, iy, 12, '#ff9a8a', 'left'); lx += 40;
+        ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 6, { resist: true, size: 12 }); lx += 17; });
+        iy += 22;
       }
-      U.wrap(c, ib.hint, 290, 10).slice(0, 3).forEach(function (l, k) { G.txt(c, l, 650, 366 + k * 12, 10, ib.fire ? '#ffc890' : '#c8b8e8', 'left'); });
+      U.wrap(c, ib.hint, 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, ib.fire ? '#ffc890' : '#d4c8ec', 'left'); iy += 19; });
     }
-    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 650, 401, 11, '#9a8fb0', 'left');
+    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
     for (i = 0; i < 5; i++) {
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
-      U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 16, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
+      U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 18, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
     }
-    var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : '');
-    G.txt(c, pl1, 650, 453, 10, '#ffe9a0', 'left');
-    U.wrap(c, P.pelText(bid, psel), 290, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 650, 466 + k * 12, 10, '#c8b8e8', 'left'); });
-    var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
-    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 15, sub: 'Enter  -  ' + names });
+    var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : ''), py = 440;
+    G.txt(c, pl1, 14, py, 13, '#ffe9a0', 'left'); py += 19;
+    U.wrap(c, P.pelText(bid, psel), 440, 13).slice(0, 3).forEach(function (ln2) { G.txt(c, ln2, 14, py, 13, '#d4c8ec', 'left'); py += 19; });
+    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: 'Enter  -  ' + names });
   }
 
   // ============================================================= ARCHIVO (Ulalume) / COLECCIÓN
@@ -579,7 +599,7 @@
     var list = archList(), S = SV(), i, d = list[Math.min(st.csel, list.length - 1)] || list[0], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color;
     var owned = G.Cards.defs.filter(function (q) { return q.id && L.unlocked(q.id); }).length;
     bg(c, 'ARCHIVO  -  Ulalume');
-    G.txt(c, 'Colección ' + owned + '/' + G.Cards.defs.length + '  -  anclas ' + S.anchors.length + '/' + G.B.anchorSlots, 300, 24, 13, '#9a8fb0', 'left');
+    G.txt(c, 'Colección ' + owned + '/' + G.Cards.defs.length + '  -  anclas ' + S.anchors.length + '/' + G.B.anchorSlots, 290, 24, 13, '#b4a8c8', 'left');
     for (i = 0; i < FILTERS.length; i++) {
       var f = FILTERS[i], cr = chipRect(i), on = (st.filter || 'all') === f.id;
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(cr.x, cr.y, cr.w, cr.h); c.strokeStyle = on ? f.color : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(cr.x + 1, cr.y + 1, cr.w - 2, cr.h - 2);
@@ -590,12 +610,12 @@
       G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true, dim: rk === 0, glow: list[i] === d ? '#ffe9a0' : null });
       if (list[i] === d) { c.strokeStyle = '#ffe9a0'; c.lineWidth = 3; c.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); }
       if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
-      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y + r.h - 14, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h - 7, 10, '#2a1a00', 'center', '#ffd24a'); }
+      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 20, r.y + 3, 17, 15); G.txt(c, 'A', r.x + r.w - 11.5, r.y + 11, 12, '#2a1a00', 'center', '#ffd24a'); }
     }
     // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
-    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 42, 10, '#c8a0ff', 'left');
+    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 20, 12, '#c8a0ff', 'left');
     G.Minis.ALL.forEach(function (mid, k) {
-      var have = (S.insigniasEver || {})[mid], ix = 686 + k * 26;
+      var have = (S.insigniasEver || {})[mid], ix = 614 + k * 26;
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
     // detalle de la carta
@@ -604,62 +624,62 @@
     G.txt(c, d.name, 700, 84, 17, '#ffd27a', 'left');
     G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), 700, 105, 12, tc, 'left');
     G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', 700, 125, 13, rank ? '#fff' : '#ff8a8a', 'left');
-    var ls = U.wrap(c, d.desc, 306, 11);
-    for (i = 0; i < ls.length && i < 4; i++) G.txt(c, ls[i], 626, 172 + i * 14, 11, '#d8cfe8', 'left');
+    var ls = U.wrap(c, d.desc, 306, 12);
+    for (i = 0; i < ls.length && i < 4; i++) G.txt(c, ls[i], 626, 170 + i * 17, 12, '#d8cfe8', 'left');
     var how = rank ? 'Mejoras de rango: árbol de Grum.' : G.Save.STARTERS.indexOf(id) >= 0 ? 'Carta inicial.' : 'Se desbloquea en el árbol de Grum' + (nodeFor(id) ? ': ' + nodeFor(id).name + ' (' + (G.Tree.tabOf(nodeFor(id).tree) || {}).name + ').' : '.');
-    var hl = U.wrap(c, how, 306, 11); for (i = 0; i < hl.length && i < 2; i++) G.txt(c, hl[i], 626, 236 + i * 14, 11, '#9dffb4', 'left');
+    var hl = U.wrap(c, how, 306, 12); for (i = 0; i < hl.length && i < 2; i++) G.txt(c, hl[i], 626, 242 + i * 17, 12, '#9dffb4', 'left');
     var isAnchor = S.anchors.indexOf(id) >= 0, nw = comboNames(S.anchors.concat(isAnchor ? [] : [id]));
     var gain = isAnchor || !rank ? [] : nw.filter(function (cb) { return comboNames(S.anchors).indexOf(cb) < 0; });
-    if (gain.length) G.txt(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 626, 276, 11, '#ffe9a0', 'left');
+    if (gain.length) G.txt(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 626, 282, 12, '#ffe9a0', 'left');
     U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 16, sub: '[E]' });
     // mano al salir
     G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 376, 12, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
       var hr = handRect2(i), isAn = i < G.B.anchorSlots, a = S.anchors[i];
-      if (isAn && a) { G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true }); G.txt(c, 'ANCLA', hr.x + hr.w / 2, hr.y + hr.h + 9, 9, '#ffd24a', 'center'); }
+      if (isAn && a) { G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true }); G.txt(c, 'ANCLA', hr.x + hr.w / 2, hr.y + hr.h + 11, 12, '#ffd24a', 'center'); }
       else if (isAn) G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '+');
-      else { G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?'); G.txt(c, 'ABIERTO', hr.x + hr.w / 2, hr.y + hr.h + 9, 9, '#6f6480', 'center'); }
+      else { G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?'); G.txt(c, 'ABIERTO', hr.x + hr.w / 2, hr.y + hr.h + 11, 12, '#a89cc0', 'center'); }
     }
     drawSynergy(c, S, d, isAnchor);
     // loadouts
     U.panel(c, 614, 372, 336, 156);
-    G.txt(c, 'LOADOUTS  1-3 elegir  Z guardar  X aplicar  N nombre', 626, 382, 10, '#9a8fb0', 'left');
+    G.txt(c, G.Sys.isTouch() ? 'LOADOUTS  (toca uno)' : 'LOADOUTS  1-3 elegir  Z guardar  X aplicar', 626, 381, 12, '#b4a8c8', 'left');
     for (i = 0; i < 3; i++) {
       var lr = loRect(i), lo = S.loadouts[i], sel = st.lo === i;
       c.fillStyle = sel ? '#2a1d3a' : '#150f20'; c.fillRect(lr.x, lr.y, lr.w, lr.h); c.strokeStyle = sel ? '#ffd27a' : '#3a2f48'; c.lineWidth = sel ? 3 : 2; c.strokeRect(lr.x + 1, lr.y + 1, lr.w - 2, lr.h - 2);
       var nm = st.edit && sel ? (st.buf || 'ESCRIBE...') + (Math.floor(Date.now() / 400) % 2 ? '_' : ' ') : (lo ? lo.name : 'VACÍO ' + (i + 1));
       G.txt(c, nm, lr.x + 8, lr.y + 14, 12, lo ? '#fff' : '#6a5f78', 'left');
       var sub = lo ? lo.anchors.map(function (a2) { return (G.Cards.def(a2) || { short: '?' }).short; }).join('+') + ' ' + lo.len + 'm' + (lo.dish ? ' *' : '') : 'sin guardar';
-      G.txt(c, sub.length > 19 ? sub.slice(0, 18) + '.' : sub, lr.x + 8, lr.y + 32, 9, '#9a8fb0', 'left');
+      G.txt(c, sub.length > 16 ? sub.slice(0, 15) + '.' : sub, lr.x + 8, lr.y + 32, 12, '#b4a8c8', 'left');
       U.button(c, loSave(i), 'GUARDAR', { size: 12, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
       U.button(c, loApply(i), 'APLICAR', { size: 12, off: !lo, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     }
-    G.txt(c, 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 531, 10, '#6f6480', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
   }
   // Vista previa de sinergias de etiqueta de las anclas (y de la carta señalada)
   function drawSynergy(c, S, d, isAnchor) {
     var i, N = {}, ids = S.anchors.slice(0, G.B.anchorSlots), x = 372, y = 372;
     U.panel(c, x, y, 232, 156);
-    G.txt(c, 'SINERGIAS DE TUS ANCLAS', x + 10, y + 14, 11, '#9a8fb0', 'left');
+    G.txt(c, 'SINERGIAS DE TUS ANCLAS', x + 10, y + 14, 12, '#b4a8c8', 'left');
     ids.forEach(function (a) { var t = G.Cards.def(a).tag; N[t] = (N[t] || 0) + 1; });
     var tags = Object.keys(N), px = x + 10;
-    if (!tags.length) G.txt(c, 'Sin anclas: sal con la mano vacía.', x + 10, y + 32, 11, '#8a7f96', 'left');
+    if (!tags.length) G.txt(c, 'Sin anclas: sal con la mano vacía.', x + 10, y + 34, 12, '#b4a8c8', 'left');
     tags.forEach(function (t, k) {
       var col = (G.TAGS[t] || {}).color || '#fff'; c.fillStyle = col; c.beginPath(); c.arc(px + 5, y + 34, 5, 0, 6.283); c.fill();
-      G.txt(c, (G.TAGS[t] || { name: t }).name + ' x' + N[t], px + 14, y + 34, 10, '#d8cfe8', 'left'); px += 14 + (G.TAGS[t].name.length + 3) * 6.4 + 8;
+      G.txt(c, (G.TAGS[t] || { name: t }).name + ' x' + N[t], px + 14, y + 34, 12, '#d8cfe8', 'left'); px += 14 + (G.TAGS[t].name.length + 3) * 7.2 + 8;
     });
     var cur = comboNames(ids);
-    G.txt(c, cur.length ? 'FUSIONES POSIBLES' : 'Sin fusiones: junta etiquetas distintas', x + 10, y + 54, 10, cur.length ? '#9dffb4' : '#9a8fb0', 'left');
-    cur.slice(0, 3).forEach(function (cb, k) {
-      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x + 15, y + 72 + k * 17, 4, 0, 6.283); c.fill(); c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x + 25, y + 72 + k * 17, 4, 0, 6.283); c.fill();
-      G.txt(c, cb.name, x + 34, y + 72 + k * 17, 11, '#ffe9a0', 'left');
+    G.txt(c, cur.length ? 'FUSIONES POSIBLES' : 'Sin fusiones aún', x + 10, y + 54, 12, cur.length ? '#9dffb4' : '#b4a8c8', 'left');
+    cur.slice(0, 2).forEach(function (cb, k) {
+      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x + 15, y + 74 + k * 18, 4, 0, 6.283); c.fill(); c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x + 25, y + 74 + k * 18, 4, 0, 6.283); c.fill();
+      G.txt(c, cb.name, x + 34, y + 74 + k * 18, 12, '#ffe9a0', 'left');
     });
-    if (cur.length > 3) G.txt(c, '+' + (cur.length - 3) + ' más', x + 160, y + 72, 10, '#9a8fb0', 'left');
+    if (cur.length > 2) G.txt(c, '+' + (cur.length - 2) + ' más', x + 222, y + 92, 12, '#b4a8c8', 'right');
     var set = Object.keys(N).filter(function (t) { return N[t] >= 2 && t !== 'neutral'; });
-    if (set.length) G.txt(c, 'Set ' + G.TAGS[set[0]].name + ': a 3 cartas +25 %', x + 10, y + 118, 9, '#c8b8e8', 'left');
+    if (set.length) G.txt(c, 'Set ' + G.TAGS[set[0]].name + ': 3 cartas +25 %', x + 10, y + 112, 12, '#c8b8e8', 'left');
     var gain = !isAnchor && G.Save.rank(d.id) ? comboNames(ids.concat([d.id])).filter(function (cb) { return cur.indexOf(cb) < 0; }) : [];
     var gt = gain.length ? 'Con ' + d.short + ': ' + gain.map(function (cb) { return cb.name; }).join(', ') : (isAnchor ? d.short + ' ya es ancla.' : 'Con ' + d.short + ': sin fusión nueva.');
-    U.wrap(c, gt, 212, 10).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, x + 10, y + 132 + k * 13, 10, gain.length ? '#ffe9a0' : '#8a7f96', 'left'); });
+    U.wrap(c, gt, 212, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, x + 10, y + 132 + k * 16, 12, gain.length ? '#ffe9a0' : '#b4a8c8', 'left'); });
   }
 
   // ============================================================= COCINA de Tía Castaña
@@ -735,14 +755,14 @@
       var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id, lk = !Cook.unlocked(d);
       U.panel(c, r.x, r.y, r.w, r.h, { border: isCur ? '#7dff9a' : ok ? '#8a6a4a' : '#3a2f48' });
       U.part(c, d.icon, r.x + 28, r.y + 29, 14);
-      G.txt(c, '[' + (i + 1) + '] ' + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 18, 16, lk ? '#7a6f88' : '#ffd27a', 'left');
-      G.txt(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, r.x + 58, r.y + 40, 11, lk ? '#ff9a8a' : '#d8cfe8', 'left');
+      G.txt(c, '[' + (i + 1) + '] ' + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 12, 16, lk ? '#a89cc0' : '#ffd27a', 'left');
+      U.wrap(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, 490, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 58, r.y + 31 + k * 16, 12, lk ? '#ff9a8a' : '#d8cfe8', 'left'); });
       var x = r.x + 560, k;
       for (k in d.parts) { var have = S.parts[k] || 0; U.part(c, k, x + 8, r.y + 28, 9); G.txt(c, have + '/' + d.parts[k], x + 22, r.y + 29, 12, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 74; }
       U.part(c, 'brasa', x + 8, r.y + 28, 9); G.txt(c, S.brasas + '/' + d.brasas, x + 22, r.y + 29, 12, S.brasas >= d.brasas ? '#9dffb4' : '#ff8a8a', 'left');
       U.button(c, dBtn(i), isCur ? 'LISTO' : lk ? 'CERRADA' : 'COCINAR', { size: 15, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     });
-    G.txt(c, '1-' + pg.length + ': cocinar  -  Q / E: cambiar de página  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, '1-' + pg.length + ': cocinar  -  Q / E: cambiar de página  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
   }
 
   // ============================================================= LOGROS (Abuelo Lanudo)
@@ -771,7 +791,7 @@
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = got ? '#ffd24a' : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       c.fillStyle = got ? '#ffd24a' : '#3a2f48'; c.beginPath(); c.arc(r.x + 20, r.y + 18, 9, 0, 6.283); c.fill();
       if (got) G.txt(c, 'v', r.x + 20, r.y + 19, 12, '#3a2410', 'center', 'rgba(0,0,0,0)');
-      G.txt(c, a.name, r.x + 40, r.y + 12, 13, got ? '#fff' : '#8a7f96', 'left'); G.txt(c, a.desc.length > 84 ? a.desc.slice(0, 83) + '.' : a.desc, r.x + 40, r.y + 27, 10, got ? '#bdb2d0' : '#6a5f78', 'left');
+      G.txt(c, a.name, r.x + 40, r.y + 11, 13, got ? '#fff' : '#a89cc0', 'left'); G.txt(c, a.desc.length > 66 ? a.desc.slice(0, 65) + '.' : a.desc, r.x + 40, r.y + 28, 12, got ? '#d4c8e8' : '#a89cc0', 'left');
     });
     U.panel(c, 590, 64, 356, 300, { border: '#b8a878' });
     if (sel) {
@@ -782,8 +802,8 @@
     var n = A.DEFS.length, sc = st.lscroll || 0;
     U.button(c, R_LUP, 'ANTERIORES', { size: 13, off: sc <= 0, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
     U.button(c, R_LDN, 'SIGUIENTES', { size: 13, off: sc >= n - LROWS, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
-    G.txt(c, (sc + 1) + '-' + Math.min(n, sc + LROWS) + ' de ' + n, 768, 434, 11, '#9a8fb0', 'center');
-    G.txt(c, 'Flechas: elegir  -  Esc: volver', 14, 526, 10, '#6f6480', 'left');
+    G.txt(c, (sc + 1) + '-' + Math.min(n, sc + LROWS) + ' de ' + n, 768, 438, 12, '#b4a8c8', 'center');
+    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: elegir  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
   }
 
   // ============================================================= MENÚ y AJUSTES
@@ -793,6 +813,7 @@
     if (onR(R_CLOSE) || onR(MB(3))) return true;
     if (onR(MB(0))) { G.Aldea.fromMenu = true; cur = 'archive'; st.csel = 0; }
     else if (onR(MB(1))) { cur = 'settings'; }
+    else if (onR(MB(4))) { st.manBack = 'menu'; P.open('manual'); }
     else if (onR(MB(2))) {
       if (confirm === 'del') { G.Save.reset(); G.Aldea.open(false); say('Progreso borrado.'); return false; }
       confirm = 'del'; confirmT = 4000; say('Pulsa otra vez para BORRAR todo el progreso (no se puede deshacer; exporta antes si dudas).');
@@ -807,6 +828,7 @@
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
     U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
+    U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
   var CB = { calm: { x: 290, y: 130, w: 380, h: 56 }, intro: { x: 290, y: 200, w: 380, h: 56 }, entries: { x: 290, y: 270, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
@@ -859,7 +881,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    man: { x: 770, y: 64, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -879,6 +901,7 @@
     if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
+    if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
   }
@@ -902,8 +925,9 @@
     U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
+    U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
     U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 536, 9, G.Save.ok ? '#6f6480' : '#ff8a8a', 'center');
+    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');
   }
 })();

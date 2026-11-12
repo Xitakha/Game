@@ -519,7 +519,7 @@
         if (n.icon === 'II' || n.icon === 'III' || n.icon === '3') G.txt(c, n.icon, p.x, p.y + 1, n.icon.length > 1 ? 16 : 22, owned ? '#1a1024' : '#fff', 'center');
         else G.Cards.glyph(c, n.icon, p.x, p.y + (n.type === 'M' ? 2 : 0), n.type === 'M' ? 11 : 15, ik);
         c.restore(); }
-      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 24, p.y - 22, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 24, p.y - 21, 10, '#fff', 'center'); } }
+      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
       return;   // la etiqueta con el nombre se dibuja después de todos los nodos (T.draw) para que ningún marco la tape
     }
     c.save(); c.translate(p.x, p.y);
@@ -547,17 +547,17 @@
     c.restore();
     if (st === 'excluded') { c.strokeStyle = '#ff6a6a'; c.lineWidth = 3; c.beginPath(); c.moveTo(p.x - 20, p.y - 20); c.lineTo(p.x + 20, p.y + 20); c.stroke(); }
     // coste en PF (chapa dorada) y estrella de nivel
-    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + 24, p.y - 22, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + 24, p.y - 21, 10, '#fff', 'center'); } }
-    G.txt(c, n.name.length > 15 ? n.name.slice(0, 14) + '.' : n.name, p.x, p.y + NR + 7, 10, dim ? '#6f6480' : '#d8cfe8', 'center');
+    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
+    G.txtBg(c, n.name.length > 13 ? n.name.slice(0, 12) + '.' : n.name, p.x, p.y + NR + 7, 12, dim ? '#a89cc0' : '#e8dff8', 'center');
   }
 
   T.draw = function (c) {
     var S = SV(), m = inp.mouse, t = Date.now() / 1000, i;
     c.fillStyle = '#08040e'; c.fillRect(0, 0, G.W, G.H);
     // cabecera
-    G.txt(c, 'FORJA DE GRUM', 14, 22, 24, '#ffd27a', 'left'); G.txt(c, 'Herrero de armas', 14, 40, 11, '#c8a070', 'left');
+    G.txt(c, 'FORJA DE GRUM', 14, 20, 24, '#ffd27a', 'left'); G.txt(c, 'Herrero de armas', 14, 42, 12, '#c8a070', 'left');
     pfIcon(c, 262, 22, 11); G.txt(c, 'PF libres ' + T.pfFree(), 280, 22, 16, T.pfFree() > 0 ? '#ffd24a' : '#9a8fb0', 'left');
-    G.txt(c, T.pfEarned() + '/' + L.PF_CAP + ' ganados', 280, 38, 10, '#9a8fb0', 'left');
+    G.txt(c, T.pfEarned() + '/' + L.PF_CAP + ' ganados', 280, 40, 12, '#b4a8c8', 'left');
     U.part(c, 'brasa', 430, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 446, 22, 16, '#ff9a3c', 'left');
     var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];
     // fila de partes (compacta)
@@ -608,8 +608,8 @@
     nodes.forEach(function (nd) { drawNodeShape(c, nd, T.status(nd), pos(nd), nd.id === ui.sel, t); });
     if (ART) nodes.forEach(function (nd) {
       var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded', col = dm ? '#7a6f8a' : '#e8dff8';
-      if (nd.ruta) { var wl = U.wrap(c, nd.name, 84, 10); wl.slice(0, 2).forEach(function (l, k) { G.txt(c, l, q.x, q.y + NR + 9 + k * 11, 10, col, 'center'); }); return; }
-      G.txt(c, nd.name.length > 17 ? nd.name.slice(0, 16) + '.' : nd.name, q.x, q.y + NR + 9, 10, col, 'center');
+      if (nd.ruta) { var wl = U.wrap(c, nd.name, 84, 10); wl.slice(0, 2).forEach(function (l, k) { G.txtBg(c, l, q.x, q.y + NR + 9 + k * 15, 12, col, 'center'); }); return; }
+      G.txtBg(c, nd.name.length > 13 ? nd.name.slice(0, 12) + '.' : nd.name, q.x, q.y + NR + 9, 12, col, 'center');
     });
     if (ui.flashT > 0 && BY[ui.flash]) {
       var fp = pos(BY[ui.flash]), u = 1 - ui.flashT / 800;
@@ -637,9 +637,9 @@
       ['A', 'B'].forEach(function (k, j) {
         var ch = n.ch[k], picked = T.choice(n.id) === k;
         G.txt(c, k + ' - ' + ch.name + (picked ? '  (elegida)' : ''), DET.x + 14, y, 12, picked ? '#9dffb4' : '#ffe9a0', 'left');
-        var ls = U.wrap(c, ch.desc, DET.w - 28, 11);
-        for (var q = 0; q < ls.length && q < 3; q++) G.txt(c, ls[q], DET.x + 14, y + 16 + q * 14, 11, '#bdb2d0', 'left');
-        y += 20 + Math.min(ls.length, 3) * 14 + 6;
+        var ls = U.wrap(c, ch.desc, DET.w - 28, 12);
+        for (var q = 0; q < ls.length && q < 3; q++) G.txt(c, ls[q], DET.x + 14, y + 18 + q * 16, 12, '#c8bedc', 'left');
+        y += 22 + Math.min(ls.length, 3) * 16 + 4;
       });
     }
     if (n.type === 'root') return;
