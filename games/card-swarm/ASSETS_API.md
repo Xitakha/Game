@@ -1443,3 +1443,32 @@ Extiende `assets_armor.js` sin tocarlo: sets T3-T6, 5 talismanes de minijefe, Ma
 - **Marlo vestido**: `Assets.drawMarloArmor(ctx, x, y, t, {set, flip, scale=1, anim:'idle|walk|hurt', by, equip:{yelmo,peto}, alpha})`. x,y = CENTRO del sprite `player` (mismo punto que `G.fx.spr` / `drawMarlo`; en la aldea scale 1.3). Dibujarlo justo despues del sprite. `set` admite los 7 sets (`aldeano|pastor|karceron|letea|yarlak|melaria|cenizar` + alias) o null; `equip` mezcla sets por pieza. Devuelve true si dibujo. Cache por set/pose (24x24 -> 48x48).
 - **fx_armor_block**: sprite `fx_armor_block` (32x32 base, 3 frames: impacto, escudo hexagonal, disipacion; anim `block`) y `Assets.fxArmorBlock(ctx, x, y, t, {scale=1, dur=300, alpha})`: x,y = centro, `t` = ms desde el golpe; devuelve false al pasar `dur` (el llamador lo descarta). Usa `lighter`, sin `shadowBlur`.
 - Captura de verificacion: `studio/docs/capturas-herrero/5-armaduras-t3-t6.jpg`. 500 `drawArmorIcon` ~3 ms.
+
+---
+
+# Audio de cinematicas v9 (src/sfx_cine.js; cargar DESPUES de sfx_cenizar.js; solo audio procedural)
+Contexto WebAudio propio que sigue desbloqueo, mute, volumen y suspend de Assets. No usa `G.rng` ni toca la simulacion. Seguro (try/catch; sin audio devuelve `false`). Tono: cuento junto al fuego, pero oscuro. Sin voz: solo bips de texto.
+
+## Pistas (`Assets.music.setTrack(nombre); Assets.music.start()`; `Assets.music.stop()` al salir)
+| Pista | Duracion | Contenido |
+|---|---|---|
+| `cine_intro` | 25 s exactos desde `start()` (100 pasos de 0,25 s) | 0-3 s crepitar de fogata y aire; bordon La1; melodia triste de caja de musica (La menor) desde 3 s; cuerda baja; 16,5-25 s crescendo oscuro (tritono, rugido, latido que se acelera) y golpe grave final en 25 s. Pasados 25 s queda un lecho de brasas y bordon suave: la logica lo deja o llama a `music.stop()`/cambia de pista |
+| `cine_title` | bucle indefinido (8 compases, 72 BPM) | pantalla de titulo: bordon, arpegio lento de caja de musica (Am-F-Dm-E / Am-F-C-E), latido y brasas. Entra con fundido de 1,5 s |
+
+- `Assets.cineMusicTime()` -> segundos sonados de `cine_intro` (0 si no suena); util para sincronizar vinetas, aunque el reloj del motor `G.Cine` manda. Para sincronizar mejor, llamar a `setTrack('cine_intro')`+`start()` al empezar la vineta 1 (fundido de entrada de 0,8 s).
+- `renderMusic({track:'cine_intro'|'cine_title', bars?, steps?})` y `renderSfx('cine_*')` (OfflineAudioContext) para el visor de audio.
+
+## SFX: `G.Snd.cine(tipo, arg, pitch)` (tambien `Assets.cine`) -> true si sono
+| tipo | arg | Uso | Notas |
+|---|---|---|---|
+| `'blip'` | `'lanudo'` (o `'narrador'`) = narrador grave y calido; cualquier otro (`'vesper'`, `'grum'`, `null`...) = neutro (tecla cuadrada) | Bip de maquina de escribir. Llamarlo **uno por palabra** (diseno sec. 1), no por letra | `pitch` (defecto 1) multiplica; ademas hay +-8 % aleatorio. Sugerido: 0.9-1.2 segun la entonacion / personaje. Separacion minima 28 ms |
+| `'title'` | - | Golpe de titulo/logo (~3,9 s con cola): impacto grave + campana oscura + brasas | al aparecer "SWARM HAND" |
+| `'tap'` | - | Confirmacion de "TOCA PARA JUGAR" (calida, ascendente, ~1 s) | **Llamar DENTRO del gesto del usuario**: hace `Assets.unlock()` y `resume()` del contexto propio. Llamarlo ANTES de `music.setTrack/start` |
+| `'trans'` | `'in'` (defecto, soplo que entra) / `'out'` (soplo que se apaga) / `'cut'` (corte seco) | Transicion entre vinetas | |
+| `'next'` | - | Tic de madera al completar/avanzar una linea con un toque | |
+| `'spark'` | 0..4 | Chispa = nota del leitmotiv en la vineta 4 (La, Do, Re, Fa, La 8va) | |
+| `'skip'` | - | Stinger de salto de cinematica: barrido descendente + golpe seco + brasas (~0,5 s) | llamar al saltar, junto con `music.stop()` |
+
+- Nombres internos (para `renderSfx`/visor): `cine_blip_lanudo`, `cine_blip_neutro`, `cine_title`, `cine_tap`, `cine_trans_in|out|cut`, `cine_next`, `cine_spark`, `cine_skip`; lista en `Assets.sfxCine`.
+- Flujo sugerido: titulo `setTrack('cine_title')` al primer toque ('tap') -> intro `setTrack('cine_intro')` -> vineta 8 `cine('title')` -> `setTrack(<pista del contexto>)`. Si falta la pista/funcion, silencio.
+- Pruebas: Playwright+Chromium, 0 errores; todos los SFX y las dos pistas se renderizan offline (intro 30 s con cola, pico 0,67).
