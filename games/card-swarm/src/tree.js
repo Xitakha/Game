@@ -519,7 +519,7 @@
         if (n.icon === 'II' || n.icon === 'III' || n.icon === '3') G.txt(c, n.icon, p.x, p.y + 1, n.icon.length > 1 ? 16 : 22, owned ? '#1a1024' : '#fff', 'center');
         else G.Cards.glyph(c, n.icon, p.x, p.y + (n.type === 'M' ? 2 : 0), n.type === 'M' ? 11 : 15, ik);
         c.restore(); }
-      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 24, p.y - 22, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 24, p.y - 21, 10, '#fff', 'center'); } }
+      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
       return;   // la etiqueta con el nombre se dibuja después de todos los nodos (T.draw) para que ningún marco la tape
     }
     c.save(); c.translate(p.x, p.y);
@@ -547,7 +547,7 @@
     c.restore();
     if (st === 'excluded') { c.strokeStyle = '#ff6a6a'; c.lineWidth = 3; c.beginPath(); c.moveTo(p.x - 20, p.y - 20); c.lineTo(p.x + 20, p.y + 20); c.stroke(); }
     // coste en PF (chapa dorada) y estrella de nivel
-    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + 24, p.y - 22, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + 24, p.y - 21, 10, '#fff', 'center'); } }
+    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
     G.txtBg(c, n.name.length > 13 ? n.name.slice(0, 12) + '.' : n.name, p.x, p.y + NR + 7, 12, dim ? '#a89cc0' : '#e8dff8', 'center');
   }
 
@@ -637,9 +637,9 @@
       ['A', 'B'].forEach(function (k, j) {
         var ch = n.ch[k], picked = T.choice(n.id) === k;
         G.txt(c, k + ' - ' + ch.name + (picked ? '  (elegida)' : ''), DET.x + 14, y, 12, picked ? '#9dffb4' : '#ffe9a0', 'left');
-        var ls = U.wrap(c, ch.desc, DET.w - 28, 11);
-        for (var q = 0; q < ls.length && q < 3; q++) G.txt(c, ls[q], DET.x + 14, y + 16 + q * 14, 11, '#bdb2d0', 'left');
-        y += 20 + Math.min(ls.length, 3) * 14 + 6;
+        var ls = U.wrap(c, ch.desc, DET.w - 28, 12);
+        for (var q = 0; q < ls.length && q < 3; q++) G.txt(c, ls[q], DET.x + 14, y + 18 + q * 16, 12, '#c8bedc', 'left');
+        y += 22 + Math.min(ls.length, 3) * 16 + 4;
       });
     }
     if (n.type === 'root') return;

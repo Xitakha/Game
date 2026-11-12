@@ -309,7 +309,7 @@
   // v (textos): el Portal se reparte en dos páginas para que nada se apelotone: SALIDA (destino, duración, Peligro, encargo y compras; la de siempre al abrir) y CARTAS (mano y anclas).
   // El botón SALIR A LA EXPEDICIÓN está siempre visible abajo a la derecha. Tab / T / toque en la pestaña cambia de página.
   function handRect(i) { return { x: 20 + i * 84, y: 130, w: 72, h: 96 }; }
-  function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 296 + Math.floor(i / 10) * 80, w: 56, h: 74 }; }
+  function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 308 + Math.floor(i / 10) * 76, w: 56, h: 72 }; }
   function lenRect(i) { return { x: 470 + i * 156, y: 118, w: 148, h: 52 }; }
   var R_GO = { x: 470, y: 470, w: 470, h: 56 };
   function ptabRect(i) { return { x: 20 + i * 150, y: 56, w: 142, h: 38 }; }
