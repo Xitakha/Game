@@ -509,3 +509,317 @@ Meta de la fase: que un jugador nuevo esté combatiendo en menos de un minuto, e
 - **Riesgo y reversión.** Un error aquí pierde partidas: nunca se sobrescribe sin copia previa. Revertir por commit.
 - **Tamaño.** M. **Decisión del dueño.** Ninguna.
 
+### F2. Balance final (8 tareas)
+
+Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas y niveles de Peligro, con y sin armadura, y que la economía lleva a las ~16 horas previstas. Regla de la fase: **ningún ajuste baja la dificultad sin una medición que lo justifique y sin el visto bueno del dueño**.
+
+#### T-F2-01 Banco de balance fiable
+- **Objetivo y por qué.** Las mediciones actuales tienen n=12 y un ruido de +-30 s; el bot llega casi siempre al jefe, así que no distingue cambios. Sin un instrumento mejor, el balance final es opinión.
+- **Pasos.** (1) `balance-designer` define la matriz: 6 biomas x Peligro I-V x 3 equipos (sin armadura, set del tier +1, set del tier +3) x 2 perfiles de bot (torpe y hábil). (2) Bot que esquiva telegrafías y recoge gemas, con habilidad regulable. (3) Ejecución por lotes con semillas fijas, n >= 30 por celda, intervalo de confianza. (4) Salida en CSV y resumen en Markdown. (5) Métricas: victoria, vida mínima, tiempo de pelea, daño evitado, muerte por fuente.
+- **Archivos.** `tools/card-swarm-balance/` (nuevo), reutiliza `play_bot.js`, `boss_fight.js`, `dodge_fusion.js`.
+- **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo alto. Diseño del experimento: `balance-designer` con Fable 5.2, esfuerzo alto. Lotes y tablas: `qa-tester` con Haiku 5.5.
+- **Dependencias.** T-F0-01, T-F0-05.
+- **Aceptación.** Dos lotes iguales difieren menos de 5 puntos de victoria por celda; el bot torpe pierde más que el hábil en todas las celdas.
+- **Pruebas.** Prueba de humo del banco en CI con 2 celdas.
+- **Riesgo y reversión.** Un bot no es un humano: sus cifras ordenan las celdas, no fijan el valor absoluto; se contrasta con T-F2-06. Es una herramienta: no afecta al juego.
+- **Tamaño.** L. **Decisión del dueño.** Ninguna.
+
+#### T-F2-02 Calibrar el daño por zona y la armadura
+- **Objetivo y por qué.** Hay que demostrar que con la armadura de su tier el bioma sigue siendo un reto, y que sin ella es claramente más duro. Hoy `zoneDmg` x1,18-x1,44 es valor de diseño sin medir.
+- **Pasos.** (1) Fijar objetivos por celda, por ejemplo victoria del bot hábil en Peligro I entre el 55 % y el 70 % con set del tier +1, y al menos 20 puntos menos sin armadura. (2) Barrer `?zdmg=`, `?armk=`, `?armcap=`. (3) Proponer valores y aplicarlos. (4) Repetir el banco.
+- **Archivos.** `src/armor.js`, `src/armor_data.js`, README (tabla de valores).
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto. Aplica `programmer` con Haiku 5.5 (cambio de constantes).
+- **Dependencias.** T-F2-01.
+- **Aceptación.** Las 6 x 3 celdas de Peligro I quedan dentro de los objetivos acordados.
+- **Pruebas.** Actualizar las comprobaciones de `armor` y `armor2` que fijan cifras.
+- **Riesgo y reversión.** Sobreajustar al bot. Los valores son perillas: revertir es restaurar la tabla.
+- **Tamaño.** M. **Decisión del dueño.** Sí: los objetivos de victoria por nivel (qué significa "reto").
+
+#### T-F2-03 Peligro IV y V de Karceron, Letea y Cenizar
+- **Objetivo y por qué.** Están por debajo del objetivo de dificultad. El tramo alto es lo que retiene al jugador experto.
+- **Pasos.** (1) Medir las 3 x 2 celdas. (2) Identificar qué ataque deja de presionar (telegrafía larga, hueco seguro, daño bajo). (3) Ajustar por patrón antes que por vida: nuevas combinaciones, ventanas más cortas, añadidos. (4) Verificar que toda telegrafía sigue cumpliendo la regla de esquiva.
+- **Archivos.** `src/boss.js` (`PELIGRO`), `src/boss_karceron.js`, `src/boss_letea.js`, `src/boss_cenizar*.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto. Implementa `programmer` con Sonnet 5.5. Revisión de justicia de patrones: `game-designer` con Opus 5.5.
+- **Dependencias.** T-F2-01.
+- **Aceptación.** Victoria del bot hábil en Peligro V por debajo del umbral acordado en los tres jefes; ninguna telegrafía por debajo de la regla `250 + 1000 * px / 190` ms.
+- **Pruebas.** Comprobación automática de la regla de esquiva sobre todos los ataques.
+- **Riesgo y reversión.** Dificultad injusta en vez de difícil: revisión de patrones y práctica del dueño. Revertir por commit.
+- **Tamaño.** M. **Decisión del dueño.** Ver los resultados antes de publicar.
+
+#### T-F2-04 Corrosión y topes de daño a jefes
+- **Objetivo y por qué.** El Virote corrosivo sube el daño a jefes; hay que saber cuánto y si rompe los topes por uso.
+- **Pasos.** (1) Medir el tiempo de pelea con y sin Corrosión en 3 jefes. (2) Comprobar la interacción con debilidades y con el tope del 3 % por uso. (3) Ajustar `?corr` si la ventaja pasa del margen acordado.
+- **Archivos.** `src/fusion.js`, `src/combat.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo medio.
+- **Dependencias.** T-F2-01.
+- **Aceptación.** La mejor build con Corrosión no acorta la pelea más de un 15 % frente a la mejor sin ella (cifra a confirmar con el dueño).
+- **Pruebas.** Comprobación del tope combinado.
+- **Riesgo y reversión.** Bajo; una constante.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+#### T-F2-05 Simulador de progresión y meta de 16 horas
+- **Objetivo y por qué.** La economía de fabricación no está validada y la meta de horas no se ha medido. Una economía demasiado lenta aburre; demasiado rápida deja sin objetivos.
+- **Pasos.** (1) Simulador sin navegador que juegue "cuentas" completas con tasas de victoria del banco y tablas de `loot.js`, `tree.js` y `armor_data.js`. (2) Salida: horas hasta cada jefe, cada set, cada rango y el final. (3) Detectar cuellos de botella por recurso. (4) Separar en `stats` el tiempo en combate del tiempo total.
+- **Archivos.** `tools/card-swarm-economy/` (nuevo), `src/main.js` (contador separado).
+- **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo medio. Modelo y lectura: `balance-designer` con Fable 5.2.
+- **Dependencias.** T-F2-01.
+- **Aceptación.** Informe con horas por hito para jugador torpe, medio y hábil; el final cae entre 12 y 20 horas para el jugador medio (rango a confirmar).
+- **Pruebas.** Pruebas unitarias del simulador con tablas pequeñas.
+- **Riesgo y reversión.** El simulador simplifica: contrastar con `playMs` del dueño. No toca el juego.
+- **Tamaño.** M. **Decisión del dueño.** Confirmar la meta de horas.
+
+#### T-F2-06 Playtest humano estructurado
+- **Objetivo y por qué.** El bot no sabe si algo es divertido o injusto. El dueño sí, pero ahora juega inmortal.
+- **Pasos.** (1) Guion de 5 sesiones: cuenta nueva hasta el Pastor, Karceron con armadura, un Peligro III, Cenizar, y una libre. (2) Tras cada una, 6 preguntas fijas y exportación de estadísticas. (3) `balance-designer` cruza las respuestas con el banco.
+- **Archivos.** `studio/docs/PLAYTEST.md` (nuevo).
+- **Responsable.** `qa-tester` con Sonnet 5.5, esfuerzo medio. Lectura: `balance-designer` con Fable 5.2.
+- **Dependencias.** T-F0-03, T-F1-01.
+- **Aceptación.** 5 sesiones registradas con causa de cada muerte y nota de diversión.
+- **Pruebas.** No aplica.
+- **Riesgo y reversión.** Una sola persona no es una muestra: sirve para detectar problemas, no para afinar décimas.
+- **Tamaño.** M. **Decisión del dueño.** Sí: su tiempo.
+
+#### T-F2-07 Auditoría de rendimiento en combate denso
+- **Objetivo y por qué.** Un survivors que da tirones no engancha, y el móvil caliente cierra la partida. Además, T-F0-05 puede subir el número de enemigos en móvil.
+- **Pasos.** (1) Perfil con `?perf=1` y el perfilador del navegador en el peor caso (Cráter, 110 enemigos, 4 poderes). (2) Lista ordenada de costes. (3) Candidatos ya vistos: `filter` + `sort` por fotograma (`src/main.js:500-503`), búsquedas de vecinos sin rejilla, degradados creados cada fotograma (`tundra.js`, `panal.js`, `enemies.js`), `shadowBlur` en cartas. (4) Aplicar las 3 de mayor retorno y medir.
+- **Archivos.** `src/main.js`, `src/combat.js`, `src/enemies.js`, `src/weapons.js`, `src/fusion.js`, `src/tundra.js`, `src/panal.js`.
+- **Responsable.** `performance-engineer` con Sonnet 5.5, esfuerzo alto; sube a Opus 5.5 si hay que introducir una rejilla espacial.
+- **Dependencias.** T-F0-05, T-F0-12.
+- **Aceptación.** p95 de fotograma en el escenario fijo de `perf_bot.js` al menos un 20 % menor que la línea base; en el móvil del dueño, menos del 5 % de fotogramas por encima de 33 ms (referencia de `MOVIL.md`).
+- **Pruebas.** La prueba de semilla de T-F0-05 debe dar el mismo estado antes y después: optimizar no cambia la simulación.
+- **Riesgo y reversión.** Cambiar el orden de resolución altera el balance: por eso la prueba de semilla. Revertir por commit.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F2-08 Presupuesto de rendimiento y de carga en CI
+- **Objetivo y por qué.** Evitar que el rendimiento se degrade sin que nadie lo vea.
+- **Pasos.** (1) Guardar la línea base de `perf_bot.js` y del tamaño de `dist/`. (2) El CI avisa si p95 empeora más de un 15 % o el tamaño crece más de un 10 %. (3) Al principio solo aviso, sin bloquear.
+- **Archivos.** `.github/workflows/tests.yml`, `tools/card-swarm-bot/perf_bot.js`, `tools/build/`.
+- **Responsable.** `performance-engineer` con Sonnet 5.5, esfuerzo bajo. Apoyo: `release-manager`.
+- **Dependencias.** T-F0-02, T-F0-10, T-F2-07.
+- **Aceptación.** Un PR que añade trabajo inútil por fotograma recibe el aviso.
+- **Pruebas.** PR de prueba.
+- **Riesgo y reversión.** Ruido de los runners: umbral relativo y mediana de 3. Se puede desactivar.
+- **Tamaño.** S. **Decisión del dueño.** Ninguna.
+
+### F3. Monetización y publicación (10 tareas)
+
+Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con una vía de ingresos que no toque el reto, y cumpliendo lo legal.
+
+#### T-F3-01 Decisión de modelo, privacidad y edad
+- **Objetivo y por qué.** Todo lo demás de la fase depende de qué se monetiza, dónde y con qué obligaciones.
+- **Pasos.** (1) Confirmar en la documentación oficial los datos de la sección 2 marcados como no verificados. (2) Redactar una política de privacidad breve y la ficha de datos. (3) Fijar el público objetivo (no dirigido a menores). (4) Cerrar la lista de recompensas permitidas (sección 2.3).
+- **Archivos.** `studio/docs/MONETIZACION.md` (nuevo), `games/card-swarm/privacy.html` (nuevo).
+- **Responsable.** `monetization-analyst` con Opus 5.5, esfuerzo alto (sube a Fable para la recomendación final: afecta a dinero y privacidad).
+- **Dependencias.** T-F1-01 con al menos 2 semanas de datos, si se quiere decidir con cifras.
+- **Aceptación.** Documento con decisión firmada por el dueño, política publicada y lista de recompensas cerrada.
+- **Pruebas.** No aplica.
+- **Riesgo y reversión.** Decidir sin datos: por eso la fase 1 va antes. Es un documento.
+- **Tamaño.** M. **Decisión del dueño.** Sí: modelo, exclusividad con Poki, cuentas y datos de cobro. **Aviso:** conviene que un profesional revise lo legal; este plan no es asesoría jurídica.
+
+#### T-F3-02 Capa de plataforma
+- **Objetivo y por qué.** Un único punto donde el juego habla con Pages, itch, cada portal o la tienda, para no ensuciar el código con SDK distintos.
+- **Pasos.** (1) Interfaz `G.Platform`: `init`, `loadingDone`, `gameplayStart`, `gameplayStop`, `rewarded(motivo)`, `happyMoment`, `canShowAds`, `saveSync`. (2) Adaptador `null` por defecto (todo funciona, sin anuncios). (3) Adaptadores por portal en archivos aparte que solo entran en su build. (4) Llamar a `gameplayStart/Stop` en los cambios de estado de `src/main.js`.
+- **Archivos.** `src/platform.js` (nuevo), `src/platform_*.js` (nuevos), `src/main.js`, `src/mobile.js`, `tools/build/`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo alto. Diseño de la interfaz y revisión: `monetization-analyst` con Opus 5.5.
+- **Dependencias.** T-F0-10, T-F3-01.
+- **Aceptación.** Con el adaptador `null` el juego es idéntico al actual (prueba de semilla); un adaptador simulado recibe los eventos en el orden correcto.
+- **Pruebas.** Grupo `platform`: secuencia de eventos, pausa de audio durante un anuncio simulado, vuelta al juego.
+- **Riesgo y reversión.** Un anuncio que no devuelve el control deja el juego colgado: tiempo máximo de espera. El adaptador `null` es la reversión.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F3-03 Diseño de recompensas opcionales
+- **Objetivo y por qué.** Ganar algo sin romper el reto ni la economía.
+- **Pasos.** (1) Especificar cada punto de la sección 2.3: tope diario, texto, dónde aparece. (2) Simular su efecto con T-F2-05. (3) Implementar detrás de `G.Platform.canShowAds()`. (4) Si no hay anuncios disponibles, el botón no aparece.
+- **Archivos.** `src/base.js`, `src/aldea.js`, `src/cards.js`, `src/loot.js`, `src/save.js`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo medio. Revisión de economía: `balance-designer` con Fable 5.2. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F3-02, T-F2-05.
+- **Aceptación.** Un jugador que ve todos los anuncios posibles avanza como mucho un 25 % más rápido que uno que no ve ninguno (cifra a confirmar); ningún anuncio ocurre en estado `play`.
+- **Pruebas.** Topes diarios, ausencia de botones sin adaptador, estado tras cancelar el anuncio.
+- **Riesgo y reversión.** Sensación de juego "con trampa": pocas recompensas y bien etiquetadas. Flag de apagado.
+- **Tamaño.** M. **Decisión del dueño.** Sí: aprobar la lista y el tope.
+
+#### T-F3-04 Textos fuera del código e inglés
+- **Objetivo y por qué.** Los portales grandes tienen público mundial; con el juego solo en español se pierde casi todo ese tráfico.
+- **Pasos.** (1) Función `G.t(clave)` con tabla `es` y `en`. (2) Extraer textos por archivo, empezando por la primera sesión, HUD, cartas y Portal. (3) Traducción al inglés con glosario de nombres. (4) Revisar anchos: el inglés suele ser más corto, pero hay que comprobarlo. (5) Selector de idioma y detección por navegador.
+- **Archivos.** `src/i18n.js`, `src/lang_es.js`, `src/lang_en.js` (nuevos) y los ~30 archivos con texto.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo alto, para la capa y las primeras extracciones; la extracción masiva con Haiku 5.5; glosario y revisión de la traducción con `game-designer` en Opus 5.5.
+- **Dependencias.** T-F0-06, T-F1-08.
+- **Aceptación.** Con idioma `en`, la primera sesión completa y los menús principales no muestran ninguna cadena en español; `textcheck` pasa en los dos idiomas.
+- **Pruebas.** Comprobación de claves sin traducir y de desbordes de texto por idioma.
+- **Riesgo y reversión.** Cambio muy extenso: hacerlo por archivos, con la batería entre cada uno. El idioma por defecto sigue siendo español.
+- **Tamaño.** L. **Decisión del dueño.** Sí: si quiere inglés y si los nombres propios se traducen.
+
+#### T-F3-05 Builds por destino
+- **Objetivo y por qué.** Cada destino pide cosas distintas: sin service worker en portales, sin enlaces externos, zip para itch.
+- **Pasos.** (1) `build` con perfiles `pages`, `itch`, `crazygames`, `poki`, `twa`. (2) Cada perfil elige adaptador, quita o deja el SW y el aviso de instalación. (3) Informe de tamaño y número de archivos por perfil. (4) Lista de comprobación de requisitos por portal.
+- **Archivos.** `tools/build/`, `studio/docs/PUBLICACION.md` (nuevo).
+- **Responsable.** `release-manager` con Sonnet 5.5, esfuerzo medio. Apoyo: `tools-engineer`.
+- **Dependencias.** T-F0-10, T-F3-02.
+- **Aceptación.** Cada perfil genera un paquete que pasa la batería; el de portal no registra service worker ni abre enlaces externos.
+- **Pruebas.** La batería contra cada perfil en CI (al menos el grupo `flow`).
+- **Riesgo y reversión.** Divergencia entre perfiles: una sola base de código, diferencias solo en el adaptador.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F3-06 Publicar en itch.io
+- **Objetivo y por qué.** Primer contacto con jugadores reales, sin coste y sin compromisos.
+- **Pasos.** (1) Página: descripción corta, 5 capturas, GIF de 10 s, etiquetas. (2) Subir el zip del perfil `itch`. (3) Donación voluntaria. (4) Recoger comentarios en un documento semanal.
+- **Archivos.** `studio/docs/marketing/` (nuevo).
+- **Responsable.** `marketing-manager` con Sonnet 5.5, esfuerzo medio. Apoyo: `release-manager`, `qa-tester` (Haiku) para las capturas.
+- **Dependencias.** T-F0-03, T-F1-02, T-F3-05, T-F3-08.
+- **Aceptación.** Página publicada; el juego carga y guarda dentro del marco de itch en móvil y escritorio.
+- **Pruebas.** Prueba manual en el marco de itch.
+- **Riesgo y reversión.** Primera impresión pobre si se publica antes de F1: respetar las dependencias. La página se puede ocultar.
+- **Tamaño.** S. **Decisión del dueño.** Sí: crear la cuenta y aprobar la página.
+
+#### T-F3-07 Envío a portales web
+- **Objetivo y por qué.** Es la vía con más tráfico para un HTML5 y la que de verdad puede dar ingresos.
+- **Pasos.** (1) Adaptador de CrazyGames y envío en lanzamiento básico. (2) Corregir lo que pida su revisión. (3) Solicitud a Poki con build y cifras de retención. (4) Decidir exclusividad según las respuestas.
+- **Archivos.** `src/platform_crazygames.js`, `src/platform_poki.js`.
+- **Responsable.** `release-manager` con Sonnet 5.5, esfuerzo medio. Apoyo: `programmer` (adaptadores), `monetization-analyst` (términos, con Opus 5.5).
+- **Dependencias.** T-F3-02, T-F3-03, T-F3-04, T-F3-05.
+- **Aceptación.** Juego aceptado en al menos un portal y eventos del SDK validados en su herramienta de pruebas.
+- **Pruebas.** Las de `platform` con el SDK real en su modo de pruebas.
+- **Riesgo y reversión.** Rechazo: es información útil; se corrige y se reenvía. Retirar el juego del portal.
+- **Tamaño.** M. **Decisión del dueño.** Sí: cuentas, términos y exclusividad.
+
+#### T-F3-08 Identidad y material de marca
+- **Objetivo y por qué.** Sin capturas, icono cuidado y un vídeo corto, nadie hace clic.
+- **Pasos.** (1) Comprobar que "Swarm Hand" no choca con otro juego o marca. (2) Guía de una página: logotipo, paleta, tono. (3) 8 capturas y un vídeo de 20-30 s grabados con los bots. (4) Textos corto y largo en español e inglés.
+- **Archivos.** `studio/docs/marketing/`, `games/card-swarm/icons/`.
+- **Responsable.** `art-director` con Opus 5.5, esfuerzo medio, para la guía y la selección; `marketing-manager` con Sonnet 5.5 para textos y montaje; capturas con Haiku 5.5.
+- **Dependencias.** T-F0-07, T-F1-08.
+- **Aceptación.** Carpeta con material listo para itch y portales, aprobada por el dueño.
+- **Pruebas.** No aplica.
+- **Riesgo y reversión.** Nombre en conflicto: mejor saberlo antes de publicar.
+- **Tamaño.** M. **Decisión del dueño.** Sí: nombre definitivo y aprobación del material.
+
+#### T-F3-09 Evaluar la Play Store con TWA
+- **Objetivo y por qué.** Tener presencia en tienda puede valer la pena, pero cuesta dinero, tiempo y obligaciones. Se decide con datos del portal.
+- **Pasos.** (1) Informe de costes y requisitos confirmados en fuentes oficiales: cuenta, prueba cerrada con 12 testers 14 días, Digital Asset Links, dominio estable, Play Billing para compras. (2) Prototipo de TWA con Bubblewrap en pista interna. (3) Recomendación de seguir o no.
+- **Archivos.** `studio/docs/PLAY-STORE.md` (nuevo), `tools/twa/` (nuevo).
+- **Responsable.** `release-manager` con Sonnet 5.5, esfuerzo medio. Decisión: `monetization-analyst` con Opus 5.5.
+- **Dependencias.** T-F3-07 con datos.
+- **Aceptación.** Informe con costes, plazos y recomendación; prototipo instalable en un dispositivo.
+- **Pruebas.** Instalación en el móvil del dueño.
+- **Riesgo y reversión.** Gastar en una cuenta que no se usa: por eso primero el informe.
+- **Tamaño.** M. **Decisión del dueño.** Sí: pagar la cuenta de desarrollador y conseguir 12 testers.
+
+#### T-F3-10 Compra de apoyo y cosméticos (solo diseño)
+- **Objetivo y por qué.** Preparar una compra única honesta para cuando haya tienda: quitar anuncios y un lote cosmético.
+- **Pasos.** (1) Definir qué incluye. (2) Diseñar 3 cosméticos de la bufanda de Marlo que no afecten al juego. (3) Especificar cómo se guarda el derecho de compra sin servidor y qué límites tiene.
+- **Archivos.** `studio/docs/MONETIZACION.md`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo bajo. Apoyo: `art-director`, `monetization-analyst`.
+- **Dependencias.** T-F3-01.
+- **Aceptación.** Especificación aprobada; nada se implementa hasta T-F3-09.
+- **Pruebas.** No aplica.
+- **Riesgo y reversión.** Ninguno.
+- **Tamaño.** S. **Decisión del dueño.** Sí: si quiere vender algo y qué.
+
+### F4. Contenido y eventos en vivo (6 tareas)
+
+Meta de la fase: dar motivos para seguir jugando después del final. Solo empieza si F1-F3 muestran que hay jugadores que llegan lejos.
+
+#### T-F4-01 Eventos semanales con mutadores
+- **Objetivo y por qué.** Variedad barata reutilizando la semilla del reto diario.
+- **Pasos.** (1) Lista de 10 mutadores (enemigos rápidos, solo dos etiquetas, sin corazones, doble élite). (2) Uno por semana, elegido por la fecha. (3) Recompensa cosmética o de Brasas con tope.
+- **Archivos.** `src/daily.js`, `src/waves.js`, `src/cards.js`, `src/panels.js`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo medio. Implementa `programmer` con Sonnet 5.5. Revisión: `balance-designer` con Fable 5.2.
+- **Dependencias.** T-F1-05.
+- **Aceptación.** Cada mutador cambia la forma de jugar y ninguno hace la partida más fácil que la normal según el banco.
+- **Pruebas.** Una comprobación por mutador.
+- **Riesgo y reversión.** Mutadores injustos: banco y práctica. Tabla de datos, fácil de retirar.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F4-02 Final de partida extendido: Peligro VI o modo sin fin
+- **Objetivo y por qué.** El jugador que acaba el juego necesita un techo más alto.
+- **Pasos.** (1) Elegir entre un Peligro VI por jefe o un modo sin fin con marcador. (2) Diseñar la escalada. (3) Medir con el banco.
+- **Archivos.** `src/boss.js`, `src/waves.js`, `src/save.js`.
+- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F2-03.
+- **Aceptación.** El bot hábil no supera el nuevo techo de forma consistente.
+- **Pruebas.** Celdas nuevas en el banco.
+- **Riesgo y reversión.** Poco. Contenido opcional.
+- **Tamaño.** M. **Decisión del dueño.** Sí: cuál de las dos opciones.
+
+#### T-F4-03 Cosméticos ganables
+- **Objetivo y por qué.** Recompensas visibles que no alteran el balance: buenas para logros, retos y, más adelante, para la compra de apoyo.
+- **Pasos.** (1) Sistema de aspecto para la bufanda y la estela. (2) 6 variantes ligadas a logros y al reto diario. (3) Selector en el Archivo.
+- **Archivos.** `src/assets.js`, `src/player.js`, `src/panels.js`, `src/save.js`.
+- **Responsable.** `art-director` con Opus 5.5, esfuerzo medio. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F0-07.
+- **Aceptación.** Cambiar de aspecto no altera ninguna cifra de combate (prueba de semilla).
+- **Pruebas.** Prueba de semilla con y sin cosmético.
+- **Riesgo y reversión.** Bajo.
+- **Tamaño.** M. **Decisión del dueño.** Ninguna.
+
+#### T-F4-04 Más profundidad de builds
+- **Objetivo y por qué.** Mantener viva la decisión central del juego: qué fusionar.
+- **Pasos.** (1) Con datos de uso, detectar fusiones que nadie elige y las que siempre se eligen. (2) Rediseñar las 3 peores. (3) Proponer un tercer nivel de fusión o sinergias entre poderes.
+- **Archivos.** `src/fusion.js`, `src/cards.js`, `DESIGN-fusion.md`.
+- **Responsable.** `game-designer` con Opus 5.5, esfuerzo alto. Números: `balance-designer` con Fable 5.2. Implementa `programmer` con Sonnet 5.5.
+- **Dependencias.** T-F1-01, T-F2-01.
+- **Aceptación.** Ninguna fusión por debajo del 3 % de uso ni por encima del 20 % en los datos (umbrales a confirmar).
+- **Pruebas.** Las del grupo `powers` actualizadas.
+- **Riesgo y reversión.** Romper el balance cerrado en F2: repetir el banco.
+- **Tamaño.** L. **Decisión del dueño.** Ninguna.
+
+#### T-F4-05 Repaso de arte y cinemáticas
+- **Objetivo y por qué.** Subir el acabado de lo primero que ve el jugador y de lo que sale en capturas.
+- **Pasos.** (1) Guía de arte de una página. (2) Sustituir las viñetas de la intro que aún parecen de reserva. (3) Revisar la legibilidad de telegrafías en los 6 biomas.
+- **Archivos.** `src/assets_cine*.js`, `src/cine_intro.js`, `studio/docs/ARTE.md` (nuevo).
+- **Responsable.** `art-director` con Opus 5.5, esfuerzo alto.
+- **Dependencias.** T-F1-02.
+- **Aceptación.** Las 6 viñetas de la intro aprobadas por el dueño; contraste de telegrafías medido sobre cada suelo.
+- **Pruebas.** Capturas comparadas y coste de dibujo medido.
+- **Riesgo y reversión.** Coste de rendimiento del arte nuevo: medir con `perf`.
+- **Tamaño.** M. **Decisión del dueño.** Aprobar el arte.
+
+#### T-F4-06 Música propia para cada bioma
+- **Objetivo y por qué.** Cuatro de los seis biomas comparten pista. La música distinta refuerza la sensación de avanzar.
+- **Pasos.** (1) Dirección sonora por bioma en media página. (2) Pistas procedurales para Cripta, Asfódelo y Cráter. (3) Mezcla revisada en altavoz de móvil.
+- **Archivos.** `src/assets.js` (música), `src/sfx*.js`, `src/main.js:392`.
+- **Responsable.** `audio-designer` con Sonnet 5.5, esfuerzo medio; la dirección sonora con Opus 5.5.
+- **Dependencias.** Ninguna.
+- **Aceptación.** Cada bioma suena distinto en una prueba a ciegas del dueño; sin cortes al cambiar de intensidad.
+- **Pruebas.** Comprobación de que cada bioma selecciona su pista.
+- **Riesgo y reversión.** Coste de CPU del audio procedural: medir.
+- **Tamaño.** M. **Decisión del dueño.** Aprobar las pistas.
+
+---
+
+## 6. Preguntas que solo el dueño puede decidir
+
+1. **Inmortalidad.** ¿Desde cuándo quieres jugar sin ella? Mientras esté puesta no se puede validar el reto (T-F0-03).
+2. **Marlo.** ¿Mapache o corderito? (T-F0-07)
+3. **Créditos.** ¿Apruebas los nombres cómicos o los cambias? (T-F0-08)
+4. **Qué es "reto" en números.** ¿Qué porcentaje de intentos debería ganar un jugador competente en Peligro I, III y V? (T-F2-02, T-F2-03)
+5. **Móviles lentos.** ¿Menos enemigos pero más duros, o el mismo número aunque baje la fluidez? (T-F0-05)
+6. **Intro.** ¿Aceptas acortarla la primera vez para llegar antes al combate? (T-F1-02)
+7. **Pantalla.** ¿Ensanchamos el área de juego en teléfonos alargados o solo movemos los controles a las franjas? (T-F1-08)
+8. **Modo corto.** ¿Quieres una expedición de 4 minutos? (T-F1-10)
+9. **Datos.** ¿Analítica solo local, o envío anónimo a un servicio con aviso de privacidad? (T-F1-01)
+10. **Dinero.** ¿Qué te parece aceptable: solo donación, anuncios recompensados, compra única de apoyo? ¿Hay algo vetado? (T-F3-01, T-F3-03)
+11. **Idioma.** ¿Traducimos al inglés? ¿Se traducen los nombres de personajes y cartas? (T-F3-04)
+12. **Cuentas.** ¿Quién crea y es titular de las cuentas de itch.io, portales y Play Console, y con qué datos de cobro? (T-F3-06, T-F3-07, T-F3-09)
+13. **Exclusividad.** Si Poki pide exclusividad en web, ¿la aceptarías? (T-F3-07)
+14. **Nombre.** ¿"Swarm Hand" es definitivo? (T-F3-08)
+15. **Ember Flock y el clásico.** ¿Se retiran del sitio y de `main`? (T-F0-13, T-F0-09)
+16. **Meta de horas.** ¿Siguen siendo ~16 horas hasta el final? (T-F2-05)
+17. **Permisos.** ¿Permites corregir `ceo.md` y `programmer.md` para quitar la mención a Phaser y listar a todo el equipo? (T-F0-09)
+
+## 7. Los 5 primeros pasos recomendados
+
+1. **T-F0-01**: reparar las herramientas de prueba. Hoy no corre ninguna y todo lo demás depende de ellas.
+2. **T-F0-12**: que el dueño haga la sesión guiada de 20 minutos en su móvil. Es la mayor incógnita y no cuesta desarrollo.
+3. **T-F0-02 y T-F0-03**: pruebas en cada PR y retirar la inmortalidad por defecto, en ese orden.
+4. **T-F0-05**: simulación reproducible y dificultad igual en todos los dispositivos. Desbloquea el balance, el reto diario y los récords.
+5. **T-F1-01 y T-F1-02**: analítica mínima y primera sesión en menos de 60 segundos. A partir de ahí cada cambio se puede medir.
+
+## 8. Qué quedó sin revisar
+
+- Rendimiento, legibilidad, instalación y uso sin conexión en un teléfono real.
+- Frame-time en el escenario pesado: `perf_bot.js` no se ejecutó.
+- Lectura línea a línea de los ~17.000 renglones de arte procedural y de los archivos de sonido: solo se revisó su estructura y sus puntos de contacto.
+- Balance de Peligro IV-V y de Corrosión: no se volvió a medir.
+- Documentación oficial de CrazyGames y Poki: no accesible desde esta sesión.
+- `games/survival-lamb` y `games/card-swarm-clasico`: solo estructura y estado, no su código.
