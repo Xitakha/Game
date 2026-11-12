@@ -32,8 +32,8 @@
     var out = [1, 2, 3, 4, 5, 6].filter(function (l) { return final || !RELIC_OF[l] || !e.broken[RELIC_OF[l]]; });
     return out;
   }
-  function rv(a, b) { return a + Math.random() * (b - a); }
-  function rsg() { return Math.random() < 0.5 ? -1 : 1; }
+  function rv(a, b) { return a + G.rng() * (b - a); }
+  function rsg() { return G.rng() < 0.5 ? -1 : 1; }
 
   // ---- generación de la geometría de una cadena candidata. keys = ids de TBL presentes. Devuelve { items: [{id, spec}], waves: [...] } con tiempos ya comprimidos
   function timeline(keys) {
@@ -57,7 +57,7 @@
     var a1 = aP + rv(-0.4, 0.4), a1b = a1 + rsg() * rv(0.5, 1.1);
     if (keys.indexOf('1a') >= 0) { add('1a', { k: 'lane', x: g.x, y: g.y, a: a1, w: 100 * gm, len: 560, dmg: 24, kb: 1.6 }); add('1b', { k: 'lane', x: g.x, y: g.y, a: a1b, w: 100 * gm, len: 560, dmg: 24, kb: 1.6 }); }
     if (keys.indexOf('2a') >= 0) {
-      var o2 = rv(0, 100), t2 = Math.random() * TAU, o3 = rv(60, 180), t3 = Math.random() * TAU;
+      var o2 = rv(0, 100), t2 = G.rng() * TAU, o3 = rv(60, 180), t3 = G.rng() * TAU;
       add('2a', { k: 'circle', x: Z.clampX(P0.x + Math.cos(t2) * o2, 40), y: Z.clampY(P0.y + Math.sin(t2) * o2, 40), r: 90 * gm, dmg: 28, kb: 1.4 });
       add('2b', { k: 'circle', x: Z.clampX(P0.x + Math.cos(t3) * o3, 40), y: Z.clampY(P0.y + Math.sin(t3) * o3, 40), r: 90 * gm, dmg: 28, kb: 1.4 });
     }
@@ -66,7 +66,7 @@
     var wdir = rsg(), wy1 = G.clamp(P0.y + rv(-170, 170), 190, G.AH - 190), wy2 = G.clamp(wy1 + rv(-150, 150), 190, G.AH - 190);
     if (keys.indexOf('4a') >= 0) { waves.push({ id: '4a', link: 4, atRel: TBL['4a'].at + sh['4a'], tele: Z.evTele(TBL['4a'].tele, 140, true), dir: wdir, gap: wy1 }); waves.push({ id: '4b', link: 4, atRel: TBL['4b'].at + sh['4b'], tele: Z.evTele(TBL['4b'].tele, 140, true), dir: wdir, gap: wy2 }); }
     if (keys.indexOf('5a') >= 0) {
-      var rc = { x: Z.clampX(P0.x + rv(-160, 160), 120), y: Z.clampY(P0.y + rv(-120, 120), 120) }, ks = Math.random() < 0.6 ? [3, 2, 1] : [1, 2, 3], gg = Math.random() * TAU, ids5 = ['5a', '5b', '5c'];
+      var rc = { x: Z.clampX(P0.x + rv(-160, 160), 120), y: Z.clampY(P0.y + rv(-120, 120), 120) }, ks = G.rng() < 0.6 ? [3, 2, 1] : [1, 2, 3], gg = G.rng() * TAU, ids5 = ['5a', '5b', '5c'];
       ids5.forEach(function (id, i) {
         var R = ks[i] * 83 + (ks[0] === 1 ? 83 : 0), c2 = rv(-0.4, 0.4), contract = ks[0] === 3;
         add(id, { k: 'hex', x: rc.x, y: rc.y, apo: R * 0.8660254, apo0: (R + (contract ? 83 : -83)) * 0.8660254, th: 32, gaps: [gg + c2 * i, gg + Math.PI + c2], gh: Math.min(0.95, Math.atan(75 / R)), dmg: 18, kb: 0.8 });

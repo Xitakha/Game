@@ -296,7 +296,7 @@
   F.blindTarget = function (e, p, dt) {
     e.blindT -= dt;
     if (!e.blindP) { e.blindP = Object.create(p); e.blindR = 0; }
-    if ((e.blindR -= dt) <= 0) { e.blindR = 1100; var a = Math.random() * 6.283, d = 120 + Math.random() * 140; e.blindP.x = e.x + Math.cos(a) * d; e.blindP.y = e.y + Math.sin(a) * d; }
+    if ((e.blindR -= dt) <= 0) { e.blindR = 1100; var a = G.rng() * 6.283, d = 120 + G.rng() * 140; e.blindP.x = e.x + Math.cos(a) * d; e.blindP.y = e.y + Math.sin(a) * d; }
     return e.blindP;
   };
 
@@ -326,7 +326,7 @@
   function later(ms, fn) { F.timers.push({ t: ms, fn: fn }); }
   function addField(f) { f.max = f.life; f.tk = 0; f.snd = 0; F.fields.push(f); while (F.fields.length > P.maxFields) F.fields.shift(); }
   function addFx(o) { o.t = 0; F.fxs.push(o); while (F.fxs.length > 80) F.fxs.shift(); }
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
   function normalFoes(list) { return list.filter(function (e) { return !e.partOf && !e.dead; }); }
 
   // ------------------------------------------------------------- Lanzamiento de cada poder (devuelve false si no hay objetivo útil)
@@ -622,7 +622,7 @@
         }
         hits.sort(function (a, b) { return a.u - b.u; });
         for (var k = 0; k < hits.length && k < 12; k++) hitE(hits[k].e, s, st.L.dmg, { burn: 3, noChain: true, kb: 0 }, ['fire', 'lightning']);
-        if (Math.random() < 0.7) fx.dot(st.x1, st.y1, G.rnd(-60, 60), G.rnd(-60, 60), 300, '#ffb347', 3, { add: true });
+        if (Math.random() < 0.7) fx.dot(st.x1, st.y1, G.rndFx(-60, 60), G.rndFx(-60, 60), 300, '#ffb347', 3, { add: true });
       }
     } else if (r.kind === 'orbit') {
       st.ang += 4.2 * dt / 1000; st.bodies = [];
@@ -706,7 +706,7 @@
         if (f.kind === 'trail') {
           var tl = segEnemies(f.x0, f.y0, f.x1, f.y1, 15, 99);
           for (j = 0; j < tl.length; j++) hitE(tl[j], f.slot, f.L.tdmg || 8, { noChain: true, kb: 0, stun: 300 }, ['blood', 'lightning']);
-          if (Math.random() < 0.7) { var tu = Math.random(); fx.dot(f.x0 + (f.x1 - f.x0) * tu, f.y0 + (f.y1 - f.y0) * tu, G.rnd(-30, 30), G.rnd(-50, -10), 400, '#ffe45a', 2, { add: true }); }
+          if (Math.random() < 0.7) { var tu = Math.random(); fx.dot(f.x0 + (f.x1 - f.x0) * tu, f.y0 + (f.y1 - f.y0) * tu, G.rndFx(-30, 30), G.rndFx(-50, -10), 400, '#ffe45a', 2, { add: true }); }
           continue;
         }
         list = CB.inRange(f.x, f.y, f.r);
@@ -714,7 +714,7 @@
           var sl = list.filter(function (en) { return en.slowT > 0 && !en.partOf; }), pool = sl.length ? sl : normalFoes(list);
           for (j = 0; j < list.length; j++) CB.slow(list[j], 0.4, 800);
           if (pool.length) {
-            e = pool[Math.floor(Math.random() * pool.length)];
+            e = pool[Math.floor(G.rng() * pool.length)];
             hitE(e, f.slot, f.L.dmg * (e.slowT > 0 ? 1.5 : 1), { noChain: true, kb: 0, stun: 500 }, ['ice', 'lightning']);
             addFx({ kind: 'strike', x: e.x, y: e.y, dur: 300, big: false }); sfx(r, 'hit', 100);
           }
@@ -731,7 +731,7 @@
             hitE(e, f.slot, 2, { noChain: true, kb: 0 }, ['poison', 'fire']);
           }
         }
-        if (Math.random() < 0.6) fx.dot(f.x + G.rnd(-f.r, f.r) * 0.6, f.y + G.rnd(-f.r, f.r) * 0.4, 0, -30, 600, f.kind === 'gas' ? '#9aff6a' : '#e8f6ff', 3, { drag: 1 });
+        if (Math.random() < 0.6) fx.dot(f.x + G.rndFx(-f.r, f.r) * 0.6, f.y + G.rndFx(-f.r, f.r) * 0.4, 0, -30, 600, f.kind === 'gas' ? '#9aff6a' : '#e8f6ff', 3, { drag: 1 });
       }
       if (f.life <= 0) {
         if (f.kind === 'gas') {

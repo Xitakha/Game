@@ -256,7 +256,7 @@
   function keyPos(e, i) { var a = e.oa + i * TAU / e.orbN; return { x: e.x + Math.cos(a) * 80, y: e.y + Math.sin(a) * 80, a: a }; }
   AL.llavero = { name: 'llavero', cd: 11000, exit: 23, dmg: 12, sT: ['warden_key_jingle', 'wave_start'], pz: ['keys:0', 'keys:1'],
     ok: function (e, d) { return d < 340; }, tele: function () { return 650; },
-    start: function (e) { e.orbN = e.enraged ? 4 : 3; e.oa = Math.random() * TAU; e.odir = Math.random() < 0.5 ? -1 : 1; e.ph = 'tele'; },
+    start: function (e) { e.orbN = e.enraged ? 4 : 3; e.oa = G.rng() * TAU; e.odir = G.rng() < 0.5 ? -1 : 1; e.ph = 'tele'; },
     move: function (e, X) { if (X.d > e.r + X.p.r + 8) H.moveTo(e, X.a, e.spd * 0.4, X.s); },
     fire: function (e) { e.st = 'run'; e.t = 0; e.ph = 'orbit'; snd('warden_key_orbit', 'whoosh', { vol: 0.6 }); },
     run: function (e, dt, X) {
@@ -624,7 +624,7 @@
     fire: function (e) { M.endAtk(e, 600, null, 'idle'); }, draw: function () { } };
   // olas: e.wv = { dir, lat, anchor, g, gw, n, t0 }
   function waveInit(e, p, n, delay) {
-    var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]], d = dirs[Math.floor(Math.random() * 4)];
+    var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]], d = dirs[Math.floor(G.rng() * 4)];
     e.wv = { dx: d[0], dy: d[1], lx: -d[1], ly: d[0], ax: p.x, ay: p.y, g: rnd(-100, 100), gw: e.part.broken ? 180 : 140, n: n, delay: delay || 0, hit: {} };
   }
   function wavePos(e, i, t) { return -240 + 260 * (t - e.wv.delay - 1200 * i) / 1000; }

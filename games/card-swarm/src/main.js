@@ -139,7 +139,17 @@
   };
 
   // ---------------------------------------------------------------- Utilidades
-  G.rnd = function (a, b) { return a + Math.random() * (b - a); };
+  // RNG de la SIMULACION (ofertas, hordas, botin, azar de combate/jefes). Sin ?seed= es Math.random tal cual (comportamiento identico a antes);
+  // con ?seed=<n> es mulberry32 (misma semilla + mismas entradas = misma partida). Particulas/fx usan Math.random (G.rndFx) y no consumen esta secuencia.
+  G.rng = Math.random; G.seed = null;
+  G.rngSeed = function (n) {
+    if (n == null) { G.rng = Math.random; G.seed = null; return; }
+    var a = (n >>> 0) || 1; G.seed = n;
+    G.rng = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  };
+  if (/[?&]seed=\d+/.test(location.search)) G.rngSeed(qnum('seed', 0));
+  G.rnd = function (a, b) { return a + G.rng() * (b - a); };
+  G.rndFx = function (a, b) { return a + Math.random() * (b - a); };
   G.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   G.dist = function (ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); };
   G.angDiff = function (a, b) { var d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -425,6 +435,8 @@
     }
     inp.pressed = {}; inp.swipe = 0; inp.dragY = 0;
   }
+
+  G.step = step;   // para tests deterministicos (con ?speed=0 el bucle no avanza solo)
 
   // ---------------------------------------------------------------- Render
   function buildGround(biome) {

@@ -306,7 +306,7 @@
         if (e.phase >= 2 && B.has('pollinator') && !G.enemies.some(function (q) { return !q.dead && q.type === 'pollinator' && q.bossAdd; })) list.push('pollinator');
       }
       var uniq = [], used = 0; list.forEach(function (ty) { if (used + 1 <= room + 1e-6) { uniq.push(ty); used++; } });
-      A0.pose = 'llamada'; A0.actMs = 300; A0.rec = 600; A0.spots = []; var a0 = Math.random() * TAU;
+      A0.pose = 'llamada'; A0.actMs = 300; A0.rec = 600; A0.spots = []; var a0 = G.rng() * TAU;
       uniq.forEach(function (ty, k) {
         var cx, cy, tries = 0, an = a0 + k * 1.3;
         do { an += 1.1; cx = e.x + Math.cos(an) * 170; cy = e.y + 24 + Math.sin(an) * 150; tries++; } while (G.dist(cx, cy, p.x, p.y) < 110 && tries < 8);
@@ -323,10 +323,10 @@
   // ---- 5. Panal abierto (F2-F3): 7-9 celdas en torno al jugador se llenan de miel (10 s) y 2-3 son nidos que eclosionan una Larva explosiva a los 1,5 s
   ATK.m_panal = {
     start: function (e, A0) {
-      var p = PL(), cand = PN.cells.filter(function (c) { return c.st === 0 && !c.nest && G.dist(c.x, c.y, p.x, p.y) < 270; }), n = 7 + Math.floor(Math.random() * 3), opened = [], i;
-      cand.sort(function (a, b) { return (G.dist(a.x, a.y, p.x, p.y) + Math.random() * 160) - (G.dist(b.x, b.y, p.x, p.y) + Math.random() * 160); });
+      var p = PL(), cand = PN.cells.filter(function (c) { return c.st === 0 && !c.nest && G.dist(c.x, c.y, p.x, p.y) < 270; }), n = 7 + Math.floor(G.rng() * 3), opened = [], i;
+      cand.sort(function (a, b) { return (G.dist(a.x, a.y, p.x, p.y) + G.rng() * 160) - (G.dist(b.x, b.y, p.x, p.y) + G.rng() * 160); });
       for (i = 0; i < cand.length && opened.length < n; i++) if (PN.openCell(cand[i], { tele: 1200, life: 10000, src: 'melaria' })) opened.push(cand[i]);
-      var nn = Math.min(opened.length, 2 + Math.floor(Math.random() * 2)); A0.nests = [];
+      var nn = Math.min(opened.length, 2 + Math.floor(G.rng() * 2)); A0.nests = [];
       var far = opened.slice().sort(function (a, b) { return G.dist(b.x, b.y, p.x, p.y) - G.dist(a.x, a.y, p.x, p.y); });   // los nidos, lejos del jugador (la Larva no nace encima)
       for (i = 0; i < nn; i++) A0.nests.push({ x: far[i].x, y: far[i].y, nest: true });
       A0.pose = 'panal'; A0.actMs = 450; A0.rec = 700; sfx('mel_comb_tele', { vol: 0.9 });
@@ -389,7 +389,7 @@
   ATK.m_eclosion = {
     ok: function (e) { return addsLoad() + (pel().n >= 5 ? 3 : 2) <= addCap(e) + 1e-6; },
     start: function (e, A0) {
-      var g = gnd(e), n = pel().n >= 5 ? 6 : 4, a0 = Math.random() * TAU; A0.pose = 'eclosion'; A0.actMs = 400; A0.rec = 700; A0.pts = [];
+      var g = gnd(e), n = pel().n >= 5 ? 6 : 4, a0 = G.rng() * TAU; A0.pose = 'eclosion'; A0.actMs = 400; A0.rec = 700; A0.pts = [];
       for (var i = 0; i < n; i++) {
         var an = a0 + i * TAU / n, m = PN.clampPt(g.x + Math.cos(an) * 170, g.y + Math.sin(an) * 150, 40), ad = spawnAdd('bomb', m[0], m[1], A0.tele + 80); A0.pts.push({ x: ad.x, y: ad.y });
       }
@@ -433,7 +433,7 @@
   H.onDespair = function (e) {
     var a = A(), second = e.despLeft === 0 && !!pel().x2, rings = [], k, n = 0;
     for (k = 5; k >= 1; k--) {
-      var R = k * 83, g0 = Math.random() * TAU;
+      var R = k * 83, g0 = G.rng() * TAU;
       rings.push({ k: k, R: R, apo: R * COS30, th: 32, gh: Math.min(0.95, Math.atan(75 / R)), gaps: [g0, g0 + Math.PI + G.rnd(-0.5, 0.5)], at: 1000 + 1300 * n, state: 'idle', done: false, tg: 0 }); n++;
     }
     a.des = { rings: rings, fx: e.x, fy: e.y, second: second }; a.land2 = false; a.hatch.length = 0;

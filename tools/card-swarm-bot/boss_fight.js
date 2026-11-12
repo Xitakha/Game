@@ -12,7 +12,7 @@ async function one(b, i) {
   pg.on('pageerror', e => errs.push('PAGEERR ' + e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 5).join(' | ')));
   const url = cfg.fusion ? `http://localhost:${cfg.port}/index.html?nosw=1&direct=1&all=1&reset=1&nointro=1&prep=0&speed=${cfg.speed}&peligro=${cfg.peligro}&hand=${cfg.hand}${cfg.actives ? '&actives=' + cfg.actives : ''}${cfg.boss === 'cenizar' ? '&assault=1' : '&boss=' + cfg.boss}${cfg.extra}` : cfg.full ? `http://localhost:${cfg.port}/index.html?reset=1&len=${cfg.len}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}` : `http://localhost:${cfg.port}/index.html?boss=${cfg.boss}&reset=1&len=${cfg.len}&hand=${cfg.hand}&speed=${cfg.speed}&peligro=${cfg.peligro}${cfg.hpcal ? '&hpcal=' + cfg.hpcal : ''}${cfg.extra}`;
   await pg.addInitScript(() => { });
-  await pg.goto(url);
+  await pg.goto(url + (process.env.SEED ? '&seed=' + (+process.env.SEED + i) : ''));   // SEED=<n>: partida i usa la semilla n+i
   if (cfg.full) {
     await pg.evaluate(([prof, anc]) => {
       const D = G.Save.data, mid = ['ember','ring','nova','zap','pool','bleed','thorns','mantle','frost','whet','hooves','magnet','cloud','bile','heart','satchel'];

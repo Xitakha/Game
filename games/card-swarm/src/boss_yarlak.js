@@ -232,8 +232,8 @@
   // ---- 1. Pisotón de glaciar: círculo r 130 + anillo de hielo con hueco de 70 grados + 3 estalagmitas avisadas
   ATK.y_pisoton = {
     start: function (e, A0) {
-      var sgn = Math.random() < 0.5 ? -1 : 1; A0.ga = angTo(e, PL()) + sgn * G.rnd(25, 65) * DEG; A0.pose = 'pisoton'; A0.actMs = 450; A0.rec = 800; A0.dmg = 22; A0.cr = 130;
-      A0.st = []; var a0 = Math.random() * TAU;
+      var sgn = G.rng() < 0.5 ? -1 : 1; A0.ga = angTo(e, PL()) + sgn * G.rnd(25, 65) * DEG; A0.pose = 'pisoton'; A0.actMs = 450; A0.rec = 800; A0.dmg = 22; A0.cr = 130;
+      A0.st = []; var a0 = G.rng() * TAU;
       for (var i = 0; i < 3; i++) { var an = a0 + i * TAU / 3 + G.rnd(-0.4, 0.4), d = G.rnd(160, 220); A0.st.push({ x: clampX(e.x + Math.cos(an) * d, 40), y: clampY(e.y + Math.sin(an) * d, 40) }); }
       sfx('yar_stomp_tele', { vol: 0.9 });
     },
@@ -330,7 +330,7 @@
   }
   function breathTick(e, A0, dt, aim) {
     var p = PL(); A0.tk = (A0.tk || 0) - dt;
-    if (Math.random() < 0.9) { var d = G.rnd(60, A0.reach), an = aim + G.rnd(-0.4, 0.4); fx.burst(A0.ox + Math.cos(an) * d, A0.oy + Math.sin(an) * d, 1, '#e8f6ff', 60, 400, 3, { add: true }); }
+    if (Math.random() < 0.9) { var d = G.rndFx(60, A0.reach), an = aim + G.rndFx(-0.4, 0.4); fx.burst(A0.ox + Math.cos(an) * d, A0.oy + Math.sin(an) * d, 1, '#e8f6ff', 60, 400, 3, { add: true }); }
     if (A0.tk > 0) return;
     A0.tk = 250;
     var d2 = G.dist(A0.ox, A0.oy, p.x, p.y);
@@ -340,7 +340,7 @@
   }
   ATK.y_aliento = {
     start: function (e, A0) {
-      A0.base = angTo(e, PL()); setOrigin(e, A0, A0.base); A0.reach = 480; A0.half = 25 * DEG; A0.dirS = Math.random() < 0.5 ? -1 : 1; A0.back = !!pel().v3; A0.sweepMs = A0.back ? 2400 : 1200; A0.actMs = A0.sweepMs; A0.fixAt = A0.tele * 0.7; A0.pose = 'aliento'; A0.rec = 600; A0.drawAct = true; A0.tk = 0;
+      A0.base = angTo(e, PL()); setOrigin(e, A0, A0.base); A0.reach = 480; A0.half = 25 * DEG; A0.dirS = G.rng() < 0.5 ? -1 : 1; A0.back = !!pel().v3; A0.sweepMs = A0.back ? 2400 : 1200; A0.actMs = A0.sweepMs; A0.fixAt = A0.tele * 0.7; A0.pose = 'aliento'; A0.rec = 600; A0.drawAct = true; A0.tk = 0;
       sfx('yar_breath_tele', { vol: 0.9 });
     },
     tele: function (e, A0) { if (A0.t < A0.fixAt) { A0.base = angTo(e, PL()); e.face = Math.cos(A0.base) >= 0 ? 1 : -1; } setOrigin(e, A0, A0.base); },
@@ -363,7 +363,7 @@
       var P = pel(), room = P.cap - U.addsAlive(), p = PL(), n = (e.phase === 2 ? 2 : 3) + P.adds, list = [], i;
       n = Math.max(0, Math.min(n, room)); for (i = 0; i < n; i++) list.push(B.has('frostwolf') ? 'frostwolf' : 'worm');
       if (e.phase === 4 && list.length < room && B.has('archer')) list.push('archer');
-      A0.pose = 'llamada'; A0.actMs = 300; A0.rec = 600; A0.spots = []; var a0 = Math.random() * TAU;
+      A0.pose = 'llamada'; A0.actMs = 300; A0.rec = 600; A0.spots = []; var a0 = G.rng() * TAU;
       list.forEach(function (ty, k) {
         var cx, cy, tries = 0, an = a0 + k * 1.3;
         do { an += 1.1; cx = e.x + Math.cos(an) * 170; cy = e.y + Math.sin(an) * 150; tries++; } while (G.dist(cx, cy, p.x, p.y) < 110 && tries < 8);
@@ -382,9 +382,9 @@
   ATK.y_alud = {
     start: function (e, A0) {
       var p = PL(), n = pel().v3 ? 12 : 8, i, ang = Math.atan2(p.vy || 0, p.vx || 0), mv = Math.hypot(p.vx || 0, p.vy || 0) > 40, sp = [];
-      if (!mv) ang = Math.random() * TAU;
+      if (!mv) ang = G.rng() * TAU;
       for (i = 0; i < 3; i++) sp.push({ x: clampX(p.x + (p.vx || 0) * (0.35 + 0.25 * i) + G.rnd(-12, 12), 50), y: clampY(p.y + (p.vy || 0) * (0.35 + 0.25 * i) + G.rnd(-12, 12), 50) });
-      var last = sp[2], line = ang + (Math.random() < 0.5 ? 1 : -1) * 70 * DEG;
+      var last = sp[2], line = ang + (G.rng() < 0.5 ? 1 : -1) * 70 * DEG;
       for (i = 3; i < n; i++) sp.push({ x: clampX(last.x + Math.cos(line) * (i - 2) * (n > 8 ? 85 : 110), 50), y: clampY(last.y + Math.sin(line) * (i - 2) * (n > 8 ? 85 : 110), 50) });
       sp.forEach(function (s, k) { s.imp = k * 220; s.done = false; });
       A0.spots = sp; A0.pose = 'alud'; A0.actMs = (n - 1) * 220 + 250; A0.rec = 700; A0.drawAct = true; A0.r = 50;
@@ -395,7 +395,7 @@
       var p = PL();
       A0.spots.forEach(function (s) {
         if (s.done || A0.t < s.imp) return;
-        s.done = true; fx.shake(4, 120); sfx('yar_block', { vol: 0.6, pitch: G.rnd(0.9, 1.1) }); fx.burst(s.x, s.y, 8, '#e8f6ff', 220, 500, 4, { g: 200 }); fx.ring(s.x, s.y, 8, A0.r, 250, '#ffffff', 4);
+        s.done = true; fx.shake(4, 120); sfx('yar_block', { vol: 0.6, pitch: G.rndFx(0.9, 1.1) }); fx.burst(s.x, s.y, 8, '#e8f6ff', 220, 500, 4, { g: 200 }); fx.ring(s.x, s.y, 8, A0.r, 250, '#ffffff', 4);
         if (!p.dead && G.dist(s.x, s.y, p.x, p.y) <= A0.r) hurt(e, 18, 'boss_alud', { kb: 1.2 });
         var o = { x: s.x, y: s.y, r: 22, hp: 1, dead: false, shake: 0, sortY: s.y + 8, kind: 'iceblock', born: G.time, draw: drawBlock }; S.obs.push(o); S.pushOutOne(o, p, p.r);
         hitPillarsIn(function (q, i, isT) { if (isT && G.dist(q.x, q.y, s.x, s.y) < 60) T.hitPillar(i, 150); return false; });
@@ -450,9 +450,9 @@
   // ---- 8. Ventisca blanca (F3-F4): 3 olas de 120 px cada 1,5 s a 260 px/s con 1 hueco de 140 px; empujan; ráfaga de 6 s
   ATK.y_ventisca = {
     start: function (e, A0) {
-      A0.dir = Math.random() < 0.5 ? 1 : -1; A0.x0 = A0.dir > 0 ? G.WALL - 60 : G.AW - G.WALL + 60; A0.w = 120; A0.v = 260; A0.gaps = [];
+      A0.dir = G.rng() < 0.5 ? 1 : -1; A0.x0 = A0.dir > 0 ? G.WALL - 60 : G.AW - G.WALL + 60; A0.w = 120; A0.v = 260; A0.gaps = [];
       var y = G.rnd(170, G.AH - 170);
-      for (var i = 0; i < 3; i++) { A0.gaps.push(y); y = G.clamp(y + (Math.random() < 0.5 ? -1 : 1) * G.rnd(120, 220), 150, G.AH - 150); }
+      for (var i = 0; i < 3; i++) { A0.gaps.push(y); y = G.clamp(y + (G.rng() < 0.5 ? -1 : 1) * G.rnd(120, 220), 150, G.AH - 150); }
       A0.pose = 'ventisca'; A0.actMs = 3300; A0.rec = 500; A0.drawAct = true; A0.sent = 0; sfx('yar_blizz_tele', { vol: 0.9 });
     },
     go: function () { A().gust = 6000; setBz(0.45); },
@@ -483,7 +483,7 @@
   // ------------------------------------------------------------------ ataque desesperado: Invierno Eterno (10 s)
   H.onDespair = function (e) {
     var a = A(), second = e.despLeft === 0 && !!pel().x2;
-    a.des = { n: 0, rot: Math.random() * TAU, fx: e.x, fy: e.y, second: second };
+    a.des = { n: 0, rot: G.rng() * TAU, fx: e.x, fy: e.y, second: second };
     a.bands.length = 0; a.warns.length = 0;
     T.setPatchR(70); T.setHeatR(120); setBz(0.6); BZ.clearR = 260;
     if (!a.fires) {

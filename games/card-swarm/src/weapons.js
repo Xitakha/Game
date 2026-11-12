@@ -42,7 +42,7 @@
     if (!e || e.dead) { e = q.tgt = C().nearest(q.x, q.y, 300, Array.from(q.hit)); if (!e) return true; }
     var dx = e.x - q.x, dy = e.y - q.y, d = Math.hypot(dx, dy) || 1, a = Math.atan2(dy, dx);
     q.ang = a; q.x += dx / d * q.speed * s + Math.sin(q.t / 60) * 24 * s; q.y += dy / d * q.speed * s + Math.cos(q.t / 70) * 24 * s;
-    if (Math.random() < 0.3) fx.dot(q.x, q.y, G.rnd(-15, 15), G.rnd(-15, 15), 260, '#8a1030', 2);
+    if (Math.random() < 0.3) fx.dot(q.x, q.y, G.rndFx(-15, 15), G.rndFx(-15, 15), 260, '#8a1030', 2);
     if (d < e.r + 9) {
       q.hit.add(e);
       C().deal(e, q.dmg, { tag: 'blood', id: 'bat', ang: a, kb: 20, bleed: true, proj: true, sx: q.x - Math.cos(a) * 30, sy: q.y - Math.sin(a) * 30 });
@@ -71,10 +71,10 @@
     var out = q.life <= 0 || q.x < G.WALL || q.y < G.WALL || q.x > G.AW - G.WALL || q.y > G.AH - G.WALL;
     if (G.Panal.on) { if (!out && G.Panal.outside(q.x, q.y)) out = true; if (q.tag === 'fire') G.Panal.fireArea(q.x, q.y, 10); }   // P5: los muros diagonales detienen los proyectiles; el Fuego carameliza la miel que sobrevuela
     // estela por etiqueta
-    if (Math.random() < 0.6) {
-      if (q.tag === 'fire') fx.dot(q.x, q.y, G.rnd(-20, 20), G.rnd(-40, -5), 320, Math.random() < 0.5 ? '#ff9a3c' : '#ffd27a', 3, { add: true });
-      else if (q.tag === 'ice') fx.dot(q.x, q.y, G.rnd(-15, 15), G.rnd(-15, 15), 300, '#bfeaff', 2, { add: true });
-      else if (q.tag === 'poison') fx.dot(q.x, q.y, G.rnd(-10, 10), -20, 380, '#7be34a', 3, { drag: 1 });
+    if (G.rng() < 0.6) {
+      if (q.tag === 'fire') fx.dot(q.x, q.y, G.rndFx(-20, 20), G.rndFx(-40, -5), 320, Math.random() < 0.5 ? '#ff9a3c' : '#ffd27a', 3, { add: true });
+      else if (q.tag === 'ice') fx.dot(q.x, q.y, G.rndFx(-15, 15), G.rndFx(-15, 15), 300, '#bfeaff', 2, { add: true });
+      else if (q.tag === 'poison') fx.dot(q.x, q.y, G.rndFx(-10, 10), -20, 380, '#7be34a', 3, { drag: 1 });
       else if (q.tag === 'steel' && q.kind === 'axe') fx.dot(q.x, q.y, 0, 0, 200, '#dfe6f0', 2, { add: true });
     }
     if (out) { if (q.explode) explodeProj(q); return true; }
@@ -196,13 +196,13 @@
     strike: function (s, d, L, p) {
       var list = G.enemies.filter(function (e) { return !e.dead && e.spawnT <= 0 && !e.untarget && e.x > G.cam.x && e.x < G.cam.x + G.W && e.y > G.cam.y && e.y < G.cam.y + G.VH; });
       if (!list.length) return false;
-      var tf = G.Tree.fx, ia = Math.floor(Math.random() * list.length), e = list[ia];
+      var tf = G.Tree.fx, ia = Math.floor(G.rng() * list.length), e = list[ia];
       function bolt(e2, mul) {
-        fx.bolt(e2.x + G.rnd(-20, 20), e2.y - 260, e2.x, e2.y, col(d.tag), 5);
+        fx.bolt(e2.x + G.rndFx(-20, 20), e2.y - 260, e2.x, e2.y, col(d.tag), 5);
         C().boom(e2.x, e2.y, d.boomR * L.area * (tf.rayoAncho ? 1.5 : 1), d.dmg * L.dmg * mul * (tf.rayoAncho ? 1.1 : 1), d.tag, { id: d.id, kb: 30 });   // Tormenta II-B: área x1,5 y +10 %
       }
       bolt(e, 1);
-      if (tf.dobleRayo && list.length > 1) bolt(list[(ia + 1 + Math.floor(Math.random() * (list.length - 1))) % list.length], 0.6);   // Tormenta II-A: segundo rayo (60 %)
+      if (tf.dobleRayo && list.length > 1) bolt(list[(ia + 1 + Math.floor(G.rng() * (list.length - 1))) % list.length], 0.6);   // Tormenta II-A: segundo rayo (60 %)
       fx.shake(2, 80);
       return true;
     },
@@ -219,7 +219,7 @@
     },
     mark: function (s, d, L, p) {
       var list = C().inRange(p.x, p.y, 280); if (!list.length) return false;
-      for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = list[i]; list[i] = list[j]; list[j] = x; }
+      for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(G.rng() * (i + 1)), x = list[i]; list[i] = list[j]; list[j] = x; }
       for (var k = 0; k < Math.min(3 + (G.Tree.fx.cuatroMarcas ? 1 : 0), list.length); k++) {   // Sangría II-A: 4 marcas
         var e = list[k];
         fx.bolt(p.x, p.y - 6, e.x, e.y, '#d02048', 2);
@@ -331,7 +331,7 @@
         W.ojoT = 10000;
         G.enemies.forEach(function (en) {   // cada 10 s cae un rayo sobre cada élite y jefe
           if (en.dead || en.spawnT > 0 || !(en.big || en.type === 'boss') || en.partOf) return;
-          fx.bolt(en.x + G.rnd(-20, 20), en.y - 300, en.x, en.y, col('lightning'), 6);
+          fx.bolt(en.x + G.rndFx(-20, 20), en.y - 300, en.x, en.y, col('lightning'), 6);
           C().boom(en.x, en.y, 40, 150, 'lightning', { id: 'ojo', kb: 0 }); fx.shake(4, 120);
         });
       }
@@ -360,7 +360,7 @@
       c.fillStyle = G.fg(g, 'rgba(' + k + ',0.14)'); c.beginPath(); c.arc(p.x, p.y, R, 0, 6.283); c.fill();
       c.strokeStyle = 'rgba(' + k + ',0.7)'; c.lineWidth = 2; c.setLineDash([8, 10]); c.lineDashOffset = -t * 30;
       c.beginPath(); c.arc(p.x, p.y, R * (0.97 + 0.03 * Math.sin(t * 4)), 0, 6.283); c.stroke(); c.restore();
-      if (Math.random() < 0.25) { var a = G.rnd(0, 6.283), r = G.rnd(0.2, 1) * R; fx.dot(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 0, d.tag === 'ice' ? 10 : -25, 600, d.tag === 'ice' ? '#d8f2ff' : '#7be34a', 3, { drag: 1 }); }
+      if (Math.random() < 0.25) { var a = G.rndFx(0, 6.283), r = G.rndFx(0.2, 1) * R; fx.dot(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 0, d.tag === 'ice' ? 10 : -25, 600, d.tag === 'ice' ? '#d8f2ff' : '#7be34a', 3, { drag: 1 }); }
     }
   };
   W.drawAir = function (c) {
@@ -383,7 +383,7 @@
         if (d.tag === 'fire') {
           c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5; c.fillStyle = '#ff7a2a'; c.beginPath(); c.arc(b.x, b.y, 14, 0, 6.283); c.fill(); c.restore();
           fx.spr(c, Assets.sprite('flame', Math.floor(G.time / 110 + j) % 3), b.x, b.y - 3, { sx: 1.5, sy: 1.5 });
-          if (Math.random() < 0.4) fx.dot(b.x, b.y, G.rnd(-15, 15), G.rnd(-30, -5), 300, '#ffb347', 3, { add: true });
+          if (Math.random() < 0.4) fx.dot(b.x, b.y, G.rndFx(-15, 15), G.rndFx(-30, -5), 300, '#ffb347', 3, { add: true });
         } else {
           c.save(); c.translate(Math.round(b.x), Math.round(b.y)); c.rotate(G.Proj.ang(b.a));
           c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.25; c.fillStyle = '#dfe6f0'; c.beginPath(); c.arc(0, 0, 13, 0, 6.283); c.fill();

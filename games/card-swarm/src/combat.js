@@ -74,7 +74,7 @@
       case 'fire': fx.spark(x, y, 3, ang); fx.ember(x, y, 2, 6); break;
       case 'ice': fx.burst(x, y, 6, '#bfeaff', 150, 380, 3, { add: true }); fx.burst(x, y, 3, '#6ac8ff', 90, 450, 4); break;
       case 'lightning': fx.burst(x, y, 7, '#fff6a8', 220, 260, 3, { add: true }); break;
-      case 'poison': for (var i = 0; i < 4; i++) fx.dot(x + G.rnd(-6, 6), y + G.rnd(-4, 4), G.rnd(-30, 30), G.rnd(-70, -20), G.rnd(400, 650), i % 2 ? '#7be34a' : '#b4ff7a', 4, { drag: 1 }); break;
+      case 'poison': for (var i = 0; i < 4; i++) fx.dot(x + G.rndFx(-6, 6), y + G.rndFx(-4, 4), G.rndFx(-30, 30), G.rndFx(-70, -20), G.rndFx(400, 650), i % 2 ? '#7be34a' : '#b4ff7a', 4, { drag: 1 }); break;
       case 'blood': fx.burst(x, y, 6, '#c01838', 170, 420, 3, { g: 300 }); break;
       case 'steel': fx.spark(x, y, 2, ang); fx.burst(x, y, 4, '#dfe6f0', 200, 220, 2, { add: true }); break;
       default: fx.burst(x, y, 4, '#d8cfe8', 120, 300, 3);
@@ -101,7 +101,7 @@
     if (m.tagMul[tag]) dmg *= m.tagMul[tag];   // Hielo / Rayo / Veneno / Sangre: pasivo del árbol y Resonancia (set)
     if (tag === 'steel') {
       dmg *= m.steelDmg;
-      if ((a.edge_ice && slowed) || Math.random() < m.steelCrit) {
+      if ((a.edge_ice && slowed) || G.rng() < m.steelCrit) {
         dmg *= 2; crit = true;
         if (m.set4.steel && (!C.filoCd || G.time - C.filoCd > 400)) {   // Filo eterno (set Acero 4+): un crítico recorta 0,3 s todos los cooldowns
           C.filoCd = G.time; for (var fi = 0; fi < p.hand.length; fi++) if (p.hand[fi] && p.hand[fi].cd > 0) p.hand[fi].cd = Math.max(0, p.hand[fi].cd - 300);
@@ -170,7 +170,7 @@
     if (o.kb && !armor) { var k = 12; e.kx = Math.cos(o.ang || 0) * o.kb * k; e.ky = Math.sin(o.ang || 0) * o.kb * k; }
     if (e.type === 'archer' && e.st === 'aim' && o.kb) { e.st = 'move'; e.shootT = 1200; }
     if (e.type === 'fanner' && e.st === 'aim' && o.kb && !blocked) { e.st = 'move'; e.shootT = 1200; }   // un empujón interrumpe la ráfaga
-    if ((e.type === 'boss' || e.big) && !o.zone) fx.hitspark(e.x + G.rnd(-14, 14), e.y + G.rnd(-14, 14), 1.4);
+    if ((e.type === 'boss' || e.big) && !o.zone) fx.hitspark(e.x + G.rndFx(-14, 14), e.y + G.rndFx(-14, 14), 1.4);
     if (o.proj && a.edge_elec && tag === 'steel' && !o.noChain) {
       var nx = C.nearest(e.x, e.y, 100, [e]);
       if (nx) C.chain(e.x, e.y, nx, 2, 8, 1, 100, 'lightning', { noChain: true, exclude: [e] });
@@ -180,7 +180,7 @@
     }
     if (e.hp <= 0) {
       G.Enemies.kill(e, false, tag);
-      if (o.lifesteal && Math.random() < B.heal.chance) G.Player.heal(p, o.lifesteal, 'fang');   // robo de vida: 20 % por kill
+      if (o.lifesteal && G.rng() < B.heal.chance) G.Player.heal(p, o.lifesteal, 'fang');   // robo de vida: 20 % por kill
     }
     return dmg;
   };
@@ -232,7 +232,7 @@
       e.poisonT -= dt;
       if (e.poisonT <= 0) e.poisonN = 0;
       else {
-        if (Math.random() < 0.05 * e.poisonN) fx.dot(e.x + G.rnd(-6, 6), e.y, 0, -40, 500, '#7be34a', 3, { drag: 1 });
+        if (Math.random() < 0.05 * e.poisonN) fx.dot(e.x + G.rndFx(-6, 6), e.y, 0, -40, 500, '#7be34a', 3, { drag: 1 });
         if (tickAcc(e, 'poison', 4 * e.poisonN * m.poisonDmg, dt, 'poison')) return true;
       }
     }
@@ -240,7 +240,7 @@
     if (e.neuCd > 0) e.neuCd -= dt;
     var bl = ((e.bleedT > 0 ? (G.Tree.fx.sangradoHondo ? 7 : 5) : 0) + (a.bloodpoison && e.poisonN > 0 ? 3 : 0)) * m.tagMul.blood;
     if (bl > 0) {
-      if (Math.random() < 0.05) fx.dot(e.x, e.y, G.rnd(-20, 20), 30, 400, '#c01838', 3, { g: 200 });
+      if (Math.random() < 0.05) fx.dot(e.x, e.y, G.rndFx(-20, 20), 30, 400, '#c01838', 3, { g: 200 });
       if (tickAcc(e, 'blood', bl, dt, 'blood')) return true;
     }
     return false;
@@ -285,7 +285,7 @@
     for (var i = G.zones.length - 1; i >= 0; i--) {
       var z = G.zones[i]; if (!z || z.team === 'e') continue;   // zonas enemigas: las gestiona enemies.js (z puede faltar si la muerte del jefe limpió zonas a mitad del bucle)
       z.life -= dt; z.tk -= dt;
-      if (z.kind === 'pool' && Math.random() < 0.08) fx.dot(z.x + G.rnd(-z.r, z.r) * 0.7, z.y + G.rnd(-z.r, z.r) * 0.5, 0, -30, 600, '#9aff6a', 3, { drag: 1 });
+      if (z.kind === 'pool' && Math.random() < 0.08) fx.dot(z.x + G.rndFx(-z.r, z.r) * 0.7, z.y + G.rndFx(-z.r, z.r) * 0.5, 0, -30, 600, '#9aff6a', 3, { drag: 1 });
       if (z.tk <= 0) {
         z.tk = z.interval || 300;
         if (z.tag === 'fire' && G.Panal.on) G.Panal.fireArea(z.x, z.y, z.r * 0.6);   // P5: el suelo ardiente carameliza la miel
@@ -333,9 +333,9 @@
     var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
     for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
     if (elite) { for (var q = 0; q < 4; q++) C.dropGem(e.x, e.y, 'ash', d.ash / 4); C.dropGem(e.x, e.y, 'heart', B.player.heal * 2); }
-    else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (Math.random() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
+    else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (G.rng() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
     else for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
-    if (Math.random() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
+    if (G.rng() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
     G.Loot.onKill(e);
     if (e.burnT > 0) {
       var tf = G.Tree.fx;
@@ -349,7 +349,7 @@
       }
     }
     var tfk = G.Tree.fx;
-    if (tfk.vampiro && tag === 'blood' && Math.random() < 0.12) G.Player.heal(p, 3, 'vampiro');   // Vampiro (Sangre): 12 % de curar 3 HP al matar con Sangre
+    if (tfk.vampiro && tag === 'blood' && G.rng() < 0.12) G.Player.heal(p, 3, 'vampiro');   // Vampiro (Sangre): 12 % de curar 3 HP al matar con Sangre
     if (M().set4.blood) { p.sedN = (p.sedN || 0) + 1; if (p.sedN % 3 === 0) { p.shield = Math.min(20, (p.shield || 0) + 10); G.fx.num(p.x, p.y - 30, '+10 escudo', '#d02048'); } }   // Sed (set Sangre 4+): 3 kills = escudo de 10 HP (tope 20)
     if (tfk.pactoSangre) { p.pactN = (p.pactN || 0) + 1; if (p.pactN % 25 === 0) { G.Player.heal(p, 15, 'pacto'); p.pactT = 5000; G.fx.ring(p.x, p.y, 8, 70, 400, '#d02048', 5); } }   // Pacto de sangre (maestría)
     if (tfk.pandemia && e.poisonN > 0) {   // Pandemia (Veneno): un envenenado que muere pasa sus stacks a 3 enemigos cercanos
@@ -358,7 +358,7 @@
     }
     if (M().set4.poison && e.poisonN > 0) C.zone({ kind: 'pool', x: e.x, y: e.y, r: 40, life: 2500, dps: 5, tag: 'poison', poison: true, interval: 500 });   // Epidemia (set Veneno 4+): charco venenoso al morir un envenenado
     if (a.frenzy) p.frenzyT = 1500;
-    if (a.pact && tag === 'fire' && Math.random() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
+    if (a.pact && tag === 'fire' && G.rng() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
     if (e.poisonN > 0) {
       if (a.bloodpoison) { p.poisonKills++; if (p.poisonKills % 15 === 0) G.Player.heal(p, B.heal.bloodpoison, 'bloodpoison'); }
       if (a.plague || e.fusPlague) {

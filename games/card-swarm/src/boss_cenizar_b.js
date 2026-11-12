@@ -35,7 +35,7 @@
   ATK.c_requiem = {
     start: function (e, A0) {
       var a = A(), short = e.phase === 7; A0.dur = short ? 8000 : 12000; A0.pose = 'requiem'; A0.actMs = A0.dur; A0.rec = 800; A0.drawAct = true; A0.mt = 0;
-      a.lava = { state: 'tele', t: 0, ph: Math.random() * TAU, dur: A0.dur, fade: 0 };
+      a.lava = { state: 'tele', t: 0, ph: G.rng() * TAU, dur: A0.dur, fade: 0 };
       sfx('lava_rise', { vol: 0.8 }); faceTo(e, angTo(e, PL()));
     },
     tele: function (e, A0) { var l = A().lava; if (l) l.t = A0.t; },
@@ -51,8 +51,8 @@
       while (A0.mt >= 1300 && A0.t < A0.dur - 900) {
         A0.mt -= 1300;
         var is = Z.islands(l), tgt, onI = Z.onIsland(p.x, p.y, p.r) && !p.dead;
-        if (onI && Math.random() < 0.4) tgt = { x: p.x + G.rnd(-50, 50), y: p.y + G.rnd(-50, 50) };
-        else { var k = is[Math.floor(Math.random() * 3)], an = Math.random() * TAU, rr = Math.random() * (k.r - 40); tgt = { x: k.x + Math.cos(an) * rr, y: k.y + Math.sin(an) * rr }; }
+        if (onI && G.rng() < 0.4) tgt = { x: p.x + G.rnd(-50, 50), y: p.y + G.rnd(-50, 50) };
+        else { var k = is[Math.floor(G.rng() * 3)], an = G.rng() * TAU, rr = G.rng() * (k.r - 40); tgt = { x: k.x + Math.cos(an) * rr, y: k.y + Math.sin(an) * rr }; }
         Z.add({ k: 'circle', x: tgt.x, y: tgt.y, r: 50, tele: Z.evTele(900, 50), dmg: 14, src: 'boss_brasa', col: 'orange', ghost: false, fixAt: 0, silent: true, onGo: function (v) { fx.burst(v.x, v.y, 10, '#ff9a3c', 200, 450, 4, { add: true }); fx.shake(3, 100); sfx('ash_fall', { vol: 0.5 }); } });
       }
       return A0.t >= A0.dur;
@@ -87,7 +87,7 @@
     start: function (e, A0) {
       var p = PL(); A0.pose = 'lluvia'; A0.actMs = 6 * 250 + 400; A0.rec = 600; faceTo(e, angTo(e, p));
       for (var i = 0; i < 6; i++) {
-        var an = Math.random() * TAU, d = i === 0 ? 0 : G.rnd(60, 230);
+        var an = G.rng() * TAU, d = i === 0 ? 0 : G.rnd(60, 230);
         Z.add({ k: 'circle', x: Z.clampX(p.x + Math.cos(an) * d, 40), y: Z.clampY(p.y + Math.sin(an) * d, 40), r: 55, delay: i * 250, tele: A0.tele, dmg: 14, src: 'boss_meteoro', col: 'orange', fixAt: 0, ghost: i > 0 && false, silent: true,
           onGo: function (v) { fx.burst(v.x, v.y, 8, '#ff9a3c', 180, 400, 4, { add: true }); fx.shake(2, 80); sfx('ash_fall', { vol: 0.4 }); } });
       }
@@ -108,7 +108,7 @@
     var a = A(), p = PL(), type = idx % 3, m = mouth(e, type), echoMs = pel().v3 ? 3000 : 2000, eco = !e.broken.ojo, tele = Z.evTele(900, 60), i, an, x, y;
     sfx('echo_ping', { vol: 0.5, pitch: 0.9 + type * 0.15 }); fx.ring(m.x, m.y, 4, 40, 400, ['#7be34a', '#bfeaff', '#fff6a8'][type], 4);
     if (type === 0) {   // ácido: 3 charcos r 65 (6 s) alrededor del jugador
-      var a0 = Math.random() * TAU;
+      var a0 = G.rng() * TAU;
       for (i = 0; i < 3; i++) {
         an = a0 + i * TAU / 3; x = Z.clampX(p.x + Math.cos(an) * G.rnd(80, 130)); y = Z.clampY(p.y + Math.sin(an) * G.rnd(80, 130));
         acidAt(x, y, tele);
@@ -130,7 +130,7 @@
     start: function (e, A0) {
       var a = A(); A0.pose = 'coro'; A0.short = e.phase === 7; A0.iv = e.broken.ojo ? 1800 : 1500; A0.n = Math.floor(((A0.short ? 8000 : 12000) - 1000) / A0.iv) + 1; A0.vi = 0;
       A0.actMs = (A0.n - 1) * A0.iv + 1500; A0.rec = 1000; A0.drawAct = true;
-      a.coro = { m0: Math.random() * TAU, open: 0, t: 0 }; faceTo(e, angTo(e, PL())); sfx('echo_ping', { vol: 0.7 });
+      a.coro = { m0: G.rng() * TAU, open: 0, t: 0 }; faceTo(e, angTo(e, PL())); sfx('echo_ping', { vol: 0.7 });
     },
     tele: function (e, A0) { A().coro.open = A0.t / A0.tele; },
     go: function (e, A0) { A().coro.open = 1; expose(e, 1.25, A0.actMs, 'window'); fx.shake(4, 160); },
@@ -150,7 +150,7 @@
   // ---- Mordisco en picado (de una voz): carril 70 x 320 desde una boca, fijo los últimos 480 ms
   ATK.c_mordisco = {
     start: function (e, A0) {
-      var g = gnd(e), k = Math.floor(Math.random() * 3), an = Math.random() * TAU + k * 2.1, ox = g.x + Math.cos(an) * 110, oy = g.y + Math.sin(an) * 70 - 10, p = PL();
+      var g = gnd(e), k = Math.floor(G.rng() * 3), an = G.rng() * TAU + k * 2.1, ox = g.x + Math.cos(an) * 110, oy = g.y + Math.sin(an) * 70 - 10, p = PL();
       A0.pose = 'mordisco'; A0.actMs = 300; A0.rec = 650; faceTo(e, angTo(e, p));
       Z.add({ k: 'lane', x: ox, y: oy, a: Math.atan2(p.y - oy, p.x - ox), w: 70, len: 320, tele: A0.tele, dmg: 22, src: 'boss_mordisco', col: 'turq', fixAt: Math.max(0, A0.tele - 480), kb: 1.3,
         upd: function (v) { var pp = PL(); v.a = Math.atan2(pp.y - v.y, pp.x - v.x); }, onGo: function (v) { fx.shake(5, 150); sfx('hit_heavy', { vol: 0.7, pitch: 1.2 }); } });
@@ -173,7 +173,7 @@
   var FIRES = [[330, 240], [1110, 240], [720, 410], [330, 590], [1110, 590]];
   ATK.c_invierno = {
     start: function (e, A0) {
-      var a = A(); A0.short = e.phase === 7; A0.n = A0.short ? 5 : 7; A0.pose = 'invierno'; A0.actMs = 1000 + (A0.n - 1) * 1400 + 1800; A0.rec = 1200; A0.wi = 0; A0.fi = 0; A0.rot = Math.random() * TAU; A0.drawAct = true;
+      var a = A(); A0.short = e.phase === 7; A0.n = A0.short ? 5 : 7; A0.pose = 'invierno'; A0.actMs = 1000 + (A0.n - 1) * 1400 + 1800; A0.rec = 1200; A0.wi = 0; A0.fi = 0; A0.rot = G.rng() * TAU; A0.drawAct = true;
       a.fires = FIRES.map(function (f) { return { x: f[0], y: f[1], r: 64, tgt: 120 * geo('invierno'), fl: 0 }; }); a.fires.fade = 0; sfx('ice_creak', { vol: 0.7 }); faceTo(e, angTo(e, PL()));
     },
     tele: function (e, A0) { var u = ease(A0.t / A0.tele); A().fires.forEach(function (f) { f.r = 64 + (f.tgt - 64) * u; }); },
@@ -207,8 +207,8 @@
   Z.addBand = function (o) { var a = A(); o.hit = false; o.w = o.w || 120; o.v = o.v || 260; o.gapH = o.gapH || 140; a.bands.push(o); sfx('ember_wave', { vol: 0.6 }); return o; };
   ATK.c_ventisca = {
     start: function (e, A0) {
-      A0.dir = Math.random() < 0.5 ? 1 : -1; A0.x0 = A0.dir > 0 ? G.WALL - 60 : G.AW - G.WALL + 60; A0.gaps = []; A0.pose = 'ventisca'; A0.actMs = 3300; A0.rec = 600; A0.sent = 0; A0.drawAct = true;
-      var y = G.rnd(190, G.AH - 190); for (var i = 0; i < 3; i++) { A0.gaps.push(y); y = G.clamp(y + (Math.random() < 0.5 ? -1 : 1) * G.rnd(120, 220), 170, G.AH - 170); }
+      A0.dir = G.rng() < 0.5 ? 1 : -1; A0.x0 = A0.dir > 0 ? G.WALL - 60 : G.AW - G.WALL + 60; A0.gaps = []; A0.pose = 'ventisca'; A0.actMs = 3300; A0.rec = 600; A0.sent = 0; A0.drawAct = true;
+      var y = G.rnd(190, G.AH - 190); for (var i = 0; i < 3; i++) { A0.gaps.push(y); y = G.clamp(y + (G.rng() < 0.5 ? -1 : 1) * G.rnd(120, 220), 170, G.AH - 170); }
       sfx('ice_creak', { vol: 0.8 }); faceTo(e, A0.dir > 0 ? 0 : Math.PI);
     },
     go: function () { },
@@ -238,7 +238,7 @@
   // 5 anillos hexagonales (R = k x 83, grosor 32, 2 huecos de ~150 px) de fuera hacia dentro cada 1,3 s: los impares CONTRAEN y los pares EXPANDEN hasta su radio (el daño llega al
   // final del aviso de 900 ms, 18). Corona rota: todos contraen. Doc 12 s: aquí ~8 s (5 anillos).
   function ringEv(c0, k, i, e, short) {
-    var R = k * 83, g0 = Math.random() * TAU, gh = Math.min(0.95, Math.atan(75 / R)), contract = e.broken.corona ? true : (k % 2 === 1), tl = Z.evTele(1000, 80);
+    var R = k * 83, g0 = G.rng() * TAU, gh = Math.min(0.95, Math.atan(75 / R)), contract = e.broken.corona ? true : (k % 2 === 1), tl = Z.evTele(1000, 80);
     return Z.add({ k: 'hex', x: c0.x, y: c0.y, apo: R * 0.8660254, apo0: (R + (contract ? 83 : -83)) * 0.8660254, th: 32 * geo('zumbido'), gaps: [g0, g0 + Math.PI + G.rnd(-0.5, 0.5)], gh: gh, delay: i * 1300, tele: tl, dmg: 18, src: 'boss_zumbido', col: 'amber', fixAt: tl * 0.7, glyph: i + 1,
       gx: c0.x + Math.cos(g0) * R * 0.97, gy: c0.y + Math.sin(g0) * R * 0.97, silent: true, ghost: i < 2,
       onGo: function (v) { fx.shake(3, 100); sfx(contract ? 'hex_ring_in' : 'hex_ring_out', { vol: 0.6 }); } });
@@ -269,7 +269,7 @@
       if (e.phase >= 6) list.push('boar');   // sin Polinizador: es de la familia del Panal y fuera de él no tiene IA
       list = list.slice(0, Math.max(0, room)); A0.pose = 'enjambre'; A0.actMs = 300; A0.rec = 600;
       list.forEach(function (ty, k) {
-        var cx, cy, tries = 0, an = Math.random() * TAU + k * 1.3;
+        var cx, cy, tries = 0, an = G.rng() * TAU + k * 1.3;
         do { an += 1.1; cx = e.x + Math.cos(an) * 200; cy = e.y + 30 + Math.sin(an) * 160; tries++; } while (G.dist(cx, cy, p.x, p.y) < 110 && tries < 8);
         Z.spawnAdd(ty, cx, cy, A0.tele);
       });
@@ -288,7 +288,7 @@
       if (l.state === 'on') {
         l.tk = (l.tk || 0) - dt;
         if (l.tk <= 0) { l.tk = 500; if (!p.dead && !Z.onIsland(p.x, p.y, p.r)) hurtC(e, 8, 'boss_lava', { soft: true }); }
-        if (Math.random() < 0.3) { var is = Z.islands(l); }
+        if (G.rng() < 0.3) { var is = Z.islands(l); }
       } else if (l.state === 'fade') { l.fade += dt; if (l.fade > 700) a.lava = null; }
     }
     if (a.fires) {

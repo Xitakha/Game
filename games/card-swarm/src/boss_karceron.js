@@ -94,7 +94,7 @@
   H.pos = function () { return { x: ANCH[0][0], y: ANCH[0][1] }; };
   H.setup = function (e, p) {
     var a = A();
-    a.margin = 0; a.marginTo = 0; a.lava = POOLS.map(function (q) { return { x: q[0], y: q[1], r: 70, t: Math.random() * 2000 }; });
+    a.margin = 0; a.marginTo = 0; a.lava = POOLS.map(function (q) { return { x: q[0], y: q[1], r: 70, t: G.rng() * 2000 }; });
     a.puddles = []; a.rain = []; a.rub = []; a.cracks = []; a.mace = null; a.open = false; a.ai = 0; a.moveWait = 4000; a.tk = 0; a.islR = ISL_R; a.islShow = 0;
     a.flood = { state: 'off', t: 0, dur: 0, req: false };
     PILLARS.forEach(function (q) { S.obs.push({ x: q[0], y: q[1], r: 30, hp: 300, dead: false, shake: 0, sortY: q[1] + 6, kind: 'bone', draw: drawPillar }); });
@@ -135,7 +135,7 @@
     e.moveAmt = 0; e.face = p.x >= e.x ? 1 : -1;
     a.moveWait -= dt;
     if (a.moveWait > 0) return;
-    if (d < 3) { var n; do { n = Math.floor(Math.random() * 3); } while (n === a.ai); a.ai = n; a.moveWait = 6500; return; }
+    if (d < 3) { var n; do { n = Math.floor(G.rng() * 3); } while (n === a.ai); a.ai = n; a.moveWait = 6500; return; }
     var st = Math.min(d, 25 * dt / 1000);
     e.x += (t[0] - e.x) / d * st; e.y += (t[1] - e.y) / d * st; e.moveAmt = 1; e.curSpd = 25;
   };
@@ -314,7 +314,7 @@
       if (m.st === 0 && A0.abs >= m.at) {
         m.st = 1;
         if (i < A0.nAim) { m.x = clampX(p.x + (A0.vx || 0) * 0.45 + G.rnd(-14, 14)); m.y = clampY(p.y + (A0.vy || 0) * 0.45 + G.rnd(-14, 14)); }
-        else { var an = Math.random() * TAU, dd = G.rnd(70, 300); m.x = clampX(p.x + Math.cos(an) * dd); m.y = clampY(p.y + Math.sin(an) * dd); }
+        else { var an = G.rng() * TAU, dd = G.rnd(70, 300); m.x = clampX(p.x + Math.cos(an) * dd); m.y = clampY(p.y + Math.sin(an) * dd); }
         m.imp = A0.abs + 900;
       }
       if (m.st === 1 && A0.abs >= m.imp) { m.st = 2; impact(e, { x: m.x, y: m.y, r: 55, dmg: 18, puddles: i < 2 }); }   // deja 2 charcos de brasas en total (los de los 2 primeros impactos)
@@ -340,7 +340,7 @@
   // ---- Aliento de magma: cono de 50 grados que barre 40 grados a 30 grados/s; los pilares lo bloquean
   ATK.k_aliento = {
     start: function (e, A0) {
-      A0.a0 = angTo(e, PL()); A0.sgn = Math.random() < 0.5 ? -1 : 1; A0.sweep = 40 * DEG; A0.half = 25 * DEG; A0.reach = 560; A0.pose = 'aliento'; A0.actMs = 1330; A0.rec = 700; A0.drawAct = true; A0.tk = 0; A0.ang = A0.a0;
+      A0.a0 = angTo(e, PL()); A0.sgn = G.rng() < 0.5 ? -1 : 1; A0.sweep = 40 * DEG; A0.half = 25 * DEG; A0.reach = 560; A0.pose = 'aliento'; A0.actMs = 1330; A0.rec = 700; A0.drawAct = true; A0.tk = 0; A0.ang = A0.a0;
     },
     tele: function (e, A0) { if (A0.t < A0.tele * 0.45) { A0.a0 = angTo(e, PL()); A0.ang = A0.a0; } e.face = Math.cos(A0.a0) >= 0 ? 1 : -1; },
     go: function (e, A0) { sfx('flame', { vol: 0.7, pitch: 0.7 }); fx.shake(3, 200); },
@@ -348,7 +348,7 @@
       var p = PL();
       A0.ang = A0.a0 + A0.sgn * A0.sweep * G.clamp(A0.t / A0.actMs, 0, 1);
       var ox = e.x + Math.cos(A0.ang) * 70, oy = e.y + Math.sin(A0.ang) * 70;
-      if (Math.random() < 0.9) fx.flames(ox + Math.cos(A0.ang) * G.rnd(60, 420), oy + Math.sin(A0.ang) * G.rnd(60, 420), 1, 30);
+      if (Math.random() < 0.9) fx.flames(ox + Math.cos(A0.ang) * G.rndFx(60, 420), oy + Math.sin(A0.ang) * G.rndFx(60, 420), 1, 30);
       A0.tk -= dt;
       if (A0.tk <= 0 && !p.dead) {
         var d = Math.hypot(p.x - e.x, p.y - e.y);
@@ -389,7 +389,7 @@
   }
   ATK.k_costillas = {
     start: function (e, A0) {
-      var ang = angTo(e, PL()), a0 = Math.random() * 30 * DEG, off = ((ang - a0) % (30 * DEG) + 30 * DEG) % (30 * DEG);
+      var ang = angTo(e, PL()), a0 = G.rng() * 30 * DEG, off = ((ang - a0) % (30 * DEG) + 30 * DEG) % (30 * DEG);
       if (Math.min(off, 30 * DEG - off) < 7 * DEG) a0 += 15 * DEG;
       A0.a0 = a0; A0.vol = [1, 2, 3][e.phase - 1]; A0.k = 0; A0.pose = 'costillas'; A0.rec = 500; A0.drawAct = true; A0.gap = 600;
     },
@@ -412,7 +412,7 @@
   ATK.k_erupcion = {
     avail: function (e) { return !e.broken.nucleo; },
     start: function (e, A0) { A0.r = 250; if (Math.hypot(PL().x - e.x, PL().y - e.y) < 120) A0.tele = Math.round(1650 * (pel().tele || 1));   // pegado al torso hay que correr 250 px: regla de esquiva 250 + 1000 x 260 / 190 -> telegrafía larga
-      A0.openMs = e.broken.grillete ? 5500 : 4000; A0.pose = 'erupcion'; A0.rec = 900; A0.drawAct = true; A0.fin = false; A0.actMs = A0.openMs; A0.a0 = Math.random() * 30 * DEG; },
+      A0.openMs = e.broken.grillete ? 5500 : 4000; A0.pose = 'erupcion'; A0.rec = 900; A0.drawAct = true; A0.fin = false; A0.actMs = A0.openMs; A0.a0 = G.rng() * 30 * DEG; },
     go: function (e, A0) {
       var p = PL();
       fx.shake(9, 300); fx.hit(50); sfx('boss_roar', { pitch: 0.7, vol: 0.7 }); fx.shockwave(e.x, e.y, 520); fx.ring(e.x, e.y, 40, 250, 450, '#ffcf7a', 6);
@@ -442,7 +442,7 @@
       if (e.phase === 3) list.push('blinker');
       for (var k = 0; k < P.adds; k++) list.push('scorcher');
       list = list.slice(0, Math.max(0, room)); A0.pose = 'penitentes'; A0.actMs = 300; A0.rec = 600; A0.spots = [];
-      var a0 = Math.random() * TAU;
+      var a0 = G.rng() * TAU;
       for (var i = 0; i < 4; i++) {   // 4 círculos de aparición alrededor del Carcelero; se usan tantos como adds
         var an = a0 + i * TAU / 4, x = clampX(e.x + Math.cos(an) * 230), y = clampY(e.y + Math.sin(an) * 190);
         if (Math.hypot(x - p.x, y - p.y) < 100) { x = clampX(x + (x < p.x ? -120 : 120)); }
@@ -481,7 +481,7 @@
       a.rainT += dt;
       if (a.rainT >= (e.despLeft === 0 && pel().x2 ? 1e9 : 1000)) {   // Peligro V: el 2.o desesperado es solo la Marea (doc: "Réquiem + Marea"): sin lluvia de brasas   // un impacto por segundo sobre las islas (r 50, telegrafía de 900 ms)
         a.rainT -= 1000;
-        var ii = Math.random() < 0.6 ? nearestIsland(p.x, p.y) : Math.floor(Math.random() * 3), an = Math.random() * TAU, rr = Math.random() * a.islR * 0.8;
+        var ii = G.rng() < 0.6 ? nearestIsland(p.x, p.y) : Math.floor(G.rng() * 3), an = G.rng() * TAU, rr = G.rng() * a.islR * 0.8;
         a.rain.push({ x: ISLANDS[ii][0] + Math.cos(an) * rr, y: ISLANDS[ii][1] + Math.sin(an) * rr, r: 50, dmg: 18, t: 0, imp: 900, puddles: false });
       }
     }
@@ -503,7 +503,7 @@
       fx.part('fx_boss_crack', e.x + Math.cos(an) * 90, e.y + 70 + Math.sin(an) * 40, 0, 0, 900, { anim: true, sc: 1.4 });
       fx.shake(4, 150); sfx('hit_heavy', { pitch: 0.5, vol: 0.5 }); I.cr = k + 1;
     }
-    if (t < 700 && Math.random() < 0.12) fx.ember(e.x + G.rnd(-90, 90), e.y + 90, 2, 20);
+    if (t < 700 && Math.random() < 0.12) fx.ember(e.x + G.rndFx(-90, 90), e.y + 90, 2, 20);
     e.rise = t < 700 ? 0 : ease((t - 700) / 900);
     if (t >= 700 && !I.landed) {
       I.landed = true; fx.shake(9, 300); fx.shockwave(e.x, e.y + 90, 360); fx.burst(e.x, e.y + 90, 26, '#ff6a1a', 260, 700, 5, { add: true }); fx.flames(e.x, e.y + 90, 12, 90); sfx('shockwave', { vol: 0.9, pitch: 0.7 });
@@ -532,7 +532,7 @@
     c.save();
     c.beginPath(); c.rect(x - 260, y - 260, 520, 260 + gy + 6); c.clip();   // lo que está bajo la línea del charco queda oculto (emerge / se hunde)
     c.translate(x, y + (1 - rise) * 230 + Math.sin(t / 600) * 2);
-    var sh = o.shake ? (Math.random() - 0.5) * 4 : 0; c.translate(sh, 0);
+    var sh = o.shake ? (G.rng() - 0.5) * 4 : 0; c.translate(sh, 0);
     var br = o.broken || {}, rz = o.roar || 0;
     // brazo izquierdo (grillete)
     var lx = -150, ly = 52;
@@ -592,7 +592,7 @@
   };
 
   function drawPillar(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
+    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
     if (ART()) { Assets.drawPillar(c, 'bone', x, y, { hp: 1, t: G.time }); return; }
     c.save(); c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(x, y + 18, 34, 12, 0, 0, TAU); c.fill();
     c.fillStyle = BONE; c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';

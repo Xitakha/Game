@@ -32,7 +32,7 @@ const BOT = () => {
   const res = []; let next = 0;
   async function one(g) {
     const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage();
-    await pg.goto(`${base}/index.html?nosw=1&reset=1&speed=4`); await pg.waitForTimeout(600);
+    await pg.goto(`${base}/index.html?nosw=1&reset=1&speed=4${process.env.SEED ? '&seed=' + (+process.env.SEED + g) : ''}`); await pg.waitForTimeout(600);
     await pg.evaluate(() => { G.startGame(); }); await pg.evaluate(BOT);
     const t0 = Date.now(); let r = null;
     while (Date.now() - t0 < 600000) { await pg.waitForTimeout(1000); r = await pg.evaluate(() => ({ st: G.state, t: Math.round(G.runT / 1000), won: G.won, lvl: G.player.level, kills: G.kills, boss: G.Enemies.boss() ? Math.round(G.Enemies.boss().hp / G.Enemies.boss().maxHp * 100) : null, log: window.__log })); if (r.st === 'gameover') break; }

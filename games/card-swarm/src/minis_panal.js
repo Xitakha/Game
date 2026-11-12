@@ -72,7 +72,7 @@
     tele: function () { return 600; },
     start: function (e, X) { e.orbR = 160; },
     fire: function (e, X) {
-      var p = X.p; e.st = 'run'; e.t = 0; e.ph = 'orbit'; e.fired = false; e.th = Math.atan2(e.y - p.y, e.x - p.x); e.r0 = Math.max(60, Math.hypot(e.x - p.x, e.y - p.y)); e.dirO = Math.random() < 0.5 ? -1 : 1;
+      var p = X.p; e.st = 'run'; e.t = 0; e.ph = 'orbit'; e.fired = false; e.th = Math.atan2(e.y - p.y, e.x - p.x); e.r0 = Math.max(60, Math.hypot(e.x - p.x, e.y - p.y)); e.dirO = G.rng() < 0.5 ? -1 : 1;
       psnd('avispon_orbit', 'whoosh', { vol: 0.7 });
     },
     run: function (e, dt, X) {
