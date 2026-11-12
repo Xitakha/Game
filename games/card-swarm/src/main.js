@@ -1,5 +1,5 @@
 /* main.js - Swarm Hand: núcleo, balance, entrada, bucle de paso fijo y render. Canvas 2D puro.
-   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?biome=cripta,
+   Parámetros de depuración por URL: ?speed=4 (acelera el tiempo), ?god=1 (invulnerable), ?t=240 (empieza en el segundo indicado), ?perf=1 (medidor de frame-time, src/perf.js), ?seed=<n> (RNG sembrado de la simulacion), ?biome=cripta,
    familias v5 (src/families.js): ?fam=0 (roster legado) | ?fam=1 (fuerza familias) ?mat=1|0 (tabla de debilidades por material),
    ?pf=<n> (Puntos de Forja), ?give=, Tundra (P3): ?biome=tundra [&nobos=1 sin jefe, &ice=0 sin hielo, &cold=0 sin Frío, &softice=1 &lightstorm=1 accesibilidad] (src/tundra.js), ?len=, ?reset=1, ?dbg=1, jefes v4: ?boss=pastor|karceron|letea ?peligro=<n> ?phase= ?hp= ?hpcal= ?nointro=1 ?hand=, vista inclinada ?view=iso (src/view.js). Entrada táctil: toque = clic (al soltar), joystick flotante en la mitad izquierda, deslizar = cambiar pestaña. */
 (function () {

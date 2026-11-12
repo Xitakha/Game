@@ -31,3 +31,12 @@ Ajustes -> **Exportar guardado** (texto + archivo, copiar o compartir) e **Impor
 - Calidad Auto baja efectos y topes de enemigos/proyectiles (hasta -25 % de enemigos vivos en Baja) si los fps bajan de 45; no vuelve a subir sola (se recuerda entre sesiones; vuelve a Auto desde Ajustes).
 - Ember Flock solo tiene viewport y escalado básicos: no tiene controles táctiles.
 - Para probar en local con service worker: `?nosw=1` lo desactiva y borra su caché (desarrollo). Tras tocar archivos del juego ejecuta `python3 tools/card-swarm-pwa/stamp.py` (el workflow lo hace solo).
+
+## 7. Prueba termica de 15 min en movil real (con `?perf=1`)
+Objetivo: ver si el movil se calienta y baja el rendimiento (throttling) en una expedicion larga. Solo medir; no hay umbral duro todavia.
+1. Preparacion: bateria > 80 %, sin cargador, brillo al 50 %, modo ahorro desactivado, sin otras apps abiertas, mismo navegador siempre, temperatura ambiente anotada. Abre `.../card-swarm/index.html?perf=1&seed=1` (la semilla hace las ofertas y hordas repetibles). Juega con normalidad (Calidad: Auto) en el Crater o el bioma mas pesado que tengas desbloqueado, con 4 poderes en AUTO.
+2. **Minuto 1**: cuando el overlay marque `min 2` (es decir, completado el minuto 1), anota fps, `frame avg/p95/max` y `cpu avg/p95`. Toca el overlay (copia el JSON) y pegalo en una nota; o desde un PC con depuracion remota (`chrome://inspect`) ejecuta `__perf.export()`.
+3. **Minuto 15**: igual, al marcar `min 16`. Anota tambien lo mismo de los minutos intermedios (el JSON trae `minutes[]` con el resumen de cada minuto).
+4. Anotar: modelo de movil y navegador, temperatura ambiente, bateria inicial y final (% gastado), sensacion de temperatura de la carcasa (tibio / caliente / no se puede sostener), calidad que el juego eligio (`quality` en el JSON, por si Auto bajo de nivel), n.º de enemigos tipico, tirones percibidos, `over33` (frames > 33 ms) y `fps` global.
+5. Comparar min 1 vs min 15: que p95 y fps no empeoren de forma sostenida (referencia orientativa a confirmar: p95 <= 20 ms a 60 fps y < 5 % de frames > 33 ms). Una subida de p95 de minuto en minuto indica throttling termico. Repite con `&perf=1&seed=1` dos veces y usa la mediana.
+6. Referencia de PC: `node tools/card-swarm-bot/perf_bot.js 30` (mismo escenario fijo). No son ms de movil: sirve para ver regresiones entre versiones.
