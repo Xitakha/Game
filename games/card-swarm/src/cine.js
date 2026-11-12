@@ -2,7 +2,7 @@
    - Reloj propio: avanza únicamente con el paso fijo (G.STEP) en G.Cine.update(dt). Su azar sale de un mulberry32 propio (C.rng(id)).
    - Guion = tabla de datos:  { id, len, letterbox:{ in:[ms,ms], out:[ms,ms], bar }, scenes:[{ at, dur, draw(c, p, t, S), cam:{ from:{x,y,z}, to:{x,y,z}, ease }, layers:[{ draw(c,p,t,S), par, bake:{w,h} }] }],
                 tracks:[{ at, type, ... }] }
-     Pistas (cada una se dispara UNA vez cuando el reloj pasa de `at`):  dlg {who,color,text,dur}  title {text,sub,dur}  sfx {name,vol,pitch}  music {track,intensity|stop}  stinger {name}
+     Pistas (cine {kind,arg,pitch} = G.Snd.cine; cada una se dispara UNA vez cuando el reloj pasa de `at`):  dlg {who,color,text,dur}  title {text,sub,dur}  sfx {name,vol,pitch}  music {track,intensity|stop}  stinger {name}
                 flash {color,a,ms}  shake {amp,ms}  fade {from,to,dur,color}  tween {prop,from,to,dur,ease}  fn {fn}.
    - Capas con paralaje (par 0 = fija, 1 = sigue la cámara); `bake` hornea la capa una vez en un canvas fuera de pantalla (se libera al cambiar de escena, <= 3 vivos).
    - Texto máquina de escribir (32 car/s, un bip por palabra); subtítulos SIEMPRE (el diálogo es texto). Un toque completa la línea y otro pasa a la siguiente escena.
@@ -60,17 +60,10 @@
   // ---------------------------------------------------------------- Audio (si falta el recurso: silencio / sonido de reserva)
   C.blip = function (who) {
     try {
-      if (G.Snd && G.Snd.cine && typeof G.Snd.cine.blip === 'function') G.Snd.cine.blip(who);
-      else G.sfx('flip', { vol: 0.1, pitch: who === 'LANUDO' ? 0.7 : 1 });
+      if (G.Snd && typeof G.Snd.cine === 'function') G.Snd.cine('blip', who === 'LANUDO' ? 'lanudo' : 'neutro', 0.9 + 0.3 * ((S && S.bips || 0) % 4) / 3);
     } catch (e) { /* audio opcional */ }
   };
-  function cineSfx(name, o) {
-    try {
-      if (G.Snd && G.Snd.cine && typeof G.Snd.cine.play === 'function' && G.Snd.cine.has && G.Snd.cine.has(name)) G.Snd.cine.play(name, o);
-      else if (G.Snd && G.Snd.has && G.Snd.has(name)) G.Snd.play(name, o);
-      else if (window.Assets && Assets.sfx) Assets.sfx(name, o);
-    } catch (e) { /* audio opcional */ }
-  }
+  C.snd = function (kind, arg, pitch) { try { if (G.Snd && typeof G.Snd.cine === 'function') return G.Snd.cine(kind, arg, pitch); } catch (e) { /* audio opcional */ } return false; };
   function musicStop() { try { Assets.music.stop(); } catch (e) { /* audio */ } }
 
   // ---------------------------------------------------------------- Reproducción
@@ -96,7 +89,7 @@
     b = !!b; if (S.paused === b) return; S.paused = b;
     try { if (b) { Assets.suspendAudio(); G.Snd.suspend(); } else if (!(G.Sys && G.Sys.muted)) { Assets.resumeAudio(); G.Snd.resume(); } } catch (e) { /* audio */ }
   };
-  C.skip = function () { if (!S || S.locked) return false; finish('skip'); return true; };
+  C.skip = function () { if (!S || S.locked) return false; C.snd('skip'); finish('skip'); return true; };
   C.end = function () { if (S) finish('end'); };   // cierre forzado por el código (no por el jugador)
 
   function finish(reason) {
@@ -125,7 +118,7 @@
       case 'dlg': S.line = { who: e.who || '', color: e.color || '#f0e8d8', text: e.text, t0: S.t, until: e.dur ? S.t + e.dur : 1e9, shown: 0, bipAt: -1 }; break;
       case 'clear': S.line = null; break;
       case 'title': S.title = { text: e.text, sub: e.sub || '', t0: S.t, dur: e.dur || 3000, color: e.color || '#ffd27a' }; break;
-      case 'sfx': if (!o) cineSfx(e.name, { vol: e.vol, pitch: e.pitch }); break;
+      case 'cine': if (!o) C.snd(e.kind, e.arg, e.pitch); break;
       case 'stinger': if (!o) { try { G.Snd.play(e.name); } catch (x) { /* audio */ } } break;
       case 'music':
         try {
@@ -163,7 +156,7 @@
     var L = S.line, sc = S.script.scenes || [], i = S.sceneIdx;
     if (L && L.shown < L.text.length) { L.shown = L.text.length; L.manual = true; return; }
     if (i >= 0 && i + 1 < sc.length && S.t - sc[i].at > 700) {
-      S.silent = true; S.t = sc[i + 1].at; fireDue(); S.silent = false;
+      S.silent = true; S.t = sc[i + 1].at; fireDue(); S.silent = false; C.snd('next');
     }
   }
   C.advance = function () { if (S) advance(); };
@@ -174,7 +167,7 @@
     if (!S) return;
     var inp = G.input, tap = inp.hit('Mouse0'), kb = inp.hit('Space', 'Enter', 'KeyE');
     if (S.paused) { if (tap || kb) C.pause(false); return; }
-    if (!S.locked && (inp.hit('Escape') || (tap && G.UI && G.UI.inR(skipRect(), inp.mouse)))) { finish('skip'); return; }
+    if (!S.locked && (inp.hit('Escape') || (tap && G.UI && G.UI.inR(skipRect(), inp.mouse)))) { C.snd('skip'); finish('skip'); return; }
     if (inp.lock <= 0 && (tap || kb)) advance();
     if (!S) return;
     S.t += dt;
@@ -229,7 +222,7 @@
     c.fillStyle = '#05030a'; c.fillRect(0, 0, W, H);
     if (S.shake) {
       var u = (t - S.shake.t0) / S.shake.ms;
-      if (u >= 1) S.shake = null; else { var a = S.shake.amp * (1 - u); sh.x = Math.sin(t * 0.09) * a; sh.y = Math.cos(t * 0.13) * a; S.shakePx = Math.max(S.shakePx, Math.hypot(sh.x, sh.y)); }
+      if (u >= 1) S.shake = null; else { var a = S.shake.amp * (1 - u); sh.x = Math.sin(t * 0.09) * a * 0.7; sh.y = Math.cos(t * 0.13) * a * 0.7; S.shakePx = Math.max(S.shakePx, Math.hypot(sh.x, sh.y)); }
     }
     c.save(); if (sh.x || sh.y) c.translate(Math.round(sh.x), Math.round(sh.y));
     // tweens (valores en S.vars)

@@ -7,6 +7,7 @@
   'use strict';
   var G = window.G, C = G.Cine, TAU = Math.PI * 2;
   var W = 960, H = 540;
+  function cl(v, a, b) { return v < a ? a : v > b ? b : v; }
 
   // ---------------------------------------------------------------- Arte: reserva procedural (si Assets.cine.* existe, se prefiere)
   var R = C.rng('intro-art'), STARS = [], i;
@@ -116,42 +117,38 @@
   }
 
   var INTRO = {
-    id: 'intro', len: 26500, over: over, letterbox: { in: [0, 700], out: [25600, 26400], bar: 44 },
+    id: 'intro', len: 27000, over: over, letterbox: { in: [0, 700], out: [26200, 26900], bar: 44 },
     scenes: [
       { at: 0, dur: 4200, draw: sc1, cam: { from: { x: 0, y: 0, z: 1 }, to: { x: -60, y: 10, z: 1.2 } } },
       { at: 4200, dur: 4200, draw: sc2, cam: { from: { x: -70, y: 0, z: 1.05 }, to: { x: 70, y: 0, z: 1.05 } } },
       { at: 8400, dur: 4200, draw: sc3, cam: { from: { x: 0, y: 0, z: 1 }, to: { x: 0, y: -30, z: 1.45 } } },
       { at: 12600, dur: 5400, draw: sc4, cam: { from: { x: 60, y: 0, z: 1 }, to: { x: -60, y: 0, z: 1.05 } } },
       { at: 18000, dur: 4000, draw: sc5, cam: { from: { x: 0, y: 0, z: 1 }, to: { x: 60, y: -40, z: 1.25 } } },
-      { at: 22000, dur: 4500, draw: sc6, cam: { from: { x: 0, y: 0, z: 1.15 }, to: { x: 0, y: 0, z: 1 } } }
+      { at: 22000, dur: 5000, draw: sc6, cam: { from: { x: 0, y: 0, z: 1.15 }, to: { x: 0, y: 0, z: 1 } } }
     ],
     tracks: [
-      { at: 0, type: 'music', track: 'cine_intro', intensity: 0.3 },
+      { at: 0, type: 'music', track: 'cine_intro' },
       { at: 0, type: 'fade', from: 1, to: 0, dur: 900 },
       { at: 500, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Siéntate, Marlo. Te cuento por qué Rescoldo huele a ceniza.', dur: 3600 },
-      { at: 4200, type: 'sfx', name: 'cine_swoosh', vol: 0.5 },
+      { at: 4200, type: 'cine', kind: 'trans', arg: 'in' },
       { at: 4500, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Hubo un Hogar, con una chimenea que nunca se apagaba y un Pastor que cuidaba de todos.', dur: 3800 },
-      { at: 8400, type: 'sfx', name: 'cine_swoosh', vol: 0.5 },
-      { at: 8400, type: 'music', intensity: 0.15 },
+      { at: 8400, type: 'cine', kind: 'trans', arg: 'in' },
       { at: 8700, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Una noche, una brasa se negó a apagarse. Y lo que no se apaga, lo devora todo.', dur: 3800 },
-      { at: 10600, type: 'sfx', name: 'cine_ember', vol: 0.7 },
+      { at: 10600, type: 'cine', kind: 'trans', arg: 'cut' },
       { at: 10600, type: 'flash', color: '#ff7a2a', a: 0.35, ms: 350 },
-      { at: 12600, type: 'sfx', name: 'cine_swoosh', vol: 0.5 },
-      { at: 12600, type: 'music', intensity: 0.5 },
+      { at: 12600, type: 'cine', kind: 'trans', arg: 'in' },
       { at: 12800, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Prendió el cayado del Pastor. Despertó al Carcelero. Envenenó el río. Heló el norte. Enloqueció a la Reina.', dur: 5000 },
-      { at: 13200, type: 'sfx', name: 'cine_ember', vol: 0.4, pitch: 0.8 }, { at: 13900, type: 'sfx', name: 'cine_ember', vol: 0.4, pitch: 0.9 },
-      { at: 14600, type: 'sfx', name: 'cine_ember', vol: 0.4, pitch: 1.0 }, { at: 15300, type: 'sfx', name: 'cine_ember', vol: 0.4, pitch: 1.12 }, { at: 16000, type: 'sfx', name: 'cine_ember', vol: 0.5, pitch: 1.25 },
-      { at: 18000, type: 'sfx', name: 'cine_swoosh', vol: 0.5 },
-      { at: 18000, type: 'music', intensity: 0.25 },
+      { at: 13200, type: 'cine', kind: 'spark', arg: 0 }, { at: 13900, type: 'cine', kind: 'spark', arg: 1 },
+      { at: 14600, type: 'cine', kind: 'spark', arg: 2 }, { at: 15300, type: 'cine', kind: 'spark', arg: 3 }, { at: 16000, type: 'cine', kind: 'spark', arg: 4 },
+      { at: 18000, type: 'cine', kind: 'trans', arg: 'in' },
       { at: 18300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Y entre las cenizas nació un corderito con una bufanda que arde sin quemar. Tú.', dur: 3600 },
-      { at: 22000, type: 'sfx', name: 'cine_swoosh', vol: 0.5 },
-      { at: 22000, type: 'music', intensity: 0.7 },
-      { at: 22300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Seis llamas siguen ardiendo. Apágalas.', dur: 2400 },
-      { at: 24200, type: 'sfx', name: 'cine_title_hit', vol: 0.9 },
-      { at: 24200, type: 'flash', color: '#fff2b0', a: 0.5, ms: 400 },
-      { at: 24200, type: 'shake', amp: 4, ms: 400 },
-      { at: 24200, type: 'title', text: 'SWARM HAND', sub: 'Apaga las seis llamas.', dur: 2200 },
-      { at: 25800, type: 'fade', from: 0, to: 1, dur: 650 }
+      { at: 22000, type: 'cine', kind: 'trans', arg: 'in' },
+      { at: 22300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Seis llamas siguen ardiendo. Apágalas.', dur: 2600 },
+      { at: 25000, type: 'cine', kind: 'title' },
+      { at: 25000, type: 'flash', color: '#fff2b0', a: 0.5, ms: 400 },
+      { at: 25000, type: 'shake', amp: 4, ms: 400 },
+      { at: 25000, type: 'title', text: 'SWARM HAND', sub: 'Apaga las seis llamas.', dur: 2000 },
+      { at: 26300, type: 'fade', from: 0, to: 1, dur: 600 }
     ]
   };
   C.INTRO = INTRO;
@@ -182,7 +179,7 @@
   C.openTitle = function (next) { T = { t: 0, next: next, going: false }; G.state = 'title'; };
   function afterTitle() {
     var next = T.next; T = null;
-    var go = function () { G.state = 'aldea'; if (next) next(); };
+    var go = function () { try { Assets.music.stop(); } catch (e) { /* audio */ } G.state = 'aldea'; if (next) next(); };
     if (C.off) { go(); return; }
     if (!C.introSeen() || C.force) { if (!C.playIntro({ replay: C.introSeen(), onEnd: go })) go(); }
     else go();
@@ -194,7 +191,8 @@
     if (T.t > 400 && !T.going && any) {
       T.going = true;
       try { G.Snd.unlock(); } catch (e) { /* audio */ } try { Assets.unlock(); } catch (e2) { /* audio */ }
-      G.sfx('card_select', { vol: 0.4 });
+      C.snd('tap');   // dentro del gesto: desbloquea el audio; luego la pista del título
+      try { Assets.music.setTrack('cine_title'); Assets.music.start(); } catch (e3) { /* audio */ }
       afterTitle();
     }
   };

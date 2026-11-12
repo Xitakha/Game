@@ -1,4 +1,5 @@
 /* save.js - Guardado local de Swarm Hand (localStorage con try/catch y versión de esquema).
+   v12 (v9 cinemáticas): cine { introSeen, introVer, entrySeen{}, epilogueSeen, creditsSeen } y settings.cine { calm (Reducir destellos; null = según prefers-reduced-motion), textSpeed, soundCaps }. Migración v11 -> v12 con copia en swarmhand.fusion.save.v11: las cuentas con progreso (runs, bossKills, bossSeen, PF o final visto) reciben la intro como vista.
    v11 (v8.1 sets nuevos): sin campos nuevos; regala el Peto de Escama / Pelaje / Jalea / Brasa por jefe ya vencido (Letea, Yarlak, Melaria, Cenizar) y equipa el de mayor tier. Migración v10 -> v11 con copia en swarmhand.fusion.save.v10.
    v10 (v8 Herrero): armor { owned, equipped, seen, stats, ped }, trophiesEver / insigniasEver (acumulado: Ruta, logros y Archivo; trophies / insignias pasan a ser saldo gastable), loadouts[i].armor, stats.playMs, flags.smithMet / smithGift. Migración v9 -> v10 con copia en swarmhand.fusion.save.v9: regala set Aldeano + Peto de cada jefe vencido.
    v9 (P7, Integración): portalSeen { destino: 1 } (destinos ya vistos abiertos en el Portal: los recién desbloqueados se marcan 'NUEVO'); la rama 'Ruta' del árbol usa nodos normales (nodes) y los trofeos ya guardados (trophies);
@@ -18,7 +19,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.fusion.save', VERSION = 11;
+  var KEY = 'swarmhand.fusion.save', VERSION = 12;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -40,9 +41,10 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, cine: freshCine(), portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
+  function freshCine() { return { introSeen: false, introVer: 1, entrySeen: {}, epilogueSeen: false, creditsSeen: false }; }
   function freshArmor() { return { owned: {}, equipped: [null, null, null, null], seen: {}, stats: { blocked: 0, crafts: 0 }, ped: {} }; }
   var warned = false;
   S.save = function () {
@@ -120,6 +122,13 @@
         });
       }
     }
+    if (d.v === 11) {   // v9: cinemáticas. Sin pérdida: solo se añaden campos
+      d.v = 12; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated12 = 1;
+      var bk11 = (d.bossKills && typeof d.bossKills === 'object') ? d.bossKills : {}, bs11 = (d.bossSeen && typeof d.bossSeen === 'object') ? d.bossSeen : {};
+      var prog = (d.runs > 0) || Object.keys(bk11).some(function (k) { return bk11[k] > 0; }) || Object.keys(bs11).some(function (k) { return bs11[k]; }) || !!(d.pf && d.pf.earned > 1) || !!d.endingSeen;
+      d.cine = freshCine(); d.cine.introSeen = !!prog; d.cine.epilogueSeen = d.cine.creditsSeen = !!d.endingSeen;
+      Object.keys(bs11).forEach(function (k) { if (bs11[k]) d.cine.entrySeen[k] = 1; });
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -141,7 +150,7 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen', 'trophiesEver', 'insigniasEver', 'stats', 'armor'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen', 'trophiesEver', 'insigniasEver', 'stats', 'armor', 'cine'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
     var ar = d.armor; ['owned', 'seen', 'stats', 'ped'].forEach(function (k) { if (!ar[k] || typeof ar[k] !== 'object') ar[k] = freshArmor()[k]; });
     if (!Array.isArray(ar.equipped) || ar.equipped.length !== 4) ar.equipped = [null, null, null, null];
     if (typeof ar.stats.blocked !== 'number') ar.stats.blocked = 0; if (typeof ar.stats.crafts !== 'number') ar.stats.crafts = 0;
@@ -153,6 +162,9 @@
     if (!d.peligro.melaria) d.peligro.melaria = 1;
     if (!d.peligro.cenizar) d.peligro.cenizar = 1;
     d.endingSeen = !!d.endingSeen;
+    var ci = d.cine, fc = freshCine(); for (var ck in fc) if (ci[ck] == null) ci[ck] = fc[ck];
+    ci.introSeen = !!ci.introSeen; ci.epilogueSeen = !!ci.epilogueSeen; ci.creditsSeen = !!ci.creditsSeen; if (!ci.entrySeen || typeof ci.entrySeen !== 'object') ci.entrySeen = {};
+    if (d.settings && typeof d.settings === 'object' && (!d.settings.cine || typeof d.settings.cine !== 'object')) d.settings.cine = { calm: null, textSpeed: 1, soundCaps: true };
     if (typeof d.pending.dish === 'undefined') d.pending.dish = null;
     if (typeof d.shop.dish !== 'number') d.shop.dish = 0;
     if (typeof d.lossStreak !== 'number') d.lossStreak = 0;

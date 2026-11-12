@@ -428,6 +428,12 @@
       case 'ending':
         G.Ending.update(dt);
         break;
+      case 'title':
+        G.Cine.titleUpdate(dt);
+        break;
+      case 'cine':
+        G.Cine.update(dt);   // v9: cinemática a pantalla completa (solo dibujo y audio; no avanza G.time ni la simulación)
+        break;
       case 'gameover':
         G.fx.update(dt);
         G.Base.updateEnd();
@@ -460,6 +466,8 @@
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
     if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
+    if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }
+    if (G.state === 'cine') { G.Cine.draw(ctx); return; }
     if (G.state === 'ending') { G.Ending.draw(ctx); G.Sys.drawBar(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     var off = G.fx.offset();
@@ -550,8 +558,11 @@
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
-    if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(location.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
-    if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
+    var boot = function () {
+      if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(location.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
+      if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
+    };
+    if (!(G.Cine && G.Cine.boot(boot))) boot();   // v9: pantalla de título + intro (solo URL limpia o ?cine=1; ?cine=0 y los bots la saltan)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();

@@ -3,6 +3,20 @@
 Estado: PLAN, sin código. Autor: director de cinemáticas y animación. Parte de `README.md`, `DESIGN-v7-jefe-final.md` (lore de Cenizar), `DESIGN-v4-jefes.md` (intro de 3,5 s, tabla 2.2), `DESIGN-v5-biomas.md`, `DESIGN-v3-aldea.md`, `src/ending.js`, `src/boss.js` (+ `boss_*.js`), `src/main.js`, `src/save.js`, `ASSETS_API.md`.
 Todas las cifras de tiempo son punto de partida para ajustar con el dueño y con QA. Marcado **[PROPUESTA DE LORE]** = lo inventa este documento y necesita aprobación del dueño.
 
+## Decisiones aprobadas (dueño)
+
+1. Tono: cuento junto al fuego, pero OSCURO.
+2. Intro de ~25 s (guion acortado a 6 viñetas, texto en español). NO se puede saltar la primera vez; sí en repeticiones. Las cuentas con progreso la reciben marcada como vista.
+3. Solo texto con bips, sin voz.
+4. Créditos finales (fase posterior): estudio "Xitakha Studio" y luego los agentes con nombres cómicos.
+5. Lore "brasa mansa" de Marlo: aprobado.
+6. Epílogo con Carapa y Rufo (y lo que recomiende el plan); el final va ANTES del botín.
+7. La aldea cambia poco a poco con cada jefe (fase posterior).
+8. Entradas de jefe NO saltables la primera vez (fase posterior).
+9. Pantalla de título "TOCA PARA JUGAR" que desbloquea el audio.
+
+Implementación fase 1: `src/cine.js` (motor), `src/cine_intro.js` (título, guion de la intro, flujo), guardado v12, ajustes en AJUSTES > CINEMÁTICAS, `tests.js cine`. Desvíos: la intro se marca vista solo al terminar (no a los 3 s: si cierras a mitad, vuelve a salir); la intro dura ~27 s para clavar el golpe final de la música (25 s); `settings.cine.calm` sustituye a `flash`.
+
 ---
 
 ## 0. Resumen en una pantalla

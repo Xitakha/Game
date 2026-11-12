@@ -49,6 +49,7 @@
     if (cur === 'archive' && st.edit) { updEdit(); return false; }   // renombrar un loadout: Esc/Enter terminan la edición, no cierran el panel
     if (cur === 'menu') { if (esc) return true; }
     else if (cur === 'settings') { if (esc || cl) { cur = 'menu'; return false; } }
+    else if (cur === 'cine') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
     else if (esc || cl) return true;
     if (cur === 'vesper') return updVesper();
@@ -59,6 +60,7 @@
     if (cur === 'logros') return updLogros();
     if (cur === 'menu') return updMenu();
     if (cur === 'settings') return updSettings();
+    if (cur === 'cine') return updCine();
     return true;
   };
   P.draw = function (c) {
@@ -72,6 +74,7 @@
     else if (cur === 'logros') drawLogros(c);
     else if (cur === 'menu') drawMenu(c);
     else if (cur === 'settings') drawSettings(c);
+    else if (cur === 'cine') drawCine(c);
   };
 
   // ============================================================= VESPER
@@ -802,6 +805,25 @@
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
     U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
   }
+  // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
+  var CB = { calm: { x: 290, y: 150, w: 380, h: 56 }, intro: { x: 290, y: 230, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
+  function updCine() {
+    if (onR(CB.calm)) { G.Cine.setCalm(!G.Cine.cfg().calm); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(CB.intro) && !G.Cine.off) {
+      G.Panels.closeAll(); G.Aldea.setPanel(null);
+      G.Cine.playIntro({ replay: true, onEnd: function () { G.Aldea.open(false); } });
+      return true;
+    }
+    if (onR(CB.back)) cur = 'settings';
+    return false;
+  }
+  function drawCine(c) {
+    bg(c, 'CINEMÁTICAS'); var cf = G.Cine.cfg();
+    U.button(c, CB.calm, 'Reducir destellos: ' + (cf.calm ? 'SÍ' : 'NO'), { size: 16, color: cf.calm ? '#2a6aa8' : '#2c2438', sub: 'Destellos suaves y menos frecuentes' });
+    U.button(c, CB.intro, 'Ver la intro', { size: 18, off: G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagada con ?cine=0' : 'se puede saltar' });
+    G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 330, 12, '#9a8fb0', 'center');
+    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+  }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
   function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
   var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
@@ -810,7 +832,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    back: { x: 330, y: 488, w: 300, h: 48 }
+    back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -829,6 +851,7 @@
     if (onR(SB.imp)) G.PWA.importSave();
     if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(SB.cine)) { cur = 'cine'; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
   }
@@ -853,6 +876,7 @@
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
+    U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 536, 9, G.Save.ok ? '#6f6480' : '#ff8a8a', 'center');
   }
 })();
