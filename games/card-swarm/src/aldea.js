@@ -36,7 +36,12 @@
 
   // Lista de interactuables (pies). El portal es un objeto sin NPC.
   var STATUE = { x: 790, y: 505 };   // P7: pies de la estatua del Hogar (el brasero de la P6.5 ocupaba el mismo sitio)
-  function statueOn() { var k = G.Save.data.bossKills; return !!(k && k.cenizar > 0); }
+  function statueOn() { var S = G.Save.data, k = S.bossKills; return !!((k && k.cenizar > 0) || S.endingSeen); }   // v9 F3: aldea.js también lee endingSeen
+  // v9 F3: NIVEL DE ALDEA 0..6 = nº de jefes vencidos (derivado de bossKills: no se guarda nada, las cuentas existentes lo reciben sin pérdida). Mejoras acumulativas.
+  A.level = function () { var S = G.Save.data, k = S.bossKills || {}, n = G.Save.BOSSES.filter(function (b) { return (k[b] || 0) > 0; }).length; return ((k.cenizar || 0) > 0 || S.endingSeen) ? 6 : n; };   // tras Cenizar queda completa
+  var LV_TXT = ['', 'Farolillos nuevos en la plaza.', 'Vallado nuevo y la leña en orden.', 'Flores junto al vallado.', 'Las chimeneas vuelven a humear.', 'Banderines sobre Rescoldo.', 'Amanece en Rescoldo. El Hogar está completo.'];
+  A.levelText = function (n) { return LV_TXT[n] || ''; };
+  var lvSeen = -1, dawnT = 0;
   function ints() {
     var out = NPC_ORDER.map(function (id) { var p = npcPos(id); return { id: id, x: p.x, y: p.y, name: npcName(id), npc: true }; });
     var sp = Lay.spots.portal; out.push({ id: 'portal', x: sp.x, y: sp.y, name: 'Portal', npc: false });
@@ -65,6 +70,13 @@
       try { var nr = G.Armor.smithOn() && G.Save.data.flags.smithMet ? G.Armor.readyCount() : 0; if (nr > 0) flash('Carapa tiene ' + nr + ' pieza' + (nr > 1 ? 's' : '') + ' lista' + (nr > 1 ? 's' : '') + '.'); } catch (eC) { /* armadura */ }
       if (nAv > 0) flash('Grum tiene ' + nAv + ' mejora' + (nAv > 1 ? 's' : '') + ' lista' + (nAv > 1 ? 's' : '') + ' para forjar.');
     } else if (!M.opened) { react = null; if (nAv > 0) flash('Grum tiene ' + nAv + ' mejora' + (nAv > 1 ? 's' : '') + ' lista' + (nAv > 1 ? 's' : '') + ' para forjar.'); }
+    var lv = A.level();
+    if (lvSeen >= 0 && lv > lvSeen && fromRun && G.won) {   // un jefe nuevo vencido: la aldea mejora (jingle creciente + aviso)
+      try { if (G.Cine) G.Cine.snd3('village', lv); } catch (eL) { /* audio */ }
+      flash('Rescoldo mejora: ' + LV_TXT[lv]);
+    }
+    lvSeen = lv;
+    if (fromRun && G.Ending && G.Ending.dawn) { G.Ending.dawn = false; dawnT = 4200; A.timeMode = 'dia'; }   // tras el final: cartel "Amanece en Rescoldo"
     M.opened = true;
     try { G.Ach.check().forEach(function (a) { flash('Logro: ' + a.name + ' (habla con Lanudo)'); }); } catch (e) { /* logros */ }
     applySettings();
@@ -390,6 +402,7 @@
     c.scale(M.dir < 0 ? -K : K, K);
     if (cv) c.drawImage(cv, -cv.width / 2, -cv.height / 2);
     else { c.fillStyle = '#e8dcc0'; c.beginPath(); c.arc(0, 0, 12, 0, 6.283); c.fill(); }
+    if (statueOn()) { try { var gh = c.createRadialGradient(-8, -6, 1, -8, -6, 16); gh.addColorStop(0, 'rgba(255,190,90,' + (0.5 + 0.2 * Math.sin(time / 260)) + ')'); gh.addColorStop(1, 'rgba(255,120,40,0)'); c.fillStyle = gh; c.fillRect(-26, -22, 36, 36); } catch (eH) { /* halo */ } }   // la brasa mansa de la bufanda, visible tras el final
     try {   // v8.1: Marlo vestido con el casco y el peto equipados (assets_armor2.js)
       if (window.Assets && Assets.drawMarloArmor && G.Armor && !G.Armor.OFF) {
         var eqd = G.Save.data.armor.equipped, mp = [eqd[0], eqd[1]].map(function (id) { var p = id && G.ArmorData.piece(id); return p && p.set !== 'mini' ? SET_ART[p.set] : null; });
@@ -458,6 +471,38 @@
     if (done) { c.fillStyle = '#ffd24a'; c.beginPath(); c.arc(x + 46, y - 20, 9 + Math.sin(now / 200), 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#6a6078'; c.fillRect(x + 38, y - 10, 16, 12); c.strokeRect(x + 38, y - 10, 16, 12); }
     c.restore();
   }
+  // v9 F3: mejoras acumulativas de la aldea. Si existe arte (Assets.cine3.villageUpgrades de assets_cine3.js) se usa; si no, esta capa sencilla sobre el decorado.
+  function lamp(c, x, y, now, k) { c.fillStyle = '#1b1124'; c.fillRect(x - 1, y - 10, 2, 10); c.fillStyle = '#ffb347'; c.globalAlpha = 0.85 + 0.15 * Math.sin(now / 300 + k); c.beginPath(); c.arc(x, y + 3, 5, 0, 6.283); c.fill(); c.globalAlpha = 1; }
+  function drawUpgrades(c, now, lv) {
+    if (lv <= 0) return;
+    try { var U3 = window.Assets && Assets.cine3 && typeof Assets.cine3 === 'object' && Assets.cine3.villageUpgrades; if (U3 && U3(c, now, { level: lv, time: A.timeMode })) return; } catch (e) { /* reserva */ }
+    var i, x;
+    c.save(); c.lineWidth = 2; c.strokeStyle = '#1b1124';
+    if (lv >= 1) {   // farolillos colgantes entre la fragua y la plaza
+      c.beginPath(); c.moveTo(30, 238); c.quadraticCurveTo(170, 268, 300, 232); c.quadraticCurveTo(360, 252, 440, 244); c.stroke();
+      for (i = 0; i < 9; i++) { x = 50 + i * 44; lamp(c, x, 244 + Math.sin(i * 0.7) * 10 + (i > 5 ? 4 : 0), now, i); }
+    }
+    if (lv >= 2) {   // vallado nuevo (remates dorados) y pila de leña
+      for (i = 0; i < 17; i++) { c.fillStyle = '#d8a050'; c.fillRect(34 + i * 56 - 4, 480 + 4, 8, 4); }
+      c.fillStyle = '#7a4a28'; for (i = 0; i < 4; i++) { c.fillRect(8, 470 + i * 7, 34, 6); c.strokeRect(8, 470 + i * 7, 34, 6); }
+    }
+    if (lv >= 3) {   // flores junto al vallado
+      var cols = ['#ff7a9a', '#ffd24a', '#c090ff', '#7fe0d0'];
+      for (i = 0; i < 24; i++) { c.fillStyle = cols[i % 4]; c.fillRect(20 + i * 39 + (i % 3) * 5, 498 + (i % 2) * 4, 5, 5); c.fillStyle = '#3a7a3a'; c.fillRect(22 + i * 39 + (i % 3) * 5, 503 + (i % 2) * 4, 2, 5); }
+    }
+    if (lv >= 4) {   // humo de las chimeneas
+      [[100, 196], [715, 120]].forEach(function (h, q) { for (i = 0; i < 6; i++) { var u = ((now / 3200) + i / 6 + q * 0.3) % 1; c.fillStyle = 'rgba(200,190,210,' + (0.35 * (1 - u)) + ')'; c.beginPath(); c.arc(h[0] + Math.sin(u * 5 + i) * 10 + u * 14, h[1] - u * 90, 6 + u * 12, 0, 6.283); c.fill(); } });
+    }
+    if (lv >= 5) {   // banderines rojo-ámbar entre los árboles
+      c.beginPath(); c.moveTo(330, 150); c.quadraticCurveTo(480, 190, 640, 150); c.stroke();
+      for (i = 0; i < 12; i++) { x = 336 + i * 25; var yy = 150 + Math.sin(i / 11 * 3.14) * 22 + Math.sin(now / 400 + i) * 1.5; c.fillStyle = i % 2 ? '#c4301c' : '#ff9a3c'; c.beginPath(); c.moveTo(x - 7, yy); c.lineTo(x + 7, yy); c.lineTo(x, yy + 16); c.closePath(); c.fill(); }
+    }
+    if (lv >= 6) {   // amanecer: luz cálida desde la esquina y estandarte del Hogar
+      c.globalCompositeOperation = 'lighter'; var g = c.createRadialGradient(0, 0, 40, 0, 0, 620); g.addColorStop(0, 'rgba(255,170,80,0.28)'); g.addColorStop(1, 'rgba(255,120,40,0)'); c.fillStyle = g; c.fillRect(0, 0, 960, 540); c.globalCompositeOperation = 'source-over';
+      c.fillStyle = '#6a4a30'; c.fillRect(926, 120, 5, 150); c.fillStyle = '#c4301c'; c.beginPath(); c.moveTo(931, 124); c.lineTo(931, 190); c.lineTo(900 + Math.sin(now / 500) * 3, 178); c.lineTo(906, 156); c.lineTo(900, 134); c.closePath(); c.fill(); c.stroke();
+    }
+    c.restore();
+  }
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;
@@ -469,7 +514,7 @@
       catch (e) { haveArt = false; }
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
-    drawBrasero(c, now); drawCarapaFallback(c, now);
+    drawBrasero(c, now); drawCarapaFallback(c, now); drawUpgrades(c, now, A.level());
     drawMarks(c, now, tg);
     drawEmotes(c, now); drawBark(c);
     if (mode !== 'panel') drawTopHud(c);
@@ -477,6 +522,7 @@
     D.draw(c);
     if (mode === 'panel') G.Panels.draw(c);
     if (toastT > 0 && toast && mode !== 'panel') { c.save(); c.globalAlpha = Math.min(1, toastT / 400); G.txt(c, toast, G.W / 2, 74, 14, '#ffe9a0', 'center'); c.restore(); }
+    if (dawnT > 0) { dawnT -= 16; var da = Math.min(1, dawnT / 600, (4200 - dawnT) / 600); c.save(); c.globalAlpha = Math.max(0, da); G.txt(c, 'AMANECE EN RESCOLDO', G.W / 2, 120, 34, '#fff0c8', 'center', '#2a0a04'); c.restore(); }
     if (fade) { var u = fade.t / fade.dur, a = u < 0.5 ? u * 2 : (1 - u) * 2; c.fillStyle = 'rgba(7,5,12,' + Math.min(1, a) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };
 
