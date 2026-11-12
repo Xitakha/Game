@@ -258,7 +258,7 @@
   var OFF = { w: 220, h: 252, gap: 22, y: 52 };
   C.offerRect = function (i) { var x0 = (G.W - (3 * OFF.w + 2 * OFF.gap)) / 2; return { x: x0 + i * (OFF.w + OFF.gap), y: OFF.y, w: OFF.w, h: OFF.h }; };
   C.slotRect = function (i, big) {
-    if (big === 'end') return { x: 20 + i * 94, y: 118, w: 86, h: 114 };
+    if (big === 'end') return { x: 20 + i * 94, y: 112, w: 86, h: 114 };
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
     return { x: 8 + i * 77, y: 430, w: 72, h: 96 };   // FUSION: la mano va a la IZQUIERDA (los 4 botones de poderes ocupan la zona del pulgar derecho)
   };
@@ -453,6 +453,7 @@
   };
 
   function wrap(c, text, maxW, size) {
+    size = G.fs(size);
     c.font = 'bold ' + size + 'px "Courier New", monospace';
     var words = text.split(' '), lines = [], line = '';
     for (var i = 0; i < words.length; i++) {

@@ -141,7 +141,7 @@
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
     drawBanner(c);
     G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
-    if (G.state === 'paused') { drawPause(c); if (H.eqOpen) G.Smith.draw(c); }
+    if (G.state === 'paused') { G.minFont = G.MIN_UI; drawPause(c); if (H.eqOpen) G.Smith.draw(c); }
     if (p.hurtT > 300) { c.fillStyle = 'rgba(255,0,0,' + (0.18 * (p.hurtT - 300) / 300) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };
 
@@ -172,7 +172,7 @@
   };
   function drawPause(c) {
     var U = G.UI, now = performance.now();
-    c.fillStyle = 'rgba(8,4,14,0.8)'; c.fillRect(0, 0, G.W, G.H);
+    c.fillStyle = 'rgba(8,4,14,0.9)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, 'PAUSA', G.W / 2, 82, 44, '#ffd27a', 'center');
     U.button(c, PB.go, 'CONTINUAR', { size: 24, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     U.button(c, PB.qual, 'GRÁFICOS: ' + G.Sys.qualityLabel(), { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });

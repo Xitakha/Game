@@ -5,7 +5,7 @@
   'use strict';
   var G = window.G, Bs = G.Base = {};
   var U = G.UI, inp = G.input;
-  var END_RETRY = { x: 20, y: 448, w: 440, h: 70 }, END_BASE = { x: 480, y: 448, w: 460, h: 70 };
+  var END_RETRY = { x: 20, y: 456, w: 440, h: 68 }, END_BASE = { x: 480, y: 456, w: 460, h: 68 };
 
   Bs.launch = function () { G.sfx('card_select', { vol: 0.7 }); G.startGame(); };
   // Reintentar la misma salida: normal, cacería (misma bestia y Peligro) o práctica (misma mano; la fase de inicio puede cambiarse con 1-3)
@@ -25,72 +25,121 @@
     if (inp.hit('KeyB', 'Escape') || (inp.hit('Mouse0') && U.inR(END_BASE, m))) { Bs.open(true); }
   };
 
+  // Pantalla de fin (v: textos). Rejilla vertical: título 30, subtítulo 62, columnas de y = 84 a 444, botones de y = 456. Texto >= 12 px lógicos con interlineado >= 1,3, fondo opaco
+  // (no se transparenta la arena) y filas que se reparten solas: si una fila "izquierda + derecha" no cabe en el ancho del panel, la derecha baja a una línea propia.
+  var PN_X = 500, PN_Y = 84, PN_W = 440, PN_H = 360, IN_X = 516, IN_W = 408;
+  function infoRows(c, y, rows, size) {   // rows: [[izq, colIzq, der, colDer], ...]; devuelve la y siguiente
+    size = size || 13; var lh = Math.round(size * 1.5);
+    rows.forEach(function (r) {
+      if (!r || (!r[0] && !r[2])) return;
+      c.font = 'bold ' + size + 'px "Courier New", monospace';
+      var wl = r[0] ? c.measureText(r[0]).width : 0, wr = r[2] ? c.measureText(r[2]).width : 0;
+      if (r[0] && r[2] && wl + wr + 16 > IN_W) { G.txt(c, r[0], IN_X, y, size, r[1], 'left'); y += lh; G.txt(c, r[2], IN_X, y, size, r[3], 'left'); y += lh; return; }
+      if (r[0]) G.txt(c, r[0], IN_X, y, size, r[1], 'left');
+      if (r[2]) G.txt(c, r[2], IN_X + IN_W, y, size, r[3], 'right');
+      y += lh;
+    });
+    return y;
+  }
+  function wrapLines(c, y, text, maxLines, size, col, x, maxW) {
+    var ls = U.wrap(c, text, maxW, size), lh = Math.round(size * 1.45);
+    if (ls.length > maxLines) { ls = ls.slice(0, maxLines); var l = ls[maxLines - 1]; ls[maxLines - 1] = l.replace(/\s*\S{0,3}$/, '') + '...'; }
+    ls.forEach(function (ln) { G.txt(c, ln, x, y, size, col, 'left'); y += lh; });
+    return y;
+  }
+  function endTitle(c, md, prac, won) {
+    return prac ? (won ? 'PRÁCTICA SUPERADA' : 'PRÁCTICA: HAS CAÍDO') : md === 'hunt' ? (G.final ? (won ? 'EL CRÁTER SE APAGA' : 'EL INCENDIO TE CONSUME') : won ? 'CACERÍA CUMPLIDA' : 'LA BESTIA SE LIBRA') : won ? 'MANO GANADORA' : 'HAS CAÍDO';
+  }
   Bs.drawEnd = function (c) {
     var won = G.won, p = G.player, h = p.hand, i, S = G.Save.data, sm = G.Loot.summary || { parts: {}, total: 0, brasas: 0, newCards: [] };
-    c.fillStyle = won ? 'rgba(20,14,0,0.92)' : 'rgba(20,0,6,0.92)'; c.fillRect(0, 0, G.W, G.H);
+    c.fillStyle = won ? 'rgb(22,16,4)' : 'rgb(22,4,10)'; c.fillRect(0, 0, G.W, G.H);
+    var gr = c.createRadialGradient(480, 200, 40, 480, 200, 560); gr.addColorStop(0, won ? 'rgba(90,60,10,0.35)' : 'rgba(90,10,30,0.3)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, G.W, G.H);
     var md = G.mode, prac = md === 'practice';
-    G.txt(c, prac ? (won ? 'PRÁCTICA SUPERADA' : 'PRÁCTICA: HAS CAÍDO') : md === 'hunt' ? (G.final ? (won ? 'EL CRÁTER SE APAGA' : 'EL INCENDIO TE CONSUME') : won ? 'CACERÍA CUMPLIDA' : 'LA BESTIA SE LIBRA') : won ? 'MANO GANADORA' : 'HAS CAÍDO', G.W / 2, 34, md === 'run' ? 44 : 38, won ? '#ffd24a' : '#ff5a5a', 'center');
-    G.txt(c, md === 'run' ? 'Tiempo ' + G.fmtTime(G.runT) + '   -   Kills ' + G.kills + '   -   Nivel ' + p.level : (prac ? 'Práctica (jefe a media vida, sin Peligro, sin recompensas)' : (G.final ? 'Asalto al Cráter  -  Peligro ' : 'Cacería de Vesper  -  Peligro ') + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)] + (G.final ? '  -  Cenizar a vida completa' : '  -  jefe a 75 % de vida')), G.W / 2, 72, 16, '#fff', 'center');
-    G.txt(c, 'TU MANO FINAL', 20, 246, 13, '#9a8fb0', 'left');
+    G.txt(c, endTitle(c, md, prac, won), G.W / 2, 30, 38, won ? '#ffd24a' : '#ff6a6a', 'center');
+    G.txt(c, md === 'run' ? 'Tiempo ' + G.fmtTime(G.runT) + '   -   Kills ' + G.kills + '   -   Nivel ' + p.level : (prac ? 'Práctica (jefe a media vida, sin Peligro, sin recompensas)' : (G.final ? 'Asalto al Cráter  -  Peligro ' : 'Cacería de Vesper  -  Peligro ') + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)] + (G.final ? '  -  Cenizar a vida completa' : '  -  jefe a 75 % de vida')), G.W / 2, 66, 16, '#fff', 'center');
+    // ---- columna izquierda: mano, poderes y resumen del jefe
+    G.txt(c, 'TU MANO FINAL', 20, 100, 13, '#b4a8c8', 'left');
     for (i = 0; i < h.length; i++) {
       var r = G.Cards.slotRect(i, 'end');
       if (h[i]) G.Cards.drawCard(c, { id: h[i].id, lvl: h[i].lvl }, r.x, r.y, r.w, r.h, { nocd: true });
       else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
     }
     G.Cards.drawComboLines(c, 'end');
-    // resumen del jefe (v4): una línea bajo el título; los trofeos y el desglose de Brasas van en el panel del botín
+    var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; }), ly = 262;
+    if (names.length) {
+      G.txt(c, 'FUSIONES', 20, ly, 13, '#b4a8c8', 'left'); ly += 24;
+      names.slice(0, 4).forEach(function (cb) {
+        c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(28, ly, 5, 0, 6.283); c.fill();
+        c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(39, ly, 5, 0, 6.283); c.fill();
+        G.txt(c, cb.name, 52, ly, 13, '#ffe9a0', 'left'); ly += 22;
+      });
+    } else {
+      var acts = (p.actives || []).filter(Boolean);
+      G.txt(c, acts.length ? 'PODERES' : G.Fusion.endText(), 20, ly, acts.length ? 13 : 12, acts.length ? '#b4a8c8' : '#ffe9a0', 'left'); ly += 24;
+      acts.slice(0, 4).forEach(function (a) {
+        var d = G.Fusion.recipe(a.id);
+        try { G.FusionArt.icon(c, a.id, 32, ly, 10); } catch (e0) { /* sin icono */ }
+        G.txt(c, (d ? d.short : a.id) + ' Nv' + a.lvl, 50, ly, 13, '#ffe9a0', 'left');
+        G.txt(c, a.uses + (a.uses === 1 ? ' uso' : ' usos'), 330, ly, 12, '#b4a8c8', 'right');
+        ly += 22;
+      });
+    }
+    // resumen del jefe (v4): bajo los poderes, hasta 4 líneas envueltas
     var bi = sm.boss;
     if (bi) {
       var BDP = (G.Boss.DEFS[bi.id] || {}).parts || {}, PN = { cuernos: 'Cuernos', cayado: 'Cayado', vellon: 'Vellón' }, mm = Math.floor(bi.time / 60000), ss = Math.floor(bi.time / 1000) % 60;
-      var bl = bi.name.toUpperCase() + (bi.won ? '  -  derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss : '  -  te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida')
-        + '  -  partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k] || (BDP[k] && BDP[k].name) || k; }).join(', ') : 'ninguna');
-      if (bi.peligro > 1 && !prac) bl += '  -  PELIGRO ' + G.Boss.ROMAN[bi.peligro];
-      G.txt(c, bl.length > 118 ? bl.slice(0, 117) + '.' : bl, G.W / 2, 92, 13, bi.won ? '#ffd24a' : '#ff9a8a', 'center');
+      var bl = bi.name.toUpperCase() + (bi.won ? ' - derrotado en ' + mm + ':' + (ss < 10 ? '0' : '') + ss : ' - te venció con ' + Math.round(bi.hpFrac * 100) + ' % de vida')
+        + '. Partes rotas: ' + (bi.parts.length ? bi.parts.map(function (k) { return PN[k] || (BDP[k] && BDP[k].name) || k; }).join(', ') : 'ninguna');
+      if (bi.peligro > 1 && !prac) bl += '. PELIGRO ' + G.Boss.ROMAN[bi.peligro];
+      c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(14, 378, 462, 66);
+      wrapLines(c, 394, bl, 3, 13, bi.won ? '#ffd24a' : '#ff9a8a', 22, 450);
     }
-    var names = G.Cards.combos.filter(function (cb) { return G.Cards.active[cb.k]; });
-    if (names.length) {
-      G.txt(c, 'FUSIONES', 20, 276, 13, '#9a8fb0', 'left');
-      names.slice(0, 7).forEach(function (cb, k) {
-        var y = 298 + k * 22;
-        c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(28, y, 5, 0, 6.283); c.fill();
-        c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(39, y, 5, 0, 6.283); c.fill();
-        G.txt(c, cb.name, 52, y, 13, '#ffe9a0', 'left');
-      });
-    } else G.txt(c, G.Fusion.endText(), 20, 276, 12, '#ffe9a0', 'left');   // FUSION
     if (prac) { drawPracticePanel(c, sm); drawEndButtons(c, S); return; }
-    // botín
-    U.panel(c, 500, 96, 440, 336, { border: '#8a6a30' });
-    G.txt(c, 'BOTÍN  (+' + sm.total + ' partes)', 516, 114, 18, '#ffd27a', 'left');
-    var L = G.Loot, shown = 0;
+    // ---- panel del botín
+    U.panel(c, PN_X, PN_Y, PN_W, PN_H, { border: '#8a6a30' });
+    G.txt(c, 'BOTÍN  (+' + sm.total + ' partes)', IN_X, 108, 18, '#ffd27a', 'left');
+    var L = G.Loot, shown = 0, GY = 140, GP = 32;
     L.PARTS.forEach(function (P) {
       var n = sm.parts[P.id] || 0; if (!n) return;
-      var col = shown % 3, row = Math.floor(shown / 3), x = 516 + col * 140, y = 146 + row * 34;
+      var col = shown % 3, row = Math.floor(shown / 3), x = IN_X + col * 136, y = GY + row * GP;
       U.part(c, P.id, x + 12, y, 12);
       G.txt(c, '+' + n, x + 30, y, 17, P.rare ? '#e0a8ff' : '#fff', 'left');
-      G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + 70, y + 1, 11, '#9a8fb0', 'left');
+      G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + 66, y + 1, 12, '#b4a8c8', 'left');
       shown++;
     });
     if (bi && bi.trophies.length) bi.trophies.forEach(function (tk) {   // trofeos de jefe: cuentan como Esencia
       var T = G.Boss.TROPHY[tk]; if (!T) return;
-      var col2 = shown % 3, row2 = Math.floor(shown / 3), x2 = 516 + col2 * 140, y2 = 146 + row2 * 34;
+      var col2 = shown % 3, row2 = Math.floor(shown / 3), x2 = IN_X + col2 * 136, y2 = GY + row2 * GP;
       c.drawImage(Assets.sprite(T.spr, 0), x2, y2 - 14, 28, 28); G.txt(c, '+1 ' + T.name.split(' ')[0], x2 + 32, y2, 13, '#ffd27a', 'left');
       shown++;
     });
-    if (!shown) G.txt(c, 'Sin partes esta vez', 516, 150, 14, '#9a8fb0', 'left');
-    U.part(c, 'brasa', 528, 262, 11);
-    G.txt(c, '+' + sm.brasas + ' Brasas   (total ' + S.brasas + ')', 548, 262, 16, '#ff9a3c', 'left');
-    if (bi) G.txt(c, 'jefe +' + bi.brasas + (bi.peligro > 1 ? ' (P' + G.Boss.ROMAN[bi.peligro] + ')' : '') + (bi.mode === 'hunt' ? '' : ' / run +' + (sm.brasas - bi.brasas)), 778, 262, 10, '#c8a070', 'left');
-    if (sm.rare) G.txt(c, '¡Esencia rara conseguida!', 516, 286, 13, '#e0a8ff', 'left');
-    else G.txt(c, 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', 516, 286, 12, '#9a8fb0', 'left');
-    if (sm.quest) U.wrap(c, 'Encargo: ' + sm.quest, 410, 11).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 516, 302 + k * 13, 11, '#ffe9a0', 'left'); });
-    if (sm.pfGained) G.txt(c, '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja', 730, 286, 12, '#ffd24a', 'left');
-    G.txt(c, sm.newCards.length ? 'NUEVAS CARTAS YA FORJABLES (Clásica)' : 'PF libres ' + G.Tree.pfFree() + '  -  nodos comprables ' + G.Tree.availableCount(), 516, 336, 13, sm.newCards.length ? '#9dffb4' : '#9a8fb0', 'left');
-    sm.newCards.slice(0, 6).forEach(function (id, k) {
-      G.Cards.drawCard(c, { id: id, lvl: 0 }, 516 + k * 68, 348, 56, 74, { nocd: true, glow: '#9dffb4' });
-    });
-    if (bi && bi.unlocked) G.txt(c, '¡PELIGRO ' + G.Boss.ROMAN[bi.unlocked] + ' DESBLOQUEADO!', 730, 310, 13, '#9dffb4', 'left');
-    if (sm.blocked > 0) G.txt(c, 'Daño evitado por armadura: ' + sm.blocked + ' (' + Math.round(100 * sm.blocked / Math.max(1, sm.rawDmg)) + ' %)', 516, 410, 12, '#6ac8d8', 'left');
-    if (sm.dur) G.txt(c, 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : ''), 720, 426, 10, '#9a8fb0', 'center');
+    if (!shown) G.txt(c, 'Sin partes esta vez', IN_X, GY, 14, '#b4a8c8', 'left');
+    var y = GY + Math.max(1, Math.ceil(shown / 3)) * GP + 6;
+    c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(IN_X, y - 12, IN_W, 1);
+    U.part(c, 'brasa', IN_X + 10, y + 8, 10);
+    G.txt(c, '+' + sm.brasas + ' Brasas', IN_X + 28, y + 8, 17, '#ff9a3c', 'left');
+    G.txt(c, 'total ' + S.brasas, IN_X + IN_W, y + 8, 13, '#ffc890', 'right');
+    y += 32;
+    var rows = [];
+    if (bi) rows.push(['Jefe +' + bi.brasas + (bi.peligro > 1 ? ' (P' + G.Boss.ROMAN[bi.peligro] + ')' : '') + (bi.mode === 'hunt' ? '' : '   Expedición +' + (sm.brasas - bi.brasas)), '#e0b888']);
+    rows = rows.map(function (r) { return [r[0], r[1]]; });
+    if (sm.rare) rows.push(['¡Esencia rara conseguida!', '#e0a8ff', sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '', '#ffd24a']);
+    else rows.push(['Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', '#b4a8c8', sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '', '#ffd24a']);
+    if (bi && bi.unlocked) rows.push(['¡PELIGRO ' + G.Boss.ROMAN[bi.unlocked] + ' DESBLOQUEADO!', '#9dffb4']);
+    if (sm.blocked > 0) rows.push(['Daño evitado por armadura: ' + sm.blocked + ' (' + Math.round(100 * sm.blocked / Math.max(1, sm.rawDmg)) + ' %)', '#7fd8e8']);
+    y = infoRows(c, y, rows, 13);
+    if (sm.quest) { y += 2; y = wrapLines(c, y, 'Encargo: ' + sm.quest, 2, 13, '#ffe9a0', IN_X, IN_W); }
+    // nuevas cartas forjables / recordatorio de PF, y duración, pegados al fondo del panel
+    var by = PN_Y + PN_H - 12;
+    if (sm.dur) {
+      var dtx = 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : '');
+      var dl = U.wrap(c, dtx, IN_W, 12); by -= (dl.length - 1) * 17; dl.forEach(function (ln, k) { G.txt(c, ln, IN_X, by + k * 17, 12, '#b4a8c8', 'left'); });
+      by -= 22;
+    }
+    if (sm.newCards.length) {
+      by -= 66; G.txt(c, 'NUEVAS CARTAS YA FORJABLES', IN_X, by - 14, 13, '#9dffb4', 'left');
+      sm.newCards.slice(0, 8).forEach(function (id, k) { G.Cards.drawCard(c, { id: id, lvl: 0 }, IN_X + k * 52, by, 46, 60, { nocd: true, glow: '#9dffb4' }); });
+    } else G.txt(c, 'PF libres ' + G.Tree.pfFree() + '   -   nodos comprables ' + G.Tree.availableCount(), IN_X, by, 13, '#b4a8c8', 'left');
     drawEndButtons(c, S);
   };
   function drawEndButtons(c, S) {

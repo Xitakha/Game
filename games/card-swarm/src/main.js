@@ -166,7 +166,28 @@
     c.lineWidth = Math.max(2, size / 5); c.strokeStyle = stroke || '#0a0610'; c.lineJoin = 'round';
     c.strokeText(s, x, y); c.fillStyle = color || '#fff'; c.fillText(s, x, y);
   }
+  // Legibilidad (v: textos): en menús / aldea / fin de expedición / pausa (G.minFont > 0) ningún texto baja de G.minFont px lógicos (12 = ~9 px reales en un móvil de 844x390)
+  // y los grises demasiado oscuros se aclaran hasta contraste >= 4,5:1 sobre el fondo oscuro de los paneles. En combate G.minFont = 0 (etiquetas del jefe y de enemigos intactas).
+  G.minFont = 0; G.MIN_UI = 12;
+  G.fs = function (size) { return size < G.minFont ? G.minFont : size; };
+  var LIFT = {};
+  function lumOf(r, g, b) { function f(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); } return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); }
+  G.liftColor = function (col) {   // #rgb / #rrggbb: si es gris-medio oscuro (luminancia 0,03-0,216) lo mezcla con blanco hasta la luminancia 0,216 (contraste 4,5 con #1a1226). Los casi negros (texto oscuro sobre insignias claras) no se tocan
+    if (!col || col.charAt(0) !== '#') return col;
+    var r = LIFT[col]; if (r) return r;
+    var h = col.length === 4 ? col.charAt(1) + col.charAt(1) + col.charAt(2) + col.charAt(2) + col.charAt(3) + col.charAt(3) : col.slice(1), R = parseInt(h.substr(0, 2), 16), Gc = parseInt(h.substr(2, 2), 16), Bc = parseInt(h.substr(4, 2), 16);
+    if (isNaN(R + Gc + Bc)) return (LIFT[col] = col);
+    var L = lumOf(R, Gc, Bc), out = col;
+    if (L >= 0.03 && L < 0.216) {
+      var lo = 0, hi = 1, t, k;
+      for (k = 0; k < 14; k++) { t = (lo + hi) / 2; if (lumOf(R + (255 - R) * t, Gc + (255 - Gc) * t, Bc + (255 - Bc) * t) < 0.216) lo = t; else hi = t; }
+      var mx = function (v) { return Math.round(v + (255 - v) * hi); };
+      out = 'rgb(' + mx(R) + ',' + mx(Gc) + ',' + mx(Bc) + ')';
+    }
+    return (LIFT[col] = out);
+  };
   G.txt = function (c, s, x, y, size, color, align, stroke) {
+    if (G.minFont) { if (size < G.minFont) size = G.minFont; color = G.liftColor(color); }
     var m = TXON && c.getTransform ? c.getTransform() : null, rs;
     if (m && m.b === 0 && m.c === 0 && m.a === m.d && m.a > 0 && s.length < 60) {
       rs = m.a;
@@ -188,6 +209,14 @@
       TXC[key] = {};
     }
     TXS.raw++; txtRaw(c, s, x, y, size, color, align, stroke);
+  };
+  // Texto con placa oscura detrás (etiquetas sobre dibujos: nodos del árbol, fusiones...). Misma firma que G.txt; el último parámetro es la opacidad de la placa (0,72).
+  G.txtBg = function (c, s, x, y, size, color, align, alpha) {
+    var sz = G.minFont && size < G.minFont ? G.minFont : size;
+    c.save(); c.font = 'bold ' + sz + 'px "Courier New", monospace';
+    var w = Math.ceil(c.measureText(s).width) + 8, x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x - 4;
+    c.fillStyle = 'rgba(8,4,14,' + (alpha == null ? 0.72 : alpha) + ')'; c.fillRect(Math.round(x0), Math.round(y - sz * 0.62), w, Math.round(sz * 1.24)); c.restore();
+    G.txt(c, s, x, y, size, color, align);
   };
   G.fmtTime = function (ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60); s %= 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; };
 
@@ -464,6 +493,7 @@
 
   function draw() {
     var rs = G.rs || 1;
+    G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' || G.state === 'ending') ? G.MIN_UI : 0;
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
     if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }

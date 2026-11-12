@@ -84,14 +84,15 @@
     c.fillStyle = 'rgba(255,255,255,0.14)'; c.fillRect(r.x, r.y, r.w, Math.max(3, r.h / 4));
     c.strokeStyle = o.off ? '#5a4a64' : (o.border || '#ffd27a'); c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3);
     if (o.sub) {
-      G.txt(c, label, r.x + r.w / 2, r.y + r.h * 0.38, o.size || 18, o.off ? '#8a7f96' : '#fff', 'center');
-      G.txt(c, o.sub, r.x + r.w / 2, r.y + r.h * 0.74, Math.max(10, (o.size || 18) - 6), o.off ? '#7a7086' : '#ffe9a0', 'center');
+      G.txt(c, label, r.x + r.w / 2, r.y + r.h * 0.34, o.size || 18, o.off ? '#8a7f96' : '#fff', 'center');
+      G.txt(c, o.sub, r.x + r.w / 2, r.y + r.h * 0.75, Math.max(12, (o.size || 18) - 6), o.off ? '#7a7086' : '#ffe9a0', 'center');
     } else G.txt(c, label, r.x + r.w / 2, r.y + r.h / 2, o.size || 18, o.off ? '#8a7f96' : '#fff', 'center');
     c.restore();
     return hov;
   };
 
   U.wrap = function (c, text, maxW, size) {
+    size = G.fs(size);
     c.font = 'bold ' + size + 'px "Courier New", monospace';
     var words = text.split(' '), lines = [], line = '';
     for (var i = 0; i < words.length; i++) {
