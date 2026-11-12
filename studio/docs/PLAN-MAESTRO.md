@@ -15,14 +15,16 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 - En 844x390 el lienzo 16:9 ocupa 693 de 844 px de ancho (82 %): quedan dos franjas negras de ~75 px.
 - Primera vez (`?cine=1`, cuenta nueva): título, un toque, intro de ~27 s que no se puede saltar, aldea.
 - Primera expedición (cuenta nueva, `?god=0`, bot que camina en cuadrado y recoge pocas gemas): en 100 s hubo 157 bajas, nunca más de 6 enemigos vivos a la vez, la vida bajó de 100 a 93 y la primera oferta de carta por nivel llegó al segundo 55.
-- La batería de pruebas `tests.js all` **no arrancó** en el contenedor actual: ver T-F0-01. El resultado de la ejecución con la ruta corregida está en la sección 1.12.
+- La batería `tests.js all` **no arranca** tal como está en el repositorio (ruta del navegador fija: ver T-F0-01). Con una copia temporal que solo cambia esa ruta, sin tocar el repo: **541 de 541 comprobaciones correctas, 0 fallos**, unos 10 minutos.
+- `perf_bot.js` (misma copia temporal; Cráter, 110 enemigos, 4 poderes, semilla 1, 3 ejecuciones de 15 s, calidad MEDIA): 58 fps, p95 de fotograma 17 ms, CPU por fotograma 5 ms de media y 8 ms de p95, entre 6 y 10 fotogramas por encima de 33 ms. Son cifras de PC sin GPU real: sirven para comparar versiones, no para predecir el móvil.
+- Las tres ejecuciones con la **misma semilla** dieron 600, 552 y 546 bajas: el combate no es reproducible.
 
 ---
 
 ## 1. Diagnóstico por áreas
 
 ### 1.1 Diversión y bucle central
-- **Bien.** El bucle es sólido y tiene identidad: ataque básico automático, cartas como infusiones, 15 fusiones que dan poderes activos en 4 ranuras, 6 jefes con fases y partes rompibles, 5 niveles de Peligro (`src/boss.js:65-70`), cacería y práctica (`src/main.js:340-345`). Las decisiones de fusión (fusionar ya o guardar, reemplazar un poder) son decisiones de verdad. [V]
+- **Bien.** El bucle es sólido y tiene identidad: ataque básico automático, cartas como infusiones, 15 fusiones que dan poderes activos en 4 ranuras, 6 jefes con fases y partes rompibles, 5 niveles de Peligro (`src/boss.js:65-70`), cacería y práctica (`src/main.js:340-346`). Las decisiones de fusión (fusionar ya o guardar, reemplazar un poder) son decisiones de verdad. [V]
 - **Falla.** El primer minuto es plano: pocos enemigos, sin amenaza y sin decisiones (medición de arriba). En un survivors la diversión de los primeros 60-90 s decide si el jugador vuelve. [V la medición; I la consecuencia]
 - **Falla.** El jugador real juega hoy con inmortalidad por defecto (`src/main.js:20`): nadie ha sentido el reto real del juego publicado. Todo juicio sobre "es divertido" está sin validar. [V]
 - **No verificado.** Sensación de control con el joystick y los 4 botones en un teléfono real; solo hay pruebas automáticas táctiles. [N]
@@ -41,17 +43,17 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 - **Falla.** La cuenta nueva ve de golpe Brasas, PF, encargos, duración, Peligro, destino, compras y plato en el Portal. [V captura del Portal]
 
 ### 1.4 Progresión y economía
-- **Bien.** La tabla de balance de la meta está centralizada (`src/loot.js`, sección BALANCE) y documentada con sus motivos; hay "pity" de Esencia (`src/loot.js:66-67`) y duraciones con riesgo/recompensa (`src/loot.js:22-26`). [V]
+- **Bien.** La tabla de balance de la meta está centralizada (`src/loot.js`, sección BALANCE) y documentada con sus motivos; hay "pity" de Esencia (`src/loot.js:67-69`) y duraciones con riesgo/recompensa (`src/loot.js:21-25`). [V]
 - **Falla.** Hay 7 monedas y recursos (Ceniza, Brasas, 8 partes, Esencia, PF, trofeos, insignias). Es profundidad para el veterano y ruido para el novato. [V]
-- **Falla.** La economía de fabricación de armaduras T3-T6 no se ha validado (README v8.1, "Desvíos honestos"). La meta de ~16 h no está medida, aunque existe `stats.playMs` (`src/main.js:573`), que además cuenta título, pausa y aldea. [V]
+- **Falla.** La economía de fabricación de armaduras T3-T6 no se ha validado (README v8.1, "Desvíos honestos"). La meta de ~16 h no está medida, aunque existe `stats.playMs` (`src/main.js:569`), que además cuenta título, pausa y aldea. [V]
 - **No verificado.** Horas reales hasta cada hito: no hay simulador de progresión ni datos de jugadores. [N]
 
 ### 1.5 Balance y dificultad
 - **Bien.** Hay perillas por URL para casi todo y un historial honesto de mediciones en el README. [V]
 - **Falla.** Deudas confirmadas en el propio README: el reto con armadura no está demostrado (supervivencia saturada en el bot), `zoneDmg` x1,18-x1,44 sin calibrar, sets T3-T6 sin probar contra jefes, ruido de +-30 s con n=12. [V en README]
 - **Falla.** La dificultad depende del dispositivo: la calidad gráfica cambia el tope de enemigos vivos (`src/mobile.js:24-26`, `enemyMul` 1 / 0,9 / 0,75, aplicado en `src/waves.js:145`). Un móvil arranca en MEDIA (medido) y por tanto con un 10 % menos de enemigos que un PC; en BAJA, un 25 % menos. Eso contradice "el juego es un reto" y hace que el balance medido en PC no sea el del móvil. [V]
-- **Falla.** `cardDmgMul` x3,5 es una calibración global heredada del prototipo (`src/main.js:109`). Funciona, pero indica que las cifras de diseño y las reales están separadas. [V]
-- **Matiz sobre el determinismo.** Los `Math.random` que quedan en los archivos de combate son cosméticos (partículas y sonidos; revisados uno a uno en `enemies.js`, `combat.js`, `fusion.js`, `weapons.js`, `boss*.js`, `player.js`). Si el combate sigue sin ser reproducible con `?seed`, la causa probable es otra: el reloj real del bucle (`src/main.js:571-580`), la calidad adaptativa que cambia `enemyMul` y `projCap`, y los topes de partículas. [V el recuento; I la causa]
+- **Falla.** `cardDmgMul` x3,5 es una calibración global heredada del prototipo (`src/main.js:100`). Funciona, pero indica que las cifras de diseño y las reales están separadas. [V]
+- **Matiz sobre el determinismo.** Los `Math.random` que quedan en los archivos de combate son cosméticos (partículas y sonidos; revisados uno a uno en `enemies.js`, `combat.js`, `fusion.js`, `weapons.js`, `boss*.js`, `player.js`). El combate no es reproducible con `?seed` (medido: 600, 552 y 546 bajas con la misma semilla), así que la causa es otra, probablemente el reloj real del bucle (`src/main.js:567-577`), la calidad adaptativa que cambia `enemyMul` y `projCap`, y los topes de partículas. [V el recuento y la medición; I la causa]
 - **No verificado.** Peligro IV-V por debajo del objetivo en Karceron, Letea y Cenizar; Corrosión frente a jefes: no se volvió a medir aquí. [N]
 
 ### 1.6 Contenido
@@ -67,28 +69,29 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 
 ### 1.8 Audio
 - **Bien.** Audio procedural completo por familias y jefes; el audio se desbloquea con el primer toque y se suspende al salir. [V]
-- **Falla.** Solo Tundra y Panal tienen pista propia; Bosque, Cripta, Asfódelo y Cráter comparten la pista `normal` (`src/main.js:392`). [V]
+- **Falla.** Solo Tundra y Panal tienen pista propia; Bosque, Cripta, Asfódelo y Cráter comparten la pista `normal` (`src/main.js:395`). [V]
 - **Falla.** `Assets.cine3` se define dos veces: como función de audio (`src/sfx_cine3.js:150`) y después como objeto de arte (`src/assets_cine3.js:645`), que pisa a la primera. Funciona por el orden de carga y por las guardas `typeof ... === 'object'`. [V]
 - **No verificado.** Mezcla y volumen en altavoz de móvil. [N]
 
 ### 1.9 UI/UX y legibilidad móvil
-- **Bien.** Objetivos táctiles de 48 px lógicos en lo principal, joystick flotante, letterbox con áreas seguras, tamaño mínimo de 12 px lógicos en menús (`src/main.js:176`, `:545`), aclarado automático de grises (`src/main.js:180-195`), ajustes de accesibilidad (reducir sacudidas y destellos). [V]
+- **Bien.** Objetivos táctiles de 48 px lógicos en lo principal, joystick flotante, letterbox con áreas seguras, tamaño mínimo de 12 px lógicos en menús (`src/main.js:171`, `:495`), aclarado automático de grises (`src/main.js:175-190`), ajustes de accesibilidad (reducir sacudidas y destellos). [V]
 - **Falla.** 12 px lógicos son ~8,7 px reales en 844x390, y en combate el mínimo no se aplica: hay etiquetas de 8 a 11 px lógicos (5,8 a 7,9 px reales) en `hud.js`, `fusion.js` y `boss.js`. [V]
 - **Falla.** Se desperdicia el 18 % del ancho en teléfonos 19,5:9 (medido). Ese espacio podría alojar joystick y botones sin tapar la arena. [V]
-- **Falla.** La fuente es "Courier New" del sistema (`src/main.js:163`); en Android no existe y se sustituye por otra monoespaciada, con métricas distintas. [V el código; I el efecto]
+- **Falla.** La fuente es "Courier New" del sistema (`src/main.js:164`); en Android no existe y se sustituye por otra monoespaciada, con métricas distintas. [V el código; I el efecto]
 - **Falla.** Solo horizontal; en vertical sale un aviso. Los portales web móviles traen mucho tráfico en vertical. [V]
 - **No verificado.** Legibilidad en la mano del dueño, alcance del pulgar a los 4 poderes. [N]
 
 ### 1.10 Rendimiento
-- **Bien.** Paso fijo a 60 Hz, caché de texto (`src/main.js:196-222`), calidad adaptativa, medidor `?perf=1`, bot de rendimiento y protocolo térmico (`MOVIL.md`, sección 7). [V]
+- **Bien.** Paso fijo a 60 Hz, caché de texto (`src/main.js:162-211`), calidad adaptativa, medidor `?perf=1`, bot de rendimiento y protocolo térmico (`MOVIL.md`, sección 7). [V]
 - **Falla.** Carga: 92 scripts sin minificar ni agrupar (3,4 MB). GitHub Pages los comprime, pero son 92 peticiones y un análisis de 3,4 MB de JS en el arranque. [V]
-- **Falla.** Asignaciones por fotograma en el dibujo (`filter` + `sort` de todos los enemigos en `src/main.js:500-503`) y ~20 `filter`/`sort` en los archivos de combate. No hay rejilla espacial para colisiones. [V el recuento; I el coste]
-- **No verificado.** Frame-time en móvil real y calentamiento a 15 minutos. `perf_bot.js` no se pudo ejecutar por la ruta de Chromium (T-F0-01). [N]
+- **Falla.** Asignaciones por fotograma en el dibujo (`filter` + `sort` de todos los enemigos en `src/main.js:516-519`) y ~20 `filter`/`sort` en los archivos de combate. No hay rejilla espacial para colisiones. [V el recuento; I el coste]
+- **Medido en PC.** En el peor caso de `perf_bot.js` la CPU usa 5 ms de media por fotograma con ~105 enemigos (ver mediciones). Hay margen en escritorio; no dice nada del móvil. [V]
+- **No verificado.** Frame-time en móvil real y calentamiento a 15 minutos. [N]
 
 ### 1.11 Calidad de código y arquitectura
 - **Bien.** Sin dependencias, balance en un objeto, módulos por dominio, comentarios que explican el porqué, guardas `try/catch` para piezas opcionales. [V]
-- **Falla.** Todo cuelga de los globales `G` y `Assets` y del orden de 92 etiquetas `<script>` (`index.html:28-119`). Líneas muy largas con varias sentencias; archivos de 1.000 a 1.900 líneas. Cada módulo nuevo exige tocar `index.html` y `sw.js`. [V]
-- **Falla.** Los parámetros de depuración funcionan en producción: `?god`, `?give=all:30`, `?pf=`, `?reset=1`, `?cmul=` (`src/save.js:217-231`, `src/main.js:20`, `:109`). Cualquier tabla de récords o compra sería trivial de falsear, y `?reset=1` borra la partida con un enlace. [V]
+- **Falla.** Todo cuelga de los globales `G` y `Assets` y del orden de 92 etiquetas `<script>` (`index.html:29-120`). Líneas muy largas con varias sentencias; archivos de 1.000 a 1.900 líneas. Cada módulo nuevo exige tocar `index.html` y `sw.js`. [V]
+- **Falla.** Los parámetros de depuración funcionan en producción: `?god`, `?give=all:30`, `?pf=`, `?reset=1`, `?cmul=` (`src/save.js:218-233`, `src/main.js:20`, `:100`). Cualquier tabla de récords o compra sería trivial de falsear, y `?reset=1` borra la partida con un enlace. [V]
 - **Falla.** No hay captura global de errores: si algo falla en el móvil del dueño, no queda rastro. [V: sin `onerror` en `src/`]
 - **Falla.** Todos los textos están en español dentro del código (~30 archivos), sin capa de traducción. Es el mayor coste oculto para publicar en portales. [V]
 
@@ -98,16 +101,16 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 - **Falla.** No hay CI de pruebas: `pages.yml` solo despliega y lo hace con cada push a `main`, sin puerta. [V]
 - **Falla.** `tests.js` ejecuta `stamp.py` sobre el repositorio (`tools/card-swarm-bot/tests.js:39`): pasar las pruebas puede modificar `games/card-swarm/sw.js`. [V]
 - **Falla.** Conteos desactualizados en la documentación (el README habla de 218 comprobaciones en `all`). [V]
-- **Resultado de `tests.js all` en esta revisión** (copia temporal con la ruta corregida, sin tocar el repo): ver la nota al final de esta sección, añadida al terminar la ejecución.
+- **Resultado de `tests.js all` en esta revisión** (copia temporal con la ruta corregida, sin tocar el repo): 541 de 541 correctas. El código del juego está sano; lo roto es la herramienta. [V]
 
 ### 1.13 Guardado y datos
-- **Bien.** Esquema versionado v12 con cadena de migraciones y copia previa (`src/save.js:63-136`), relleno defensivo de campos (`:141-177`), exportar/importar como texto (`:180-198`), aviso si el navegador no deja guardar (`:50-57`). [V]
+- **Bien.** Esquema versionado v12 con cadena de migraciones y copia previa (`src/save.js:58-131`), relleno defensivo de campos (`:149-178`), exportar/importar como texto (`:181-199`), aviso si el navegador no deja guardar (`:50-57`). [V]
 - **Falla.** Un solo punto de fallo: `localStorage` del navegador. iOS puede borrar datos de sitios no instalados tras ~7 días sin uso (`MOVIL.md`, sección 6). No hay copia rotativa automática ni recordatorio de exportar. [V]
 - **Falla.** El guardado no tiene firma ni validación de rangos: exportar, editar e importar da cualquier progreso. Hoy no importa; con récords o compras, sí. [V]
 - **Falla.** Al cambiar de dominio (portal, itch, TWA) el guardado no viaja: cada origen tiene su `localStorage`. [I]
 
 ### 1.14 PWA y distribución
-- **Bien.** Service worker con precache versionado por hash, actualización solo cuando el jugador acepta y nunca en mitad de una expedición (`src/pwa.js:36-46`), manifest completo con iconos enmascarables, redirección del prototipo antiguo. [V]
+- **Bien.** Service worker con precache versionado por hash, actualización solo cuando el jugador acepta y nunca en mitad de una expedición (`src/pwa.js:33-43`), manifest completo con iconos enmascarables, redirección del prototipo antiguo. [V]
 - **Falla.** Solo se distribuye en GitHub Pages bajo `xitakha.github.io/Game/`: sin dominio propio, sin página de tienda, sin capturas ni tráiler. [V]
 - **Falla.** `pages.yml` aún borra `assets_village_tmp.js`, que ya no existe: resto sin limpiar. [V]
 - **No verificado.** Instalación y uso sin conexión en teléfono real (pendiente desde el ROADMAP). [N]
@@ -227,7 +230,7 @@ Reglas:
 Decisiones sobre agentes:
 - No se crea un "director de cinemáticas" aparte: lo cubre `art-director`, porque el motor de cinemáticas ya existe y lo pendiente es arte y ritmo.
 - No se amplía `game-designer` con el balance: quien diseña una mecánica no debe ser quien certifica sus números.
-- A los agentes existentes solo se les añade la línea `model:`; su texto no cambia. La mención a Phaser y la lista de equipo de `ceo.md` se corrigen en T-F0-09, con permiso del dueño.
+- A los agentes existentes solo se les añade la línea `model:`; su texto no cambia. `ceo` queda sin ella a propósito: es el agente de la sesión principal y usa el modelo que elija el dueño al abrirla. La mención a Phaser y la lista de equipo de `ceo.md` se corrigen en T-F0-09, con permiso del dueño.
 
 ---
 
@@ -581,7 +584,7 @@ Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas
 
 #### T-F2-07 Auditoría de rendimiento en combate denso
 - **Objetivo y por qué.** Un survivors que da tirones no engancha, y el móvil caliente cierra la partida. Además, T-F0-05 puede subir el número de enemigos en móvil.
-- **Pasos.** (1) Perfil con `?perf=1` y el perfilador del navegador en el peor caso (Cráter, 110 enemigos, 4 poderes). (2) Lista ordenada de costes. (3) Candidatos ya vistos: `filter` + `sort` por fotograma (`src/main.js:500-503`), búsquedas de vecinos sin rejilla, degradados creados cada fotograma (`tundra.js`, `panal.js`, `enemies.js`), `shadowBlur` en cartas. (4) Aplicar las 3 de mayor retorno y medir.
+- **Pasos.** (1) Perfil con `?perf=1` y el perfilador del navegador en el peor caso (Cráter, 110 enemigos, 4 poderes). (2) Lista ordenada de costes. (3) Candidatos ya vistos: `filter` + `sort` por fotograma (`src/main.js:516-519`), búsquedas de vecinos sin rejilla, degradados creados cada fotograma (`tundra.js`, `panal.js`, `enemies.js`), `shadowBlur` en cartas. (4) Aplicar las 3 de mayor retorno y medir.
 - **Archivos.** `src/main.js`, `src/combat.js`, `src/enemies.js`, `src/weapons.js`, `src/fusion.js`, `src/tundra.js`, `src/panal.js`.
 - **Responsable.** `performance-engineer` con Sonnet 5.5, esfuerzo alto; sube a Opus 5.5 si hay que introducir una rejilla espacial.
 - **Dependencias.** T-F0-05, T-F0-12.
@@ -777,7 +780,7 @@ Meta de la fase: dar motivos para seguir jugando después del final. Solo empiez
 #### T-F4-06 Música propia para cada bioma
 - **Objetivo y por qué.** Cuatro de los seis biomas comparten pista. La música distinta refuerza la sensación de avanzar.
 - **Pasos.** (1) Dirección sonora por bioma en media página. (2) Pistas procedurales para Cripta, Asfódelo y Cráter. (3) Mezcla revisada en altavoz de móvil.
-- **Archivos.** `src/assets.js` (música), `src/sfx*.js`, `src/main.js:392`.
+- **Archivos.** `src/assets.js` (música), `src/sfx*.js`, `src/main.js:395`.
 - **Responsable.** `audio-designer` con Sonnet 5.5, esfuerzo medio; la dirección sonora con Opus 5.5.
 - **Dependencias.** Ninguna.
 - **Aceptación.** Cada bioma suena distinto en una prueba a ciegas del dueño; sin cortes al cambiar de intensidad.
@@ -818,7 +821,7 @@ Meta de la fase: dar motivos para seguir jugando después del final. Solo empiez
 ## 8. Qué quedó sin revisar
 
 - Rendimiento, legibilidad, instalación y uso sin conexión en un teléfono real.
-- Frame-time en el escenario pesado: `perf_bot.js` no se ejecutó.
+- Frame-time en móvil: `perf_bot.js` solo se ejecutó en PC sin GPU real.
 - Lectura línea a línea de los ~17.000 renglones de arte procedural y de los archivos de sonido: solo se revisó su estructura y sus puntos de contacto.
 - Balance de Peligro IV-V y de Corrosión: no se volvió a medir.
 - Documentación oficial de CrazyGames y Poki: no accesible desde esta sesión.
