@@ -1527,3 +1527,77 @@ Assets.cine2.list [{id,name,epi,lore,color,dur,durShort}] ; .ids ; .info(id) ; .
 - **Cartel** `card(id,ctx,w,h,p,{short,calm,y})`: placa casi negra con filete de luz que crece, esquinas de hierro y color del jefe; fundido de entrada 0-18 % (corta 0-30 %) y de salida en el ultimo 14 %. Textos (ES): EL PASTOR CORRUPTO / Bestia del Rebano / "El Pastor era el mejor de nosotros." | KARCERON / Coloso de Huesos y Magma / "Desperto entre sus propios grilletes." | LETEA / la Hidra del Asfodelo / "El rio del olvido tiene tres voces." | YARLAK / El invierno que camina / "Guardaba la ultima hoguera del norte." | MELARIA / la Reina Abeja / "Devoro la jalea de sus hermanas." | CENIZAR / El Incendio Primero / "Nacio de la primera brasa que nadie apago." (con tildes en el codigo; `short` omite el lore). Colores: `#c090ff, #ff9a3c, #5fd6c8, #bfeaff, #f3a31f, #fff2b0`.
 - **Prerrollo de Cenizar** `prelude(ctx,w,h,p,{calm,lite,y})` p sobre 6 s: 0-2 s el Hogar Quemado desde arriba (losas, vigas caidas, escombros, haz de luz por el techo roto con polvo; camara que entra con zoom); 2-4 s el brasero y las grietas que se encienden una a una hacia los cinco sellos del pentagono (usa `Assets.CRATER.seals`) en `#c090ff #ff9a3c #5fd6c8 #bfeaff #f3a31f`; 3,7-4,2 s corte a negro; 4,2-6 s cartel CENIZAR / El Incendio Primero (+ lore). Tras 6 s, la logica arranca la intro estandar. Pinta fondo opaco propio (pantalla completa).
 - Uso tipico (sobre el mundo real, el programador): `Assets.cine2.omen(id,ctx,w,h,p,{short,calm})` durante el presagio, tu propio sprite, y `Assets.cine2.card(...)` encima; o toma completa autonoma con `entry` (para galeria/pruebas). Rendimiento (Chromium sin GPU, 844x390, con lectura forzada): ~6-7 ms por llamada `entry`+`card` (domina el sprite del jefe), 0 errores. Capturas: `studio/docs/capturas-herrero/cine2-entradas.jpg` (6 jefes x p 0,12/0,4/0,6/1) y `cine2-prelude-cenizar.jpg`.
+
+---
+
+# Audio del cierre v9 - FASE 3 (src/sfx_cine3.js; cargar DESPUES de `sfx_cine2.js`; el programador anade el `<script>` en index.html y sw.js)
+Solo audio procedural (WebAudio), contexto propio que sigue desbloqueo, mute, volumen y suspend de Assets. No usa `G.rng` ni toca la simulacion. Seguro (try/catch; sin audio devuelve `false`). Tono oscuro con esperanza al final; sin voz, solo bips. Encadena `Assets.music` igual que `sfx_cine.js` (las pistas anteriores siguen funcionando).
+
+## Pistas (`Assets.music.setTrack(nombre); Assets.music.start()`; `Assets.music.stop()` al salir, fundido de 0,4 s)
+| Pista | Duracion | Contenido |
+|---|---|---|
+| `cine_epilogo` | 35 s exactos desde `start()` (60 BPM, 140 pasos de 0,25 s); entra con fundido de 1,5 s | 0-16 s ceniza: viento, crepitar escasisimo, bordon casi inaudible, caja de musica que duda (Mi frigio). **16,0 s = el fuego prende** (rugido corto + latido; tema del fuego Mi-Sol#-La-Do# en mayor, acordes Mi-La-Do#m-Si-Mi, crepitar creciente). 24-35 s crescendo suave (cuerda, octava grave de la caja) y acorde de Mi mayor a 32 s. Despues de 35 s queda un lecho de bordon y brasas (parar con `music.stop()`) |
+| `cine_creditos` | 25,6 s (75 BPM, 8 compases) con cierre; entra con fundido de 0,8 s | Calido y esperanzado: bordon, latido, escobillas, arpegio de marimba/campana (Mi-La-Si-Do#m-Mi-La-Si-Mi) y acorde final de Mi mayor en el compas 8 (~22,4 s). Despues queda un lecho suave de brasas (no se repite el tema) |
+
+- `Assets.cineMusicTime3()` -> segundos sonados de la pista cine3 actual (0 si no suena); util para disparar el reencendido a 16 s.
+- `renderMusic({track:'cine_epilogo'|'cine_creditos', steps?})` y `renderSfx('cine3_*')` (OfflineAudioContext) para el visor.
+
+## SFX: `G.Snd.cine3(tipo, arg, pitch)` (tambien `Assets.cine3`) -> true si sono
+| tipo | arg | Duracion | Uso |
+|---|---|---|---|
+| `'victory'` | - | 6,0 s (audible hasta ~5,5 s) | Stinger de victoria sobre Cenizar: latido, vacio, notas de caja de musica Mi-Si-Sol (menor, la herida) y Sol# (llega la esperanza), acorde de Mi mayor suave; cola que muere a 6 s. Sin eco largo |
+| `'fire'` | - | 4,2 s | Reencendido del fuego (Marlo suelta la brasa mansa): chispa, brasa que respira, rugido que sube, el fuego prende a 1,6 s, crepitar creciente, 3 campanas mansas. Sin destello: pensado para halo calido |
+| `'village'` | nivel 1..6 (se acota) | ~1,5 s (cuerpo <= 1,2 s) | Jingle "la aldea mejora" al vencer cada jefe: cada nivel anade una nota/capa (2 notas menores al 1, 7 notas con latido y chispas al 6) |
+| `'blip'` | `'carapa'` (defecto: yunque metalico claro) o `'rufo'` (cuadrada corta, rapida) | 0,05-0,1 s | Bip de texto, uno por palabra. Separacion minima 28 / 20 ms; +-8 % aleatorio x `pitch` |
+| `'stop'` | - | fundido 150 ms | Corta victory/fire/village vivos (al saltar) |
+
+- Nombres internos: `cine3_victory`, `cine3_fire`, `cine3_village_1..6`, `cine3_blip_carapa|rufo`; metadatos (`len`, `dur`, `min`) en `Assets.sfxCine3`. Re-disparo del mismo SFX bajo su `min` (victory 1,5 s, fire 1 s, village 0,4 s) se ignora.
+
+## Orden recomendado del cierre (arregla el pisado de jingles; hoy `stg_cenizar_win` y `stg_cenizar_ending` suenan a la vez)
+1. Muerte de Cenizar: `stg_cenizar_death` (~6 s) como hoy. **No** llamar a `stg_cenizar_win` ni a `stg_cenizar_ending` en la ruta con cinematica (ni `G.Snd.play('stg_cenizar_win')` en `main.js`).
+2. `music.stop()`; silencio de 1,5 s; `cine3('victory')` (6 s). El epilogo empieza **despues** de 6,2 s (o antes solo si se salta: `cine3('stop')`).
+3. Epilogo: `setTrack('cine_epilogo'); start()`. A los **16,0 s** de pista (`cineMusicTime3() >= 16`, o `t` de la escena) lanzar `cine3('fire')` (y `ending_hearth` ya no hace falta). Bips: `cine('blip', ...)` para el resto y `cine3('blip','carapa'|'rufo')`.
+4. A ~35 s: `setTrack('cine_creditos'); start()` (cambio con fundido de 0,45 s); al terminar `music.stop()` y de vuelta a la pista del contexto con `setTrack('normal')`.
+5. Al saltar la cinematica: `cine3('stop'); music.stop()`.
+6. Aldea: al volver tras vencer a un jefe, `cine3('village', nivel)` con nivel = jefes vencidos (1..6).
+- Pruebas: Playwright+Chromium, 0 errores; todas las definiciones (10 SFX + 2 pistas) renderizan offline sin NaN, pico <= 0,56 (SFX) / 0,84 (creditos, con compresor); epilogo RMS 0,002 -> 0,18 (ceniza a calidez).
+
+---
+
+# Cinematicas v9 - epilogo, creditos y aldea reconstruida (src/assets_cine3.js, FASE 3 de arte)
+Archivo nuevo, solo arte, procedural (canvas 2D, sin librerias). Cargar DESPUES de `assets.js`, `assets_village.js` y `assets_armor.js` (Carapa); `assets_cine.js` es opcional (aporta el logo SWARM HAND de los creditos; sin el, texto). El programador anade `<script src="src/assets_cine3.js">` (y `sw.js`). Tono: cuento junto al fuego oscuro con esperanza al final. Nunca lanza (devuelve `false` si falla o el id no existe). Todo lo temporal sale de `t`/`p` (sin estado interno: se puede saltar o rebobinar).
+```
+Assets.cine3.epilogue(id, ctx, w, h, t, opts) -> bool   // vineta del epilogo a pantalla completa (0,0,w,h)
+Assets.cine3.credits(ctx, w, h, t, opts)      -> bool   // pantalla de creditos con scroll (25 s por defecto)
+Assets.cine3.villageRebuild(ctx, level, t, opts) -> bool // overlay "aldea reconstruida", level 0..6, coords de aldea 960x540
+Assets.cine3.villageNpcs(level, t)            -> {npc:{anim}}  // animaciones de aldeanos por nivel (para opts.npcs de drawVillage)
+Assets.cine3.list  // [{id,name,dur}]  ;  .ids ; .dur(id|'credits') ; .total (36000) ; .creditsDur (25000) ; .maxLevel (6)
+Assets.cine3.logo(ctx, cx, cy, w, t, {calm, p}) ; .preload(id,w,h,opts) ; .free()
+```
+## Epilogo (6 vinetas, 36 s; el orden de `ids` es el de reproduccion)
+| id | dur ms | Contenido |
+|---|---|---|
+| `victoria` | 6000 | Crater de Cenizar: la corona se deshace y las seis llamas desfallecen una a una (purpura, naranja, turquesa, hielo, ambar y al final la blanca grande); queda una unica brasa que sube. Hito: la brasa aparece en `p` ~ 0,72 |
+| `apagado` | 5000 | El Hogar apagado: sala en ruinas, techo roto con haz de luna y polvo, chimenea fria. Marlo entra caminando desde la izquierda en `p` > 0,5 |
+| `brasa` | 7000 | Marlo y la brasa mansa: se acerca (hasta p 0,3), la brasa late fuerte en la bufanda (0,25-0,38), sale en arco hasta los troncos (0,38-0,83) y queda latiendo en la chimenea. Sin destello blanco: solo halo calido. Hito de audio sugerido: `cine_give_ember` en `p` ~ 0,80 |
+| `renace` | 6000 | El fuego renace: la ascua prende y la llama crece (0-0,62); la sala se recompone por fundido ruina -> reconstruida (0,3-0,88), ventanas y estandartes se encienden, motas doradas suben |
+| `reunidos` | 7000 | Reunidos junto al fuego: Grum, Carapa, Castana, Ulalume, Vesper y Rufo en fila, Lanudo sentado (habla) y Marlo delante. Cada ~1,1 s habla uno distinto (`anim` talk); Grum y Rufo celebran (`happy`) a partir de p 0,45 |
+| `amanecer` | 5000 | La aldea real (`drawVillage`) al amanecer con la reconstruccion completa (nivel 6), sol y rayos, travelling lento y Marlo junto al brasero. Es la vineta mas cara (~8-17 ms, domina `drawVillage`) |
+- `opts`: `p` (0..1; manda; por defecto `t/dur`), `calm` (Reducir destellos: llama/luces casi estables, polvo y brasas mas lentas y escasas, sin titilar de brillos), `lite` (capas al 60 %), `vignette` (false), `vig` (0..1), `bars` (0..1 letterbox), `fade:false` (quita el fundido desde negro del primer 7 % de `p` y el de salida; por defecto cada vineta entra desde negro).
+- Espacio virtual de 540 px de alto (ancho = `w/h*540`): igual de valido en 960x540, 844x390 y 4:3. Los textos/dialogos los pone el motor ENCIMA (franja inferior, y > 70 % de `h`; queda suelo oscuro). Dialogo sugerido por vineta: `reunidos` (Lanudo, Vesper, Castana, Grum, Carapa, Rufo, Ulalume); `amanecer` el cartel "Amanece en Rescoldo.".
+- Memoria: capas de fondo en offscreen (cielo/lejano/suelo/primer plano, recortadas en vertical, lejanas a menor resolucion), cache LRU de 2 vinetas: ~5-8 MB por vineta a 960x540. `preload(id,w,h,opts)` construye las capas con antelacion (llamar durante la vineta anterior; 10-25 ms en CPU lenta); `free()` la vacia (llamar al terminar el epilogo). Sprites reales (`player`, `npc_*` incl. `npc_carapa`) con grado oscuro cacheado por fotograma.
+## Creditos
+`credits(ctx,w,h,t,{p, dur=25000, calm, lite, bg:false, fadeOut})`: fondo de amanecer con la aldea en silueta (cacheado a media resolucion), placa oscura suave tras la columna, texto con borde oscuro y tamano que se ajusta al ancho. Orden: logo **Xitakha Studio** (X de brasa con llama, vectorial; tambien suelto con `cine3.logo`), "presenta", logo SWARM HAND (`Assets.cine.logo`), equipo con nombres comicos (cabecera ambar / nombre / chiste: Don Cetro Mandon = CEO, Dulcinea Reglasdetres = diseno, Bugo Parches = programador, Tuerca Martillazo = herramientas, Pixela Pincelloco = arte, Sonia Pitidos = audio, Pepe Rompetodo = QA, Marta Encuestas y Rastro Buscatesoros = mercado y assets, "Nuestro jefe supremo" = el dueno), gracias especiales (Lanudo y el resto del pueblo) y cierre "Y a ti, Marlo, que apagaste las seis llamas. / GRACIAS POR JUGAR". Los bloques se colocan en secuencia con alturas fijas, asi que **no se superponen**; scroll lineal hasta centrar el cierre al 88 % de `dur`, que se queda quieto el resto. Fundido desde negro (0-5 %) y a negro (96-100 %; `fadeOut:0` lo quita). Para editar nombres/orden: array `CRED` del archivo. Texto minimo 17 unidades virtuales (~12 px en 844x390).
+## Aldea reconstruida
+`villageRebuild(ctx, level, t, {calm, fresh=1, time})` dibuja ENCIMA de `drawVillage` (mismas coords 960x540; `level` = numero de jefes vencidos 0..6, se redondea y acota; 0 no dibuja nada). Mejoras acumulativas y sutiles:
+| nivel | Se anade |
+|---|---|
+| 1 Pastor | tejados nuevos (herreria rojiza, tablon turquesa con veleta) + primeras 8 flores |
+| 2 Karceron | brasero de la plaza con aro de piedras y llama que crece (mas luz y chispas) + mas humo en la forja |
+| 3 Letea | guirnaldas de farolillos (forja-tablon-carpa-torre), maceta con flores en el tablon + 12 flores mas |
+| 4 Yarlak | estandartes rojo-ambar (torre y plaza), chimenea nueva con humo en el tablon, brasero con segunda llama |
+| 5 Melaria | aldeanos animados (corazones/notas sobre Castana, Vesper, Grum, Rufo, Ulalume), mariposas (no en calm) + 10 flores |
+| 6 Cenizar | remates dorados en la torre, halo calido sobre la plaza, petalos al viento, chispas doradas en el brasero y el resto de flores |
+- `fresh` (0..1) anima la mejora del nivel recien alcanzado (aparece escalada/transparente); usar p. ej. `fresh = min(1, ms desde subir de nivel / 2500)`. `time` = el mismo valor que pasas a `drawVillage` (0 dia, 0,5 ocaso, 1 noche; ajusta el brillo de los farolillos). `calm`: banderas y petalos sin ondear, sin parpadeo, sin mariposas.
+- Uso: `Assets.drawVillage(ctx, t, {time, npcs: Object.assign({}, Assets.cine3.villageNpcs(level, t), tusNpcs), ...}); Assets.cine3.villageRebuild(ctx, level, t, {time, calm});` Si usas luz (`light` por defecto), el overlay queda bajo la oscuridad solo si pasas `light:false` a `drawVillage` y llamas despues a `Assets.drawVillageLight(ctx,t,{time})`; si no, se dibuja sobre ella (valido de dia). `villageNpcs(level,t)` devuelve `{grum:{anim:'work'},...}` (Grum trabaja desde el nivel 2, Castana cocina/descansa nivel 2, Vesper nivel 3, Rufo nivel 4, Ulalume y Lanudo nivel 5; con nivel 6 tambien `happy`); los aldeanos que no aparecen quedan por defecto. Rinde ~1-2 ms por llamada.
+- Pruebas: Playwright+Chromium (sin GPU, lectura forzada): 5-17 ms por fotograma de vineta (960x540, 844x390 y 720x540), creditos 5-7 ms, 0 errores con `calm`, `lite`, ids invalidos y `level` fuera de rango. Capturas: `studio/docs/capturas-herrero/cine3-epilogo.jpg`, `cine3-aldea-niveles.jpg`, `cine3-creditos.jpg`.

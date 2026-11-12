@@ -400,12 +400,13 @@
     G.won = won; G.state = 'gameover';
     G.finalHand = G.Cards.snapshot();
     if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
-    G.sfx(won ? 'boss_die' : 'game_over');
-    if (won) { try { G.Snd.play(G.bossId === 'cenizar' ? 'stg_cenizar_win' : G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
+    var fin = won && G.bossId === 'cenizar' && G.mode !== 'practice' && G.Ending && G.Ending.eligible();   // v9 F3: final con cinemática (el orden de jingles lo lleva ending.js: nada de stg_cenizar_win aquí)
+    if (!fin) G.sfx(won ? 'boss_die' : 'game_over');
+    if (won && !fin) { try { G.Snd.play(G.bossId === 'cenizar' ? 'stg_cenizar_win' : G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
     try { Assets.music.stop(); } catch (e) { /* sin audio */ }
     G.Tundra.end();   // apaga el viento de la ventisca
     G.Panal.end();    // apaga el zumbido ambiente del Panal
-    if (won && G.bossId === 'cenizar' && G.mode !== 'practice' && G.cenizarFinal && G.cenizarFinal.first && G.Ending) G.Ending.begin();   // P6.5: cinemática final + créditos la 1.a vez
+    if (fin) G.Ending.begin();   // v9 F3: epílogo en el Hogar + créditos la 1.a vez, antes del botín
   };
 
   // ---------------------------------------------------------------- Actualización
@@ -426,7 +427,7 @@
     var ct = G.Boss.camTarget(tx, ty);   // la intro del jefe desplaza la cámara y hace zoom
     G.cam.x += (ct.x - G.cam.x) * 0.15; G.cam.y += (ct.y - G.cam.y) * 0.15;
     if (p.dead) { G.deadT += dt; if (G.deadT > 900) G.finish(false); return; }
-    if (G.bossDead) { G.endT += dt; if (G.endT > 3000) G.finish(true); return; }
+    if (G.bossDead) { G.endT += dt; if (G.Ending && G.Ending.victoryOn()) G.Ending.victoryUpdate(); if (G.endT > (G.Ending ? G.Ending.waitMs() : 3000)) G.finish(true); return; }   // v9 F3: la victoria in-world de Cenizar dura 6 s
     if (G.pendingLevels > 0) { G.state = 'cards'; G.Cards.open('level'); }
   }
 
@@ -455,9 +456,6 @@
       case 'cards':
         G.fx.updateShake(dt);
         G.Cards.update(dt);
-        break;
-      case 'ending':
-        G.Ending.update(dt);
         break;
       case 'title':
         G.Cine.titleUpdate(dt);
@@ -494,13 +492,12 @@
 
   function draw() {
     var rs = G.rs || 1;
-    G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' || G.state === 'ending') ? G.MIN_UI : 0;
+    G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' ) ? G.MIN_UI : 0;
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
     if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
     if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }
     if (G.state === 'cine') { G.Cine.draw(ctx); return; }
-    if (G.state === 'ending') { G.Ending.draw(ctx); G.Sys.drawBar(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
     if (G.state === 'gameover') { G.Hud.draw(ctx); return; }   // la pantalla de fin es opaca: no se pinta el mundo detrás (ahorra trabajo y evita textos flotantes fuera de sitio)
     var off = G.fx.offset();
@@ -558,6 +555,7 @@
     }
     if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     if (TN) G.Tundra.drawVignette(ctx);   // escarcha del Frío en bordes y esquinas
+    if (G.Ending && G.state === 'play' && G.Ending.victoryOn()) G.Ending.drawVictory(ctx);   // v9 F3: victoria in-world (barras, desaturado, la última brasa)
     G.Hud.draw(ctx);
     drawJoy(ctx);
     if (G.state === 'play') G.Sys.drawBar(ctx);

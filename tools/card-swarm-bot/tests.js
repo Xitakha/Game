@@ -742,7 +742,89 @@ async function cine() {
   console.log('      ', JSON.stringify(hs));
   ok(hs[0].hash === hs[1].hash && hs[0].kills === hs[1].kills, 'hash de simulacion IDENTICO con ?cine=0 y con titulo+intro (' + hs[0].hash + ')');
   await cine2(b);
+  await cine3(b);
   await b.close();
+}
+
+// ---------------------------------------------------------------- Cinematicas v9 fase 3: cierre (victoria in-world, epilogo, creditos) y aldea por niveles
+async function cine3(b) {
+  console.log('--- cinematicas v9 fase 3: victoria de Cenizar -> epilogo -> creditos -> botin; aldea por niveles; galeria');
+  const FIGHT = extra => `reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&hand=spark:3,shard:2,dart:1&boss=cenizar${extra}`;
+  const kill = pg => E(pg, () => {
+    G.Save.data.cine.introSeen = true;
+    for (let i = 0; i < 40 && G.state === 'title'; i++) G.step(); if (G.state === 'title') { G.input.pressed.Space = true; G.step(); }
+    for (let i = 0; i < 4000 && (G.state === 'title' || G.state === 'cine'); i++) G.step();
+    window.__snd = []; const p0 = G.Snd.play; G.Snd.play = function (n) { window.__snd.push('play:' + n); return p0.apply(this, arguments); };
+    const c3 = G.Snd.cine3; G.Snd.cine3 = function (k, a) { window.__snd.push('cine3:' + k); return c3 && c3.apply(this, arguments); };
+    for (let i = 0; i < 600 && !G.Boss.e; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } }
+    const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } return !!e;
+  });
+  // 1. Primera victoria con cine=1: victoria in-world 6 s -> epilogo (bloqueado) -> creditos -> botin
+  let pg = await mk(b, FIGHT('&cine=1'));
+  ok(await kill(pg), 'Cenizar (cine=1): jefe muerto');
+  const v = await E(pg, () => { let n = 0, seen = false, lastEnd = 0; while (G.state === 'play' && n++ < 2000) { G.step(); if (G.Ending.victoryOn()) seen = true; lastEnd = G.endT; } return { seen, st: G.state, n, endT: lastEnd, info: G.Cine.info() && G.Cine.info().id, ms: n * G.STEP, hp: G.state }; });
+  ok(v.seen && v.st === 'cine' && v.info === 'epilogue', 'victoria in-world (G.Ending.victoryOn) -> epilogo (' + Math.round(v.endT) + ' ms de espera)');
+  ok(v.endT > 5900 && v.endT < 6300, 'la victoria in-world dura ~6 s (' + Math.round(v.endT) + ' ms)');
+  const ep = await E(pg, () => { const o = {}; for (let i = 0; i < 100; i++) G.step(); G.input.pressed.Escape = true; G.input.pressed.Space = true; for (let i = 0; i < 3; i++) { G.input.lock = 0; G.step(); } o.locked = G.Cine.info().locked; o.still = G.Cine.info().id === 'epilogue'; o.len = G.Cine.EPILOGUE.len; o.skip = G.Cine.skip(); o.vis = JSON.stringify(G.Save.data.cine); return o; });
+  ok(ep.locked && ep.still && !ep.skip, 'epilogo la 1.a vez: NO saltable (Esc / toque / skip())');
+  ok(ep.len >= 40000 && ep.len <= 56000, 'epilogo ' + (ep.len / 1000).toFixed(1) + ' s (incluye ~6 s de stinger de victoria y los 16 s de ceniza de la pista)');
+  const run = await E(pg, () => { let n = 0, maxF = 0, flashN = 0, marks = [], paused = null; const t0 = G.time;
+    while (G.Cine.active() && G.Cine.info().id === 'epilogue' && n++ < 4000) {
+      G.step(); const i = G.Cine.info(); if (i) { maxF = Math.max(maxF, i.maxFlashA); flashN = Math.max(flashN, i.flashCount); }
+      if (n === 200) { const a = G.Cine.info().t; window.dispatchEvent(new Event('blur')); for (let k = 0; k < 30; k++) G.step(); paused = { p: G.Cine.info().paused, same: G.Cine.info().t === a }; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); paused.resumed = !G.Cine.info().paused; }
+    }
+    const S = G.Save.data; return { n, maxF, flashN, paused, dtime: G.time - t0, id: G.Cine.info() && G.Cine.info().id, end: S.endingSeen, ep: S.cine.epilogueSeen, cr: S.cine.creditsSeen }; });
+  ok(run.paused && run.paused.p && run.paused.same && run.paused.resumed, 'pausa en segundo plano (blur): el reloj del epilogo se detiene y reanuda con un toque');
+  ok(run.maxF <= 0.3 && run.flashN === 0, 'epilogo: sin destello blanco (maxFlashA ' + run.maxF.toFixed(2) + ', destellos ' + run.flashN + ')');
+  ok(run.dtime === 0 && run.id === 'credits' && run.end && run.ep && !run.cr, 'epilogo no avanza G.time; marca endingSeen y epilogueSeen; sigue con los creditos');
+  const cr = await E(pg, () => { const o = { len: G.Cine.CREDITS_SCRIPT.len }; for (let i = 0; i < 60; i++) G.step(); o.lock1 = G.Cine.info().locked; o.skip1 = G.Cine.skip(); for (let i = 0; i < 160; i++) G.step(); o.lock2 = G.Cine.info().locked; o.names = JSON.stringify(G.Ending.CREDITS).length > 200 && /XITAKHA/.test(JSON.stringify(G.Ending.CREDITS));
+    o.skip2 = G.Cine.skip(); o.st = G.state; o.cr = G.Save.data.cine.creditsSeen; return o; });
+  ok(cr.lock1 && !cr.skip1 && !cr.lock2 && cr.skip2, 'creditos: bloqueados 3 s y saltables despues');
+  ok(cr.len >= 24000 && cr.len <= 27000 && cr.names, 'creditos ' + (cr.len / 1000).toFixed(1) + ' s con Xitakha Studio y los 8 agentes');
+  ok(cr.st === 'gameover' && cr.cr, 'tras los creditos: pantalla de botin (gameover) y creditsSeen');
+  const snd = await E(pg, () => window.__snd);
+  ok(!snd.includes('play:stg_cenizar_win') && !snd.includes('play:stg_cenizar_ending') && snd.filter(x => x === 'cine3:victory').length === 1 && snd.filter(x => x === 'cine3:fire').length === 1, 'jingles: sin stg_cenizar_win ni stg_cenizar_ending; cine3 victory y fire una vez (' + snd.join(',') + ')');
+  const ls = await E(pg, () => { G.Aldea.open(true); return { lv: G.Aldea.level(), st: G.state }; });
+  ok(ls.lv === 6 && ls.st === 'aldea', 'tras el botin la aldea esta completa (nivel 6)');
+  await done(pg, 'cierre');
+  // 2. ?cine=0, bots (sin cine=1) y 2.a victoria: sin epilogo, directo al botin
+  for (const [name, extra, pre] of [['cine=0', '&cine=0', false], ['URL de prueba (sin cine=1)', '', false], ['2.a victoria', '&cine=1', true]]) {
+    pg = await mk(b, FIGHT(extra));
+    if (pre) await E(pg, () => { G.Save.data.bossKills.cenizar = 1; });
+    await kill(pg);
+    const r = await E(pg, () => { let n = 0, vic = false, cine = false; while (G.state !== 'gameover' && n++ < 3000) { G.step(); if (G.state === 'play' && G.Ending.victoryOn()) vic = true; if (G.Cine.active()) cine = true; } return { vic, cine, st: G.state, endT: G.endT }; });
+    ok(r.st === 'gameover' && !r.vic && !r.cine && r.endT < 3200, name + ': sin victoria in-world ni epilogo (espera ' + Math.round(r.endT) + ' ms): directo al botin');
+    await done(pg, 'cierre-' + name);
+  }
+  // 3. Practica: nunca
+  pg = await mk(b, FIGHT('&cine=1&practice=1'));
+  await kill(pg); const pr = await E(pg, () => { let n = 0, cine = false; while (G.state !== 'gameover' && n++ < 3000) { G.step(); if (G.Cine.active()) cine = true; } return { cine, st: G.state, eg: G.Ending.eligible() }; });
+  ok(!pr.cine && !pr.eg && pr.st === 'gameover', 'Practica: sin epilogo');
+  await done(pg, 'cierre-practica');
+  // 4. Simulacion: el combate de Cenizar no cambia (hash identico con ?cine=0 y cine=1 hasta la muerte)
+  const hs = [];
+  for (const extra of ['&cine=0', '&cine=1']) {
+    pg = await mk(b, FIGHT(extra) + '&nodmg=1');
+    hs.push(await E(pg, () => { G.Save.data.cine.introSeen = true; for (let i = 0; i < 40 && G.state === 'title'; i++) G.step(); if (G.state === 'title') { G.input.pressed.Space = true; G.step(); } for (let i = 0; i < 4000 && (G.state === 'title' || G.state === 'cine'); i++) G.step();
+      for (let i = 0; i < 700; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } const e = G.Boss.e; let h = 0; const m = [G.time, e && e.x, e && e.y, G.state].join('|'); for (let i = 0; i < m.length; i++) h = (h * 31 + m.charCodeAt(i)) | 0; return { h, m }; }));
+    await done(pg, 'hash-' + extra);
+  }
+  ok(hs[0].h === hs[1].h, 'simulacion de Cenizar (reloj, posicion y estado; HP, fase y bajas dependen de tiempo real incluso con ?cine=0) identica con ?cine=0 y cine=1 (' + hs[0].m + ')');
+  // 5. Aldea por niveles 0..6 (derivado de bossKills) y dibujo sin errores; migracion: cuentas con jefes lo reciben
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  const vl = await E(pg, () => { const out = [], ids = G.Save.BOSSES; const cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; const c = cv.getContext('2d'); let err = 0;
+    for (let n = 0; n <= 6; n++) { G.Save.data.bossKills = {}; G.Save.data.endingSeen = false; for (let i = 0; i < n; i++) G.Save.data.bossKills[ids[i]] = 1; G.Aldea.open(false); try { G.Aldea.draw(c); } catch (e) { err++; } out.push(G.Aldea.level()); }
+    G.Save.data.bossKills = { karceron: 2, melaria: 1 }; const mix = G.Aldea.level(); G.Save.data.bossKills = {}; G.Save.data.endingSeen = true; const es = G.Aldea.level(); return { out, mix, es, err, txt: [1, 2, 3, 4, 5, 6].every(n => G.Aldea.levelText(n).length > 5) }; });
+  ok(JSON.stringify(vl.out) === '[0,1,2,3,4,5,6]' && vl.mix === 2 && vl.es === 6 && vl.err === 0 && vl.txt, 'nivel de aldea 0..6 = jefes vencidos (cualquier orden); endingSeen => completa; dibuja los 7 niveles sin errores');
+  const sv = await E(pg, () => { const k = Object.keys(G.Save.data); return k.includes('villageLevel') || k.includes('aldeaNivel'); });
+  ok(!sv, 'el nivel de aldea no se guarda (derivado de bossKills)');
+  // 6. Galeria: epilogo + creditos y creditos solos, saltables, sin escribir en el guardado
+  const gl = await E(pg, () => { G.Save.data.endingSeen = true; G.Save.data.cine.introSeen = true; const before = JSON.stringify(G.Save.data.cine); const o = {};
+    G.Cine.off = false; let done = 0; G.Ending.playAll({ replay: true, returnState: 'aldea', onEnd: () => { done++; } }); o.id0 = G.Cine.info().id; o.lock0 = G.Cine.info().locked;
+    for (let i = 0; i < 30; i++) G.step(); G.Cine.skip(); o.id1 = G.Cine.info() && G.Cine.info().id; for (let i = 0; i < 200; i++) G.step(); G.Cine.skip(); o.done = done; o.st = G.state;
+    G.Ending.playCredits({ replay: true, returnState: 'aldea' }, () => { done++; }); o.idc = G.Cine.info().id; for (let i = 0; i < 200; i++) G.step(); G.Cine.skip(); o.done2 = done; o.same = before === JSON.stringify(G.Save.data.cine); return o; });
+  ok(gl.id0 === 'epilogue' && !gl.lock0 && gl.id1 === 'credits' && gl.done === 1 && gl.idc === 'credits' && gl.done2 === 2 && gl.same, 'galeria: epilogo (saltable) -> creditos (saltables tras 3 s); no escribe en el guardado');
+  await done(pg, 'aldea-galeria');
 }
 
 // ---------------------------------------------------------------- Cinematicas v9 fase 2: entradas de jefe

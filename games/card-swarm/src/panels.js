@@ -831,7 +831,8 @@
     U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
-  var CB = { calm: { x: 290, y: 130, w: 380, h: 56 }, intro: { x: 290, y: 200, w: 380, h: 56 }, entries: { x: 290, y: 270, w: 380, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
+  var CB = { calm: { x: 290, y: 100, w: 380, h: 56 }, intro: { x: 290, y: 166, w: 380, h: 56 }, entries: { x: 290, y: 232, w: 380, h: 56 }, epi: { x: 290, y: 298, w: 186, h: 56 }, cred: { x: 484, y: 298, w: 186, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
+  function endUnlocked() { var S = G.Save.data; return !!(S.endingSeen || (S.cine && (S.cine.epilogueSeen || S.cine.creditsSeen)) || (S.bossKills && S.bossKills.cenizar > 0)); }
   function updCine() {
     if (onR(CB.calm)) { G.Cine.setCalm(!G.Cine.cfg().calm); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(CB.intro) && !G.Cine.off) {
@@ -840,6 +841,9 @@
       return true;
     }
     if (onR(CB.entries)) { cur = 'cine2'; return false; }
+    var back = function () { G.Aldea.open(false); };
+    if (onR(CB.epi) && !G.Cine.off && endUnlocked()) { G.Panels.closeAll(); G.Aldea.setPanel(null); G.Ending.playAll({ replay: true, returnState: 'aldea', onEnd: back }); return true; }   // epílogo + créditos (no escribe en el guardado)
+    if (onR(CB.cred) && !G.Cine.off && endUnlocked()) { G.Panels.closeAll(); G.Aldea.setPanel(null); G.Ending.playCredits({ replay: true, returnState: 'aldea' }, back); return true; }
     if (onR(CB.back)) cur = 'settings';
     return false;
   }
@@ -870,7 +874,10 @@
     U.button(c, CB.calm, 'Reducir destellos: ' + (cf.calm ? 'SÍ' : 'NO'), { size: 16, color: cf.calm ? '#2a6aa8' : '#2c2438', sub: 'Destellos suaves y menos frecuentes' });
     U.button(c, CB.intro, 'Ver la intro', { size: 18, off: G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagada con ?cine=0' : 'se puede saltar' });
     U.button(c, CB.entries, 'Ver entradas de jefe', { size: 18, off: G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagadas con ?cine=0' : 'galería, se pueden saltar' });
-    G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 330, 12, '#9a8fb0', 'center');
+    var eu = endUnlocked(), off = G.Cine.off || !eu, sb = G.Cine.off ? 'apagado con ?cine=0' : eu ? 'se puede saltar' : 'tras vencer a Cenizar';
+    U.button(c, CB.epi, eu ? 'Ver epílogo' : '???', { size: 16, off: off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: sb });
+    U.button(c, CB.cred, eu ? 'Ver créditos' : '???', { size: 16, off: off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: sb });
+    G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 380, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];

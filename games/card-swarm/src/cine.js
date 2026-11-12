@@ -60,9 +60,12 @@
   // ---------------------------------------------------------------- Audio (si falta el recurso: silencio / sonido de reserva)
   C.blip = function (who) {
     try {
-      if (G.Snd && typeof G.Snd.cine === 'function') G.Snd.cine('blip', who === 'LANUDO' ? 'lanudo' : 'neutro', 0.9 + 0.3 * ((S && S.bips || 0) % 4) / 3);
+      var pt = 0.9 + 0.3 * ((S && S.bips || 0) % 4) / 3;
+      if (who === 'CARAPA' || who === 'RUFO') { if (G.Snd && typeof G.Snd.cine3 === 'function') { G.Snd.cine3('blip', who.toLowerCase(), pt); return; } }   // sfx_cine3.js
+      if (G.Snd && typeof G.Snd.cine === 'function') G.Snd.cine('blip', who === 'LANUDO' ? 'lanudo' : 'neutro', pt);
     } catch (e) { /* audio opcional */ }
   };
+  C.snd3 = function (kind, arg, pitch) { try { if (G.Snd && typeof G.Snd.cine3 === 'function') return G.Snd.cine3(kind, arg, pitch); } catch (e) { /* audio opcional */ } return false; };
   C.snd = function (kind, arg, pitch) { try { if (G.Snd && typeof G.Snd.cine === 'function') return G.Snd.cine(kind, arg, pitch); } catch (e) { /* audio opcional */ } return false; };
   function musicStop() { try { Assets.music.stop(); } catch (e) { /* audio */ } }
 
@@ -83,13 +86,14 @@
     return true;
   };
   C.active = function () { return !!S; };
-  C.info = function () { return S ? { id: S.script.id, t: S.t, len: S.script.len, locked: S.locked, paused: S.paused, fired: S.nFired, scene: S.sceneIdx, maxFlashA: S.maxFlashA, flashCount: S.flashCount, shakePx: S.shakePx, bakedCanvases: Object.keys(S.baked).length, line: S.line ? S.line.text : null } : null; };
+  C.info = function () { return S ? { id: S.script.id, t: S.t, len: S.script.len, locked: isLocked(), paused: S.paused, fired: S.nFired, scene: S.sceneIdx, maxFlashA: S.maxFlashA, flashCount: S.flashCount, shakePx: S.shakePx, bakedCanvases: Object.keys(S.baked).length, line: S.line ? S.line.text : null } : null; };
   C.pause = function (b) {
     if (!S) return;
     b = !!b; if (S.paused === b) return; S.paused = b;
     try { if (b) { Assets.suspendAudio(); G.Snd.suspend(); } else if (!(G.Sys && G.Sys.muted)) { Assets.resumeAudio(); G.Snd.resume(); } } catch (e) { /* audio */ }
   };
-  C.skip = function () { if (!S || S.locked) return false; C.snd('skip'); finish('skip'); return true; };
+  function isLocked() { return !!S && S.locked && !(S.opts.skipAfter != null && S.t >= S.opts.skipAfter); }   // skipAfter (ms): se bloquea solo hasta ese instante (créditos: saltables tras 3 s)
+  C.skip = function () { if (!S || isLocked()) return false; C.snd('skip'); finish('skip'); return true; };
   C.end = function () { if (S) finish('end'); };   // cierre forzado por el código (no por el jugador)
 
   function finish(reason) {
@@ -167,7 +171,7 @@
     if (!S) return;
     var inp = G.input, tap = inp.hit('Mouse0'), kb = inp.hit('Space', 'Enter', 'KeyE');
     if (S.paused) { if (tap || kb) C.pause(false); return; }
-    if (!S.locked && (inp.hit('Escape') || (tap && G.UI && G.UI.inR(skipRect(), inp.mouse)))) { C.snd('skip'); finish('skip'); return; }
+    if (!isLocked() && (inp.hit('Escape') || (tap && G.UI && G.UI.inR(skipRect(), inp.mouse)))) { C.snd('skip'); finish('skip'); return; }
     if (inp.lock <= 0 && (tap || kb)) advance();
     if (!S) return;
     S.t += dt;
@@ -267,21 +271,21 @@
     }
     // subtítulo / diálogo (siempre visible)
     var L = S.line;
-    if (L) drawLine(c, L);
+    if (L) drawLine(c, L, sc.dlgTop);
     // botón SALTAR o pista de avance
-    if (!S.locked) {
+    if (!isLocked()) {
       var r = skipRect(), hov = G.UI && G.UI.inR(r, G.input.mouse);
       c.save(); c.fillStyle = hov ? 'rgba(90,70,120,0.92)' : 'rgba(20,12,32,0.8)'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = '#bfa8e8'; c.lineWidth = 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.restore();
       G.txt(c, 'SALTAR', r.x + r.w / 2, r.y + r.h / 2, 16, '#fff', 'center');
     }
-    G.txt(c, S.locked ? 'Toca: avanzar' : 'Toca: avanzar  -  Esc: saltar', 14, H - 12, 10, 'rgba(200,190,220,0.55)', 'left');
+    G.txt(c, isLocked() ? 'Toca: avanzar' : 'Toca: avanzar  -  Esc: saltar', 14, H - 12, 10, 'rgba(200,190,220,0.55)', 'left');
     if (S.paused) {
       c.fillStyle = 'rgba(5,3,10,0.82)'; c.fillRect(0, 0, W, H);
       G.txt(c, 'PAUSA', W / 2, H / 2 - 24, 34, '#ffd27a', 'center'); G.txt(c, 'TOCA PARA CONTINUAR', W / 2, H / 2 + 22, 20, '#f0e8d8', 'center');
     }
   };
-  function drawLine(c, L) {
-    var W = G.W, H = G.H, txt = L.text.slice(0, L.shown), full = wrapText(c, L.text, 760, 18), n = full.length, bh = 30 + n * 26 + (L.who ? 14 : 0), y = H - 52 - bh, i;
+  function drawLine(c, L, top) {
+    var W = G.W, H = G.H, txt = L.text.slice(0, L.shown), full = wrapText(c, L.text, 760, 18), n = full.length, bh = 30 + n * 26 + (L.who ? 14 : 0), y = top ? 46 : H - 52 - bh, i;
     c.save(); c.fillStyle = 'rgba(8,4,14,0.86)'; c.fillRect(60, y, 840, bh); c.strokeStyle = L.color; c.lineWidth = 2; c.strokeRect(61, y + 1, 838, bh - 2);
     var ty = y + 22;
     if (L.who) { G.txt(c, L.who, 84, ty, 14, L.color, 'left'); ty += 22; }

@@ -1176,7 +1176,7 @@
     var chx = tx - 190 * s; ctx.save(); ctx.globalAlpha = 1 - rest; ctx.fillStyle = '#241a14'; ctx.strokeStyle = OLC; ctx.lineWidth = 3.4 * s; ctx.fillRect(chx - 22 * s, ty - 40 * s, 44 * s, 8 * s); ctx.strokeRect(chx - 22 * s, ty - 40 * s, 44 * s, 8 * s); ctx.restore(); ctx.save(); ctx.globalAlpha = rest; ctx.fillStyle = '#8a5a34'; ctx.strokeStyle = OLC; ctx.lineWidth = 3.4 * s; ctx.fillRect(chx - 22 * s, ty - 40 * s, 44 * s, 8 * s); ctx.strokeRect(chx - 22 * s, ty - 40 * s, 44 * s, 8 * s); ctx.fillRect(chx - 22 * s, ty - 90 * s, 8 * s, 52 * s); ctx.strokeRect(chx - 22 * s, ty - 90 * s, 8 * s, 52 * s); ctx.fillRect(chx - 20 * s, ty - 32 * s, 6 * s, 40 * s); ctx.fillRect(chx + 14 * s, ty - 32 * s, 6 * s, 40 * s); ctx.restore();
     // los amigos (siluetas con luz por el borde): Lanudo, Vesper, Castana, Grum, Ulalume
     var cols = ['#ffd9a0', '#d0a0ff', '#ffb060', '#ffc890', '#a0f0e0'], hts = [118, 96, 108, 140, 90], xs = [-330, -210, 60, 290, 390];
-    for (i = 0; i < 5; i++) { var lit = clamp((fr * 5 - i) * 0.9, 0, 1); if (lit > 0) friend(ctx, hx + xs[i] * s * 0.9 + (1 - lit) * 24 * s, fl + 52 * s + (i % 2) * 6 * s, i, hts[i] * s, lit, cols[i]); }
+    for (i = 0; i < 5 && !o.noFriends; i++) { var lit = clamp((fr * 5 - i) * 0.9, 0, 1); if (lit > 0) friend(ctx, hx + xs[i] * s * 0.9 + (1 - lit) * 24 * s, fl + 52 * s + (i % 2) * 6 * s, i, hts[i] * s, lit, cols[i]); }
     // fundido calido final
     var fo = ease((p - 0.9) / 0.1); if (fo > 0) { ctx.fillStyle = 'rgba(20,8,4,' + (0.85 * fo).toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); }
     ctx.restore();
