@@ -1601,3 +1601,30 @@ Assets.cine3.logo(ctx, cx, cy, w, t, {calm, p}) ; .preload(id,w,h,opts) ; .free(
 - `fresh` (0..1) anima la mejora del nivel recien alcanzado (aparece escalada/transparente); usar p. ej. `fresh = min(1, ms desde subir de nivel / 2500)`. `time` = el mismo valor que pasas a `drawVillage` (0 dia, 0,5 ocaso, 1 noche; ajusta el brillo de los farolillos). `calm`: banderas y petalos sin ondear, sin parpadeo, sin mariposas.
 - Uso: `Assets.drawVillage(ctx, t, {time, npcs: Object.assign({}, Assets.cine3.villageNpcs(level, t), tusNpcs), ...}); Assets.cine3.villageRebuild(ctx, level, t, {time, calm});` Si usas luz (`light` por defecto), el overlay queda bajo la oscuridad solo si pasas `light:false` a `drawVillage` y llamas despues a `Assets.drawVillageLight(ctx,t,{time})`; si no, se dibuja sobre ella (valido de dia). `villageNpcs(level,t)` devuelve `{grum:{anim:'work'},...}` (Grum trabaja desde el nivel 2, Castana cocina/descansa nivel 2, Vesper nivel 3, Rufo nivel 4, Ulalume y Lanudo nivel 5; con nivel 6 tambien `happy`); los aldeanos que no aparecen quedan por defecto. Rinde ~1-2 ms por llamada.
 - Pruebas: Playwright+Chromium (sin GPU, lectura forzada): 5-17 ms por fotograma de vineta (960x540, 844x390 y 720x540), creditos 5-7 ms, 0 errores con `calm`, `lite`, ids invalidos y `level` fuera de rango. Capturas: `studio/docs/capturas-herrero/cine3-epilogo.jpg`, `cine3-aldea-niveles.jpg`, `cine3-creditos.jpg`.
+
+# FX 2 - escudo en perspectiva, hielo facetado, impactos con particulas y estados (src/assets_fx2.js; Director de arte)
+Cargar DESPUES de `assets_fusion3.js` y antes de `fusion.js` (el `<script>` ya esta en index.html y sw.js). Tecnicas inspiradas en la web de efectos
+pixelfx (MIT: facetas con 3 tonos, destello barrido, chispas con gravedad y rebote, fuego que acaba en humo, estelas de N puntos, flare de 8 rayos),
+reescritas en canvas 2D suave y procedural. Sin lectura/escritura de pixeles, sin dependencias, sin tocar simulacion ni `G.rng` (azar cosmetico con `G.rndFx`).
+`?fx2=0` desactiva todo y devuelve el arte anterior (A/B y rollback). `?fx2prof=1` acumula ms por funcion en `G.Fx2.prof` (lo imprime `tools/fx2-lab/perf_fx2.js`).
+
+## Funciones nuevas en `G.FusionArt2` (todas seguras: save/restore y errores en `lastError`)
+- `wardBackAuto(c)` -> mitad LEJANA del escudo del Cristal; la llama `fusion.js drawGround` (detras del personaje). Lee `p.ward` y el poder `cristal` activo.
+- `wardFront(c, x, y, r, t, alpha, u)` -> mitad CERCANA (delante del personaje); la llama `fusion.js drawAir` (cae a `ward` si fx2 esta apagado).
+- `ward(...)` (existente) ahora pinta las dos mitades seguidas (lo usa la demo del Manual).
+- `fx2Draw(c)` -> particulas (chispas, escombros, brasas->humo, flares) y marcas de estado sobre enemigos; la llama `fusion.js drawAir` al final.
+- `fx2Clear()` -> vacia el pool (tambien se vacia solo si `G.time` retrocede, p. ej. al reiniciar).
+Envueltas con el mismo contrato (misma firma): `lance`, `fan`, `storm`, `nova` (`'ice'`, `'shatter'`, `'pact'`, `'toxic'`), `strike`, `impact`, `axe`, `icon('cristal')`.
+Arte de Tundra/Yarlak (`Assets.drawIcePillar`, `drawYarlakSpike/Icicle/Pulse`): se les suma escarcha de suelo debajo; el resto no cambia.
+
+## `G.Fx2` (utilidades reutilizables)
+`explode(x, y, pal, nChispas, nEscombros, nBrasas, flare)` con `pal` = fire | plasma | forja | descarga | ice | cristal | gas;
+`frost(c, x, y, r, a)`, `crystal(c, x, y, escala, 'ice'|'pink', rot)`, `flare(c, x, y, escala, 'r,g,b')`, `TONE` (paletas luz/medio/sombra), `cap()` (tope vivo).
+
+## Reglas de rendimiento y accesibilidad
+- Pool de 72 particulas, tope vivo = `G.Q.partCap x 0,22` (alta 72, media 48, baja 19); como mucho 2 explosiones por 100 ms; solo se generan en combate real (`G.state==='play'` y Manual cerrado: la demo del Manual sigue siendo determinista).
+- Sprites cacheados offscreen a x2 (cristal, lanza, escarcha, flares, llamas, caparazon de hielo, placas de oxido); sin gradientes por frame (resplandor = sprite aditivo).
+- Marcas de estado (quemado, helado, envenenado, corroido): hasta 22 / 14 / 6 enemigos (alta / media / baja), 2 estados por enemigo; helado >= 55 % de lentitud = caparazon facetado con destello.
+- Reducir destellos (`G.Cine.cfg().calm`): sin flares, brillos <= 25 %, la mitad de chispas, humo mas tenue.
+- Vista inclinada (iso): todo lo vertical se dibuja en espacio de pantalla (`scale(1, 1/K)`), el suelo (escarcha, anillos) en espacio de suelo.
+- Herramienta de comparacion: `tools/fx2-lab/` (`lab.js` hoja ANTES | DESPUES; `perf_fx2.js` A/B de ms por frame con `EXTRA='&fx2=0'`).

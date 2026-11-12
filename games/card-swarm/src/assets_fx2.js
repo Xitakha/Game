@@ -367,13 +367,13 @@
       e = es[i]; if (e.dead || e.partOf || e.hidden || e.hide || e.spawnT > 0) continue;
       if (!(e.burnT > 0 || e.slowT > 0 || e.poisonT > 0 || e.corrodeT > 0)) continue;
       if (e.x < cx0 || e.x > cx1 || e.y < cy0 || e.y > cy1) continue;
-      n++; ns = 0; r = Math.max(8, Math.min(40, e.r || 12)); sc = r / 14; x = e.x; y = e.y * k; ph = i * 0.37; c.globalAlpha = 1;
+      n++; ns = 0; r = Math.max(8, Math.min(26, e.r || 12)); sc = r / 14; x = e.x; y = e.y * k; ph = i * 0.37; c.globalAlpha = 1;
       if (e.burnT > 0 && ns++ < 2) {   // fuego: 3 lenguas animadas + brasas que suben
-        put(c, burnSpr((Math.floor(t * 9 + ph * 3)) % 3), x, y - r * 0.5, sc);
+        put(c, burnSpr((Math.floor(t * 9 + ph * 3)) % 3), x, y - r * 0.45, sc * 0.78);
         c.globalCompositeOperation = 'lighter'; c.fillStyle = '#ffd060'; var eu = (t * 1.2 + ph) % 1; c.globalAlpha = 1 - eu; c.fillRect(x + Math.sin(t * 4 + ph) * r * 0.6 - 1, y - r * 0.8 - eu * r * 1.6, 2.2, 2.2); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
       }
       if (e.slowT > 0 && ns++ < 2) {   // helado: escarcha + cristales a los pies; >= 55 % de lentitud: caparazon facetado con destello
-        put(c, chillSpr(), x, y, sc);
+        put(c, chillSpr(), x, y, sc * 0.85);
         if (e.slowPct >= 0.55) { put(c, shellSpr(), x, y - 1, Math.max(0.5, r / 14)); glintBar(c, x, y, r * 2.2, r * 0.9, ((t * 0.55 + ph) % 1)); }
         else if (((t * 0.7 + ph) % 1) < 0.16) { c.globalAlpha = 0.9; c.globalCompositeOperation = 'lighter'; put(c, flareSpr('200,235,255'), x - r * 0.8, y + r * 0.2, 0.22, t); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; }
       }
@@ -472,6 +472,21 @@
     FX2.old.icon.apply(B, arguments);
     if (id === 'cristal') { var ph = (T() * 0.7) % 1; c.save(); c.translate(cx, cy); glintBar(c, 0, 0, s * 1.6, s * 0.7, ph); c.restore(); }
   });
+
+  // Hielo de la Tundra / Yarlak (arte por sprites de assets_fam3 / assets_boss3): se les suma escarcha en el suelo y un destello que barre
+  function wrapAsset(name, fn) {
+    var A = window.Assets, old = A && A[name]; if (typeof old !== 'function') return; FX2.old[name] = old;
+    A[name] = function (ctx) {
+      if (!FX2.on) return old.apply(A, arguments);
+      try { fn.apply(null, arguments); } catch (e) { B.lastError = e; }
+      return old.apply(A, arguments);
+    };
+  }
+  function icyDecal(ctx, x, y, r, a) { ctx.save(); ctx.globalAlpha = a * (calm() ? 0.8 : 1); ctx.drawImage(frostSpr(), x - r, y + 6 - r * 0.42, r * 2, r * 0.84); ctx.restore(); }
+  wrapAsset('drawIcePillar', function (ctx, x, y, o) { if (o && o.rebuild > 0 && !(o.hp > 0)) return; icyDecal(ctx, x, y + 16, 38, 0.6); });
+  wrapAsset('drawYarlakSpike', function (ctx, x, y, p, o) { icyDecal(ctx, x, y + 14, 44 * (o && o.scale ? o.scale / 1.25 : 1), 0.7 * Math.min(1, p * 2 + 0.2)); });
+  wrapAsset('drawYarlakIcicle', function (ctx, x, y, p, o) { icyDecal(ctx, x, y, 26, 0.5 * p); });
+  wrapAsset('drawYarlakPulse', function (ctx, x, y, p, o) { icyDecal(ctx, x, y, ((o && o.r) || 280) * (1 - (1 - p) * (1 - p)) * 0.9, 0.35 * (1 - p)); });
 
   // API nueva
   B.wardBack = function (c, x, y, r, t, alpha, u) { if (!c || !FX2.on) return; c.save(); try { wardBack(c, x, y, r, t, alpha, u); } catch (e) { B.lastError = e; } c.restore(); };
