@@ -778,6 +778,7 @@
   // ------------------------------------------------------------- Dibujo
   F.drawGround = function (c) {
     var t = G.time / 1000, a2 = A2();
+    if (a2 && a2.wardBackAuto) a2.wardBackAuto(c);   // FX2: mitad lejana del escudo del Cristal (detras del personaje)
     for (var i = 0; i < F.fields.length; i++) {
       var f = F.fields[i], u = Math.min(1, f.life / 400, (f.max - f.life) / 250 + 0.2);
       if (f.kind === 'storm') { if (!art('storm', c, f.x, f.y, f.r, t, u)) G.FusionArt.cloud(c, f.x, f.y, f.r, t, 'vapor', u * 0.6); }
@@ -822,13 +823,14 @@
       var s = p.actives && p.actives[i]; if (!s || !s.st) continue;
       var st = s.st;
       if (RBY[s.id].kind === 'beam') G.FusionArt.beam(c, st.x0, st.y0, st.x1, st.y1, st.L.w, G.time / 1000);
-      else if (RBY[s.id].kind === 'ward') { var wu = Math.max(0, p.ward / (st.max || 1)); if (!art('ward', c, p.x, p.y, s.lvl > 1 ? 66 : 56, G.time / 1000, 1, wu)) { c.save(); c.globalAlpha = 0.3 + 0.4 * wu; c.strokeStyle = '#d86a98'; c.lineWidth = 4; c.beginPath(); c.arc(p.x, p.y, 40, 0, 6.283); c.stroke(); c.restore(); } }
+      else if (RBY[s.id].kind === 'ward') { var wu = Math.max(0, p.ward / (st.max || 1)); if (!art('wardFront', c, p.x, p.y, s.lvl > 1 ? 66 : 56, G.time / 1000, 1, wu) && !art('ward', c, p.x, p.y, s.lvl > 1 ? 66 : 56, G.time / 1000, 1, wu)) { c.save(); c.globalAlpha = 0.3 + 0.4 * wu; c.strokeStyle = '#d86a98'; c.lineWidth = 4; c.beginPath(); c.arc(p.x, p.y, 40, 0, 6.283); c.stroke(); c.restore(); } }
       else if (RBY[s.id].kind === 'orbit') for (j = 0; j < st.bodies.length; j++) G.FusionArt.dagger(c, st.bodies[j].x, st.bodies[j].y, st.bodies[j].a + Math.PI / 2);
       else if (RBY[s.id].kind === 'mark' && a2) for (j = 0; j < st.marks.length; j++) { var e = st.marks[j]; if (!e.dead && e.hemoT > 0) a2.mark(c, e.x, e.y, e.r + 4, G.time / 1000); }
     }
     for (i = 0; i < F.axes.length; i++) { var ax = F.axes[i]; if (a2) a2.axe(c, ax.x, ax.y, ax.t / 1000, 1); else { c.fillStyle = '#ff8a2a'; c.beginPath(); c.arc(ax.x, ax.y, 18, 0, 6.283); c.fill(); } }
     if (corrodeN > 0) for (i = 0; i < G.enemies.length; i++) { var ce = G.enemies[i]; if (ce.corrodeT > 0 && !ce.dead && visible(ce) && !art('status', c, 'corrode', ce.x, ce.y, ce.r, G.time / 1000)) { c.save(); c.strokeStyle = '#9ad05a'; c.setLineDash([3, 4]); c.beginPath(); c.arc(ce.x, ce.y, ce.r + 3, 0, 6.283); c.stroke(); c.restore(); } }
     if (p.fusBuffT > 0 && a2) a2.aura(c, p.x, p.y, G.time / 1000, Math.min(1, p.fusBuffT / 500), 26);
+    if (a2 && a2.fx2Draw) a2.fx2Draw(c);   // FX2: particulas (chispas, escombros, fuego->humo, flares) y estados sobre enemigos
   };
   function sweep(c, x, y, r, frac) {
     c.fillStyle = 'rgba(8,4,14,0.72)'; c.beginPath(); c.moveTo(x, y); c.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + 6.283 * frac); c.closePath(); c.fill();
