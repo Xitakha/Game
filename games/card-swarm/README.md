@@ -207,3 +207,11 @@ Lectura honesta:
 - AJUSTES > CINEMÁTICAS: "Reducir destellos" y "Ver la intro" (repetición saltable, no escribe en el guardado).
 - Motor `G.Cine` (`src/cine.js`): pistas, cámara, capas con paralaje, texto máquina de escribir, letterbox, pausa en segundo plano; solo dibuja y suena (sin `G.rng`, sin tocar la simulación). Guardado v12 (`cine{}` y `settings.cine`), con copia `swarmhand.fusion.save.v11`.
 - Pruebas: `node tools/card-swarm-bot/tests.js cine` (incluye hash de simulación idéntico con y sin cine).
+
+## Cinemáticas v9 - fase 2 (entradas de jefe)
+- Capa de cinemática SOBRE la intro in-world de `boss.js` (`H.intro`, `cadT = 1200`, telegrafías y balance intactos). Código: `src/cine_entry.js` (capa, prerrollo de Cenizar, galería), arte `src/assets_cine2.js` (`Assets.cine2.omen/card/entry/prelude`), audio `src/sfx_cine2.js` (`G.Snd.cine2`).
+- Versiones: **larga** (1.ª vez que te enfrentas al jefe, `cine.entrySeen[id]`/`bossSeen`; ~4,5 s: 1 s de presagio + la intro de 3,5 s; NO saltable; cartel y subtítulo de lore de Lanudo); **corta** (resto, ~1,6 s; saltable con Espacio/toque desde 800 ms; práctica siempre corta); **apagada** (`?cine=0`, `?nointro=1`, URLs de prueba `?direct/?boss/?hunt/?assault/?practice` salvo `?cine=1`, y bots): la intro de siempre de 3,5 s. `?cine=short` fuerza la corta.
+- La simulación es idéntica en las tres: el presagio de la larga no corre el mundo (`G.Boss.introGate` devuelve 0 pasos) y la corta ejecuta varios pasos de `STEP` por tick; `G.time`, `G.rng` y el estado tras la entrada no cambian (test con hash). Saltar ejecuta de golpe rugido/`cullHorde`, música y `cadT = 1200`.
+- Cenizar, 1.ª vez: prerrollo `full` de 6 s bloqueado justo antes de `S.spawn` (no avanza `G.time`), con subtítulos sobre el Hogar quemado y la brasa mansa; después la entrada larga. Las siguientes, corta.
+- AJUSTES > CINEMÁTICAS > **Ver entradas de jefe**: galería (solo jefes ya vistos), saltable, no escribe en el guardado. Respeta Reducir destellos (`settings.cine.calm`) y `G.shakeMul`.
+- Pruebas: `node tools/card-swarm-bot/tests.js cine` (sección fase 2: modos, duraciones, hash idéntico con `?cine=0`/larga/corta, salto, 6 jefes, prerrollo, galería).
