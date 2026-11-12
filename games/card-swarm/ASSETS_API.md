@@ -1527,3 +1527,37 @@ Assets.cine2.list [{id,name,epi,lore,color,dur,durShort}] ; .ids ; .info(id) ; .
 - **Cartel** `card(id,ctx,w,h,p,{short,calm,y})`: placa casi negra con filete de luz que crece, esquinas de hierro y color del jefe; fundido de entrada 0-18 % (corta 0-30 %) y de salida en el ultimo 14 %. Textos (ES): EL PASTOR CORRUPTO / Bestia del Rebano / "El Pastor era el mejor de nosotros." | KARCERON / Coloso de Huesos y Magma / "Desperto entre sus propios grilletes." | LETEA / la Hidra del Asfodelo / "El rio del olvido tiene tres voces." | YARLAK / El invierno que camina / "Guardaba la ultima hoguera del norte." | MELARIA / la Reina Abeja / "Devoro la jalea de sus hermanas." | CENIZAR / El Incendio Primero / "Nacio de la primera brasa que nadie apago." (con tildes en el codigo; `short` omite el lore). Colores: `#c090ff, #ff9a3c, #5fd6c8, #bfeaff, #f3a31f, #fff2b0`.
 - **Prerrollo de Cenizar** `prelude(ctx,w,h,p,{calm,lite,y})` p sobre 6 s: 0-2 s el Hogar Quemado desde arriba (losas, vigas caidas, escombros, haz de luz por el techo roto con polvo; camara que entra con zoom); 2-4 s el brasero y las grietas que se encienden una a una hacia los cinco sellos del pentagono (usa `Assets.CRATER.seals`) en `#c090ff #ff9a3c #5fd6c8 #bfeaff #f3a31f`; 3,7-4,2 s corte a negro; 4,2-6 s cartel CENIZAR / El Incendio Primero (+ lore). Tras 6 s, la logica arranca la intro estandar. Pinta fondo opaco propio (pantalla completa).
 - Uso tipico (sobre el mundo real, el programador): `Assets.cine2.omen(id,ctx,w,h,p,{short,calm})` durante el presagio, tu propio sprite, y `Assets.cine2.card(...)` encima; o toma completa autonoma con `entry` (para galeria/pruebas). Rendimiento (Chromium sin GPU, 844x390, con lectura forzada): ~6-7 ms por llamada `entry`+`card` (domina el sprite del jefe), 0 errores. Capturas: `studio/docs/capturas-herrero/cine2-entradas.jpg` (6 jefes x p 0,12/0,4/0,6/1) y `cine2-prelude-cenizar.jpg`.
+
+---
+
+# Audio del cierre v9 - FASE 3 (src/sfx_cine3.js; cargar DESPUES de `sfx_cine2.js`; el programador anade el `<script>` en index.html y sw.js)
+Solo audio procedural (WebAudio), contexto propio que sigue desbloqueo, mute, volumen y suspend de Assets. No usa `G.rng` ni toca la simulacion. Seguro (try/catch; sin audio devuelve `false`). Tono oscuro con esperanza al final; sin voz, solo bips. Encadena `Assets.music` igual que `sfx_cine.js` (las pistas anteriores siguen funcionando).
+
+## Pistas (`Assets.music.setTrack(nombre); Assets.music.start()`; `Assets.music.stop()` al salir, fundido de 0,4 s)
+| Pista | Duracion | Contenido |
+|---|---|---|
+| `cine_epilogo` | 35 s exactos desde `start()` (60 BPM, 140 pasos de 0,25 s); entra con fundido de 1,5 s | 0-16 s ceniza: viento, crepitar escasisimo, bordon casi inaudible, caja de musica que duda (Mi frigio). **16,0 s = el fuego prende** (rugido corto + latido; tema del fuego Mi-Sol#-La-Do# en mayor, acordes Mi-La-Do#m-Si-Mi, crepitar creciente). 24-35 s crescendo suave (cuerda, octava grave de la caja) y acorde de Mi mayor a 32 s. Despues de 35 s queda un lecho de bordon y brasas (parar con `music.stop()`) |
+| `cine_creditos` | 25,6 s (75 BPM, 8 compases) con cierre; entra con fundido de 0,8 s | Calido y esperanzado: bordon, latido, escobillas, arpegio de marimba/campana (Mi-La-Si-Do#m-Mi-La-Si-Mi) y acorde final de Mi mayor en el compas 8 (~22,4 s). Despues queda un lecho suave de brasas (no se repite el tema) |
+
+- `Assets.cineMusicTime3()` -> segundos sonados de la pista cine3 actual (0 si no suena); util para disparar el reencendido a 16 s.
+- `renderMusic({track:'cine_epilogo'|'cine_creditos', steps?})` y `renderSfx('cine3_*')` (OfflineAudioContext) para el visor.
+
+## SFX: `G.Snd.cine3(tipo, arg, pitch)` (tambien `Assets.cine3`) -> true si sono
+| tipo | arg | Duracion | Uso |
+|---|---|---|---|
+| `'victory'` | - | 6,0 s (audible hasta ~5,5 s) | Stinger de victoria sobre Cenizar: latido, vacio, notas de caja de musica Mi-Si-Sol (menor, la herida) y Sol# (llega la esperanza), acorde de Mi mayor suave; cola que muere a 6 s. Sin eco largo |
+| `'fire'` | - | 4,2 s | Reencendido del fuego (Marlo suelta la brasa mansa): chispa, brasa que respira, rugido que sube, el fuego prende a 1,6 s, crepitar creciente, 3 campanas mansas. Sin destello: pensado para halo calido |
+| `'village'` | nivel 1..6 (se acota) | ~1,5 s (cuerpo <= 1,2 s) | Jingle "la aldea mejora" al vencer cada jefe: cada nivel anade una nota/capa (2 notas menores al 1, 7 notas con latido y chispas al 6) |
+| `'blip'` | `'carapa'` (defecto: yunque metalico claro) o `'rufo'` (cuadrada corta, rapida) | 0,05-0,1 s | Bip de texto, uno por palabra. Separacion minima 28 / 20 ms; +-8 % aleatorio x `pitch` |
+| `'stop'` | - | fundido 150 ms | Corta victory/fire/village vivos (al saltar) |
+
+- Nombres internos: `cine3_victory`, `cine3_fire`, `cine3_village_1..6`, `cine3_blip_carapa|rufo`; metadatos (`len`, `dur`, `min`) en `Assets.sfxCine3`. Re-disparo del mismo SFX bajo su `min` (victory 1,5 s, fire 1 s, village 0,4 s) se ignora.
+
+## Orden recomendado del cierre (arregla el pisado de jingles; hoy `stg_cenizar_win` y `stg_cenizar_ending` suenan a la vez)
+1. Muerte de Cenizar: `stg_cenizar_death` (~6 s) como hoy. **No** llamar a `stg_cenizar_win` ni a `stg_cenizar_ending` en la ruta con cinematica (ni `G.Snd.play('stg_cenizar_win')` en `main.js`).
+2. `music.stop()`; silencio de 1,5 s; `cine3('victory')` (6 s). El epilogo empieza **despues** de 6,2 s (o antes solo si se salta: `cine3('stop')`).
+3. Epilogo: `setTrack('cine_epilogo'); start()`. A los **16,0 s** de pista (`cineMusicTime3() >= 16`, o `t` de la escena) lanzar `cine3('fire')` (y `ending_hearth` ya no hace falta). Bips: `cine('blip', ...)` para el resto y `cine3('blip','carapa'|'rufo')`.
+4. A ~35 s: `setTrack('cine_creditos'); start()` (cambio con fundido de 0,45 s); al terminar `music.stop()` y de vuelta a la pista del contexto con `setTrack('normal')`.
+5. Al saltar la cinematica: `cine3('stop'); music.stop()`.
+6. Aldea: al volver tras vencer a un jefe, `cine3('village', nivel)` con nivel = jefes vencidos (1..6).
+- Pruebas: Playwright+Chromium, 0 errores; todas las definiciones (10 SFX + 2 pistas) renderizan offline sin NaN, pico <= 0,56 (SFX) / 0,84 (creditos, con compresor); epilogo RMS 0,002 -> 0,18 (ceniza a calidez).
