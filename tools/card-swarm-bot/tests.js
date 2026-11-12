@@ -367,7 +367,7 @@ async function armor() {
   const b = await launch();
   // 1) cuenta vacia: sin Carapa; ?smith=1 la abre y la escena entrega el set Aldeano
   let pg = await mk(b, 'reset=1&nosw=1');
-  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 11), 'cuenta nueva: guardado v11, Carapa aun no ha llegado');
+  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 12), 'cuenta nueva: guardado v12, Carapa aun no ha llegado');
   const zb = await E(pg, () => { G.curBiome = 'bosque'; return [G.Armor.engaged(), G.Armor.zone()]; });
   ok(zb[0] === false && zb[1] === 1, 'cuenta vacia en Bosque: sin zoneDmg ni armadura (rama antigua de hurt)');
   await done(pg, 'armor-vacia');
@@ -380,9 +380,9 @@ async function armor() {
     G.Save.load(); const d = G.Save.data;
     return { v: d.v, brasas: d.brasas, thread: d.parts.thread, pf: d.pf.earned, te: d.trophiesEver, ie: d.insigniasEver, tr: d.trophies, owned: Object.keys(d.armor.owned).sort(), eq: d.armor.equipped, gift: d.flags.smithGift, bak: !!localStorage.getItem('swarmhand.fusion.save.v9') };
   });
-  ok(mig.v === 11 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
+  ok(mig.v === 12 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
   ok(mig.owned.join() === 'ald_amulet,ald_boots,ald_chest,ald_helm,car_chest,esq_chest' && mig.eq[1] === 'car_chest' && mig.gift === 1, 'regalo: Aldeano + Peto por jefe vencido (Esquila y Carcelero), mejor equipado: ' + mig.owned.length + ' piezas');
-  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 12, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
+  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 13, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
   ok(imp[0] === true && imp[1] === false, 'importText acepta la v11 y rechaza versiones mayores');
   await done(pg, 'armor-migra');
   // 3) panel: fabricar, equipar, reforzar con toques en 844x390
@@ -468,7 +468,7 @@ async function armor2() {
     localStorage.setItem('swarmhand.fusion.save', JSON.stringify(old)); G.Save.load(); const x = G.Save.data;
     return { v: x.v, owned: Object.keys(x.armor.owned).sort().join(), eq: x.armor.equipped, brasas: x.brasas, bak: !!localStorage.getItem('swarmhand.fusion.save.v10'), tr: x.trophies.horn };
   });
-  ok(m11.v === 11 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
+  ok(m11.v === 12 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
   ok(['bra_chest', 'esc_chest', 'gla_chest', 'jal_chest', 'car_chest', 'esq_chest'].every(id => m11.owned.includes(id)) && m11.eq[1] === 'bra_chest', 'regalo: Peto de Escama, Pelaje, Jalea y Brasa por jefe vencido; equipa el de mayor tier (' + m11.eq[1] + ')');
   // datos y costes
   const dt = await E(pg, () => {

@@ -15,6 +15,9 @@
   var EMB = []; for (i = 0; i < 40; i++) EMB.push({ x: R() * W, y: R(), sp: 0.4 + R() * 0.8, ph: R() * TAU });
   function art(name) { try { var A = window.Assets && Assets.cine; return A && typeof A[name] === 'function' ? A[name] : null; } catch (e) { return null; } }
 
+  function artScene(id, c, t, p) {   // arte de assets_cine.js (Assets.cine.scene); la cámara y el paralaje los lleva el propio arte (por p)
+    try { var A = window.Assets && Assets.cine; return !!(A && typeof A.scene === 'function' && A.scene(id, c, W, H, t, { p: p, calm: C.cfg().calm, vignette: false })); } catch (e) { return false; }
+  }
   function sky(c, top, bot, h) { var g = c.createLinearGradient(0, 0, 0, h || H); g.addColorStop(0, top); g.addColorStop(1, bot); c.fillStyle = g; c.fillRect(-200, -100, W + 400, (h || H) + 200); }
   function stars(c, t, a) { c.save(); c.fillStyle = '#e8e4ff'; for (var k = 0; k < STARS.length; k++) { var s = STARS[k]; c.globalAlpha = (a == null ? 1 : a) * (0.35 + 0.35 * Math.sin(t / 700 + s.ph)); c.fillRect(Math.round(s.x), Math.round(s.y), s.s, s.s); } c.restore(); }
   function ground(c, y, col) { c.fillStyle = col; c.fillRect(-200, y, W + 400, H - y + 200); }
@@ -45,14 +48,14 @@
 
   // ---------------------------------------------------------------- Escenas (reserva)
   function sc1(c, p, t) {   // fogata de Rescoldo, de noche
-    var f = art('bg'); if (f) { try { f(c, 'fogata', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('fogata', c, t, p)) return;
     sky(c, '#05030f', '#1a1030', 380); stars(c, t); hills(c, 330, '#110a1c', 18, 0.006, 1); hills(c, 380, '#0c0714', 12, 0.01, 3);
     ground(c, 410, '#0a0610'); logs(c, 480, 430, 1); flame(c, 480, 424, 1.2, t);
     npc(c, 'lanudo', 360, 452, t, 2.6, false); marlo(c, 600, 456, t, 3, true);
     dark(c, 0.15);
   }
   function sc2(c, p, t) {   // el Hogar de antes (flashback ámbar)
-    var f = art('bg'); if (f) { try { f(c, 'hogar', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('hogar', c, t, p)) return;
     sky(c, '#2a1608', '#6a3a14', 400); ground(c, 410, '#2a180c');
     c.save(); c.strokeStyle = '#1b1124'; c.lineWidth = 4; c.fillStyle = '#4a2c18'; c.fillRect(250, 220, 460, 190); c.strokeRect(250, 220, 460, 190);
     c.fillStyle = '#2e1a10'; c.beginPath(); c.moveTo(230, 222); c.lineTo(480, 120); c.lineTo(730, 222); c.closePath(); c.fill(); c.stroke();
@@ -64,7 +67,7 @@
     c.fillStyle = 'rgba(40,20,0,0.35)'; c.fillRect(-200, -100, W + 400, H + 200);
   }
   function sc3(c, p, t) {   // la brasa
-    var f = art('bg'); if (f) { try { f(c, 'chimenea', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('chimenea', c, t, p)) return;
     sky(c, '#0a0508', '#1a0c0c'); c.save(); c.strokeStyle = '#1b1124'; c.lineWidth = 5; c.fillStyle = '#2a2028';
     c.fillRect(300, 120, 360, 340); c.strokeRect(300, 120, 360, 340); c.fillStyle = '#0a0406'; c.fillRect(350, 220, 260, 240); c.restore();
     var e = Math.min(1, p * 1.4), ex = 480 + Math.sin(t / 700) * 14 * e, ey = 440 - e * 250 + Math.sin(t / 300) * 4;
@@ -83,7 +86,7 @@
     c.restore();
   }
   function sc4(c, p, t) {   // los cinco rescoldos: panel que se desplaza y se enciende de uno en uno
-    var f = art('bg'); if (f) { try { f(c, 'rescoldos', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('rescoldos', c, t, p)) return;
     sky(c, '#07040c', '#120a1c'); var k;
     for (k = 0; k < 5; k++) {
       var x = 30 + k * 184, lit = cl((t - 600 - k * 700) / 400, 0, 1), col = PAN[k][0];
@@ -95,13 +98,13 @@
   }
   function hex(h) { var n = parseInt(h.slice(1), 16); return ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255); }
   function sc5(c, p, t) {   // la bufanda
-    var f = art('bg'); if (f) { try { f(c, 'bufanda', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('bufanda', c, t, p)) return;
     sky(c, '#0a0610', '#2a1408', 440); stars(c, t, 0.5); ground(c, 450, '#120a0c'); glow(c, 480, 380, 300, 'rgba(255,140,50,A)', 0.2 + 0.05 * Math.sin(t / 300));
     npc(c, 'lanudo', 250, 470, t, 3, false); marlo(c, 600, 480, t, 8, true); scarf(c, 590, 300, t, 3);
     dark(c, 0.1);
   }
   function sc6(c, p, t) {   // el Portal y las seis llamas
-    var f = art('bg'); if (f) { try { f(c, 'portal', { w: W, h: H, t: t, p: p }); return; } catch (e) { /* reserva */ } }
+    if (artScene('portal', c, t, p)) return;
     sky(c, '#04020a', '#140a22', 330); stars(c, t, 0.7); hills(c, 300, '#0c0714', 14, 0.008, 2); ground(c, 420, '#08050c');
     var cols = ['#c090ff', '#ff9a3c', '#3fc0b0', '#bfeaff', '#f3a31f', '#ffffff'], k;
     for (k = 0; k < 6; k++) { var x = 130 + k * 140, s = k === 5 ? 0.7 : 0.45; glow(c, x, 300, 60 * (s + 0.3), 'rgba(' + hex(cols[k]) + ',A)', 0.4); c.fillStyle = cols[k]; c.beginPath(); c.moveTo(x - 10 * s, 310); c.quadraticCurveTo(x, 270 - 8 * s - Math.sin(t / 200 + k) * 3, x + 10 * s, 310); c.closePath(); c.fill(); }
@@ -152,6 +155,9 @@
     ]
   };
   C.INTRO = INTRO;
+  function hasArt() { try { return !!(Assets.cine && typeof Assets.cine.scene === 'function'); } catch (e) { return false; } }
+  INTRO.scenes.forEach(function (sc) { sc.camFallback = sc.cam; });
+  C.prepIntro = function () { INTRO.scenes.forEach(function (sc) { sc.cam = hasArt() ? null : sc.camFallback; }); };
 
   // ---------------------------------------------------------------- Guardado: marcas de la intro
   function cineSave() { return G.Save && G.Save.data && G.Save.data.cine; }
@@ -162,12 +168,12 @@
      La 1.ª vez (cuenta sin introSeen y no replay): bloqueada, sin botón SALTAR. */
   C.playIntro = function (opts) {
     opts = opts || {};
-    var first = !opts.replay && !C.introSeen(), cfg = C.cfg();
+    var first = !opts.replay && !C.introSeen(), cfg = C.cfg(); C.prepIntro();
     return C.play(INTRO, {
       mode: 'full', first: first, skippable: !first, calm: cfg.calm, returnState: opts.returnState || 'aldea',
       onEnd: function (reason) {
         if (!opts.replay && (reason === 'end' || reason === 'skip')) C.markIntro();
-        try { Assets.music.stop(); } catch (e) { /* audio */ }
+        try { Assets.music.stop(); if (Assets.cine && Assets.cine.free) Assets.cine.free(); } catch (e) { /* audio */ }
         if (opts.onEnd) opts.onEnd(reason);
       }
     });
@@ -198,6 +204,7 @@
   };
   C.titleDraw = function (c) {
     var t = T ? T.t : 0, k;
+    try { if (Assets.cine && Assets.cine.title && Assets.cine.title(c, W, H, t, { calm: C.cfg().calm })) return; } catch (ea) { /* reserva */ }
     sky(c, '#05030a', '#1c0e14'); stars(c, t, 0.8);
     for (k = 0; k < EMB.length; k++) { var e = EMB[k], u = ((t * 0.00006 * e.sp * 1000) / 60 + e.y) % 1; c.fillStyle = 'rgba(255,' + (140 + Math.floor(80 * (1 - u))) + ',60,' + (0.7 * (1 - u)) + ')'; c.fillRect(Math.round(e.x + Math.sin(t / 900 + e.ph) * 14), Math.round(H - u * (H + 20)), 3, 3); }
     hills(c, 420, '#0c0714', 16, 0.007, 1.3); ground(c, 470, '#08050c'); flame(c, 480, 478, 0.9, t);
