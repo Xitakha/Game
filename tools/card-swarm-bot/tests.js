@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|iso|flow|powers|ui|village|touch|boss|balance|armor] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 const { execSync } = require('child_process');
@@ -367,7 +367,7 @@ async function armor() {
   const b = await launch();
   // 1) cuenta vacia: sin Carapa; ?smith=1 la abre y la escena entrega el set Aldeano
   let pg = await mk(b, 'reset=1&nosw=1');
-  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 11), 'cuenta nueva: guardado v11, Carapa aun no ha llegado');
+  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 12), 'cuenta nueva: guardado v12, Carapa aun no ha llegado');
   const zb = await E(pg, () => { G.curBiome = 'bosque'; return [G.Armor.engaged(), G.Armor.zone()]; });
   ok(zb[0] === false && zb[1] === 1, 'cuenta vacia en Bosque: sin zoneDmg ni armadura (rama antigua de hurt)');
   await done(pg, 'armor-vacia');
@@ -380,9 +380,9 @@ async function armor() {
     G.Save.load(); const d = G.Save.data;
     return { v: d.v, brasas: d.brasas, thread: d.parts.thread, pf: d.pf.earned, te: d.trophiesEver, ie: d.insigniasEver, tr: d.trophies, owned: Object.keys(d.armor.owned).sort(), eq: d.armor.equipped, gift: d.flags.smithGift, bak: !!localStorage.getItem('swarmhand.fusion.save.v9') };
   });
-  ok(mig.v === 11 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
+  ok(mig.v === 12 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
   ok(mig.owned.join() === 'ald_amulet,ald_boots,ald_chest,ald_helm,car_chest,esq_chest' && mig.eq[1] === 'car_chest' && mig.gift === 1, 'regalo: Aldeano + Peto por jefe vencido (Esquila y Carcelero), mejor equipado: ' + mig.owned.length + ' piezas');
-  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 12, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
+  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 13, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
   ok(imp[0] === true && imp[1] === false, 'importText acepta la v11 y rechaza versiones mayores');
   await done(pg, 'armor-migra');
   // 3) panel: fabricar, equipar, reforzar con toques en 844x390
@@ -468,7 +468,7 @@ async function armor2() {
     localStorage.setItem('swarmhand.fusion.save', JSON.stringify(old)); G.Save.load(); const x = G.Save.data;
     return { v: x.v, owned: Object.keys(x.armor.owned).sort().join(), eq: x.armor.equipped, brasas: x.brasas, bak: !!localStorage.getItem('swarmhand.fusion.save.v10'), tr: x.trophies.horn };
   });
-  ok(m11.v === 11 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
+  ok(m11.v === 12 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
   ok(['bra_chest', 'esc_chest', 'gla_chest', 'jal_chest', 'car_chest', 'esq_chest'].every(id => m11.owned.includes(id)) && m11.eq[1] === 'bra_chest', 'regalo: Peto de Escama, Pelaje, Jalea y Brasa por jefe vencido; equipa el de mayor tier (' + m11.eq[1] + ')');
   // datos y costes
   const dt = await E(pg, () => {
@@ -630,8 +630,121 @@ async function cards() {
   await done(pg, 'cards'); await b.close();
 }
 
+// ---------------------------------------------------------------- v9 Cinemáticas fase 1 (G.Cine, título, intro, guardado v12)
+const stepN = (pg, n) => E(pg, n => { for (let i = 0; i < n; i++) G.step(); }, n);
+const press = async (pg, k) => { await E(pg, k => { G.input.pressed[k] = true; }, k); await stepN(pg, 1); };
+async function cine() {
+  console.log('--- cinematicas v9 fase 1: motor, titulo, intro, guardado v12, pausa, accesibilidad');
+  const b = await launch(); let pg;
+  // 1. ?cine=0 y bots: sin titulo
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  ok(await E(pg, () => G.Cine.off && G.state === 'aldea'), '?cine=0: sin titulo (aldea directa)');
+  ok(await E(pg, () => { let r = null; G.Cine.play(G.Cine.INTRO, { onEnd: x => { r = x; } }); return r === 'off' && !G.Cine.active(); }), '?cine=0: play() llama a onEnd("off") al instante');
+  await done(pg, 'cine0');
+  pg = await mk(b, 'reset=1&speed=0');
+  ok(await E(pg, () => navigator.webdriver && G.state === 'aldea' && !G.Cine.auto), 'navegador automatizado / URL de prueba: sin titulo ni intro (bots intactos)');
+  await done(pg, 'bots');
+  for (const u of ['direct=1', 'boss=pastor', 'hunt=pastor&practice=1', 'assault=1']) {
+    pg = await mk(b, 'reset=1&speed=0&god=1&' + u);
+    ok(await E(pg, () => G.state !== 'title' && G.state !== 'cine'), `?${u}: salta el titulo (estado ${'' })`);
+    await done(pg, 'skip-' + u.split('=')[0]);
+  }
+  // 2. ?cine=1: titulo -> intro bloqueada la 1.a vez -> aldea
+  pg = await mk(b, 'reset=1&cine=1&speed=0');
+  ok(await E(pg, () => G.state === 'title' && G.Cine.titleActive()), '?cine=1: pantalla de titulo "TOCA PARA JUGAR"');
+  await stepN(pg, 10); ok(await E(pg, () => G.state === 'title'), 'el titulo no avanza solo (ni antes de 400 ms con un toque)');
+  await stepN(pg, 40); await press(pg, 'Space');
+  ok(await E(pg, () => G.state === 'cine' && G.Cine.active()), 'un toque en el titulo arranca la intro (cuenta nueva)');
+  const t0 = await E(pg, () => ({ time: G.time, runT: G.runT, seen: G.Save.data.cine.introSeen }));
+  ok(t0.seen === false, 'introSeen sigue false mientras se reproduce');
+  ok(await E(pg, () => G.Cine.info().locked === true && G.Cine.skip() === false), '1.a vez: bloqueada, skip() no hace nada');
+  await press(pg, 'Escape'); ok(await E(pg, () => G.state === 'cine'), '1.a vez: Esc no la salta');
+  await stepN(pg, 600);
+  ok(await E(pg, () => { const i = G.Cine.info(); return i && i.t > 9000 && i.fired >= 6 && i.line; }), 'avanza con su reloj propio y dispara pistas (' + JSON.stringify(await E(pg, () => G.Cine.info() && { t: Math.round(G.Cine.info().t), f: G.Cine.info().fired })) + ')');
+  ok(await E(pg, t0 => G.time === t0.time && G.runT === t0.runT, t0), 'la intro no avanza G.time ni G.runT');
+  // pausa
+  await E(pg, () => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  const tp = await E(pg, () => G.Cine.info().t); await stepN(pg, 120);
+  ok(await E(pg, tp => G.Cine.info().paused && G.Cine.info().t === tp, tp), 'segundo plano: el reloj se detiene (pausa)');
+  await E(pg, () => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); }); await press(pg, 'Space');
+  await stepN(pg, 30); ok(await E(pg, tp => !G.Cine.info().paused && G.Cine.info().t > tp, tp), 'al volver y tocar: continua desde el mismo t');
+  // toque: completa la linea y luego avanza de escena
+  const sc0 = await E(pg, () => G.Cine.info().scene); await stepN(pg, 60); await press(pg, 'Space'); await press(pg, 'Space');
+  ok(await E(pg, s => G.Cine.info().scene > s, sc0), 'tocar avanza de viñeta (sin saltar la cinematica)');
+  await stepN(pg, 1800);
+  ok(await E(pg, () => G.state === 'aldea' && !G.Cine.active() && G.Save.data.cine.introSeen === true), 'al terminar vuelve a la aldea y marca introSeen');
+  ok(await E(pg, () => G.player && G.Save.data.cine.introSeen), 'guardado coherente');
+  // repeticion: saltable y sin escribir en el guardado
+  await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.creditsSeen = false; G.Cine.playIntro({ replay: true }); });
+  ok(await E(pg, () => G.Cine.info().locked === false), 'repeticion: saltable (boton SALTAR)');
+  await stepN(pg, 30);
+  const sk = await E(pg, () => { const r = G.Cine.skipRect(); G.input.mouse.x = r.x + 5; G.input.mouse.y = r.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { st: G.state, act: G.Cine.active(), cs: G.Save.data.cine.creditsSeen }; });
+  ok(sk.st === 'aldea' && !sk.act && sk.cs === false, 'repeticion: el boton SALTAR termina y no toca el guardado');
+  await done(pg, 'cine1');
+  // 3. Reducir destellos y sacudidas
+  pg = await mk(b, 'reset=1&cine=1&speed=0');
+  await E(pg, () => { window.__mx = {}; });
+  for (const calm of [true, false]) {
+    await E(pg, calm => { G.Save.data.settings = G.Save.data.settings || { master: 0.8, music: 0.6, sfx: 0.8 }; G.Save.data.settings.cine = { calm, textSpeed: 1, soundCaps: true }; G.Cine.playIntro({ replay: true });
+      const cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; const c = cv.getContext('2d'); let mx = 0, fc = 0, sp = 0;
+      for (let i = 0; i < 1700 && G.Cine.active(); i++) { G.step(); if (!G.Cine.active()) break; G.Cine.draw(c); const n = G.Cine.info(); mx = Math.max(mx, n.maxFlashA); fc = n.flashCount; sp = Math.max(sp, n.shakePx); }
+      window.__mx[calm] = { mx, fc, sp }; G.Cine.end(); }, calm);
+  }
+  const mxr = await E(pg, () => window.__mx);
+  ok(mxr.true.mx <= 0.2501 && mxr.true.mx > 0, 'Reducir destellos: ningun destello supera 25 % de alfa (max ' + mxr.true.mx.toFixed(2) + ')');
+  ok(mxr.false.mx > 0.3, 'sin Reducir destellos el destello de titulo es mas fuerte (' + mxr.false.mx.toFixed(2) + ')');
+  ok(mxr.false.sp <= 4.01, 'sacudidas acotadas a <= 4 px (' + mxr.false.sp.toFixed(2) + ')');
+  // 4. motor: pistas una sola vez, capas horneadas, canvases liberados, subtitulos siempre
+  const eng = await E(pg, () => {
+    let n = 0, ends = [], bakes = 0; const lay = { par: 0.5, bake: { w: 960, h: 540 }, draw: () => { bakes++; } };
+    const sc = k => ({ at: k * 1000, dur: 1000, layers: [lay, { draw() {}, par: 1 }] });
+    G.Cine.play({ id: 'T', len: 4200, scenes: [sc(0), sc(1), sc(2), sc(3)], tracks: [{ at: 500, type: 'fn', fn: () => n++ }, { at: 500, type: 'fn', fn: () => n++ }, { at: 1500, type: 'dlg', who: 'X', text: 'hola mundo', dur: 800 }] }, { onEnd: r => ends.push(r), skippable: true });
+    const cv = document.createElement('canvas'); cv.width = 960; cv.height = 540; const c = cv.getContext('2d'); let maxB = 0, sawLine = false;
+    for (let i = 0; i < 300 && G.Cine.active(); i++) { G.step(); if (G.Cine.active()) { G.Cine.draw(c); maxB = Math.max(maxB, G.Cine.info().bakedCanvases); if (G.Cine.info().line) sawLine = true; } }
+    return { n, ends, maxB, sawLine, bakes, st: G.state };
+  });
+  ok(eng.n === 2 && eng.ends.join() === 'end' && eng.maxB <= 3 && eng.sawLine && eng.st === 'aldea', 'motor: cada pista una vez, onEnd("end") una vez, <= 3 canvases vivos, subtitulo visible ' + JSON.stringify(eng));
+  const sk2 = await E(pg, () => { let ends = []; G.Cine.play({ id: 'T2', len: 5000, scenes: [], tracks: [] }, { onEnd: r => ends.push(r), skippable: true }); G.Cine.skip(); G.Cine.skip(); return ends; });
+  ok(sk2.join() === 'skip', 'skip() dispara onEnd("skip") exactamente una vez');
+  await done(pg, 'cine-calm');
+  // 5. Guardado v12: migracion v11 -> v12
+  pg = await mk(b, 'reset=1&speed=0');
+  const mig = await E(pg, () => {
+    const mk11 = prog => { const d = JSON.parse(JSON.stringify(G.Save.data)); d.v = 11; delete d.cine; if (prog) { d.runs = 4; d.bossKills = { pastor: 1 }; d.bossSeen = { pastor: 1 }; d.endingSeen = false; } return d; };
+    const out = {};
+    [false, true].forEach(prog => {
+      const d = mk11(prog); localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); localStorage.removeItem('swarmhand.fusion.save.v11');
+      G.Save.load(); out[prog] = { v: G.Save.data.v, intro: G.Save.data.cine.introSeen, entry: G.Save.data.cine.entrySeen, runs: G.Save.data.runs, bk: G.Save.data.bossKills, backup: !!localStorage.getItem('swarmhand.fusion.save.v11') };
+    });
+    const d2 = mk11(true); d2.endingSeen = true; d2.settings = { master: 0.5, music: 0.5, sfx: 0.5 }; localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d2)); G.Save.load();
+    out.end = { cr: G.Save.data.cine.creditsSeen, ep: G.Save.data.cine.epilogueSeen, set: G.Save.data.settings };
+    return out;
+  });
+  ok(mig.false.v === 12 && mig.false.intro === false && mig.false.backup, 'migracion v11->v12 (cuenta sin progreso): intro NO vista, copia swarmhand.fusion.save.v11');
+  ok(mig.true.v === 12 && mig.true.intro === true && mig.true.entry.pastor === 1 && mig.true.runs === 4 && mig.true.bk.pastor === 1, 'migracion v11->v12 (con progreso): introSeen=true, entrySeen desde bossSeen, sin perdidas');
+  ok(mig.end.cr && mig.end.ep && mig.end.set.master === 0.5 && mig.end.set.cine && mig.end.set.cine.calm === null, 'endingSeen => creditsSeen/epilogueSeen; settings conservados + settings.cine');
+  await done(pg, 'cine-save');
+  // 6. La simulacion no se entera: hash identico con ?cine=0 y con cine (titulo + intro + direct)
+  const U = 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:1&seed=1234', TICKS = +process.env.CINE_TICKS || 2500, hs = [];
+  for (const extra of ['&cine=0', '&cine=1']) {
+    pg = await mk(b, U + extra);
+    if (extra === '&cine=1') {
+      ok(await E(pg, () => G.state === 'title'), 'direct + cine=1: se ve el titulo antes de la partida');
+      await stepN(pg, 40); await press(pg, 'Space');
+      await E(pg, () => { for (let i = 0; i < 4000 && (G.state === 'title' || G.state === 'cine'); i++) G.step(); });
+      ok(await E(pg, () => G.state === 'play' || G.state === 'cards'), 'direct + cine=1: tras el titulo y la intro empieza la partida directa');
+    }
+    const rg = await E(pg, () => { const a = [G.rng(), G.rng()]; G.rngSeed(1234); return a; });
+    hs.push(Object.assign(await simHash(pg, TICKS), { rg }));
+    await done(pg, 'hash' + extra);
+  }
+  console.log('      ', JSON.stringify(hs));
+  ok(hs[0].hash === hs[1].hash && hs[0].kills === hs[1].kills, 'hash de simulacion IDENTICO con ?cine=0 y con titulo+intro (' + hs[0].hash + ')');
+  await b.close();
+}
+
 (async () => {
-  const run = { seed, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

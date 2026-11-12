@@ -2,7 +2,7 @@
    La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp.py (la VERSION es un hash del contenido: cualquier cambio en el juego
    cambia este archivo, el navegador instala el worker nuevo y el juego avisa "hay una versión nueva" sin recargar por su cuenta).
    Todas las rutas son relativas al propio sw.js, así que sirve igual en / que en una subruta (https://usuario.github.io/Game/card-swarm/). */
-const VERSION = '889cbf2bb9';
+const VERSION = 'c84e1aa611';
 const CACHE = 'fusionhand-' + VERSION;
 const FILES = /*FILES*/[
   "./",
@@ -29,6 +29,7 @@ const FILES = /*FILES*/[
   "./src/sfx_fam4.js",
   "./src/sfx_melaria.js",
   "./src/sfx_cenizar.js",
+  "./src/sfx_cine.js",
   "./src/assets_peligro.js",
   "./src/armor_data.js",
   "./src/armor.js",
@@ -46,6 +47,7 @@ const FILES = /*FILES*/[
   "./src/save.js",
   "./src/assets_ui.js",
   "./src/assets_village.js",
+  "./src/assets_cine.js",
   "./src/assets_armor.js",
   "./src/assets_armor2.js",
   "./src/assets_boss.js",
@@ -76,6 +78,8 @@ const FILES = /*FILES*/[
   "./src/base.js",
   "./src/hud.js",
   "./src/ending.js",
+  "./src/cine.js",
+  "./src/cine_intro.js",
   "./src/minis.js",
   "./src/minis_atk.js",
   "./src/minis_panal.js",

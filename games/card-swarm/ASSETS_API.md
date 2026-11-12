@@ -1443,3 +1443,49 @@ Extiende `assets_armor.js` sin tocarlo: sets T3-T6, 5 talismanes de minijefe, Ma
 - **Marlo vestido**: `Assets.drawMarloArmor(ctx, x, y, t, {set, flip, scale=1, anim:'idle|walk|hurt', by, equip:{yelmo,peto}, alpha})`. x,y = CENTRO del sprite `player` (mismo punto que `G.fx.spr` / `drawMarlo`; en la aldea scale 1.3). Dibujarlo justo despues del sprite. `set` admite los 7 sets (`aldeano|pastor|karceron|letea|yarlak|melaria|cenizar` + alias) o null; `equip` mezcla sets por pieza. Devuelve true si dibujo. Cache por set/pose (24x24 -> 48x48).
 - **fx_armor_block**: sprite `fx_armor_block` (32x32 base, 3 frames: impacto, escudo hexagonal, disipacion; anim `block`) y `Assets.fxArmorBlock(ctx, x, y, t, {scale=1, dur=300, alpha})`: x,y = centro, `t` = ms desde el golpe; devuelve false al pasar `dur` (el llamador lo descarta). Usa `lighter`, sin `shadowBlur`.
 - Captura de verificacion: `studio/docs/capturas-herrero/5-armaduras-t3-t6.jpg`. 500 `drawArmorIcon` ~3 ms.
+
+---
+
+# Audio de cinematicas v9 (src/sfx_cine.js; cargar DESPUES de sfx_cenizar.js; solo audio procedural)
+Contexto WebAudio propio que sigue desbloqueo, mute, volumen y suspend de Assets. No usa `G.rng` ni toca la simulacion. Seguro (try/catch; sin audio devuelve `false`). Tono: cuento junto al fuego, pero oscuro. Sin voz: solo bips de texto.
+
+## Pistas (`Assets.music.setTrack(nombre); Assets.music.start()`; `Assets.music.stop()` al salir)
+| Pista | Duracion | Contenido |
+|---|---|---|
+| `cine_intro` | 25 s exactos desde `start()` (100 pasos de 0,25 s) | 0-3 s crepitar de fogata y aire; bordon La1; melodia triste de caja de musica (La menor) desde 3 s; cuerda baja; 16,5-25 s crescendo oscuro (tritono, rugido, latido que se acelera) y golpe grave final en 25 s. Pasados 25 s queda un lecho de brasas y bordon suave: la logica lo deja o llama a `music.stop()`/cambia de pista |
+| `cine_title` | bucle indefinido (8 compases, 72 BPM) | pantalla de titulo: bordon, arpegio lento de caja de musica (Am-F-Dm-E / Am-F-C-E), latido y brasas. Entra con fundido de 1,5 s |
+
+- `Assets.cineMusicTime()` -> segundos sonados de `cine_intro` (0 si no suena); util para sincronizar vinetas, aunque el reloj del motor `G.Cine` manda. Para sincronizar mejor, llamar a `setTrack('cine_intro')`+`start()` al empezar la vineta 1 (fundido de entrada de 0,8 s).
+- `renderMusic({track:'cine_intro'|'cine_title', bars?, steps?})` y `renderSfx('cine_*')` (OfflineAudioContext) para el visor de audio.
+
+## SFX: `G.Snd.cine(tipo, arg, pitch)` (tambien `Assets.cine`) -> true si sono
+| tipo | arg | Uso | Notas |
+|---|---|---|---|
+| `'blip'` | `'lanudo'` (o `'narrador'`) = narrador grave y calido; cualquier otro (`'vesper'`, `'grum'`, `null`...) = neutro (tecla cuadrada) | Bip de maquina de escribir. Llamarlo **uno por palabra** (diseno sec. 1), no por letra | `pitch` (defecto 1) multiplica; ademas hay +-8 % aleatorio. Sugerido: 0.9-1.2 segun la entonacion / personaje. Separacion minima 28 ms |
+| `'title'` | - | Golpe de titulo/logo (~3,9 s con cola): impacto grave + campana oscura + brasas | al aparecer "SWARM HAND" |
+| `'tap'` | - | Confirmacion de "TOCA PARA JUGAR" (calida, ascendente, ~1 s) | **Llamar DENTRO del gesto del usuario**: hace `Assets.unlock()` y `resume()` del contexto propio. Llamarlo ANTES de `music.setTrack/start` |
+| `'trans'` | `'in'` (defecto, soplo que entra) / `'out'` (soplo que se apaga) / `'cut'` (corte seco) | Transicion entre vinetas | |
+| `'next'` | - | Tic de madera al completar/avanzar una linea con un toque | |
+| `'spark'` | 0..4 | Chispa = nota del leitmotiv en la vineta 4 (La, Do, Re, Fa, La 8va) | |
+| `'skip'` | - | Stinger de salto de cinematica: barrido descendente + golpe seco + brasas (~0,5 s) | llamar al saltar, junto con `music.stop()` |
+
+- Nombres internos (para `renderSfx`/visor): `cine_blip_lanudo`, `cine_blip_neutro`, `cine_title`, `cine_tap`, `cine_trans_in|out|cut`, `cine_next`, `cine_spark`, `cine_skip`; lista en `Assets.sfxCine`.
+- Flujo sugerido: titulo `setTrack('cine_title')` al primer toque ('tap') -> intro `setTrack('cine_intro')` -> vineta 8 `cine('title')` -> `setTrack(<pista del contexto>)`. Si falta la pista/funcion, silencio.
+- Pruebas: Playwright+Chromium, 0 errores; todos los SFX y las dos pistas se renderizan offline (intro 30 s con cola, pico 0,67).
+
+---
+
+# Cinematicas v9 - intro y titulo (src/assets_cine.js, FASE 1 de arte)
+Archivo nuevo, solo arte. Cargar DESPUES de `assets.js` y `assets_village.js` (usa los sprites `player` y `npc_*`; sin ellos dibuja siluetas). El programador anade `<script src="src/assets_cine.js">` (y `sw.js`). Tono: cuento junto al fuego pero OSCURO (paleta calida baja, bordes casi negros, brasas). Procedural, sin librerias; nunca lanza (devuelve `false` si falla).
+```
+Assets.cine.scene(id, ctx, w, h, t, opts) -> bool   // pinta la vineta a pantalla completa en (0,0,w,h)
+Assets.cine.title(ctx, w, h, t, opts)     -> bool   // pantalla de titulo
+Assets.cine.list  // [{id,name,dur}]  ;  Assets.cine.ids ; Assets.cine.dur(id)
+```
+- `t` = ms desde el inicio de la vineta (anima fuego/brasas/latido). `opts`: `p` (0..1, progreso; por defecto `t/dur`; manda en parallax, zoom, y hitos), `calm` (Reducir destellos: llama y luces casi estables, sin titilar de estrellas, brasas mas lentas/escasas, sin destello al encender; en titulo el "TOCA PARA JUGAR" pulsa suave en vez de parpadear), `lite` (capas al 60 %), `vignette` (false = sin vineta), `vig` (fuerza 0..2), `bars` (0..1: letterbox integrado; o usar `letterbox`).
+- **Vinetas** (`dur` sugerida en ms; es solo una guia, el ritmo lo manda `p`): `fogata` 5000 (aldea de noche, Lanudo y Marlo junto al fuego, push-in a Lanudo) | `hogar` 6000 (flashback ambar: casa grande, siluetas en las ventanas, el Pastor y su rebano) | `brasa` 6000 (chimenea; una brasa salta y vira de ambar a naranja sucio; zoom) | `rescoldos` 9000 (panel que se desplaza: Pastor morado, Karceron naranja, Letea turquesa, Yarlak azul-blanco, Melaria ambar; cada uno se enciende en `p = i/5`, con chispa = 1 nota; usar 5 hitos de audio en `p` 0, .2, .4, .6, .8) | `ruinas` 7000 (Rescoldo en ruinas: Grum, Vesper, Ulalume, Castana, Rufo con sprites reales y luz de brasas; brasero apagado) | `bufanda` 6000 (Marlo en primer plano, la brasa mansa late en la bufanda; Lanudo senala) | `portal` 6000 (arco de piedra; se enciende en p .35-.62, Marlo camina hacia el, al final aparecen las seis llamas: cinco de color + una blanca arriba). Orden de la intro propuesto (6 vinetas, ~25 s): fogata 4 s, hogar+brasa (solo `brasa` ~4 s), rescoldos 6 s, ruinas 4 s, bufanda 4 s, portal 4 s, y `title`.
+- **Titulo**: `title(ctx,w,h,t,{calm,text,sub,prompt,logoP,fadeIn,vig})`. `t` desde que aparece la pantalla: fundido desde negro 0-0,9 s, el logo se enciende 0,3-1,9 s, el prompt "TOCA PARA JUGAR" aparece a 1,8 s y parpadea (calm: pulso suave). `text` cambia el prompt (p. ej. "CONTINUAR"), `prompt:false` lo oculta, `sub` cambia el subtitulo ("Apaga las seis llamas."), `fadeIn:false` quita el fundido inicial.
+- **Piezas sueltas**: `logo(ctx, cx, cy, w, t, {p, calm, sub})` (SWARM / HAND de brasa, `p` 0..1 aparicion; `sub:false` sin subtitulo; ocupa ~`w` x `0,42w`) | `marlo(ctx, pose, x, y, t, {scale=2.4, flip, calm})` poses `idle|walk|look|scarf` (x,y = pies; `scarf` hace latir la brasa mansa) | `lanudo(ctx, pose, x, y, t, {scale=2, flip})` poses `idle|talk|point` | `silhouette(ctx, bossId, x, y, s, {color, eye, t})` siluetas de `pastor|karceron|letea|yarlak|melaria` (reutilizables para presagios de jefe) | `vignette(ctx,w,h,{strength})` | `letterbox(ctx,w,h,p,{size=0.1,color})` | `fade(ctx,w,h,a,color)`.
+- **Espacio**: cada escena se compone en un espacio virtual de 540 px de alto (ancho = `w/h*540`), asi que sirve igual para 960x540 que para 844x390. Los textos/globos los pone el motor de logica ENCIMA (franja inferior, ~y > 70 % de `h`, queda sombra para legibilidad).
+- **Memoria y rendimiento**: capas de fondo (cielo, lejano, medio, suelo, primer plano) cacheadas en offscreen, recortadas en vertical y las lejanas a menor resolucion; cache LRU de 2 escenas (+ titulo): ~6-9 MB por escena a 960x540. `preload(id,w,h,opts)` construye las capas con antelacion (llamar durante la vineta anterior; construir tarda 5-25 ms en CPU lenta, ~1 ms en GPU). `free()` vacia todas las caches (llamar al terminar la intro). Cada fotograma: unas pocas docenas de drawImage + glows cacheados (sin `shadowBlur`, sin `filter`); medido en Chromium sin GPU (software) 6-10 ms por fotograma con lectura forzada, 0 errores en 148 llamadas (calm/lite/bars).
+- Notas: Marlo se dibuja con el sprite real `player` (mapache); el primer plano de la vineta `bufanda` es un busto vectorial propio. Los personajes se oscurecen por codigo (cache por fotograma) con luz de fogata para encajar con el tono. Capturas: `studio/docs/capturas-herrero/cine-1.jpg`, `cine-2.jpg`, `cine-3.jpg`.

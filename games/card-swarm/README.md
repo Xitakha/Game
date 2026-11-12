@@ -199,3 +199,11 @@ Lectura honesta:
   Los poderes quitan de media ~10 puntos de vida del jefe, con mucha dispersión; el Pastor (Forja + Plasma + Pacto, debilidades de Fuego y Acero) es el único derrotado. No se ha medido el boss-bot original (`tools/card-swarm-boss-bot`) para comparar jefe a jefe.
 - Topes por uso (400 por objetivo, 3 % de la vida del jefe) sin cambios: con el tope al 3 %, un poder da como máximo ~730 de daño por uso a un jefe de ~24.000 PV; no se han probado 1,5 %.
 - Rendimiento: humo en Chromium de escritorio con horda de 100 enemigos, 4 poderes en AUTO y mano completa: ~58 fps, frame máximo 41 ms, 0 errores. Sin medición en móvil real.
+
+
+## Cinemáticas v9 - fase 1 (motor, título e intro)
+- Al abrir el juego (URL limpia, navegador no automatizado) sale el título "TOCA PARA JUGAR" (desbloquea el audio), luego la intro de ~27 s si no está vista (la 1.ª vez no se puede saltar; sí en repeticiones) y la aldea.
+- `?cine=0` lo apaga todo; `?cine=1` fuerza título + intro (también con ?direct=, ?boss=...: la partida empieza tras la intro). `?direct=`, `?boss=`, `?hunt=`, `?assault=`, `?practice=` y los bots (navigator.webdriver) no ven el título.
+- AJUSTES > CINEMÁTICAS: "Reducir destellos" y "Ver la intro" (repetición saltable, no escribe en el guardado).
+- Motor `G.Cine` (`src/cine.js`): pistas, cámara, capas con paralaje, texto máquina de escribir, letterbox, pausa en segundo plano; solo dibuja y suena (sin `G.rng`, sin tocar la simulación). Guardado v12 (`cine{}` y `settings.cine`), con copia `swarmhand.fusion.save.v11`.
+- Pruebas: `node tools/card-swarm-bot/tests.js cine` (incluye hash de simulación idéntico con y sin cine).
