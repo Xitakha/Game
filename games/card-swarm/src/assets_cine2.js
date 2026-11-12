@@ -17,17 +17,17 @@
 
   // ------------------------------------------------------------------ datos por jefe
   var BOSS = {
-    pastor:   { name: 'EL PASTOR CORRUPTO', epi: 'Bestia del Rebaño', lore: 'El Pastor era el mejor de nosotros.', col: '#c090ff', col2: '#5a3a8a', k: 1.0,
+    pastor:   { name: 'EL PASTOR CORRUPTO', epi: 'Bestia del Rebaño', lore: 'El Pastor era el mejor de nosotros.', col: '#c090ff', col2: '#5a3a8a', k: 0.8,
                 bg: ['#0b0712', '#231536', '#120b1a'] },
-    karceron: { name: 'KARCERON', epi: 'Coloso de Huesos y Magma', lore: 'Despertó entre sus propios grilletes.', col: '#ff9a3c', col2: '#8a2a0a', k: 0.95,
+    karceron: { name: 'KARCERON', epi: 'Coloso de Huesos y Magma', lore: 'Despertó entre sus propios grilletes.', col: '#ff9a3c', col2: '#8a2a0a', k: 0.82,
                 bg: ['#0c0507', '#2a0e0c', '#140706'] },
-    letea:    { name: 'LETEA', epi: 'la Hidra del Asfódelo', lore: 'El río del olvido tiene tres voces.', col: '#5fd6c8', col2: '#2f6f6a', k: 1.05,
+    letea:    { name: 'LETEA', epi: 'la Hidra del Asfódelo', lore: 'El río del olvido tiene tres voces.', col: '#5fd6c8', col2: '#2f6f6a', k: 0.82,
                 bg: ['#050b0e', '#0d2a2c', '#081618'] },
-    yarlak:   { name: 'YARLAK', epi: 'El invierno que camina', lore: 'Guardaba la última hoguera del norte.', col: '#bfeaff', col2: '#5c88a8', k: 0.9,
+    yarlak:   { name: 'YARLAK', epi: 'El invierno que camina', lore: 'Guardaba la última hoguera del norte.', col: '#bfeaff', col2: '#5c88a8', k: 0.82,
                 bg: ['#070b14', '#1b2c44', '#0e1726'] },
-    melaria:  { name: 'MELARIA', epi: 'la Reina Abeja', lore: 'Devoró la jalea de sus hermanas.', col: '#f3a31f', col2: '#8a5a0a', k: 1.0,
+    melaria:  { name: 'MELARIA', epi: 'la Reina Abeja', lore: 'Devoró la jalea de sus hermanas.', col: '#f3a31f', col2: '#8a5a0a', k: 0.85,
                 bg: ['#0e0804', '#33200a', '#1a0f05'] },
-    cenizar:  { name: 'CENIZAR', epi: 'El Incendio Primero', lore: 'Nació de la primera brasa que nadie apagó.', col: '#fff2b0', col2: '#a8561e', k: 0.82,
+    cenizar:  { name: 'CENIZAR', epi: 'El Incendio Primero', lore: 'Nació de la primera brasa que nadie apagó.', col: '#fff2b0', col2: '#a8561e', k: 0.68,
                 bg: ['#0a0506', '#2a1410', '#150a0a'] }
   };
   var IDS = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar'];
@@ -241,7 +241,7 @@
   function entry(id, c, w, h, p, o) {
     var B = BOSS[id]; if (!B) return false; o = o || {}; p = clamp(p || 0, 0, 1);
     var short = !!o.short, calm = !!o.calm, T = tl(short), dur = short ? DUR_SHORT : DUR_LONG, t = p * dur;
-    var u = h / 540, gy = h * (o.gy || 0.8), cx = w / 2, q = sm(0, T.om, p), amb = 1 - sm(T.a1, 1, p) * 0.45;
+    var u = h / 540, gy = h * (o.gy || 0.72), cx = w / 2, q = sm(0, T.om, p), amb = 1 - sm(T.a1, 1, p) * 0.45;
     var ap = sm(T.a0, T.a1, p);                                   // aparicion 0..1
     c.save();
     if (o.bg !== false) backdrop(c, w, h, id, gy, t, o);
@@ -278,7 +278,7 @@
   function omen(id, c, w, h, p, o) {
     var B = BOSS[id]; if (!B) return false; o = o || {}; p = clamp(p || 0, 0, 1);
     var short = !!o.short, T = tl(short), t = p * (short ? DUR_SHORT : DUR_LONG), u = h / 540, q = sm(0, T.om, p) * (1 - sm(T.a1, 1, p) * 0.6);
-    c.save(); darken(c, w, h, 0.5 * q); OM[id](c, w, h, sm(0, T.om, p), t, o, u, h * (o.gy || 0.8), o.cx != null ? o.cx : w / 2); c.restore(); return true;
+    c.save(); darken(c, w, h, 0.5 * q); OM[id](c, w, h, sm(0, T.om, p), t, o, u, h * (o.gy || 0.72), o.cx != null ? o.cx : w / 2); c.restore(); return true;
   }
 
   // ================================================================== CARTEL
@@ -292,7 +292,7 @@
     var B = BOSS[id]; if (!B) return false; o = o || {}; p = clamp(p || 0, 0, 1);
     var short = !!o.short, calm = !!o.calm, u = h / 540, name = o.name || B.name, epi = o.epi || B.epi, lore = o.lore === false || short && o.lore == null ? '' : (o.lore || B.lore);
     var inn = sm(0, short ? 0.3 : 0.18, p), out = 1 - sm(short ? 0.82 : 0.86, 1, p), a = inn * out; if (a <= 0.003) return true;
-    var pw = Math.min(w * 0.86, (short ? 440 : 600) * u * 1.15), ph = (lore ? 148 : short ? 96 : 118) * u, cx = w / 2, cy = h * (o.y || 0.76) + (1 - inn) * 14 * u, x = cx - pw / 2, y = cy - ph / 2;
+    var pw = Math.min(w * 0.86, (short ? 440 : 600) * u * 1.15), ph = (lore ? 132 : short ? 88 : 108) * u, cx = w / 2, cy = h * (o.y || 0.8) + (1 - inn) * 14 * u, x = cx - pw / 2, y = cy - ph / 2;
     var ink = o.color || B.col, k = rgb(ink);
     c.save(); c.globalAlpha = a;
     // placa: fondo casi negro con borde doble y esquinas "de hierro"; la linea de luz crece desde el centro
