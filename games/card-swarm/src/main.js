@@ -17,7 +17,7 @@
   G.vt = function () { return G.runT * G.tk; };
 
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
-  G.speed = qnum('speed', 1); G.god = qnum('god', 0) > 0; G.t0 = qnum('t', 0) * 1000;
+  G.speed = qnum('speed', 1); G.god = qnum('god', (navigator.webdriver ? 0 : 1)) > 0; /* TEMPORAL (pruebas del dueño): inmortal por defecto salvo bots; ?god=0 lo desactiva. Revertir este commit para quitarlo. */ G.t0 = qnum('t', 0) * 1000;
   // Jefes v4: ?boss=pastor salta a la pelea, ?peligro=<n> (1-5), ?phase=2|3, ?hp=0.3, ?nointro=1, ?hand=spark:3,ember:2 (mano de prueba)
   G.bossUrl = (/[?&]boss=(\w+)/.exec(location.search) || [])[1] || null; G.peligro = qnum('peligro', 1);
   // J3: ?hunt=<jefe> arranca una cacería (sin hordas, 6 ofertas de preparación), ?practice=1 la modalidad PRACTICAR (con ?hunt= o ?boss=), ?prep=0 salta las 6 ofertas, ?zoom=0.9 zoom de combate opcional
