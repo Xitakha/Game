@@ -497,7 +497,7 @@
       G.txt(c, d.name, r.w / 2, 128, 17, '#fff', 'center');
       var lines = wrap(c, d.desc, r.w - 22, 12);
       for (k = 0; k < lines.length && k < 4; k++) G.txt(c, lines[k], r.w / 2, 152 + k * 15, 12, '#d8cfe8', 'center');
-      G.txt(c, '[' + (i + 1) + ']', 17, 16, 14, '#ffd27a', 'center');
+      if (!G.Sys.isTouch()) G.txt(c, '[' + (i + 1) + ']', 17, 16, 14, '#ffd27a', 'center');
       var by = r.h - 50;
       if (owned) {
         c.fillStyle = 'rgba(255,210,74,0.2)'; c.fillRect(22, by - 11, r.w - 44, 22);

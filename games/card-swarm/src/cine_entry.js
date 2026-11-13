@@ -83,7 +83,7 @@
       for (i = 0; i < n; i++) { var part = lines[i].slice(0, Math.max(0, txt.length - shown)); shown += lines[i].length + 1; if (part) G.txt(c, part, 84, y + 44 + i * 26, 18, '#f4ecdc', 'left'); }
       c.restore();
     }
-    if (short && real >= 800 && I.t < 3400) G.txt(c, 'Espacio / toque: saltar', W - 20, H - b - 12, 11, '#9a8fb0', 'right');
+    if (short && real >= 800 && I.t < 3400) G.txt(c, G.hint('Espacio / toque: saltar', 'Toca: saltar'), W - 20, H - b - 12, 11, '#9a8fb0', 'right');
     return true;
   };
 

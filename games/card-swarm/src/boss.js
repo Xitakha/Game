@@ -1064,7 +1064,7 @@
       }
       c.restore();
     }
-    if (I.seen && t > 1000 && t < 3400) G.txt(c, 'Espacio / toque: saltar', Wd - 20, Hd - b - 12, 11, '#9a8fb0', 'right');
+    if (I.seen && t > 1000 && t < 3400) G.txt(c, G.hint('Espacio / toque: saltar', 'Toca: saltar'), Wd - 20, Hd - b - 12, 11, '#9a8fb0', 'right');
   }
   S.hudBars = function () { return 0; };
 

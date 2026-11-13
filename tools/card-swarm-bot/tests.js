@@ -945,11 +945,16 @@ async function cine2(b) {
 
 
 
+// Pistas de teclado que no deben verse en pantallas táctiles (T-F0-06)
+const KBD_RE = /\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
+const kbdHints = d => d.texts.map(t => t.s).filter(s => KBD_RE.test(s));
+const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2)); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); };
+
 // ---------------------------------------------------------------- Texto: pantallas de victoria de los 6 jefes y menús sin solapes ni desbordes
 async function text() {
   console.log('--- texto: victoria de los 6 jefes, derrota, pausa, Portal y paneles (844x390): sin solapes, desbordes ni fuentes < 11,5 px');
   const b = await launch();
-  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
+  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); const kb = kbdHints(d); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
   for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {
     const pg = await mk(b, `reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&cine=0&hand=spark:3,shard:2,dart:1&boss=${id}`);
     const st = await E(pg, () => { G.Save.data.bossKills.cenizar = 1; for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 600 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } return G.state; });
@@ -971,7 +976,15 @@ async function text() {
   pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
   for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor']) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel(n); }, pn); await sleep(pg, 150); await report(pg, 'panel ' + pn); }
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('portal'); G.Panels.portalTab(1); }); await sleep(pg, 150); await report(pg, 'panel portal (cartas)');
-  await done(pg, 'texto-paneles'); await b.close();
+  // T-F0-06: más pantallas con pistas posibles (aldea con NPC cerca, oferta de cartas, tutorial de la partida, Herrería en cada pestaña)
+  await E(pg, () => { G.Aldea.open(false); }); await sleep(pg, 200); await kbdOnly(pg, 'aldea');
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('armor'); }); await sleep(pg, 150);
+  for (const tb of [0, 1]) { await E(pg, t => { if (G.Smith.setTab) G.Smith.setTab(t); }, tb); await sleep(pg, 100); await kbdOnly(pg, 'herreria pestaña ' + tb); }
+  await done(pg, 'texto-paneles');
+  pg = await mk(b, 'reset=1&direct=1&all=1&god=1&speed=0&noanchor=1');
+  await E(pg, () => { G.Save.data.anchors = []; G.startGame(); }); await sleep(pg, 500); await kbdOnly(pg, 'oferta de cartas');
+  await E(pg, () => { G.Cards.skip(); }); await sleep(pg, 300); await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); }); await kbdOnly(pg, 'partida (tutorial)');
+  await done(pg, 'texto-partida'); await b.close();
 }
 
 

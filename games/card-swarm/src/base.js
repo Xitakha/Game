@@ -142,7 +142,7 @@
   };
   function drawEndButtons(c, S) {
     var md = G.mode;
-    U.button(c, END_RETRY, md === 'practice' ? 'REINICIAR PRÁCTICA' : md === 'hunt' ? (G.final ? 'OTRO ASALTO' : 'OTRA CACERÍA') : 'REINTENTAR MISMO BUILD', { size: 22, sub: md === 'practice' ? 'R / Enter  -  misma mano; 1-3: fase de inicio' : md === 'hunt' ? 'R / Enter  -  6 ofertas nuevas' : 'R / Enter  -  anclas: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'ninguna') });
+    U.button(c, END_RETRY, md === 'practice' ? 'REINICIAR PRÁCTICA' : md === 'hunt' ? (G.final ? 'OTRO ASALTO' : 'OTRA CACERÍA') : 'REINTENTAR MISMO BUILD', { size: 22, sub: md === 'practice' ? G.hint('R / Enter  -  misma mano; 1-3: fase de inicio', 'misma mano') : md === 'hunt' ? G.hint('R / Enter  -  6 ofertas nuevas', '6 ofertas nuevas') : G.hint('R / Enter  -  ', '') + 'anclas: ' + (S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'ninguna') });
     U.button(c, END_BASE, 'IR A LA ALDEA', { size: 22, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: 'B  -  forjar, encargos y anclas' });
   }
   function drawPracticePanel(c, sm) {

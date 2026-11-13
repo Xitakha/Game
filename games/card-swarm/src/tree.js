@@ -665,12 +665,12 @@
     var can = st === 'avail' && !why;
     if (n.type === 'M') {
       ['A', 'B'].forEach(function (k, j) {
-        U.button(c, R_CH[j], 'ELEGIR ' + k, { size: 15, off: st !== 'avail' || !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: n.ch[k].name + (j ? ' [G]' : ' [F]') });
+        U.button(c, R_CH[j], 'ELEGIR ' + k, { size: 15, off: st !== 'avail' || !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: n.ch[k].name + G.hint(j ? ' [G]' : ' [F]', '') });
       });
     } else if (st === 'owned') {
       /* nada */
     } else {
-      U.button(c, R_BUY, st === 'avail' ? (n.type === 'C' ? 'FORJAR' : 'COMPRAR') : 'BLOQUEADO', { size: 18, off: !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: why || (st === 'avail' ? '[F]' : '') });
+      U.button(c, R_BUY, st === 'avail' ? (n.type === 'C' ? 'FORJAR' : 'COMPRAR') : 'BLOQUEADO', { size: 18, off: !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: why || (st === 'avail' ? G.hint('[F]', '') : '') });
     }
   }
 })();

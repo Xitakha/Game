@@ -135,7 +135,7 @@
     if (since < 9000 && G.state === 'play') {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
       G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 300, 16, '#ffffff', 'center');
-      G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: botones o Q E R Espacio).', G.W / 2, 322, 13, '#d8cfe8', 'center');
+      G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: ' + G.hint('botones o Q E R Espacio', 'usa sus botones') + ').', G.W / 2, 322, 13, '#d8cfe8', 'center');
       c.restore();
     }
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
