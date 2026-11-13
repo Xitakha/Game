@@ -101,11 +101,11 @@
   // ------------------------------------------------------------- NPCs: diálogos
   var CHAT = {
     grum: ['Cada martillazo es una promesa.', 'El hierro recuerda lo que le enseñas.', 'Una buena hoja se gana, no se compra.'],
-    vesper: ['Apuesto por ti, cordero. No me hagas perder.', 'Los bichos más molestos pagan mejor.', 'Si algo te persigue, es que vale la pena.'],
+    vesper: ['Apuesto por ti, mapache. No me hagas perder.', 'Los bichos más molestos pagan mejor.', 'Si algo te persigue, es que vale la pena.'],
     rufo: ['Para ti, hoy, precio de amigo. Siempre es hoy.', 'Todo se vende, hasta lo que no sabías que tenías.', 'Hebra por aquí, plumas por allá... negocio redondo.'],
     ulalume: ['Tus cartas susurran. Algunas mienten.', 'Cinco cartas, un destino. Más o menos.'],
     lanudo: ['El Pastor era el mejor de nosotros...', 'Si te rodean, no corras en línea recta.', 'Dos fuegos y un hielo hacen vapor, decía mi abuela.'],
-    castana: ['¿Has comido algo? Se te ve flaco, corderito.', 'Un plato caliente vale más que un cuerno de jefe.'],
+    castana: ['¿Has comido algo? Se te ve flaco, mapachito.', 'Un plato caliente vale más que un cuerno de jefe.'],
     carapa: ['Todo se mide. Hasta el valor, con cinta métrica.', 'Costura doble: lo que yo coso, aguanta.', 'Grum pega fuerte; yo me ocupo de que a ti te peguen menos.', 'Has crecido tres dedos desde el mes pasado.']
   };
   // Líneas que cambian con los jefes vencidos y con el progreso
@@ -137,7 +137,7 @@
       if (k.karceron) out.push('Las cadenas de Karceron dan un forro excelente, por cierto.');
       if (G.curBiome === 'tundra' && !ar.equippedCount()) out.push('¿La Tundra con un chaleco? El frío no perdona.');
     }
-    if (id === 'rufo' && S.brasas > 400) out.push('Veo Brasas en tu bolsillo, cordero. Mi carro tiene huecos...');
+    if (id === 'rufo' && S.brasas > 400) out.push('Veo Brasas en tu bolsillo, mapache. Mi carro tiene huecos...');
     return out;
   }
   function who(it, color) { return { name: it.name, x: it.x, y: it.y - 96, color: color || COL[it.id] || '#a0481c', pitch: it.id === 'grum' ? -0.6 : it.id === 'ulalume' ? 0.6 : 0 }; }
@@ -210,10 +210,10 @@
   function talkCastana(it) {
     var S = G.Save.data, w = who(it), Cook = G.Cook, cur = Cook.pending(), bye = { label: 'Adiós', fn: function () {} };
     var first = !flag('castana'), line;
-    if (cur) line = 'Ese ' + cur.name.toLowerCase() + ' te va a sentar de maravilla, corderito.';
+    if (cur) line = 'Ese ' + cur.name.toLowerCase() + ' te va a sentar de maravilla, mapachito.';
     else if (S.shop.dish) line = 'Ya comiste en esta salida, cielo. Después de otra expedición, otro plato.';
     else if (!Cook.anyAffordable()) line = 'Sin ingredientes no hay milagros, cielo. Trae partes y Brasas.';
-    else line = first ? '¡Pasa, pasa, corderito! La olla ya hierve. Un plato por expedición: te ayudará mañana.' : 'Siéntate, ¿qué te apetece hoy?';
+    else line = first ? '¡Pasa, pasa, mapachito! La olla ya hierve. Un plato por expedición: te ayudará mañana.' : 'Siéntate, ¿qué te apetece hoy?';
     D.say(w, [line], [{ label: 'Cocinar', fn: function () { openPanel('cook'); } }, { label: 'Charlar', fn: function () { chat(it); } }, bye]);
   }
 
@@ -262,7 +262,7 @@
       if (G.Panels.huntAvailable()) { lines = lines.concat(['Hay una bestia que merece la pena. ¿Vamos?']); vopts.push({ label: 'Cacería', fn: function () { G.Panels.vesperTab(1); openPanel('vesper'); } }); }
       D.say(w, lines, vopts.concat([ch, bye]));
     } else if (it.id === 'rufo') {
-      var left = L.TRADE.cupo - (S.shop.trade || 0), line2 = left <= 0 ? 'Hoy no me caben más trastos. Vuelve tras otra salida.' : (S.brasas < 6 && totalParts() === 0) ? 'El cariño no paga, cordero.' : '¿Cambiamos? Tres por una, sin preguntas.';
+      var left = L.TRADE.cupo - (S.shop.trade || 0), line2 = left <= 0 ? 'Hoy no me caben más trastos. Vuelve tras otra salida.' : (S.brasas < 6 && totalParts() === 0) ? 'El cariño no paga, mapache.' : '¿Cambiamos? Tres por una, sin preguntas.';
       D.say(w, [line2], [{ label: 'Comerciar', fn: function () { openPanel('rufo'); } }, ch, bye]);
     } else if (it.id === 'ulalume') {
       var lo = S.loadouts.filter(Boolean).length;
@@ -341,7 +341,7 @@
     if (id === 'vesper') return Q.isReady() ? '¡Eso lo tengo que cobrar!' : Q.mark() === 'new' ? 'El Tablón tiene encargos nuevos.' : null;
     if (id === 'rufo') return (S.shop.trade || 0) < G.Loot.TRADE.cupo && totalParts() > 12 ? '¡Precio de amigo, siempre!' : null;
     if (id === 'ulalume') return S.runs > 0 && !S.loadouts.some(Boolean) ? '¿Guardamos un mazo?' : null;
-    if (id === 'castana') return G.Cook.anyAffordable() ? '¡Ven a comer algo, corderito!' : null;
+    if (id === 'castana') return G.Cook.anyAffordable() ? '¡Ven a comer algo, mapachito!' : null;
     if (id === 'lanudo') return G.Ach.unseen().length ? '¡Tengo una memoria nueva!' : null;
     if (id === 'carapa') { var rc = G.Armor.readyCount(); return rc > 0 ? 'Tengo ' + rc + ' pieza' + (rc > 1 ? 's' : '') + ' lista' + (rc > 1 ? 's' : '') + '.' : null; }
     return null;
@@ -476,7 +476,7 @@
   function lamp(c, x, y, now, k) { c.fillStyle = '#1b1124'; c.fillRect(x - 1, y - 10, 2, 10); c.fillStyle = '#ffb347'; c.globalAlpha = 0.85 + 0.15 * Math.sin(now / 300 + k); c.beginPath(); c.arc(x, y + 3, 5, 0, 6.283); c.fill(); c.globalAlpha = 1; }
   function drawUpgrades(c, now, lv) {
     if (lv <= 0) return;
-    try { var U3 = window.Assets && Assets.cine3 && typeof Assets.cine3 === 'object' && Assets.cine3.villageRebuild; if (U3 && U3(c, lv, now, { calm: !!(G.Cine && G.Cine.cfg().calm), fresh: Math.min(1, (now - lvAt) / 2500), time: A.timeMode === 'noche' ? 1 : A.timeMode === 'ocaso' ? 0.5 : 0 })) return; } catch (e) { /* reserva */ }
+    try { var U3 = window.Assets && Assets.cine3 && Assets.cine3.villageRebuild; if (U3 && U3(c, lv, now, { calm: !!(G.Cine && G.Cine.cfg().calm), fresh: Math.min(1, (now - lvAt) / 2500), time: A.timeMode === 'noche' ? 1 : A.timeMode === 'ocaso' ? 0.5 : 0 })) return; } catch (e) { /* reserva */ }
     var i, x;
     c.save(); c.lineWidth = 2; c.strokeStyle = '#1b1124';
     if (lv >= 1) {   // farolillos colgantes entre la fragua y la plaza
@@ -504,7 +504,7 @@
     }
     c.restore();
   }
-  function villageNpcs(now) { try { var a = window.Assets && Assets.cine3; return a && typeof a === 'object' && a.villageNpcs ? a.villageNpcs(A.level(), now) || {} : {}; } catch (e) { return {}; } }   // aldeanos animados según el nivel
+  function villageNpcs(now) { try { var a = window.Assets && Assets.cine3; return a && a.villageNpcs ? a.villageNpcs(A.level(), now) || {} : {}; } catch (e) { return {}; } }   // aldeanos animados según el nivel
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;
@@ -548,8 +548,9 @@
     });
     if (tg && !D.active()) {
       var nm = tg.name; G.txt(c, nm, tg.x, tg.y - (tg.npc ? 96 : 140), 13, '#ffe9a0', 'center');
-      var ky = anim('ui_key_e', 'pulse', now), kx = tg.x, kyy = tg.y - (tg.npc ? 124 : 164);
-      if (ky) c.drawImage(ky, Math.round(kx - ky.width / 2), Math.round(kyy - ky.height / 2 + Math.sin(now / 200) * 2));
+      var ky = G.Sys.isTouch() ? null : anim('ui_key_e', 'pulse', now), kx = tg.x, kyy = tg.y - (tg.npc ? 124 : 164);   // la tecla E solo en teclado: en táctil está el botón HABLAR
+      if (G.Sys.isTouch()) { /* sin pista de tecla */ }
+      else if (ky) c.drawImage(ky, Math.round(kx - ky.width / 2), Math.round(kyy - ky.height / 2 + Math.sin(now / 200) * 2));
       else { var sc = 1 + 0.08 * Math.sin(now / 200); c.save(); c.translate(kx, kyy); c.scale(sc, sc); c.fillStyle = '#fff6df'; c.strokeStyle = '#2a1d3a'; c.lineWidth = 3; c.fillRect(-14, -14, 28, 28); c.strokeRect(-14, -14, 28, 28); c.restore(); G.txt(c, 'E', kx, kyy + 1, 16, '#2a1d3a', 'center', '#fff6df'); }
     }
   }

@@ -14,7 +14,7 @@
   function lerp(a, b, u) { return a + (b - a) * u; }
   function ease(u) { u = cl(u, 0, 1); return u * u * (3 - 2 * u); }
   function cs() { return G.Save && G.Save.data && G.Save.data.cine; }
-  function art3(name) { try { var A = window.Assets && Assets.cine3; return A && typeof A === 'object' && typeof A[name] === 'function' ? A[name] : null; } catch (e) { return null; } }   // Assets.cine3.* = arte (assets_cine3.js); el audio vive en G.Snd.cine3
+  function art3(name) { try { var A = window.Assets && Assets.cine3; return A && typeof A[name] === 'function' ? A[name] : null; } catch (e) { return null; } }   // Assets.cine3.* = arte (assets_cine3.js); el audio vive en G.Snd.cine3
 
   // ---------------------------------------------------------------- Disparo
   En.eligible = function () { return !C.off && C.auto && G.bossId === 'cenizar' && G.mode !== 'practice' && !!(G.cenizarFinal && G.cenizarFinal.first); };

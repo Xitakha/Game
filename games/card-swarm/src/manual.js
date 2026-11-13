@@ -20,7 +20,7 @@
   var R_FIL = { x: 14, y: 108, w: 266, h: 44 }, R_SRCH = { x: 14, y: 158, w: 266, h: 44 };
   function rowR(i) { return { x: 14, y: 210 + i * 46, w: 266, h: 42 }; }
   var R_PREV = { x: 14, y: 446, w: 80, h: 44 }, R_NEXT = { x: 200, y: 446, w: 80, h: 44 };
-  var ALL = /[?&]manual=all/.test(location.search);
+  var ALL = /[?&]manual=all/.test(Dev.search);
   function SV() { return G.Save.data; }
   function tagName(t) { return (G.TAGS[t] || { name: t }).name; }
   function tagCol(t) { return (G.TAGS[t] || { color: '#c8c0d8' }).color; }

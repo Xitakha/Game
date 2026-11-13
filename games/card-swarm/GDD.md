@@ -169,7 +169,7 @@ Director de spawn por **presupuesto continuo** (adaptación de `waves.js`): cada
 - Feedback (juice reutilizado): hit-stop mínimo (30 ms solo en el jefe y kills en masa, no en cada golpe), shake al recibir daño, números de daño (agrupados/agregados cuando hay muchos), partículas por estado, flash blanco.
 
 ## Estilo visual y audio
-- **Visual:** mismo universo (cordero encapuchado en el claro maldito, paleta oscura con acentos cálidos) para reusar todo el arte. Lo nuevo: **cartas** estilo naipe oscuro con marco por etiqueta (rojo, azul, amarillo, verde, carmesí, gris) y símbolo central; proyectiles con colores de etiqueta para que se lea el caos. Arena `bosque` por defecto; `cripta` como variante de fondo para la fase 2.
+- **Visual:** mismo universo (mapache con bufanda en el claro maldito, paleta oscura con acentos cálidos) para reusar todo el arte. Lo nuevo: **cartas** estilo naipe oscuro con marco por etiqueta (rojo, azul, amarillo, verde, carmesí, gris) y símbolo central; proyectiles con colores de etiqueta para que se lea el caos. Arena `bosque` por defecto; `cripta` como variante de fondo para la fase 2.
 - **Audio:** reutiliza la música procedural en capas (la intensidad sube con los minutos, pista `boss` para el jefe). SFX nuevos: voltear carta, fusión, reroll, stinger de combo (uno corto y gratificante, el sonido de marca del juego), gema, subida de nivel, tick de estados.
 
 ## Qué se reutiliza de Ember Flock / qué es nuevo

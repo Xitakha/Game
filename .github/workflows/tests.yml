@@ -1,0 +1,82 @@
+# Pruebas automáticas de Swarm Hand (batería: tools/card-swarm-bot/tests.js all).
+# Se ejecuta en cada pull request y, en main, como puerta previa del despliegue (lo llama pages.yml con workflow_call,
+# así el push a main no corre las pruebas dos veces).
+name: Pruebas
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pruebas:
+    name: Batería completa
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Instalar Playwright (versión fijada en tools/package-lock.json)
+        working-directory: tools
+        run: npm ci
+
+      - name: Caché del navegador
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/package-lock.json') }}
+
+      - name: Instalar Chromium y sus librerías del sistema
+        working-directory: tools
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: Levantar el servidor local (puerto 8811)
+        run: |
+          python3 tools/serve.py card-swarm 8811 > servidor.log 2>&1 &
+          echo $! > servidor.pid
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null http://localhost:8811/index.html && exit 0
+            sleep 1
+          done
+          echo "El servidor no arrancó" >&2; cat servidor.log; exit 1
+
+      - name: Ejecutar la batería
+        run: |
+          set -o pipefail
+          node tools/card-swarm-bot/tests.js all 2>&1 | tee pruebas.log
+
+      - name: Parar el servidor
+        if: always()
+        run: kill "$(cat servidor.pid)" 2>/dev/null || true
+
+      - name: Guardar el registro como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registro-pruebas
+          path: |
+            pruebas.log
+            servidor.log
+          if-no-files-found: warn
+          retention-days: 14

@@ -199,12 +199,12 @@
       G.txt(c, st, r.x + r.w - 6, r.y + 13, 12, own ? (isEq ? '#9dffb4' : '#ffe9a0') : lock ? '#ff8a8a' : can ? '#9dffb4' : '#8a7f96', 'right');
     });
     p = cur(); drawDetail(c, p);
-    if (ui.tab === 1) U.button(c, R_B1, p && A.owned(p.id) ? 'YA FABRICADA' : 'FABRICAR', { size: 17, off: !p || A.owned(p.id) || !!A.craftReq(p) || !A.costOK(A.cost(p, 0)), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: '[Enter]' });
+    if (ui.tab === 1) U.button(c, R_B1, p && A.owned(p.id) ? 'YA FABRICADA' : 'FABRICAR', { size: 17, off: !p || A.owned(p.id) || !!A.craftReq(p) || !A.costOK(A.cost(p, 0)), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: G.hint('[Enter]', null) });
     else {
       var isE = p && A.eq()[p.slot] === p.id;
-      U.button(c, R_B1, !p ? 'EQUIPAR' : isE ? 'QUITAR' : 'EQUIPAR', { size: 17, off: !p, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: '[E]' });
+      U.button(c, R_B1, !p ? 'EQUIPAR' : isE ? 'QUITAR' : 'EQUIPAR', { size: 17, off: !p, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: G.hint('[E]', null) });
       var nx = p ? A.baseRef(p.id) + 1 : 1, ok2 = p && nx <= A.maxRef(p) && !A.refReq(p, nx) && A.costOK(A.cost(p, nx));
-      U.button(c, R_B2, p && nx <= A.maxRef(p) ? 'REFORZAR +' + nx : 'REFORZADA', { size: 17, off: !ok2, color: '#8a6a1a', hot: '#c89a2a', border: '#ffe08a', sub: '[R]' });
+      U.button(c, R_B2, p && nx <= A.maxRef(p) ? 'REFORZAR +' + nx : 'REFORZADA', { size: 17, off: !ok2, color: '#8a6a1a', hot: '#c89a2a', border: '#ffe08a', sub: G.hint('[R]', null) });
     }
   }
   function drawSets(c) {
@@ -264,6 +264,6 @@
     }
     if (ui.msgT > 0 && ui.msg) G.txt(c, ui.msg, 430, 521, 12, '#ffe9a0', 'center');
     if (ui.tab <= 1) drawEquipTab(c); else if (ui.tab === 2) { drawSets(c); drawSetButtons(c); } else drawPed(c);
-    G.txt(c, 'Q/E pestaña  1-4 slot  Enter acción  R reforzar  Esc salir', 14, 530, 12, '#b4a8c8', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Q/E pestaña  1-4 slot  Enter acción  R reforzar  Esc salir', 14, 530, 12, '#b4a8c8', 'left');
   };
 })();

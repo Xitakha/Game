@@ -53,6 +53,7 @@
     else if (cur === 'settings') { if (esc || cl) { cur = 'menu'; return false; } }
     else if (cur === 'cine') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'cine2') { if (esc || cl) { cur = 'cine'; return false; } }
+    else if (cur === 'errlog') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
     else if (esc || cl) return true;
     if (cur === 'vesper') return updVesper();
@@ -65,6 +66,7 @@
     if (cur === 'settings') return updSettings();
     if (cur === 'cine') return updCine();
     if (cur === 'cine2') return updCine2();
+    if (cur === 'errlog') return updErr();
     return true;
   };
   P.draw = function (c) {
@@ -81,6 +83,7 @@
     else if (cur === 'settings') drawSettings(c);
     else if (cur === 'cine') drawCine(c);
     else if (cur === 'cine2') drawCine2(c);
+    else if (cur === 'errlog') drawErr(c);
   };
 
   // ============================================================= VESPER
@@ -137,7 +140,7 @@
       U.button(c, hbRect(i), av ? D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase() : '? ' + D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase(), { size: 15, off: !av, color: st.hb === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.hb === i ? '#bfeaff' : '#6a5a80', sub: av ? 'Peligro hasta ' + G.Boss.ROMAN[G.Save.pelMax(B[i])] : 'vence al jefe 1 vez' });
     }
     var id = B[st.hb], D = G.Boss.DEFS[id], av2 = huntAvail(id), PD = G.Boss.PELIGRO[st.hp], pmax = G.Save.pelMax(id);
-    G.txt(c, 'PELIGRO  (Q/E)', 345, 135, 11, '#9a8fb0', 'left');
+    G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO'), 345, 135, 11, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) { var op = i + 1 <= pmax; U.button(c, hpRect(i), op ? G.Boss.ROMAN[i + 1] : '?', { size: 15, off: !op, color: st.hp === i + 1 ? '#a8801a' : '#2c2438', hot: '#d8a82a', border: st.hp === i + 1 ? '#ffffff' : '#6a5a80' }); }
     if (!av2) { G.txt(c, 'Derrota a este jefe en una expedición para desbloquear su cacería.', 20, 190, 14, '#ff9a8a', 'left'); return; }
     U.panel(c, 20, 162, 612, 336, { border: '#6a4a30' });
@@ -186,7 +189,7 @@
     list.forEach(function (d, i) {
       var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
       U.panel(c, r.x, r.y, r.w, r.h, { border: ready ? '#7dff9a' : isA ? '#ffd24a' : '#4a3a66' });
-      G.txt(c, '[' + (i + 1) + '] ' + d.name, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
+      G.txt(c, G.hint('[' + (i + 1) + '] ', '') + d.name, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
       var tx = r.x + 24 + Math.min(430, d.name.length * 11.6 + 40);
       G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 12, TIERC[d.tier], 'left');
       if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 80, r.y + 20, 12, '#9dffb4', 'left');
@@ -227,11 +230,11 @@
     var S = SV();
     if (what === 'part') {
       if ((S.shop.part || 0) >= L.BUY.partCupo) { say('Cupo de partes agotado esta salida.'); return; }
-      if (S.brasas < L.BUY.part) { say('El cariño no paga, cordero.'); return; }
+      if (S.brasas < L.BUY.part) { say('El cariño no paga, mapache.'); return; }
       S.brasas -= L.BUY.part; G.Save.add(st.buy, 1); S.shop.part++; say('Compras 1 ' + L.part(st.buy).short + '.');
     } else {
       if (S.shop[what]) { say('Ya lo compraste esta salida.'); return; }
-      if (S.brasas < L.BUY[what]) { say('El cariño no paga, cordero.'); return; }
+      if (S.brasas < L.BUY[what]) { say('El cariño no paga, mapache.'); return; }
       S.brasas -= L.BUY[what]; S.shop[what] = 1; S.pending[what] = 1;
       say(what === 'tonic' ? 'Tónico listo: +40 Ceniza en la próxima expedición.' : 'Imán listo: radio x1,5 en la próxima expedición.');
     }
@@ -286,7 +289,7 @@
       G.txt(c, 'RECIBES 1 DE...', 14, 264, 12, '#9a8fb0', 'left');
       cm.forEach(function (p, k) { partTile(c, p, tile(k, 272), p.id === st.get, ''); });
       var ok = st.give !== st.get && left > 0 && (S.parts[st.give] || 0) >= n;
-      U.button(c, R_TRADE, 'TRUEQUE: ' + n + ' ' + L.part(st.give).short + ' > 1 ' + L.part(st.get).short, { size: 17, off: !ok, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: '[F]  -  las raras no se truecan' });
+      U.button(c, R_TRADE, 'TRUEQUE: ' + n + ' ' + L.part(st.give).short + ' > 1 ' + L.part(st.get).short, { size: 17, off: !ok, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: G.hint('[F]  -  las raras no se truecan', 'las raras no se truecan') });
     } else if (st.rt === 1) {
       G.txt(c, 'Toca una parte para venderla (' + L.SELL + ' Brasas; Hebra ' + L.SELL_THREAD + '). Las raras no se venden.', 14, 130, 12, '#9a8fb0', 'left');
       cm.forEach(function (p, k) { partTile(c, p, tile(k, 150), false, '+' + (p.id === 'thread' ? L.SELL_THREAD : L.SELL) + ' c/u'); });
@@ -414,7 +417,7 @@
       U.button(c, R_EQUIP, 'EQUIPO', { size: 16, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: AR.readyCount() ? AR.readyCount() + ' listas' : null });
     }
     ['SALIDA', 'CARTAS'].forEach(function (nm, k) { U.button(c, ptabRect(k), nm + (k === 1 ? '  (' + list.length + ')' : ''), { size: 16, color: pt === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: pt === k ? '#bfeaff' : '#6a5a80' }); });
-    G.txt(c, 'Tab: cambiar de página', 340, 75, 12, '#b4a8c8', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Tab: cambiar de página', 340, 75, 12, '#b4a8c8', 'left');
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
     if (pt === 1) {
       G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 112, 13, '#b4a8c8', 'left');
@@ -426,7 +429,7 @@
         G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y + 8, r.w, r.h - 8, { nocd: true, glow: isA ? '#ffd24a' : null });
         if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y - 6, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + 1, 12, '#2a1a00', 'center', '#ffd24a'); }
       }
-      U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: 'Enter  -  ' + names });
+      U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: G.hint('Enter  -  ' + names, names) });
       return;
     }
     var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
@@ -484,7 +487,7 @@
       }
       U.wrap(c, ib.hint, 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, ib.fire ? '#ffc890' : '#d4c8ec', 'left'); iy += 19; });
     }
-    G.txt(c, 'PELIGRO  (Q/E)  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
+    G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO') + '  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
     for (i = 0; i < 5; i++) {
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
       U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 18, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
@@ -492,7 +495,7 @@
     var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : ''), py = 440;
     G.txt(c, pl1, 14, py, 13, '#ffe9a0', 'left'); py += 19;
     U.wrap(c, P.pelText(bid, psel), 440, 13).slice(0, 3).forEach(function (ln2) { G.txt(c, ln2, 14, py, 13, '#d4c8ec', 'left'); py += 19; });
-    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: 'Enter  -  ' + names });
+    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: G.hint('Enter  -  ' + names, names) });
   }
 
   // ============================================================= ARCHIVO (Ulalume) / COLECCIÓN
@@ -631,7 +634,7 @@
     var isAnchor = S.anchors.indexOf(id) >= 0, nw = comboNames(S.anchors.concat(isAnchor ? [] : [id]));
     var gain = isAnchor || !rank ? [] : nw.filter(function (cb) { return comboNames(S.anchors).indexOf(cb) < 0; });
     if (gain.length) G.txt(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 626, 282, 12, '#ffe9a0', 'left');
-    U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 16, sub: '[E]' });
+    U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 16, sub: G.hint('[E]', null) });
     // mano al salir
     G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 376, 12, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
@@ -755,7 +758,7 @@
       var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id, lk = !Cook.unlocked(d);
       U.panel(c, r.x, r.y, r.w, r.h, { border: isCur ? '#7dff9a' : ok ? '#8a6a4a' : '#3a2f48' });
       U.part(c, d.icon, r.x + 28, r.y + 29, 14);
-      G.txt(c, '[' + (i + 1) + '] ' + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 12, 16, lk ? '#a89cc0' : '#ffd27a', 'left');
+      G.txt(c, G.hint('[' + (i + 1) + '] ', '') + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 12, 16, lk ? '#a89cc0' : '#ffd27a', 'left');
       U.wrap(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, 490, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 58, r.y + 31 + k * 16, 12, lk ? '#ff9a8a' : '#d8cfe8', 'left'); });
       var x = r.x + 560, k;
       for (k in d.parts) { var have = S.parts[k] || 0; U.part(c, k, x + 8, r.y + 28, 9); G.txt(c, have + '/' + d.parts[k], x + 22, r.y + 29, 12, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 74; }
@@ -827,7 +830,7 @@
     U.button(c, MB(0), 'COLECCIÓN', { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
-    U.button(c, MB(3), 'CERRAR [Esc]', { size: 20 });
+    U.button(c, MB(3), G.hint('CERRAR [Esc]', 'CERRAR'), { size: 20 });
     U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
@@ -880,6 +883,29 @@
     G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 380, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
+  // ---- Informe de errores (diag.js): los últimos 20 errores de este dispositivo; se copian para pegarlos al estudio. No se envía nada.
+  var ER = { copy: { x: 150, y: 368, w: 320, h: 52 }, clear: { x: 490, y: 368, w: 320, h: 52 } };
+  function updErr() {
+    if (onR(ER.copy) && Diag.count()) { Diag.copy().then(function (ok) { st.errMsg = ok ? 'Informe copiado: pégalo donde te lo pidan.' : 'No se pudo copiar: este navegador lo impide.'; }); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(ER.clear) && Diag.count()) { Diag.clear(); st.errMsg = 'Registro vaciado.'; G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(CB.back)) cur = 'settings';
+    return false;
+  }
+  function drawErr(c) {
+    bg(c, 'INFORME DE ERRORES'); var es = Diag.entries().reverse(), i;
+    G.txt(c, es.length ? es.length + ' errores guardados en este dispositivo (los más nuevos arriba). Versión ' + Diag.build + '.' : 'No hay errores guardados.', 480, 72, 13, '#b4a8c8', 'center');
+    for (i = 0; i < es.length && i < 5; i++) {
+      var e = es[i], y = 92 + i * 50;
+      c.fillStyle = 'rgba(20,12,32,0.7)'; c.fillRect(60, y, 840, 46);
+      G.txt(c, (e.n > 1 ? 'x' + e.n + '  ' : '') + e.msg.slice(0, 80), 72, y + 14, 13, '#ffd2c8', 'left');
+      G.txt(c, (e.src ? e.src + ':' + e.line + '  ' : '') + e.kind + '  ' + e.at.slice(0, 19).replace('T', ' ') + '  ' + (e.ctx && e.ctx.state || ''), 72, y + 33, 12, '#9a8fb0', 'left');
+    }
+    if (es.length > 5) G.txt(c, '... y ' + (es.length - 5) + ' más (van en el informe copiado)', 480, 352, 12, '#9a8fb0', 'center');
+    U.button(c, ER.copy, 'COPIAR INFORME', { size: 18, off: !es.length, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
+    U.button(c, ER.clear, 'VACIAR', { size: 18, off: !es.length, color: '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
+    if (st.errMsg) G.txt(c, st.errMsg, 480, 430, 13, '#9dffb4', 'center');
+    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+  }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
   function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
   var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
@@ -888,7 +914,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    man: { x: 770, y: 64, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -908,6 +934,7 @@
     if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
+    if (onR(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
     if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
@@ -933,6 +960,7 @@
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
+    U.button(c, SB.err, 'Informe de errores', { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
     U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');

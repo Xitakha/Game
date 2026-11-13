@@ -11,7 +11,7 @@
   var ease = U.ease, angTo = U.angTo, sfx = U.sfx, pel = U.pel, expose = U.expose;
   var Z = S.cz = {};
   var OUT = '#1b1124';
-  function qn(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
+  function qn(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(Dev.search); return m ? parseFloat(m[1]) : def; }
   function PL() { return G.player; }
   function A() { return S.A; }
   function ART() { try { return !!(Assets.drawBoss && Assets.bossIds().indexOf('cenizar') >= 0 && G.hasSpr('boss_cenizar_torso')); } catch (x) { return false; } }

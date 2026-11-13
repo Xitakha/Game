@@ -1,4 +1,4 @@
-/* player.js - El corderito de Swarm Hand: solo se mueve. Sin ataque manual ni roll; su defensa es el cuerpo y la mano. */
+/* player.js - Marlo, el mapache de Swarm Hand: solo se mueve. Sin ataque manual ni roll; su defensa es el cuerpo y la mano. */
 (function () {
   'use strict';
   var G = window.G, B = G.B, P = G.Player = {};

@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|dev|diag|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -15,7 +15,7 @@ const launch = () => pwLaunch({ args: ['--no-sandbox', '--autoplay-policy=no-use
 async function mk(b, url) {
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
-  await pg.goto(`${base}/index.html?nosw=1&${url}`); await pg.waitForTimeout(600);
+  await pg.goto(`${base}/index.html?${/(^|&)nodev(&|$)/.test(url) ? '' : 'dev=1&'}nosw=1&${url}`);   // dev=1: los parámetros de trampa (give, pf, cmul, reset...) solo valen con él (src/dev.js); 'nodev' lo omite await pg.waitForTimeout(600);
   return pg;
 }
 const done = async (pg, name) => { ok(pg.errs.length === 0, `${name}: 0 errores de consola` + (pg.errs.length ? ' -> ' + pg.errs.slice(0, 3).join(' | ') : '')); await pg.close(); await pg.ctx.close(); };
@@ -85,7 +85,7 @@ async function flow() {
   const r0 = await E(pg, () => G.Cards.offerRect(0)); await tap(pg, r0.x + 100, r0.y + 100);
   let modal = await E(pg, () => G.Cards.off && G.Cards.off.modal && { title: G.Cards.off.modal.title, b: G.Cards.off.modal.buttons.map(x => x.label) });
   ok(modal && /Vapor/.test(modal.title) && /FUSIONAR YA/.test(modal.b[0]) && /conservas/.test(modal.b[0]), 'ventana de fusión visible: ' + (modal && modal.b[0]));
-  const png = await pg.screenshot({ type: 'jpeg', quality: 40 }); fs.writeFileSync(process.env.SHOT_MODAL || '/tmp/claude-0/-home-user-Game/ac8df0e6-87e6-5837-9d6a-fa8dcc4300ed/scratchpad/modal.jpg', png);
+  const png = await pg.screenshot({ type: 'jpeg', quality: 40 }); fs.writeFileSync(process.env.SHOT_MODAL || path.join(os.tmpdir(), 'swarmhand-modal.jpg'), png);
   await sleep(pg, 300); await key(pg, 'Digit1'); await sleep(pg, 300);
   ok(await waitState(pg, 'play'), 'FUSIONAR YA cierra la oferta');
   let s = await E(pg, () => G.Fusion.snapshot());
@@ -267,7 +267,7 @@ async function ui() {
   await done(pg, 'ui');
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }), pv = await ctx.newPage(); pv.errs = []; pv.ctx = ctx;
   pv.on('console', m => { if (m.type() === 'error') pv.errs.push(m.text()); }); pv.on('pageerror', e => pv.errs.push('PAGEERR ' + e.message));
-  await pv.goto(`${base}/index.html?nosw=1&reset=1&direct=1&all=1`); await sleep(pv, 800);
+  await pv.goto(`${base}/index.html?dev=1&nosw=1&reset=1&direct=1&all=1`); await sleep(pv, 800);
   ok(await E(pv, () => [...document.querySelectorAll('div')].some(d => /gira/i.test(d.textContent) && getComputedStyle(d).display !== 'none')), 'vertical 390x844: aviso "gira el teléfono"');
   await done(pv, 'vertical'); await b.close();
 }
@@ -789,6 +789,7 @@ async function cine3(b) {
   ok(cr.st === 'gameover' && cr.cr, 'tras los creditos: pantalla de botin (gameover) y creditsSeen');
   const snd = await E(pg, () => window.__snd);
   ok(!snd.includes('play:stg_cenizar_win') && !snd.includes('play:stg_cenizar_ending') && snd.filter(x => x === 'cine3:victory').length === 1 && snd.filter(x => x === 'cine3:fire').length === 1, 'jingles: sin stg_cenizar_win ni stg_cenizar_ending; cine3 victory y fire una vez (' + snd.join(',') + ')');
+  ok(await E(pg, () => typeof Assets.cine3 === 'object' && typeof Assets.cine3.epilogue === 'function' && typeof G.Snd.cine3 === 'function'), 'Assets.cine3 es el arte (assets_cine3.js) y G.Snd.cine3 el audio, sin pisarse');
   const ls = await E(pg, () => { G.Aldea.open(true); return { lv: G.Aldea.level(), st: G.state }; });
   ok(ls.lv === 6 && ls.st === 'aldea', 'tras el botin la aldea esta completa (nivel 6)');
   await done(pg, 'cierre');
@@ -944,11 +945,19 @@ async function cine2(b) {
 
 
 
+// Pistas de teclado que no deben verse en pantallas táctiles (T-F0-06)
+const KBD_RE = /\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
+const kbdHints = d => d.texts.map(t => t.s).filter(s => KBD_RE.test(s));
+const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2)); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); };
+
 // ---------------------------------------------------------------- Texto: pantallas de victoria de los 6 jefes y menús sin solapes ni desbordes
 async function text() {
   console.log('--- texto: victoria de los 6 jefes, derrota, pausa, Portal y paneles (844x390): sin solapes, desbordes ni fuentes < 11,5 px');
+  // T-F0-07: Marlo es un mapache; ningún texto del juego lo llama cordero / corderito
+  const lamb = ['aldea.js', 'panels.js', 'cine_intro.js', 'cine.js', 'dialog.js', 'quests.js', 'ending.js', 'assets_cine3.js'].filter(f => /corderit|cordero\b/i.test(fs.readFileSync(path.join(ROOT, 'games/card-swarm/src', f), 'utf8')));
+  ok(lamb.length === 0, 'textos: Marlo no es cordero ni corderito' + (lamb.length ? ' (quedan en ' + lamb.join(',') + ')' : ''));
   const b = await launch();
-  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
+  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); const kb = kbdHints(d); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
   for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {
     const pg = await mk(b, `reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&cine=0&hand=spark:3,shard:2,dart:1&boss=${id}`);
     const st = await E(pg, () => { G.Save.data.bossKills.cenizar = 1; for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 600 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } return G.state; });
@@ -970,7 +979,15 @@ async function text() {
   pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
   for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor']) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel(n); }, pn); await sleep(pg, 150); await report(pg, 'panel ' + pn); }
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('portal'); G.Panels.portalTab(1); }); await sleep(pg, 150); await report(pg, 'panel portal (cartas)');
-  await done(pg, 'texto-paneles'); await b.close();
+  // T-F0-06: más pantallas con pistas posibles (aldea con NPC cerca, oferta de cartas, tutorial de la partida, Herrería en cada pestaña)
+  await E(pg, () => { G.Aldea.open(false); }); await sleep(pg, 200); await kbdOnly(pg, 'aldea');
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('armor'); }); await sleep(pg, 150);
+  for (const tb of [0, 1]) { await E(pg, t => { if (G.Smith.setTab) G.Smith.setTab(t); }, tb); await sleep(pg, 100); await kbdOnly(pg, 'herreria pestaña ' + tb); }
+  await done(pg, 'texto-paneles');
+  pg = await mk(b, 'reset=1&direct=1&all=1&god=1&speed=0&noanchor=1');
+  await E(pg, () => { G.Save.data.anchors = []; G.startGame(); }); await sleep(pg, 500); await kbdOnly(pg, 'oferta de cartas');
+  await E(pg, () => { G.Cards.skip(); }); await sleep(pg, 300); await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); }); await kbdOnly(pg, 'partida (tutorial)');
+  await done(pg, 'texto-partida'); await b.close();
 }
 
 
@@ -1064,8 +1081,79 @@ async function manual() {
   await done(pg, 'manual-pausa'); await b.close();
 }
 
+// ---------------------------------------------------------------- Registro de errores en el dispositivo (src/diag.js, T-F0-11)
+async function diag() {
+  console.log('--- diag: captura de error y de promesa rechazada, límite de 20, copia del informe y pantalla en Ajustes');
+  const b = await launch(); const pg = await mk(b, 'reset=1');
+  await pg.ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+  ok(await E(pg, () => typeof Diag === 'object' && Diag.count() === 0), 'Diag existe y empieza vacío');
+  // 1. captura: error con archivo y línea, y promesa rechazada
+  await E(pg, () => {
+    window.dispatchEvent(new ErrorEvent('error', { message: 'prueba rota', filename: 'http://x/src/hud.js', lineno: 42, colno: 7, error: new Error('prueba rota') }));
+    window.dispatchEvent(new PromiseRejectionEvent('unhandledrejection', { promise: Promise.resolve(), reason: new Error('promesa rota') }));
+  });
+  const en = await E(pg, () => Diag.entries());
+  ok(en.length === 2 && en[0].msg === 'prueba rota' && en[0].src === 'hud.js' && en[0].line === 42 && en[0].ctx.state && en[0].build, 'captura: mensaje, archivo, línea, estado del juego y versión (' + JSON.stringify(en[0]).slice(0, 120) + ')');
+  ok(en[1].kind === 'promesa' && en[1].msg === 'promesa rota', 'captura: unhandledrejection');
+  ok(await E(pg, () => JSON.parse(localStorage.getItem('swarmhand.fusion.errlog')).length === 2), 'se guarda en localStorage (swarmhand.fusion.errlog)');
+  // 2. límite de 20 (se conservan los más nuevos) y repetidos agrupados
+  const lim = await E(pg, () => { for (let i = 0; i < 30; i++) Diag.log('fallo ' + i); for (let i = 0; i < 5; i++) Diag.log('bucle'); const e = Diag.entries(); return { n: e.length, last: e[e.length - 1], first: e[0].msg, stored: JSON.parse(localStorage.getItem('swarmhand.fusion.errlog')).length }; });
+  ok(lim.n === 20 && lim.stored === 20 && lim.last.msg === 'bucle' && lim.last.n === 5 && lim.first === 'fallo 11', 'límite de 20 (más nuevos) y el mismo fallo en bucle se cuenta (n=' + lim.n + ', bucle x' + lim.last.n + ', primero ' + lim.first + ')');
+  // 3. informe y copia
+  const rep = await E(pg, () => Diag.copy().then(ok => ({ ok, txt: Diag.text() })));
+  ok(rep.ok && /bucle/.test(rep.txt) && /version: /.test(rep.txt), 'copiar informe: devuelve true y el texto lleva versión y errores');
+  const clip = await E(pg, () => navigator.clipboard.readText().catch(() => null));
+  ok(clip === null || /informe de errores/.test(clip), 'el portapapeles recibe el informe' + (clip === null ? ' (lectura no permitida en este navegador)' : ''));
+  // 4. pantalla en Ajustes (táctil, sin pistas de teclado ni solapes) y vaciar
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
+  await tap(pg, 855, 144); await sleep(pg, 300);
+  ok(await E(pg, () => G.Panels.current()) === 'errlog', 'Ajustes: el botón Informe de errores abre la pantalla');
+  const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 11.5 }); ok(iss.length === 0 && kbdHints(d).length === 0, 'pantalla del informe: ' + d.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
+  await tap(pg, 650, 394); await sleep(pg, 300);
+  ok(await E(pg, () => Diag.count()) === 0, 'VACIAR borra el registro');
+  // 5. un fallo dentro del bucle se registra y el juego sigue
+  await E(pg, () => { G.Aldea.open(false); const o = G.Hud.draw; G.Hud.draw = function () { G.Hud.draw = o; throw new Error('fallo de dibujo'); }; G.state = 'play'; });
+  await sleep(pg, 400);
+  const fr = await E(pg, () => ({ n: Diag.count(), k: Diag.entries().map(e => e.kind + ':' + e.msg).join('|') }));
+  ok(fr.n >= 1 && /fotograma:fallo de dibujo/.test(fr.k), 'un fallo en un fotograma se registra y el bucle sigue (' + fr.k + ')');
+  pg.errs = []; await done(pg, 'diag'); await b.close();
+}
+
+// ---------------------------------------------------------------- Parámetros de depuración cerrados sin ?dev=1 (src/dev.js, T-F0-03 reducida)
+async function dev() {
+  console.log('--- dev: give / pf / len / all / cmul / hand / peligro / reset / smith cerrados sin ?dev=1; ?god y ?seed no se tocan');
+  const b = await launch(), E1 = (pg, fn) => E(pg, fn);
+  // 1. sin dev=1: nada de lo que da recursos o cambia la dificultad
+  let pg = await mk(b, 'nodev&give=all:30,brasas:900&pf=5&len=3&all=1&cmul=1&smith=1&speed=0&hand=spark:3&peligro=4');
+  const r = await E1(pg, () => ({ dev: Dev.on, brasas: G.Save.data.brasas, parts: Object.keys(G.Save.data.parts).length, pf: G.Save.data.pf.earned, len: G.lenOverride || 0, all: G.fusionAll, smith: G.Armor.smithOn(), spd: G.speed, cmul: G.B.cardDmgMul, pel: G.peligroUrl, search: Dev.search }));
+  ok(!r.dev && r.brasas === 0 && r.parts === 0 && r.pf === 1, 'sin dev=1: give y pf no cambian el guardado (brasas ' + r.brasas + ', partes ' + r.parts + ', pf ' + r.pf + ')');
+  ok(!r.len && !r.all && !r.smith && r.spd === 1 && Math.abs(r.cmul - 0.98 * 3.5) < 1e-9 && !r.pel, 'sin dev=1: len, all, smith, speed, cmul y peligro se ignoran (cmul ' + r.cmul + ', speed ' + r.spd + ')');
+  ok(!/give|cmul|pf=|smith|all=/.test(r.search), 'Dev.search no deja pasar los parámetros cerrados: "' + r.search + '"');
+  await done(pg, 'dev-cerrado');
+  // 2. reset=1 sin dev=1 no borra el guardado
+  pg = await mk(b, 'nodev');
+  await E1(pg, () => { G.Save.data.brasas = 777; G.Save.save(); });
+  await pg.goto(`${base}/index.html?nosw=1&reset=1`); await sleep(pg, 600);
+  ok((await E1(pg, () => G.Save.data.brasas)) === 777, 'sin dev=1: ?reset=1 no borra la partida');
+  await pg.goto(`${base}/index.html?nosw=1&dev=1&reset=1`); await sleep(pg, 600);
+  ok((await E1(pg, () => G.Save.data.brasas)) === 0, 'con dev=1: ?reset=1 borra la partida');
+  await done(pg, 'dev-reset');
+  // 3. con dev=1 todo sigue funcionando
+  pg = await mk(b, 'reset=1&give=all:30,brasas:900&pf=5&len=3&all=1&cmul=1&smith=1&speed=0&peligro=4');
+  const w = await E1(pg, () => ({ dev: Dev.on, brasas: G.Save.data.brasas, pf: G.Save.data.pf.earned, len: G.lenOverride, all: G.fusionAll, smith: G.Armor.smithOn(), spd: G.speed, cmul: G.B.cardDmgMul, pel: G.peligroUrl }));
+  ok(w.dev && w.brasas === 900 && w.pf === 6 && w.len === 3 && w.all && w.smith && w.spd === 0 && Math.abs(w.cmul - 0.98) < 1e-9 && w.pel, 'con dev=1: give, pf, len, all, smith, speed, cmul y peligro funcionan (' + JSON.stringify(w) + ')');
+  await done(pg, 'dev-abierto');
+  // 4. ?god y ?seed no dependen de dev=1
+  pg = await mk(b, 'nodev&god=0&seed=7');
+  ok(await E1(pg, () => G.god === false), '?god=0 sigue funcionando sin dev=1');
+  await done(pg, 'dev-god');
+  pg = await mk(b, 'nodev');
+  ok(await E1(pg, () => typeof G.god === 'boolean'), '?god no se toca (sin parámetro: por defecto ' + (await E1(pg, () => G.god)) + ')');
+  await done(pg, 'dev-god2'); await b.close();
+}
+
 (async () => {
-  const run = { manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { dev, diag, manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

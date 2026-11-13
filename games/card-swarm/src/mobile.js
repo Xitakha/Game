@@ -15,6 +15,8 @@
   Sys.isMobile = coarse || /Android|iPhone|iPad|iPod|Mobile|CriOS|FxiOS/i.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) || q('mobile') === '1';
   Sys.touchActive = Sys.isMobile;                 // dinámico: el último dispositivo usado decide los textos de ayuda (toque / teclado)
   Sys.isTouch = function () { return Sys.touchActive; };
+  // Texto de ayuda según el dispositivo: G.hint('Tab: cambiar de página', '') -> teclado / táctil ('' = no mostrar nada)
+  G.hint = function (keyText, touchText) { return Sys.touchActive ? (touchText == null ? '' : touchText) : keyText; };
   Sys.muted = false; Sys.fps = 60; Sys.paused = false;
   Sys.isIOS = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 

@@ -278,7 +278,7 @@
       c.save(); c.fillStyle = hov ? 'rgba(90,70,120,0.92)' : 'rgba(20,12,32,0.8)'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = '#bfa8e8'; c.lineWidth = 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.restore();
       G.txt(c, 'SALTAR', r.x + r.w / 2, r.y + r.h / 2, 16, '#fff', 'center');
     }
-    G.txt(c, isLocked() ? 'Toca: avanzar' : 'Toca: avanzar  -  Esc: saltar', 14, H - 12, 10, 'rgba(200,190,220,0.55)', 'left');
+    G.txt(c, isLocked() ? 'Toca: avanzar' : G.hint('Toca: avanzar  -  Esc: saltar', 'Toca: avanzar  -  SALTAR'), 14, H - 12, 10, 'rgba(200,190,220,0.55)', 'left');
     if (S.paused) {
       c.fillStyle = 'rgba(5,3,10,0.82)'; c.fillRect(0, 0, W, H);
       G.txt(c, 'PAUSA', W / 2, H / 2 - 24, 34, '#ffd27a', 'center'); G.txt(c, 'TOCA PARA CONTINUAR', W / 2, H / 2 + 22, 20, '#f0e8d8', 'center');

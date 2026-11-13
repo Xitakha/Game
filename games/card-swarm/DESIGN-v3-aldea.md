@@ -12,7 +12,7 @@ Resumen del lazo: **Aldea (caminar, hablar, forjar, aceptar encargo) -> Portal -
 
 ## A) LA ALDEA
 
-**Lore (una frase):** Rescoldo es la última aldea del rebaño que el Pastor Corrupto no quemó; sus habitantes, animales de todo tipo, sobreviven del botín que Marlo (un corderito con bufanda de brasa) trae de las expediciones.
+**Lore (una frase):** Rescoldo es la última aldea del rebaño que el Pastor Corrupto no quemó; sus habitantes, animales de todo tipo, sobreviven del botín que Marlo (un mapache con bufanda de brasa) trae de las expediciones.
 
 ### A.1 Mapa (una pantalla 960x540, sin cámara)
 
@@ -60,7 +60,7 @@ Zona caminable: franja y=290..490 (los edificios del fondo son decorado con puer
 
 ### A.3 NPCs (animales con silueta distinta)
 
-Marlo: cordero pequeño, bufanda naranja (reutiliza el sprite del jugador).
+Marlo: mapache pequeño, bufanda naranja (reutiliza el sprite del jugador).
 
 | NPC | Animal / silueta | Personalidad | Función | Diálogos mínimos |
 |---|---|---|---|---|

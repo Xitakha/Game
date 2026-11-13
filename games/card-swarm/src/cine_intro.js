@@ -144,7 +144,7 @@
       { at: 13200, type: 'cine', kind: 'spark', arg: 0 }, { at: 13900, type: 'cine', kind: 'spark', arg: 1 },
       { at: 14600, type: 'cine', kind: 'spark', arg: 2 }, { at: 15300, type: 'cine', kind: 'spark', arg: 3 }, { at: 16000, type: 'cine', kind: 'spark', arg: 4 },
       { at: 18000, type: 'cine', kind: 'trans', arg: 'in' },
-      { at: 18300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Y entre las cenizas nació un corderito con una bufanda que arde sin quemar. Tú.', dur: 3600 },
+      { at: 18300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Y entre las cenizas nació un mapachito con una bufanda que arde sin quemar. Tú.', dur: 3600 },
       { at: 22000, type: 'cine', kind: 'trans', arg: 'in' },
       { at: 22300, type: 'dlg', who: 'LANUDO', color: '#e8dcb0', text: 'Seis llamas siguen ardiendo. Apágalas.', dur: 2600 },
       { at: 25000, type: 'cine', kind: 'title' },

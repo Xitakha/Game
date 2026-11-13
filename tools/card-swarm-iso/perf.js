@@ -9,7 +9,7 @@ const PORT = process.argv[2] || '8766', OUT = '/home/user/Game/studio/docs/captu
     const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
     pg.on('console', m => { if (m.type() === 'error') errs.push(v + ' ' + m.text()); });
     pg.on('pageerror', e => errs.push(v + ' PAGEERR ' + e.message));
-    await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&reset=1&god=1&t=435&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1`);
+    await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&reset=1&god=1&t=435&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1`);
     await pg.evaluate(() => G.startGame());
     await pg.evaluate(() => { setInterval(() => { if (G.state === 'cards' && G.Cards.off) { try { G.Cards.off.mode === 'level' ? G.Cards.skip() : G.Cards.pick(0); } catch (e) { } } }, 100); });
     await pg.waitForTimeout(3000);
@@ -26,14 +26,14 @@ const PORT = process.argv[2] || '8766', OUT = '/home/user/Game/studio/docs/captu
   // toggle por Ajustes (aldea) y persistencia
   { const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
     pg.on('pageerror', e => errs.push('toggle PAGEERR ' + e.message));
-    await pg.goto(`http://localhost:${PORT}/index.html?reset=1`); await pg.waitForTimeout(800);
+    await pg.goto(`http://localhost:${PORT}/index.html?dev=1&reset=1`); await pg.waitForTimeout(800);
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
     await pg.mouse.click(480, 250); await pg.waitForTimeout(300);   // AJUSTES
     await pg.mouse.click(480, 408); await pg.waitForTimeout(300);   // vista inclinada
     console.log('toggle: iso =', await pg.evaluate(() => G.Proj.iso), 'save.view =', await pg.evaluate(() => JSON.parse(localStorage.getItem('swarmhand.save')).settings.view));
     await pg.goto(`http://localhost:${PORT}/index.html`); await pg.waitForTimeout(800);
     console.log('recarga sin ?view: iso =', await pg.evaluate(() => G.Proj.iso));
-    await pg.goto(`http://localhost:${PORT}/index.html?view=flat`); await pg.waitForTimeout(800);
+    await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=flat`); await pg.waitForTimeout(800);
     console.log('?view=flat gana al save: iso =', await pg.evaluate(() => G.Proj.iso));
     await pg.close(); }
   // táctil 844x390 en vista inclinada, jefe + horda; joystick arriba = arriba en pantalla
@@ -42,7 +42,7 @@ const PORT = process.argv[2] || '8766', OUT = '/home/user/Game/studio/docs/captu
     const pg = await ctx.newPage();
     pg.on('console', m => { if (m.type() === 'error') errs.push('touch ' + m.text()); });
     pg.on('pageerror', e => errs.push('touch PAGEERR ' + e.message));
-    await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&god=1&t=400&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1`);
+    await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&god=1&t=400&hand=spark:3,dart:3,shard:2,dagger:2,fang:2&speed=1`);
     await pg.waitForTimeout(500); await pg.evaluate(() => G.startGame());
     await pg.evaluate(() => { setInterval(() => { if (G.state === 'cards' && G.Cards.off) { try { G.Cards.off.mode === 'level' ? G.Cards.skip() : G.Cards.pick(0); } catch (e) { } } }, 100); });
     await pg.waitForTimeout(2500);

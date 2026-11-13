@@ -159,7 +159,7 @@
   Q.offers = function () {
     var key = Q.boardKey() + ':' + Q.times('bombs') + ':' + Q.unlockedBiomes().length;
     if (cache.key === key) return cache.list;
-    var forced = (/[?&]quests=([\w,]+)/.exec(location.search) || [])[1], out = [];
+    var forced = (/[?&]quests=([\w,]+)/.exec(Dev.search) || [])[1], out = [];
     if (forced) forced.split(',').forEach(function (id) { if (BY[id]) out.push(BY[id]); });
     else {
       var r = rng(hash(Q.boardKey()));
@@ -344,7 +344,7 @@
       lore: 'Cuatro piezas a juego. Se te ve el porte de un pastor... o de un carcelero.' },
     { id: 'armup', name: 'Refuerzo triple', desc: 'Lleva una pieza a +3.', ok: function (s) { return !!s.armor && Object.keys(s.armor.owned).some(function (k) { return s.armor.owned[k] >= 3; }); },
       lore: 'Una pieza a +3. Grum templó el metal y Carapa cosió la última puntada. Eso sí que aguanta.' },
-    { id: 'armbare', name: 'Cordero sin lana', desc: 'Vence a un jefe en Peligro II sin armadura equipada.', ok: function (s) { return !!(s.flags && s.flags.arm_bare); },
+    { id: 'armbare', name: 'Mapache sin abrigo', desc: 'Vence a un jefe en Peligro II sin armadura equipada.', ok: function (s) { return !!(s.flags && s.flags.arm_bare); },
       lore: 'Sin una sola pieza. Carapa se tapó los ojos; yo no pude dejar de mirar.' },
     { id: 'armmos', name: 'Mosaico', desc: 'Lleva a la vez piezas de 4 sets distintos (una por slot).', ok: function (s) { var e = s.armor && s.armor.equipped, sets = {}; if (!e) return false; e.forEach(function (id) { var p = id && G.ArmorData.piece(id); if (p) sets[p.set] = 1; }); return Object.keys(sets).length >= 4 || !!(s.flags && s.flags.arm_mosaic); },
       lore: 'Un yelmo de aquí, un peto de allá... Carapa dice que pareces un retal. Con cariño, claro.' },

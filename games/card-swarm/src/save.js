@@ -206,7 +206,7 @@
   // ---- Peligro (J3): máximo desbloqueado por jefe y nivel elegido en el Portal
   S.BOSSES = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar'];
   S.FIVE = ['pastor', 'karceron', 'letea', 'yarlak', 'melaria'];
-  S.craterOpen = function () { var k = (S.data && S.data.bossKills) || {}; return S.FIVE.every(function (b) { return (k[b] || 0) > 0; }) || /[?&](biome|boss|hunt)=(crater|cenizar)/.test(location.search); };   // P6.5: se abre al vencer a los 5 jefes
+  S.craterOpen = function () { var k = (S.data && S.data.bossKills) || {}; return S.FIVE.every(function (b) { return (k[b] || 0) > 0; }) || /[?&](biome|boss|hunt)=(crater|cenizar)/.test(Dev.search); };   // P6.5: se abre al vencer a los 5 jefes
   S.pelMax = function (id) { return G.clamp(Math.round((S.data.peligro && S.data.peligro[id]) || 1), 1, 5); };
   S.pelSel = function (id) { return Math.min(S.pelMax(id), G.clamp(Math.round((S.data.peligroSel && S.data.peligroSel[id]) || 1), 1, 5)); };
   S.setPelSel = function (id, n) { S.data.peligroSel[id] = G.clamp(n, 1, S.pelMax(id)); S.save(); };
@@ -216,7 +216,7 @@
 
   // Parámetros de URL de depuración (se aplican tras cargar)
   S.applyUrl = function () {
-    var q = location.search, m;
+    var q = Dev.search, m;
     if (/[?&]reset=1/.test(q)) S.reset();
     S.load();
     if ((m = /[?&]give=([^&]+)/.exec(q))) {

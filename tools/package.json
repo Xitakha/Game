@@ -1,0 +1,8 @@
+{
+  "name": "estudio-tools",
+  "private": true,
+  "description": "Dependencias de las pruebas automáticas (solo CI y desarrollo local). El juego no usa Node.",
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
