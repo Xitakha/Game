@@ -953,6 +953,9 @@ const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2));
 // ---------------------------------------------------------------- Texto: pantallas de victoria de los 6 jefes y menús sin solapes ni desbordes
 async function text() {
   console.log('--- texto: victoria de los 6 jefes, derrota, pausa, Portal y paneles (844x390): sin solapes, desbordes ni fuentes < 11,5 px');
+  // T-F0-07: Marlo es un mapache; ningún texto del juego lo llama cordero / corderito
+  const lamb = ['aldea.js', 'panels.js', 'cine_intro.js', 'cine.js', 'dialog.js', 'quests.js', 'ending.js', 'assets_cine3.js'].filter(f => /corderit|cordero\b/i.test(fs.readFileSync(path.join(ROOT, 'games/card-swarm/src', f), 'utf8')));
+  ok(lamb.length === 0, 'textos: Marlo no es cordero ni corderito' + (lamb.length ? ' (quedan en ' + lamb.join(',') + ')' : ''));
   const b = await launch();
   const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); const kb = kbdHints(d); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
   for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {

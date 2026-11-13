@@ -227,11 +227,11 @@
     var S = SV();
     if (what === 'part') {
       if ((S.shop.part || 0) >= L.BUY.partCupo) { say('Cupo de partes agotado esta salida.'); return; }
-      if (S.brasas < L.BUY.part) { say('El cariño no paga, cordero.'); return; }
+      if (S.brasas < L.BUY.part) { say('El cariño no paga, mapache.'); return; }
       S.brasas -= L.BUY.part; G.Save.add(st.buy, 1); S.shop.part++; say('Compras 1 ' + L.part(st.buy).short + '.');
     } else {
       if (S.shop[what]) { say('Ya lo compraste esta salida.'); return; }
-      if (S.brasas < L.BUY[what]) { say('El cariño no paga, cordero.'); return; }
+      if (S.brasas < L.BUY[what]) { say('El cariño no paga, mapache.'); return; }
       S.brasas -= L.BUY[what]; S.shop[what] = 1; S.pending[what] = 1;
       say(what === 'tonic' ? 'Tónico listo: +40 Ceniza en la próxima expedición.' : 'Imán listo: radio x1,5 en la próxima expedición.');
     }
