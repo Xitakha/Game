@@ -836,6 +836,12 @@ Respuestas a las 17 preguntas de la sección 6 y qué tareas ajustan.
 
 Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducción de nombres propios e idioma por defecto (11), datos de cobro (12), y si se publica en itch o portales con la inmortalidad aún activa (ver T-FIN-01).
 
+### Aclaraciones posteriores del dueño (2026-11-13)
+
+- **Inmortalidad y publicación.** Las versiones que se publiquen en itch.io, portales o tienda (T-F3-05, T-F3-06, T-F3-07, T-F3-09) salen con la inmortalidad APAGADA. En GitHub Pages se mantiene activa para las pruebas del dueño hasta T-FIN-01.
+- **Inglés (T-F3-04).** Se traducen también los nombres de personajes y cartas. El español sigue siendo el idioma por defecto.
+- **Servicio de analítica (T-F1-01).** Sigue pendiente: `monetization-analyst` trae opciones comparadas para que el dueño elija.
+
 ## 7. Los 5 primeros pasos recomendados
 
 Hecho el 2026-11-13: T-F0-13 (retirada de Ember Flock y del clásico), T-F0-09 (salvo los conteos del README) y la resolución de T-F0-08. Decididas pero con trabajo pendiente: T-F0-07 (texto de Marlo).
