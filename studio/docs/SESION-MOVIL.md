@@ -68,7 +68,7 @@ Enlace: https://xitakha.github.io/Game/card-swarm/?boss=pastor&god=0
 
 ## Paso 4. Taller de Carapa
 
-Enlace: https://xitakha.github.io/Game/card-swarm/?smith=1&god=0
+Enlace: https://xitakha.github.io/Game/card-swarm/?dev=1&smith=1&god=0
 
 (`?smith=1` desbloquea a Carapa, que en una cuenta nueva aún no aparece porque hace falta vencer al Pastor.)
 
@@ -81,7 +81,7 @@ Enlace: https://xitakha.github.io/Game/card-swarm/?smith=1&god=0
 
 ## Paso 5. Manual
 
-Enlace: https://xitakha.github.io/Game/card-swarm/?manual=all&god=0
+Enlace: https://xitakha.github.io/Game/card-swarm/?dev=1&manual=all&god=0
 
 (`?manual=all` muestra todas las entradas, aunque no las hayas desbloqueado.)
 
