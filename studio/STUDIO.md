@@ -3,14 +3,27 @@
 ## Organigrama
 ```
 Dueño (usuario)
-   └── CEO ──────────── único que habla con el dueño; planifica y delega
-        ├── game-designer     concepto, mecánicas, GDD, balance
-        ├── programmer        implementación del juego
-        ├── asset-scout       busca/descarga recursos gratuitos con licencia clara
-        ├── audio-designer    música y efectos (busca libres o genera)
-        ├── tools-engineer    crea apps/scripts cuando no hay recurso gratis
-        └── qa-tester         pruebas, bugs, checklist de lanzamiento
+   └── CEO ──────────────── único que habla con el dueño; planifica y delega
+        ├── game-designer         concepto, mecánicas, GDD y contenido
+        ├── balance-designer      balance numérico, economía y experimentos con bots
+        ├── programmer            implementación del juego
+        ├── performance-engineer  carga, frame-time, memoria y batería
+        ├── ux-designer           UX/UI móvil, primera sesión, legibilidad y accesibilidad
+        ├── art-director          dirección de arte, VFX y cinemáticas
+        ├── audio-designer        música y efectos (busca libres o genera)
+        ├── asset-scout           busca/descarga recursos gratuitos con licencia clara
+        ├── tools-engineer        crea apps/scripts cuando no hay recurso gratis
+        ├── qa-tester             pruebas, bugs, checklist de lanzamiento
+        ├── monetization-analyst  monetización, analítica y privacidad
+        ├── release-manager       CI, builds, publicación y documentación al día
+        ├── marketing-manager     página del juego, textos, capturas, tráiler y comunidad
+        └── market-researcher     estudia el mercado y propone ideas
 ```
+
+## Plan vigente y modelos
+- **Plan maestro de Swarm Hand:** [`studio/docs/PLAN-MAESTRO.md`](docs/PLAN-MAESTRO.md) (diagnóstico, monetización, 48 tareas en 5 fases, preguntas al dueño).
+- Cada agente lleva su modelo por defecto en la línea `model:` de `.claude/agents/<nombre>.md`. El CEO puede subirlo o bajarlo por tarea según la sección 3 del plan: Fable 5.2 para balance, arquitectura y revisiones de cierre; Opus 5.5 para diseño y revisión; Sonnet 5.5 para implementar; Haiku 5.5 para lo mecánico.
+- Todo cambio de `src/` lo revisa un agente distinto del que lo escribió; los de balance y guardado, con Fable u Opus.
 
 ## Carpetas
 | Carpeta | Contenido |

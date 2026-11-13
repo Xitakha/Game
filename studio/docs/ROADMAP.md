@@ -1,4 +1,18 @@
 # Roadmap del estudio
+
+## Plan vigente (2026-11): Swarm Hand divertido, adictivo y monetizable
+Detalle de cada tarea, responsable y modelo en [`PLAN-MAESTRO.md`](PLAN-MAESTRO.md). Lo que sigue más abajo es histórico.
+- [x] Revisión integral del proyecto y plan maestro
+- [x] Agentes nuevos: balance-designer, performance-engineer, ux-designer, art-director, monetization-analyst, release-manager, marketing-manager
+- [ ] **F0 Limpieza y deudas** (13 tareas): reparar las pruebas (ruta del navegador), CI antes de desplegar, retirar la inmortalidad por defecto, simulación reproducible, pistas de teclado en táctil, Marlo, créditos, documentación, empaquetado, registro de errores, sesión en móvil real, Ember Flock
+- [ ] **F1 Retención y primera sesión** (11 tareas): analítica mínima, combate en menos de 60 s, ritmo del primer minuto, pantalla de fin, reto diario, objetivos diarios, economía por pasos, legibilidad móvil, respuesta háptica, modo corto, guardado a prueba de pérdidas
+- [ ] **F2 Balance final** (8 tareas): banco de balance, daño por zona y armadura, Peligro IV-V, Corrosión, simulador de progresión (meta ~16 h), playtest humano, rendimiento en combate denso, presupuesto en CI
+- [ ] **F3 Monetización y publicación** (10 tareas): decisión de modelo y privacidad, capa de plataforma, recompensas opcionales, inglés, builds por destino, itch.io, portales web, marca, evaluación de Play Store, compra de apoyo
+- [ ] **F4 Contenido y eventos** (6 tareas): mutadores semanales, final extendido, cosméticos, más builds, repaso de arte, música por bioma
+- Primeros pasos: T-F0-01, T-F0-12, T-F0-02 + T-F0-03, T-F0-05, T-F1-01 + T-F1-02
+- Pendiente del dueño: las 17 preguntas de la sección 6 del plan
+
+## Histórico
 - [x] Estructura del estudio y agentes
 - [x] Primer juego: Ember Flock (MVP jugable en games/survival-lamb)
 - [ ] QA y balance del MVP
