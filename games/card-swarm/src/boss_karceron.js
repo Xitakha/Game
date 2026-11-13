@@ -532,7 +532,7 @@
     c.save();
     c.beginPath(); c.rect(x - 260, y - 260, 520, 260 + gy + 6); c.clip();   // lo que está bajo la línea del charco queda oculto (emerge / se hunde)
     c.translate(x, y + (1 - rise) * 230 + Math.sin(t / 600) * 2);
-    var sh = o.shake ? (G.rng() - 0.5) * 4 : 0; c.translate(sh, 0);
+    var sh = o.shake ? (Math.random() - 0.5) * 4 : 0; c.translate(sh, 0);
     var br = o.broken || {}, rz = o.roar || 0;
     // brazo izquierdo (grillete)
     var lx = -150, ly = 52;
@@ -592,7 +592,7 @@
   };
 
   function drawPillar(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
+    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
     if (ART()) { Assets.drawPillar(c, 'bone', x, y, { hp: 1, t: G.time }); return; }
     c.save(); c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(x, y + 18, 34, 12, 0, 0, TAU); c.fill();
     c.fillStyle = BONE; c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';

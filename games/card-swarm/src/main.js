@@ -140,14 +140,17 @@
 
   // ---------------------------------------------------------------- Utilidades
   // RNG de la SIMULACION (ofertas, hordas, botin, azar de combate/jefes). Sin ?seed= es Math.random tal cual (comportamiento identico a antes);
-  // con ?seed=<n> es mulberry32 (misma semilla + mismas entradas = misma partida). Particulas/fx usan Math.random (G.rndFx) y no consumen esta secuencia.
+  // con ?seed=<n> es mulberry32 (misma semilla + mismas entradas = misma partida). El dibujo y los efectos (fx.js, temblores de los jefes) usan Math.random / G.rndFx y NO deben consumir esta secuencia (G.rngGuard lo vigila en modo prueba).
   G.rng = Math.random; G.seed = null;
+  // Guardia (solo ?seed= con ?dev=1): cuenta en G.rngLeaks las llamadas a G.rng durante draw() o dentro de G.fx.*; guarda la primera pila en G.rngLeakStack.
+  G.rngGuard = false; G.rngLeaks = 0; G.rngLeakStack = null; G._inDraw = false; G._inFx = 0;
   G.rngSeed = function (n) {
     if (n == null) { G.rng = Math.random; G.seed = null; return; }
     var a = (n >>> 0) || 1; G.seed = n;
-    G.rng = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    var raw = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    G.rng = !G.rngGuard ? raw : function () { if (G._inDraw || G._inFx) { G.rngLeaks++; if (!G.rngLeakStack) G.rngLeakStack = new Error('G.rng en ' + (G._inDraw ? 'draw' : 'fx')).stack; } return raw(); };
   };
-  if (/[?&]seed=\d+/.test(Dev.search)) G.rngSeed(qnum('seed', 0));
+  if (/[?&]seed=\d+/.test(Dev.search)) { G.rngGuard = !!Dev.on; G.rngSeed(qnum('seed', 0)); }
   G.rnd = function (a, b) { return a + G.rng() * (b - a); };
   G.rndFx = function (a, b) { return a + Math.random() * (b - a); };
   G.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
@@ -422,6 +425,7 @@
     G.Waves.update(dt);
     G.Hud.update(dt);
     G.fx.update(dt);
+    if (G.onTick) G.onTick(dt);   // gancho de pruebas/bots (tools/): entradas por tick de mundo, nunca por reloj real
     var p = G.player;
     var tx = G.clamp(p.x - G.W / 2, 0, G.AW - G.W), ty = G.Proj.clampCamY(p.y - G.VH / 2);
     var ct = G.Boss.camTarget(tx, ty);   // la intro del jefe desplaza la cámara y hace zoom
@@ -573,12 +577,21 @@
     try {   // T-F0-11: un fallo en un fotograma se registra (Diag) y el bucle sigue; no se deja la pantalla congelada o en negro
       while (acc >= G.STEP && n < maxN) { step(); acc -= G.STEP; n++; }
       if (n === maxN) acc = 0;
-      draw();
+      if (G.rngGuard) { G._inDraw = true; try { draw(); } finally { G._inDraw = false; } } else draw();
     } catch (ef) { acc = 0; if (window.Diag) Diag.log(ef && ef.message, { kind: 'fotograma', stack: ef && ef.stack }); console.error(ef); }
     requestAnimationFrame(frame);
   }
 
+  // Envuelve las funciones de G.fx para marcar _inFx (solo con la guardia activa)
+  function guardFx() {
+    var fx = G.fx; if (!fx) return;
+    Object.keys(fx).forEach(function (k) {
+      var f = fx[k]; if (typeof f !== 'function') return;
+      fx[k] = function () { G._inFx++; try { return f.apply(this, arguments); } finally { G._inFx--; } };
+    });
+  }
   G.init = function () {
+    if (G.rngGuard) guardFx();
     canvas = document.getElementById('game'); ctx = canvas.getContext('2d');
     G.ctx = ctx; canvas.focus();
     bindInput();

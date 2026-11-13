@@ -8,7 +8,7 @@
 const { launch } = require('../lib/browser.js');
 const SECS = +process.argv[2] || 30, base = process.argv[3] || 'http://localhost:8811';
 const SEED = +process.env.SEED || 1, SWARM = +process.env.SWARM || 110, PERF = process.env.PERF !== '0', RUNS = +process.env.RUNS || 1, PINF = process.env.PINF || '0.25', EXTRA = process.env.EXTRA || '';
-const URL = `${base}/index.html?dev=1&nosw=1&reset=1&direct=1&all=1&god=1&biome=crater&t=240&nobos=1&seed=${SEED}&pinf=${PINF}&actives=vapor,plasma,forja,sed&hand=spark:3,ember:3,dart:3,shard:2,ring:1${PERF ? '&perf=1' : ''}${EXTRA}`;
+const URL = `${base}/index.html?dev=1&nosw=1&reset=1&direct=1&all=1&god=1&biome=crater&t=240&nobos=1&seed=${SEED}&q=${process.env.QUALITY || 'alta'}&pinf=${PINF}&actives=vapor,plasma,forja,sed&hand=spark:3,ember:3,dart:3,shard:2,ring:1${PERF ? '&perf=1' : ''}${EXTRA}`;
 
 async function run() {
   const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
@@ -26,13 +26,15 @@ async function run() {
     G.Fusion.auto = true;
     const R = () => (G.rng || Math.random)();   // (G.rng no existe en versiones antiguas del juego)
     const T = ['worm', 'worm', 'worm', 'archer', 'boar', 'bomb', 'shield', 'fanner', 'moth'];
-    setInterval(() => {   // mantiene el enjambre denso alrededor del jugador y nunca deja abierta una oferta de nivel
-      if (G.state === 'cards' && G.Cards.off) { G.Cards.off.modal = null; if (G.Cards.off.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); }
+    let tk = 0;
+    G.onTick = () => {   // gancho por tick de mundo (cada 15 ticks = 250 ms de juego): reproducible con ?seed, sin reloj real
+      if (++tk % 15) return;
       if (G.state !== 'play') return;
       G.player.hp = G.player.maxHp;
       let add = swarm - G.enemies.length, i = 0;
       for (; i < add && i < 12; i++) { const a = R() * 6.283, d = 120 + R() * 260; G.Enemies.spawn(T[Math.floor(R() * T.length)], G.clamp(G.player.x + Math.cos(a) * d, 60, G.AW - 60), G.clamp(G.player.y + Math.sin(a) * d, 60, G.AH - 60)); }
-    }, 250);
+    };
+    setInterval(() => { if (G.state === 'cards' && G.Cards.off) { G.Cards.off.modal = null; if (G.Cards.off.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); } }, 250);   // ofertas de nivel (no consume RNG)
   }, [SWARM, process.env.QUALITY || null]);
   await pg.waitForTimeout(3000);
   if (PERF) await pg.evaluate(() => window.__perf.reset()); else await pg.evaluate(() => { window.__own.d.length = 0; window.__own.w.length = 0; });
@@ -41,7 +43,7 @@ async function run() {
   let r;
   if (PERF) { const s = await pg.evaluate(() => window.__perf.summary()); r = { fps: s.fps, avg: s.interval.avg, p95: s.interval.p95, p99: s.interval.p99, max: s.interval.max, cpuAvg: s.work.avg, cpuP95: s.work.p95, over33: s.over33, frames: s.frames, quality: s.quality }; }
   else { const o = await pg.evaluate(() => window.__own), d = o.d.slice().sort((x, y) => x - y), w = o.w.slice().sort((x, y) => x - y); const n = d.length, avg = d.reduce((a, c) => a + c, 0) / n; r = { fps: +(1000 / avg).toFixed(2), avg: +avg.toFixed(2), p95: +d[Math.floor(n * 0.95)].toFixed(1), p99: +d[Math.floor(n * 0.99)].toFixed(1), max: +d[n - 1].toFixed(1), over33: d.filter(x => x > 33.4).length, frames: n, cpuAvg: +(w.reduce((a, c) => a + c, 0) / w.length).toFixed(2), cpuP95: +w[Math.floor(w.length * 0.95)].toFixed(1) }; }
-  r.enemiesAvg = Math.round(en.reduce((a, c) => a + c, 0) / (en.length || 1)); r.kills = await pg.evaluate(() => G.kills); r.errs = errs.length;
+  r.enemiesAvg = Math.round(en.reduce((a, c) => a + c, 0) / (en.length || 1)); r.kills = await pg.evaluate(() => G.kills); r.tick = await pg.evaluate(() => Math.round(G.time / G.STEP)); r.errs = errs.length;
   await b.close(); return r;
 }
 (async () => {

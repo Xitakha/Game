@@ -389,7 +389,7 @@
   // ---- Items ordenados por y: estalagmitas y hogueras
   function drawPillar(c, x, y, o) {
     o = o || {};
-    var sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0, h = o.h || 58, w = (o.r || 22) * 1.15, bx = x + sh, by = y + 10, al = o.alpha == null ? 1 : o.alpha;
+    var sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0, h = o.h || 58, w = (o.r || 22) * 1.15, bx = x + sh, by = y + 10, al = o.alpha == null ? 1 : o.alpha;
     c.save(); c.globalAlpha = al;
     c.fillStyle = 'rgba(8,16,40,0.45)'; c.beginPath(); c.ellipse(x, by - 2, w * 1.05, w * 0.42, 0, 0, 6.2832); c.fill();
     c.lineJoin = 'round'; c.lineWidth = 3; c.strokeStyle = '#1b1124';

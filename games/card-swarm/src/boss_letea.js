@@ -576,7 +576,7 @@
   };
 
   function drawCrystal(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
+    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0, x = Math.round(o.x + sh), y = o.y;
     if (ART()) { Assets.drawPillar(c, 'crystal', x, y, { hp: 1, t: G.time }); return; }
     c.save(); c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(x, y + 14, 28, 10, 0, 0, TAU); c.fill();
     c.fillStyle = '#8ad8ff'; c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';
