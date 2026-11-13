@@ -580,7 +580,7 @@
 
   // Pilares (ordenados por y con el resto)
   function drawPillarItem(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
+    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
     if (typeof Assets.drawWaxPillar === 'function') { Assets.drawWaxPillar(c, o.x, o.y, { hp: o.dead ? 0 : o.hp / o.max, rebuild: o.dead ? G.clamp(o.t / D.pillarRegrow, 0, 1) : 0, struck: o.shake > 0 }); return; }
     if (artOK('obs_wax_pillar') && !o.dead) { var sp = Assets.sprite('obs_wax_pillar', o.hp < o.max * 0.5 ? 2 : o.shake > 0 ? 1 : 0); c.drawImage(sp, Math.round(o.x - sp.width / 2 + sh), Math.round(o.y + 12 - sp.height)); return; }
     if (o.dead) {   // aviso de reconstrucción: anillo punteado en los últimos 3 s

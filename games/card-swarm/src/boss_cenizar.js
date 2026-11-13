@@ -261,7 +261,7 @@
   // ================================================================= HOOKS DEL MOTOR
   var PILLARS = [[470, 300], [970, 300], [330, 520], [1110, 520], [590, 640], [850, 640]];
   function drawPillar(c, it) {
-    var o = it.o, sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
+    var o = it.o, sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
     if (typeof Assets.drawAshPillar === 'function' && G.hasSpr('obs_ash_pillar')) { Assets.drawAshPillar(c, Math.round(o.x + sh), Math.round(o.y), { hp: 1, struck: o.shake > 0 }); return; }
     c.save(); c.translate(Math.round(o.x + sh), Math.round(o.y)); c.lineJoin = 'round'; c.strokeStyle = OUT; c.lineWidth = 3;
     c.fillStyle = '#3a3440'; c.beginPath(); c.moveTo(-20, 10); c.lineTo(-16, -40); c.lineTo(-6, -50); c.lineTo(10, -42); c.lineTo(20, 10); c.closePath(); c.fill(); c.stroke();

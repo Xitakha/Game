@@ -58,10 +58,10 @@
   }
   fx.part = part;
   // VFX nuevos (animados): chispa de impacto, onda de choque, humo grande, llama de maldicion, cadaver con animacion de muerte
-  fx.hitspark = function (x, y, sc) { part('hitspark', x, y, 0, 0, 160, { sc: sc || 1.2, add: true, anim: true, rot: G.rnd(0, 6.28) }); };
+  fx.hitspark = function (x, y, sc) { part('hitspark', x, y, 0, 0, 160, { sc: sc || 1.2, add: true, anim: true, rot: G.rndFx(0, 6.28) }); };
   fx.shockwave = function (x, y, r) { part('shockwave', x, y, 0, 0, 380, { sc: (r || 90) / 48, add: true, anim: true }); };
-  fx.puff = function (x, y, n) { for (var i = 0; i < n; i++) part('smoke_big', x + G.rnd(-8, 8), y + G.rnd(-8, 8), G.rnd(-25, 25), G.rnd(-45, -10), G.rnd(500, 800), { drag: 1.5, anim: true, sc: 1.1 }); };
-  fx.curse = function (x, y, n, rad) { for (var i = 0; i < n; i++) { var a = G.rnd(0, 6.28), d = G.rnd(0, rad || 10); part('curse_flame', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40 - 40, G.rnd(350, 650), { drag: 3, sc: 1.3, add: true, anim: true }); } };
+  fx.puff = function (x, y, n) { for (var i = 0; i < n; i++) part('smoke_big', x + G.rndFx(-8, 8), y + G.rndFx(-8, 8), G.rndFx(-25, 25), G.rndFx(-45, -10), G.rndFx(500, 800), { drag: 1.5, anim: true, sc: 1.1 }); };
+  fx.curse = function (x, y, n, rad) { for (var i = 0; i < n; i++) { var a = G.rndFx(0, 6.28), d = G.rndFx(0, rad || 10); part('curse_flame', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40 - 40, G.rndFx(350, 650), { drag: 3, sc: 1.3, add: true, anim: true }); } };
   fx.corpse = function (spr, x, y, flip) { if (Assets.hasAnim(spr, 'die')) fx.corpses.push({ spr: spr, x: x, y: y, t: 0, flip: flip }); };
   fx.drawCorpses = function (c) {
     for (var i = 0; i < fx.corpses.length; i++) {
@@ -75,24 +75,24 @@
   fx.spark = function (x, y, n, ang) {
     fx.hitspark(x, y, 1.1);
     for (var i = 0; i < n; i++) {
-      var a = ang != null ? ang + G.rnd(-0.9, 0.9) : G.rnd(0, 6.28), s = G.rnd(80, 240);
-      part('spark', x, y, Math.cos(a) * s, Math.sin(a) * s, G.rnd(180, 320), { drag: 4, sc: 1.3, add: true });
+      var a = ang != null ? ang + G.rndFx(-0.9, 0.9) : G.rndFx(0, 6.28), s = G.rndFx(80, 240);
+      part('spark', x, y, Math.cos(a) * s, Math.sin(a) * s, G.rndFx(180, 320), { drag: 4, sc: 1.3, add: true });
     }
   };
   fx.dust = function (x, y, n) {
-    for (var i = 0; i < n; i++) part('dust', x + G.rnd(-4, 4), y + G.rnd(-2, 6), G.rnd(-40, 40), G.rnd(-30, 10), G.rnd(250, 450), { drag: 3, grow: 0.8 });
+    for (var i = 0; i < n; i++) part('dust', x + G.rndFx(-4, 4), y + G.rndFx(-2, 6), G.rndFx(-40, 40), G.rndFx(-30, 10), G.rndFx(250, 450), { drag: 3, grow: 0.8 });
   };
   fx.smoke = function (x, y, n) {
-    for (var i = 0; i < n; i++) part('smoke', x + G.rnd(-6, 6), y + G.rnd(-6, 6), G.rnd(-30, 30), G.rnd(-60, -15), G.rnd(450, 800), { drag: 1.5, grow: 0.6 });
+    for (var i = 0; i < n; i++) part('smoke', x + G.rndFx(-6, 6), y + G.rndFx(-6, 6), G.rndFx(-30, 30), G.rndFx(-60, -15), G.rndFx(450, 800), { drag: 1.5, grow: 0.6 });
   };
   fx.ember = function (x, y, n, spread) {
     spread = spread || 20;
-    for (var i = 0; i < n; i++) part('ember', x + G.rnd(-spread, spread), y + G.rnd(-spread, spread), G.rnd(-50, 50), G.rnd(-90, -20), G.rnd(400, 800), { sc: 1.2, add: true });
+    for (var i = 0; i < n; i++) part('ember', x + G.rndFx(-spread, spread), y + G.rndFx(-spread, spread), G.rndFx(-50, 50), G.rndFx(-90, -20), G.rndFx(400, 800), { sc: 1.2, add: true });
   };
   fx.flames = function (x, y, n, rad) {
     for (var i = 0; i < n; i++) {
-      var a = G.rnd(0, 6.28), d = G.rnd(0, rad || 10);
-      part('flame', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 60, Math.sin(a) * 60 - 30, G.rnd(300, 600), { drag: 3, sc: 1.4, add: true });
+      var a = G.rndFx(0, 6.28), d = G.rndFx(0, rad || 10);
+      part('flame', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 60, Math.sin(a) * 60 - 30, G.rndFx(300, 600), { drag: 3, sc: 1.4, add: true });
     }
   };
   fx.ring = function (x, y, r0, r1, ms, color, width) {
@@ -105,13 +105,13 @@
     fx.cps.push({ x: x, y: y, vx: vx, vy: vy, life: life, max: life, color: color, size: size || 3, add: !!o.add, g: o.g || 0, drag: o.drag || 3 });
   };
   fx.burst = function (x, y, n, color, spd, life, size, o) {
-    for (var i = 0; i < n; i++) { var a = G.rnd(0, 6.283), s = G.rnd(spd * 0.3, spd); fx.dot(x, y, Math.cos(a) * s, Math.sin(a) * s, G.rnd(life * 0.6, life), color, size, o); }
+    for (var i = 0; i < n; i++) { var a = G.rndFx(0, 6.283), s = G.rndFx(spd * 0.3, spd); fx.dot(x, y, Math.cos(a) * s, Math.sin(a) * s, G.rndFx(life * 0.6, life), color, size, o); }
   };
   // Rayo zigzagueante entre dos puntos
   fx.bolt = function (x1, y1, x2, y2, color, w) {
     var d = Math.hypot(x2 - x1, y2 - y1), n = Math.max(2, Math.floor(d / 14)), pts = [[x1, y1]];
     var nx = -(y2 - y1) / (d || 1), ny = (x2 - x1) / (d || 1);
-    for (var i = 1; i < n; i++) { var u = i / n, j = G.rnd(-9, 9); pts.push([x1 + (x2 - x1) * u + nx * j, y1 + (y2 - y1) * u + ny * j]); }
+    for (var i = 1; i < n; i++) { var u = i / n, j = G.rndFx(-9, 9); pts.push([x1 + (x2 - x1) * u + nx * j, y1 + (y2 - y1) * u + ny * j]); }
     pts.push([x2, y2]);
     fx.bolts.push({ pts: pts, t: 0, max: 220, color: color || '#ffe45a', w: w || 3 });
   };
@@ -125,10 +125,10 @@
         var q = fx.nums[i];
         if (q.val != null && q.t < 260 && Math.abs(q.x - x) < 46 && Math.abs(q.y - (y - 14) - 0) < 60) { q.val += +text; q.text = String(q.val); q.size = Math.min(22, q.size + 0.4); q.t = Math.min(q.t, 120); return; }
       }
-      fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), val: +text, color: color || '#fff', size: 14 });
+      fx.nums.push({ x: x + G.rndFx(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), val: +text, color: color || '#fff', size: 14 });
       return;
     }
-    fx.nums.push({ x: x + G.rnd(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), color: color || '#fff', size: o && o.size || (big ? 20 : 14) });
+    fx.nums.push({ x: x + G.rndFx(-6, 6), y: y - 14, t: 0, max: 600, text: String(text), color: color || '#fff', size: o && o.size || (big ? 20 : 14) });
   };
 
   fx.update = function (dt) {

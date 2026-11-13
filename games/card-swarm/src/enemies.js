@@ -649,7 +649,7 @@
     } else if (st === 'flee') {
       dx = e.pond.x - e.x; dy = e.pond.y - e.y; dd = Math.hypot(dx, dy);
       moveTo(e, Math.atan2(dy, dx), e.crawl ? LE.crawl : LE.flee, s); e.face = dx >= 0 ? 1 : -1;
-      if (dd < 8) { e.st = 'hidden'; e.hidden = e.untarget = true; e.coolT = e.crawl ? 1500 : LE.cool; e.crawl = false; e.tgtT = G.rndFx(500, 2000); fx.ring(e.x, e.y, 4, 26, 300, '#9fd8d0', 2); }
+      if (dd < 8) { e.st = 'hidden'; e.hidden = e.untarget = true; e.coolT = e.crawl ? 1500 : LE.cool; e.crawl = false; e.tgtT = G.rnd(500, 2000); fx.ring(e.x, e.y, 4, 26, 300, '#9fd8d0', 2); }
     }
   }
 

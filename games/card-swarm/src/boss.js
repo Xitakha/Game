@@ -870,7 +870,7 @@
     if (S.e && S.e.def.h && S.e.def.h.items) S.e.def.h.items(list, S.e);
   };
   function drawLog(c, it) {
-    var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (G.rng() * 2 - 1) * 2 : 0;
+    var o = it.o, cv = Assets.sprite('obs_log', 0), sh = o.shake > 0 ? (Math.random() * 2 - 1) * 2 : 0;
     c.drawImage(cv, Math.round(o.x - 32 + sh), Math.round(o.y - 40));
   }
   S.drawGround = function (c) {

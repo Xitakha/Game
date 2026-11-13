@@ -595,27 +595,83 @@ const simHash = (pg, ticks) => E(pg, (ticks) => {
   G.player.hand.forEach(c => mix(c ? c.id + c.lvl : '-'));
   return { hash: h, kills: G.kills, en: G.enemies.length, gems: G.gems.length, t: Math.round(G.runT) };
 }, ticks);
+// T-F0-05 parte 1: la simulacion con semilla es reproducible. El jugador SE MUEVE (guion por tick; quieto no se ven las fugas de azar de los efectos),
+// se compara un hash EXACTO en varios puntos de control entre dos corridas con distinto tamano de bloque (600 y 23 ticks) y fotogramas dibujados entre medias.
+// Los ticks se cuentan como round(G.time / G.STEP) desde el inicio de la expedicion. G.rngLeaks (guardia de ?seed + ?dev=1) debe quedar a 0.
+const SEED_CP = [600, 900, 1800, 3600, 5400, 7200, 10800, 12600, 14400, 18000, 21600, 25200];
+const SEED_BASE = 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:3,ember:3,dart:3,shard:2,ring:1';
+const SEED_BOSS = id => `reset=1&god=1&direct=1&all=1&noanchor=1&nointro=1&cine=0&speed=0&peligro=3&hand=spark:3,ember:3,dart:3,shard:2,ring:1&boss=${id}`;
+async function seedRun(b, url, cps, block, wait) {
+  const pg = await mk(b, url), hs = [];
+  await E(pg, () => {   // utilidades de la prueba dentro de la pagina
+    window.__t0 = Math.round(G.time / G.STEP);   // las peleas de jefe empiezan con G.time > 0: se cuenta desde el inicio de la prueba
+    window.__tick = () => Math.round(G.time / G.STEP) - __t0;
+    window.__adv = (n) => {
+      const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
+      for (let i = 0, g = 0; i < n && g < n * 4; g++) {
+        if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
+        const t = __tick(), blk = Math.floor(t / 45);
+        const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
+        G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
+        const before = G.time; G.step(); if (G.time !== before) i++;
+      }
+      G.input.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
+      const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+      mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
+      G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
+      G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
+      mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
+      return { hash: h, kills: G.kills, en: G.enemies.length, tick: __tick() };
+    };
+  });
+  for (const cp of cps) {
+    let r = null;
+    for (let guard = 0; guard < 100000; guard++) {
+      const t = await E(pg, () => __tick()); if (t >= cp) break;
+      r = await E(pg, n => __adv(n), Math.min(block, cp - t)); await sleep(pg, wait);
+    }
+    hs.push(r ? r.hash : -1);
+    if (r) hs.info = r;
+  }
+  const leaks = await E(pg, () => ({ n: G.rngLeaks, st: G.rngLeakStack, g: G.rngGuard }));
+  const st = await E(pg, () => G.state);
+  await done(pg, 'seed-corrida'); return { hs, leaks, kills: hs.info && hs.info.kills, state: st };
+}
 async function seed() {
-  console.log('--- RNG con semilla: sin ?seed es Math.random; con ?seed misma partida');
+  console.log('--- RNG con semilla: sin ?seed es Math.random; con ?seed misma partida (hash exacto, con movimiento)');
   const b = await launch(); const U = 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:1';
   let pg = await mk(b, U);
-  ok(await E(pg, () => G.rng === Math.random && G.seed === null), 'sin ?seed: G.rng ES Math.random (comportamiento identico al de siempre)');
+  ok(await E(pg, () => G.rng === Math.random && G.seed === null && !G.rngGuard), 'sin ?seed: G.rng ES Math.random (comportamiento identico al de siempre) y sin guardia');
   await done(pg, 'seed-off');
-  const TICKS = +process.env.SEED_TICKS || 4000, res = [];
-  for (const sd of [1234, 1234, 99]) {
-    pg = await mk(b, U + '&seed=' + sd);
-    const sane = await E(pg, () => typeof G.rng === 'function' && G.rng !== Math.random && G.seed);
-    res.push(Object.assign(await simHash(pg, TICKS), { sane }));
-    await done(pg, 'seed-' + sd);
-  }
-  console.log('       corridas:', JSON.stringify(res));
-  ok(res.every(r => r.sane) && res[0].kills > 0 && res[0].t > 30000, 'la partida con semilla avanza (' + res[0].kills + ' kills, ' + res[0].t + ' ms de run)');
-  ok(res[0].hash === res[1].hash, 'misma semilla (1234) + mismas entradas => mismo estado/hash tras ' + TICKS + ' ticks (' + res[0].hash + ')');
-  ok(res[0].hash !== res[2].hash, 'otra semilla (99) => otra partida');
   pg = await mk(b, 'reset=1&seed=7&speed=0');
   const seq = await E(pg, () => { const a = []; G.rngSeed(5); for (let i = 0; i < 3; i++) a.push(G.rng()); G.rngSeed(5); return a.concat([G.rng()]); });
   ok(seq[0] === seq[3] && seq[0] !== seq[1] && seq.every(v => v >= 0 && v < 1), 'rngSeed(n) reinicia la secuencia mulberry32 ([0,1))');
-  await done(pg, 'seed-api'); await b.close();
+  ok(await E(pg, () => G.rngGuard === true && typeof G.rng === 'function' && G.rng !== Math.random), 'con ?seed y ?dev=1: guardia activa');
+  // guardia: G.rng dentro de G.fx o de draw se cuenta
+  const gd = await E(pg, () => { G.rngLeaks = 0; G.rngLeakStack = null; G.fx.puff(10, 10, 3); const a = G.rngLeaks; G._inDraw = true; G.rng(); G._inDraw = false; const c = G.rngLeaks; G.rng(); const d = G.rngLeaks; G.rngLeaks = 0; G.rngLeakStack = null; return [a, c, d]; });
+  ok(gd[0] === 0 && gd[1] === 1 && gd[2] === 1, 'guardia: fx.puff no consume G.rng; G.rng en draw se cuenta; fuera de draw/fx no (' + gd + ')');
+  await done(pg, 'seed-api');
+  const fxSrc = fs.readFileSync(path.join(ROOT, 'games/card-swarm/src/fx.js'), 'utf8');
+  ok(!/G\.rnd\(/.test(fxSrc) && !/G\.rng\(/.test(fxSrc), 'src/fx.js no usa G.rnd( ni G.rng( (solo G.rndFx / Math.random)');
+  const SC = [];   // [nombre, url sin calidad, [puntos de control]]
+  for (const q of ['alta', 'baja']) SC.push([`bosque ${q}`, `${SEED_BASE}&seed=1234&q=${q}`, SEED_CP]);
+  SC.push(['bosque media', `${SEED_BASE}&seed=1234&q=media`, [600, 1800, 3600]]);
+  for (const bi of ['cripta', 'asfodelo', 'tundra', 'panal', 'crater']) SC.push([bi, `${SEED_BASE}&seed=1234&q=alta&biome=${bi}&nobos=1`, [600, 1800, 3000]]);
+  for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) SC.push([`jefe ${id}`, `${SEED_BOSS(id)}&seed=77&q=alta`, id === 'karceron' ? [600, 3000, 6000] : [600, 1800, 3000]]);
+  SC.push(['jefe karceron baja', `${SEED_BOSS('karceron')}&seed=77&q=baja`, [3000, 6000]]);
+  let ticks = 0, leaks = 0, h1 = null;
+  for (const [name, url, cps] of SC) {
+    const A = await seedRun(b, url, cps, 600, 10), B = await seedRun(b, url, cps, 23, 6);
+    const same = A.hs.length === B.hs.length && A.hs.every((h, i) => h === B.hs[i]) && A.hs.every(h => h !== -1);
+    ticks += cps[cps.length - 1] * 2; leaks += A.leaks.n + B.leaks.n;
+    ok(same, `${name}: hash identico en ${cps.length} puntos de control hasta el tick ${cps[cps.length - 1]} (bloques de 600 y de 23; ${A.kills} bajas)` + (same ? '' : ' -> ' + A.hs.join(',') + ' / ' + B.hs.join(',')));
+    ok(A.leaks.n + B.leaks.n === 0 && A.leaks.g, `${name}: G.rngLeaks === 0` + (A.leaks.st || B.leaks.st ? ' ' + (A.leaks.st || B.leaks.st) : ''));
+    if (name === 'bosque alta') h1 = A.hs;
+  }
+  console.log(`       ${SC.length} escenarios, ${ticks} ticks simulados en total (2 corridas cada uno)`);
+  const C = await seedRun(b, `${SEED_BASE}&seed=99&q=alta`, [600, 1800, 3600], 600, 10);
+  ok(h1 && C.hs[1] !== h1[2], 'otra semilla (99) => otra partida');
+  await b.close();
 }
 
 // ---------------------------------------------------------------- Invariante de la mano (bot de acciones aleatorias con semilla)

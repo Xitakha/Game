@@ -316,7 +316,7 @@
   E.tunStalag = function (c, e) {
     var a = e.spawnT > 0 ? 0.25 + 0.4 * (1 - e.spawnT / (e.spawnMax || B.spawnTelegraph)) : 1;
     if (e.flash > 0) a = 1;
-    var wob = e.st === 'crawl' ? Math.sin(e.anim / 180) * 1.5 : e.st === 'tele' ? (G.rng() - 0.5) * 3 : 0;
+    var wob = e.st === 'crawl' ? Math.sin(e.anim / 180) * 1.5 : e.st === 'tele' ? (Math.random() - 0.5) * 3 : 0;
     T.drawPillar(c, e.x + wob, e.y - 10, { r: 22, eyes: true, t: e.anim, alpha: a, h: e.st === 'erupt' ? 66 : 58 });
     if (e.flash > 0) { c.save(); c.globalAlpha = 0.5; T.drawPillar(c, e.x, e.y - 10, { r: 22, alpha: 0.5, h: 58 }); c.restore(); }
     if (e.spawnT <= 0 && e.hp < e.maxHp && !e.untarget) { var w = 22, bx = Math.round(e.x - w / 2), by = Math.round(e.y - 52); c.fillStyle = '#1a0a12'; c.fillRect(bx - 1, by - 1, w + 2, 5); c.fillStyle = '#e04050'; c.fillRect(bx, by, Math.max(0, w * e.hp / e.maxHp), 3); }
