@@ -548,8 +548,9 @@
     });
     if (tg && !D.active()) {
       var nm = tg.name; G.txt(c, nm, tg.x, tg.y - (tg.npc ? 96 : 140), 13, '#ffe9a0', 'center');
-      var ky = anim('ui_key_e', 'pulse', now), kx = tg.x, kyy = tg.y - (tg.npc ? 124 : 164);
-      if (ky) c.drawImage(ky, Math.round(kx - ky.width / 2), Math.round(kyy - ky.height / 2 + Math.sin(now / 200) * 2));
+      var ky = G.Sys.isTouch() ? null : anim('ui_key_e', 'pulse', now), kx = tg.x, kyy = tg.y - (tg.npc ? 124 : 164);   // la tecla E solo en teclado: en táctil está el botón HABLAR
+      if (G.Sys.isTouch()) { /* sin pista de tecla */ }
+      else if (ky) c.drawImage(ky, Math.round(kx - ky.width / 2), Math.round(kyy - ky.height / 2 + Math.sin(now / 200) * 2));
       else { var sc = 1 + 0.08 * Math.sin(now / 200); c.save(); c.translate(kx, kyy); c.scale(sc, sc); c.fillStyle = '#fff6df'; c.strokeStyle = '#2a1d3a'; c.lineWidth = 3; c.fillRect(-14, -14, 28, 28); c.strokeRect(-14, -14, 28, 28); c.restore(); G.txt(c, 'E', kx, kyy + 1, 16, '#2a1d3a', 'center', '#fff6df'); }
     }
   }
