@@ -2,15 +2,16 @@
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
 //   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
+const os = require('os');
 const TC = require('./textcheck.js');
 const fs = require('fs'), path = require('path');
 const mode = process.argv[2] || 'all', base = process.argv[3] || 'http://localhost:8811';
 const ROOT = path.join(__dirname, '..', '..');
 let fails = 0, total = 0;
 const ok = (c, msg) => { total++; if (!c) fails++; console.log((c ? 'OK     ' : 'FALLO  ') + msg); };
-const launch = () => chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+const launch = () => pwLaunch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
 async function mk(b, url) {
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
@@ -36,9 +37,13 @@ async function iso() {
   ok(man.name === 'Swarm Hand' && man.start_url === './' && man.scope === './' && man.id === './', 'manifest: ' + man.name + ' / id ' + man.id);
   const html = fs.readFileSync(path.join(ROOT, G_DIR, 'index.html'), 'utf8');
   ok(/<title>Swarm Hand<\/title>/.test(html), 'titulo Swarm Hand');
-  const out = execSync('python3 tools/card-swarm-pwa/stamp.py', { cwd: ROOT }).toString();
+  // stamp.py reescribe sw.js: se ejecuta sobre una copia temporal para no ensuciar el repo
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cs-stamp-'));
+  fs.cpSync(path.join(ROOT, G_DIR), tmp, { recursive: true });
+  const out = execSync('python3 tools/card-swarm-pwa/stamp.py ' + JSON.stringify(tmp), { cwd: ROOT }).toString();
   ok(/sw\.js: \d+ archivos/.test(out), 'stamp.py: ' + out.trim());
-  const sw2 = fs.readFileSync(path.join(ROOT, G_DIR, 'sw.js'), 'utf8');
+  const sw2 = fs.readFileSync(path.join(tmp, 'sw.js'), 'utf8');
+  fs.rmSync(tmp, { recursive: true, force: true });
   const files = JSON.parse(sw2.match(/\/\*FILES\*\/([\s\S]*?)\/\*END\*\//)[1]);
   const missing = fs.readdirSync(path.join(ROOT, G_DIR, 'src')).filter(f => f.endsWith('.js') && !files.includes('./src/' + f));
   ok(missing.length === 0, 'precache incluye todos los src/*.js' + (missing.length ? ' (faltan ' + missing.join(',') + ')' : ''));

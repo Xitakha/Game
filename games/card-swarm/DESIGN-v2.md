@@ -1,4 +1,4 @@
-> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, archivado en `games/card-swarm-clasico/` y en la rama `archive/card-swarm-clasico-v5.6`; donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
+> **Nota (archivo):** el juego publicado en `/card-swarm/` ahora es la versión Fusión (ver `README.md`). Este documento describe el Swarm Hand clásico v5.6, retirado de `main` (2026-11-13; queda en el historial de git y en la rama `archive/card-swarm-clasico-v5.6`); donde habla de combos pasivos o de la mano que dispara sola no aplica al juego actual.
 
 # Swarm Hand - DESIGN v2 (enemigos + protagonista)
 

@@ -10,9 +10,11 @@ Detalle de cada tarea, responsable y modelo en [`PLAN-MAESTRO.md`](PLAN-MAESTRO.
 - [ ] **F3 Monetización y publicación** (10 tareas): decisión de modelo y privacidad, capa de plataforma, recompensas opcionales, inglés, builds por destino, itch.io, portales web, marca, evaluación de Play Store, compra de apoyo
 - [ ] **F4 Contenido y eventos** (6 tareas): mutadores semanales, final extendido, cosméticos, más builds, repaso de arte, música por bioma
 - Primeros pasos: T-F0-01, T-F0-12, T-F0-02 + T-F0-03, T-F0-05, T-F1-01 + T-F1-02
-- Pendiente del dueño: las 17 preguntas de la sección 6 del plan
+- Decisiones del dueño (2026-11-13): las 17 preguntas están respondidas y registradas en la sección "Decisiones del dueño" del plan. Pendiente de aclarar: las cifras de "reto" por nivel de Peligro (antes de F2)
 
 ## Histórico
+> Todo lo que sigue es histórico. `games/survival-lamb` (Ember Flock) y `games/card-swarm-clasico` se retiraron de `main` el 2026-11-13; siguen en el historial de git (el clásico, también en la rama `archive/card-swarm-clasico-v5.6`). Las rutas citadas abajo ya no existen en `main`.
+
 - [x] Estructura del estudio y agentes
 - [x] Primer juego: Ember Flock (MVP jugable en games/survival-lamb)
 - [ ] QA y balance del MVP

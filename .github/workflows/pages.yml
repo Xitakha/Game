@@ -1,4 +1,4 @@
-# Publica los juegos en GitHub Pages: https://xitakha.github.io/Game/  (Swarm Hand en /card-swarm/, Ember Flock en /survival-lamb/)
+# Publica los juegos en GitHub Pages: https://xitakha.github.io/Game/  (Swarm Hand en /card-swarm/; /card-swarm-fusion/ solo redirige)
 # Solo se sube lo necesario para jugar: nada de studio/, documentación (*.md) ni capturas.
 name: Desplegar en GitHub Pages
 
@@ -26,13 +26,11 @@ jobs:
       - name: Ensamblar el sitio
         run: |
           set -euo pipefail
-          mkdir -p _site/card-swarm _site/survival-lamb
+          mkdir -p _site/card-swarm
           cp tools/site/index.html _site/index.html
           touch _site/.nojekyll
           cp -a games/card-swarm/. _site/card-swarm/
-          cp -a games/survival-lamb/. _site/survival-lamb/
           find _site -type f -name '*.md' -delete
-          rm -f _site/card-swarm/src/assets_village_tmp.js
           # versión del service worker = hash del contenido; falla si falta algún archivo del precache
           python3 tools/card-swarm-pwa/stamp.py _site/card-swarm
           # enlaces antiguos del prototipo: /card-swarm-fusion/ redirige al juego (el SW clásico y el nuevo solo controlan /card-swarm/)

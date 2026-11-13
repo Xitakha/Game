@@ -1,7 +1,7 @@
 // COPIA de tools/card-swarm-clasico-boss-bot/fight.js (el original no se toca) para la Fusión: cfg.fusion=true usa ?actives=<poderes>&all=1&direct=1; mismo bot esquivador (dodge_fusion.js, con AUTO).
 // uso: node boss_fight.js '{"fusion":true,"boss":"pastor","port":8811,"hand":"spark:3,dart:2,shard:2,dagger:2,fang:1","actives":"forja,plasma,pacto,gas","runs":8,"par":4,"speed":12,"noLevel":true}'
 // uso: (jefes: "boss":"pastor|karceron|letea", "port":8765) node fight.js '{"hand":"spark:3,ember:3","runs":4,"speed":6,"react":250,"mistakes":0.1,"peligro":1,"par":4,"len":9,"dist":250}'
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const fs = require('fs');
 const cfg = Object.assign({ hand: 'spark:3,ember:3,dart:3,shard:2,ring:1', runs: 4, speed: 6, react: 250, mistakes: 0.1, peligro: 1, par: 4, len: 9, dist: 250, every: 100, maxSim: 420, extra: '', full: false, noLevel: false, inattn: 0, hp0: 100, hpcal: 0, burst: null, horizon: 1600, profile: 'fresh', anchors: '', boss: 'pastor', port: 8765, nogod: false }, JSON.parse(process.argv[2] || '{}'));
 const botSrc = fs.readFileSync(__dirname + '/dodge_fusion.js', 'utf8');
@@ -41,7 +41,7 @@ async function one(b, i) {
   return { i, tEnd: fin.tEnd, bossSeen: fin.boss, hand: fin.hand, lvl: fin.lvl, kills: fin.kills, won: !!fin.won, combatT: Math.round(fin.combat / 1000), bossHp: fin.info && fin.info.hp, parts: fin.parts, phases: ph, hb: fin.bot && fin.bot.hb, minHp: fin.bot && Math.round(fin.bot.minHp), log: fin.won ? undefined : (fin.bot && fin.bot.log), err: fin.bot && fin.bot.err, errs: errs.slice(0, 2), timeout: !!(res && res.timeout), wall: Math.round((Date.now() - t0) / 1000) };
 }
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const results = []; let next = 0;
   async function worker() { while (next < cfg.runs) { const i = next++; try { const r = await one(b, i); results.push(r); console.log(JSON.stringify(r)); } catch (e) { console.log('ERR', i, e.message); } } }
   await Promise.all(Array.from({ length: Math.min(cfg.par, cfg.runs) }, worker));

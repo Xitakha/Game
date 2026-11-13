@@ -1,12 +1,12 @@
 // Capturas comparativas vista plana vs ?view=iso. Uso: node caps.js <puerto>  (servidor: python3 tools/serve.py card-swarm <puerto>)
 // Genera NN_nombre_plana.png / NN_nombre_iso.png en studio/docs/capturas-vista-iso/ (la unión lado a lado la hace merge.py).
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const PORT = process.argv[2] || '8766';
 const OUT = '/home/user/Game/studio/docs/capturas-vista-iso/';
 const HAND = 'spark:3,dart:3,shard:2,dagger:2,fang:2';
 const only = process.argv[3];
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const allErrs = [];
   async function run(view, fn) {
     const pg = await b.newPage({ viewport: { width: 960, height: 540 } });

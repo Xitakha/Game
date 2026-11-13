@@ -6,13 +6,13 @@
 // Env: SEED=<n> (def. 1)  SWARM=<n enemigos vivos, def. 110>  PERF=1|0 (1 = usa el overlay ?perf=1 del juego; 0 = juego sin ?perf, medido con un contador propio)
 //      RUNS=<n> (repite y da la mediana)  PINF=<f> (?pinf, def. 0.25)  QUALITY=alta|media|baja (ajuste de calidad de G.Q.level, def. no tocar)  EXTRA='&x=1'
 // Mide la ventana tras 3 s de calentamiento. En headless (GPU por software) los ms no son los de un movil: sirve para comparar versiones, no como absoluto.
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const SECS = +process.argv[2] || 30, base = process.argv[3] || 'http://localhost:8811';
 const SEED = +process.env.SEED || 1, SWARM = +process.env.SWARM || 110, PERF = process.env.PERF !== '0', RUNS = +process.env.RUNS || 1, PINF = process.env.PINF || '0.25', EXTRA = process.env.EXTRA || '';
 const URL = `${base}/index.html?nosw=1&reset=1&direct=1&all=1&god=1&biome=crater&t=240&nobos=1&seed=${SEED}&pinf=${PINF}&actives=${process.env.ACT || 'vapor,plasma,forja,sed'}&hand=spark:3,ember:3,dart:3,shard:2,ring:1${PERF ? '&perf=1' : ''}${EXTRA}`;
 
 async function run() {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
   if (!PERF) await pg.addInitScript(() => {   // contador propio (solo en la variante sin ?perf): intervalo entre frames y trabajo (CPU) del callback

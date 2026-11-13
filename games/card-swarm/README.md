@@ -1,6 +1,6 @@
 # Swarm Hand (antes "Fusión": prototipo v1, balance v2)
 
-**Este es el juego publicado en https://xitakha.github.io/Game/card-swarm/** (el dueño aprobó el prototipo Fusión y sustituyó a la versión anterior). La versión clásica (mano de 5 cartas con combos pasivos, v5.6) quedó archivada en `../card-swarm-clasico/` (no se despliega; también en la rama remota `archive/card-swarm-clasico-v5.6`; su README: `../card-swarm-clasico/README-clasico.md`). Diseño de partida: `DESIGN-fusion.md`.
+**Este es el juego publicado en https://xitakha.github.io/Game/card-swarm/** (el dueño aprobó el prototipo Fusión y sustituyó a la versión anterior). La versión clásica (mano de 5 cartas con combos pasivos, v5.6) se retiró de `main` el 2026-11-13 (decisión del dueño): sigue en el historial de git y en la rama remota `archive/card-swarm-clasico-v5.6`. Diseño de partida: `DESIGN-fusion.md`.
 Los `DESIGN-v*.md`, `GDD.md`, `MOVIL.md`, etc. de esta carpeta son heredados del clásico (llevan una nota arriba); donde hablan de combos pasivos no aplican.
 Arte y audio de los poderes nuevos: `src/assets_fusion2.js` / `src/sfx_fusion2.js` (8 poderes) y `src/assets_fusion3.js` / `src/sfx_fusion3.js` (fusiones 13-15); contrato en `ASSETS_FUSION.md`.
 
@@ -122,7 +122,7 @@ Parámetros de balance v2 (todos sin recompilar, valores por defecto entre paré
 
 Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swarm-bot/`):
 - `node tools/card-swarm-bot/tests.js [all|seed|cards|iso|flow|powers|ui|village|touch|boss|balance|armor]` (0 errores de consola en cada una; `iso` ahora comprueba PWA: manifest, caché `fusionhand-*`, precache completo, guardado `swarmhand.fusion.*`).
-- `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` mismo bot sobre el clásico (`python3 tools/serve.py card-swarm-clasico 8812`); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
+- `play_bot.js <n> <cmul> [sinPoderes] [base] [speed] [all] [extra]` partidas completas con 4 poderes en AUTO; `baseline_bot.js <n>` (OBSOLETO: comparaba con el clásico, que ya no está en `main`; para usarlo hay que recuperar el clásico de la rama de archivo); `boss_bot.js <n> [jefes] [sinPoderes]` pelea por jefe con 4 poderes fijados por URL.
 
 ### Calidad: semilla, invariante de la mano y rendimiento
 - **`?seed=<n>`** (RNG sembrable). `G.rng()` es la fuente de azar de la SIMULACION (ofertas de cartas, hordas y spawns, botin/drops, azar de combate, fusiones, jugador, jefes y enemigos; `G.rnd(a,b)` la usa). Sin `?seed` `G.rng === Math.random` (mismo comportamiento que antes; el test `seed` lo comprueba). Con semilla es mulberry32: misma semilla + mismas entradas = misma partida. Particulas/fx/sfx/ending siguen con `Math.random` (`G.rndFx` para el azar cosmetico), asi que no consumen la secuencia. `G.rngSeed(n)` resiembra (sin argumento vuelve a Math.random) y `G.step()` avanza un tick fijo (con `?speed=0` el bucle no corre solo): asi el test `seed` corre dos partidas headless con la misma semilla y compara un hash del estado tras 4000 ticks. Limites: con entrada humana o bots en tiempo real (rAF) la partida sigue sin ser reproducible; los bots aceptan `SEED=<n>` (partida i usa n+i) para reducir la varianza, no para repetir exacto. Lo que no esta sembrado: cosas de reloj de pared (`Date.now`: Tablon diario, animaciones).
@@ -133,7 +133,7 @@ Pruebas y bots (Chromium de `/opt/pw-browsers`, 844x390 táctil, `tools/card-swa
 ## Balance
 Ver "Balance medido" al final (números reales, ruido y límites del bot).
 
-## Guardado y PWA (convivencia con el clásico)
+## Guardado y PWA (herencia del clásico, ya retirado de `main`)
 - Guardado en `localStorage` `swarmhand.fusion.save`. El guardado clásico `swarmhand.save` (y sus copias `.v2`-`.v8`) NO se lee, migra ni borra: queda intacto por si se reabre el clásico.
 - `sw.js`: caché `fusionhand-<hash>` (NO empieza por `swarmhand-`: el `activate` del clásico borraba las `swarmhand-*` del origen). `manifest.webmanifest`: `id`/`start_url`/`scope` `./` (mismo `id` que el clásico: quien lo tenía instalado recibe el juego nuevo como actualización de la misma app, con sus datos nuevos en blanco).
 - `tools/card-swarm-pwa/stamp.py` (único; el precache sale de `index.html`). `.github/workflows/pages.yml` despliega solo `games/card-swarm` en `/card-swarm/`; `/card-swarm-fusion/` es solo una redirección (`tools/site/card-swarm-fusion-redirect.html` + `card-swarm-fusion-sw.js`, que desregistra el SW del prototipo).

@@ -1,8 +1,8 @@
 // fps (horda y jefe) en ambas vistas + toggle de Ajustes + táctil 844x390. Uso: node perf.js <puerto>
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const PORT = process.argv[2] || '8766', OUT = '/home/user/Game/studio/docs/capturas-vista-iso/';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const errs = [];
   const fps = (pg, ms) => pg.evaluate((ms) => new Promise(res => { let n = 0; const t0 = performance.now(); (function f() { n++; if (performance.now() - t0 < ms) requestAnimationFrame(f); else res(n / (ms / 1000)); })(); }), ms);
   for (const v of ['flat', 'iso']) {
