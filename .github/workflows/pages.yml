@@ -17,8 +17,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Puerta de calidad: si la batería falla, no se ensambla ni se despliega nada.
+  pruebas:
+    uses: ./.github/workflows/tests.yml
+
   build:
+    needs: pruebas
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
@@ -50,6 +56,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

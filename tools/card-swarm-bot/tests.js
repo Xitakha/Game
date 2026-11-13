@@ -789,6 +789,7 @@ async function cine3(b) {
   ok(cr.st === 'gameover' && cr.cr, 'tras los creditos: pantalla de botin (gameover) y creditsSeen');
   const snd = await E(pg, () => window.__snd);
   ok(!snd.includes('play:stg_cenizar_win') && !snd.includes('play:stg_cenizar_ending') && snd.filter(x => x === 'cine3:victory').length === 1 && snd.filter(x => x === 'cine3:fire').length === 1, 'jingles: sin stg_cenizar_win ni stg_cenizar_ending; cine3 victory y fire una vez (' + snd.join(',') + ')');
+  ok(await E(pg, () => typeof Assets.cine3 === 'object' && typeof Assets.cine3.epilogue === 'function' && typeof G.Snd.cine3 === 'function'), 'Assets.cine3 es el arte (assets_cine3.js) y G.Snd.cine3 el audio, sin pisarse');
   const ls = await E(pg, () => { G.Aldea.open(true); return { lv: G.Aldea.level(), st: G.state }; });
   ok(ls.lv === 6 && ls.st === 'aldea', 'tras el botin la aldea esta completa (nivel 6)');
   await done(pg, 'cierre');

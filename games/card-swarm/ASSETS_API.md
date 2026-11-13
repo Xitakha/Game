@@ -1542,7 +1542,8 @@ Solo audio procedural (WebAudio), contexto propio que sigue desbloqueo, mute, vo
 - `Assets.cineMusicTime3()` -> segundos sonados de la pista cine3 actual (0 si no suena); util para disparar el reencendido a 16 s.
 - `renderMusic({track:'cine_epilogo'|'cine_creditos', steps?})` y `renderSfx('cine3_*')` (OfflineAudioContext) para el visor.
 
-## SFX: `G.Snd.cine3(tipo, arg, pitch)` (tambien `Assets.cine3`) -> true si sono
+## SFX: `G.Snd.cine3(tipo, arg, pitch)` -> true si sono
+(`Assets.cine3` es solo el arte, de `assets_cine3.js`; el audio no cuelga de `Assets.cine3`.)
 | tipo | arg | Duracion | Uso |
 |---|---|---|---|
 | `'victory'` | - | 6,0 s (audible hasta ~5,5 s) | Stinger de victoria sobre Cenizar: latido, vacio, notas de caja de musica Mi-Si-Sol (menor, la herida) y Sol# (llega la esperanza), acorde de Mi mayor suave; cola que muere a 6 s. Sin eco largo |

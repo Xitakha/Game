@@ -476,7 +476,7 @@
   function lamp(c, x, y, now, k) { c.fillStyle = '#1b1124'; c.fillRect(x - 1, y - 10, 2, 10); c.fillStyle = '#ffb347'; c.globalAlpha = 0.85 + 0.15 * Math.sin(now / 300 + k); c.beginPath(); c.arc(x, y + 3, 5, 0, 6.283); c.fill(); c.globalAlpha = 1; }
   function drawUpgrades(c, now, lv) {
     if (lv <= 0) return;
-    try { var U3 = window.Assets && Assets.cine3 && typeof Assets.cine3 === 'object' && Assets.cine3.villageRebuild; if (U3 && U3(c, lv, now, { calm: !!(G.Cine && G.Cine.cfg().calm), fresh: Math.min(1, (now - lvAt) / 2500), time: A.timeMode === 'noche' ? 1 : A.timeMode === 'ocaso' ? 0.5 : 0 })) return; } catch (e) { /* reserva */ }
+    try { var U3 = window.Assets && Assets.cine3 && Assets.cine3.villageRebuild; if (U3 && U3(c, lv, now, { calm: !!(G.Cine && G.Cine.cfg().calm), fresh: Math.min(1, (now - lvAt) / 2500), time: A.timeMode === 'noche' ? 1 : A.timeMode === 'ocaso' ? 0.5 : 0 })) return; } catch (e) { /* reserva */ }
     var i, x;
     c.save(); c.lineWidth = 2; c.strokeStyle = '#1b1124';
     if (lv >= 1) {   // farolillos colgantes entre la fragua y la plaza
@@ -504,7 +504,7 @@
     }
     c.restore();
   }
-  function villageNpcs(now) { try { var a = window.Assets && Assets.cine3; return a && typeof a === 'object' && a.villageNpcs ? a.villageNpcs(A.level(), now) || {} : {}; } catch (e) { return {}; } }   // aldeanos animados según el nivel
+  function villageNpcs(now) { try { var a = window.Assets && Assets.cine3; return a && a.villageNpcs ? a.villageNpcs(A.level(), now) || {} : {}; } catch (e) { return {}; } }   // aldeanos animados según el nivel
   A.draw = function (c) {
     var now = Date.now(), tg = (mode === 'walk' && !D.active()) ? target() : null, talkTg = D.active() ? A.lastTarget : null;
     if (tg) A.lastTarget = tg;

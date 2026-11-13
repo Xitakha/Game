@@ -147,7 +147,6 @@
   }
   var S = window.G && window.G.Snd;
   if (S) S.cine3 = cine3;
-  A.cine3 = cine3;
   A.sfxCine3 = {}; names.forEach(function (n) { A.sfxCine3[n] = { fam: 'cine3', len: DEFS[n].len, min: DEFS[n].min, dur: dur(DEFS[n]) }; });
 
   // ================= Musica
