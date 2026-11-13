@@ -2,10 +2,10 @@
 //   python3 tools/serve.py card-swarm 8812 &   (cerrar por PID)
 //   node tools/fx2-lab/lab.js <escena> [salida.jpg] [base=http://localhost:8812]
 // Escenas: ward | ice | boom | status | all     (imagen con dos columnas: ANTES | DESPUES; cada escena es una fila de 450 x 250)
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const scene = process.argv[2] || 'all', out = process.argv[3] || '/tmp/fx2_' + scene + '.jpg', base = process.argv[4] || 'http://localhost:8812';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const b = await launch({ args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 900, height: 1000 }, deviceScaleFactor: +process.env.DSF || 1 }), pg = await ctx.newPage(); const errs = [];
   pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => m.type() === 'error' && errs.push(m.text()));
   await pg.goto(base + '/index.html?nosw=1&reset=1&direct=1&god=1&cine=0&biome=crater&nobos=1&seed=1'); await pg.waitForTimeout(900);

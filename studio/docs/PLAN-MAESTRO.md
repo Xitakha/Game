@@ -3,6 +3,7 @@
 Fecha de la revisión: 2026-11-12 · Commit revisado: `33197d4` (rama `claude/serene-pascal-bsxbz3`, igual que `main`).
 Alcance: `games/card-swarm` (juego principal), `games/survival-lamb`, `games/card-swarm-clasico`, `tools/`, `studio/`, `.claude/agents/`, `.github/workflows/pages.yml`.
 Esta revisión **no cambia código del juego ni balance**: solo diagnostica y planifica.
+Actualización 2026-11-13: el dueño respondió las 17 preguntas de la sección 6; las respuestas están en la sección "Decisiones del dueño (2026-11-13)" y las tareas afectadas ya están ajustadas. `games/survival-lamb`, `games/card-swarm-clasico` y sus herramientas se retiraron de `main` (T-F0-13); lo que el diagnóstico dice de ellos es histórico.
 
 Cómo leer la evidencia:
 - **[V]** verificado leyendo el código o midiendo en esta revisión (se cita `archivo:línea` o la medición).
@@ -59,11 +60,11 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 ### 1.6 Contenido
 - **Bien.** 28 cartas, 15 fusiones, 6 biomas, 6 jefes, 2 minijefes por bioma, 7 sets de armadura, epílogo y créditos. Es mucho contenido para el tamaño del estudio. [V]
 - **Falla.** No hay contenido repetible tras el final salvo subir Peligro: sin modo infinito, sin mutadores, sin eventos. [V]
-- **Falla.** `games/survival-lamb` se publica en Pages sin controles táctiles (`MOVIL.md`, sección 6) y aparece en el índice público (`tools/site/index.html`). Da mala primera impresión en móvil. [V]
+- **Falla.** `games/survival-lamb` se publica en Pages sin controles táctiles (`MOVIL.md`, sección 6) y aparece en el índice público (`tools/site/index.html`). Da mala primera impresión en móvil. [V] **Resuelto 2026-11-13:** retirado del sitio y de `main` (T-F0-13).
 
 ### 1.7 Arte y VFX
 - **Bien.** El arte procedural de la aldea, los jefes y los efectos tiene nivel y estilo coherente (capturas de esta revisión). [V]
-- **Falla.** Marlo se ve como mapache y el guion lo llama "corderito" (`src/cine_intro.js:147`, `src/aldea.js:104`, `:108`, `:213`). [V]
+- **Falla.** Marlo se ve como mapache y el guion lo llama "corderito" (decisión del dueño: es mapache; hay que corregir el texto, T-F0-07) (`src/cine_intro.js:147`, `src/aldea.js:104`, `:108`, `:213`). [V]
 - **Falla.** En el segundo 8 de la intro la imagen es casi negra con rectángulos simples: parece arte de reserva (captura). [V la captura; I que sea reserva]
 - **Falla.** No hay dirección de arte escrita (paleta, grosor de línea, reglas de legibilidad de telegrafías). 25 archivos `assets_*.js` suman ~17.000 líneas. [V]
 
@@ -123,7 +124,7 @@ Mediciones propias de esta revisión (Chromium headless, vista 844x390 táctil, 
 - **A favor.** El diseño ya tiene sumideros y momentos naturales para recompensas opcionales (reroll, plato, tónico e imán de Rufo, duplicar Brasas del botín) que no tocan el reto del combate. [V que existen; I que sirven]
 
 ### 1.17 Marca y marketing
-- **Falla.** Nombre sin comprobar frente a otros juegos o marcas, sin eslogan fijado fuera del título ("Apaga las seis llamas"), sin página, sin redes, sin tráiler; los nombres cómicos de los créditos están sin aprobar (`src/assets_cine3.js:568`). [V]
+- **Falla.** Nombre sin comprobar frente a otros juegos o marcas, sin eslogan fijado fuera del título ("Apaga las seis llamas"), sin página, sin redes, sin tráiler; los nombres cómicos de los créditos estaban sin aprobar (`src/assets_cine3.js:568`); el dueño los aprobó el 2026-11-13 (T-F0-08). [V]
 
 ### 1.18 Organización del estudio
 - **Bien.** Roles claros, encargos autocontenidos, regla de que solo el CEO hace commit. [V]
@@ -146,7 +147,7 @@ Principios que no se negocian (derivan de lo que pide el dueño):
 | Opción | Pros | Contras | Ingreso esperable (cualitativo) | Requisitos técnicos | Requisitos legales | Impacto en la experiencia |
 |---|---|---|---|---|---|---|
 | A. itch.io gratis con "paga lo que quieras" y enlace de apoyo | Cero integración, público afín a roguelites, comentarios directos, no exige inglés | Poco tráfico orgánico; las donaciones son escasas | Muy bajo; sirve para validar y juntar comunidad | Zip del juego (límite citado en foros: ~1.000 archivos; el juego tiene ~100) | Cuenta del dueño y datos de cobro | Ninguno |
-| B. Portales web con su SDK (CrazyGames, Poki) | Tráfico grande ya existente; ellos venden los anuncios y gestionan el consentimiento; reparto de ingresos | Curados: pueden rechazar; piden inglés y buen arranque; Poki prefiere exclusividad web; solo se permiten sus anuncios | Bajo a medio, proporcional a partidas; es la vía realista para un HTML5 sin presupuesto de adquisición | Capa de plataforma con eventos de juego y anuncios; build sin service worker ni enlaces externos; CrazyGames: descarga inicial <= 50 MB y <= 20 MB para portada móvil (el juego pesa 3,4 MB); Poki: se cita un objetivo de < 8 MB iniciales | Aceptar los términos del portal; el consentimiento de anuncios lo gestiona el portal | Bajo si solo hay recompensados y pausas en la aldea |
+| B. Portales web con su SDK (CrazyGames, Poki) | Tráfico grande ya existente; ellos venden los anuncios y gestionan el consentimiento; reparto de ingresos | Curados: pueden rechazar; piden inglés y buen arranque; Poki prefiere exclusividad web (el dueño: solo si pagan muy bien); solo se permiten sus anuncios | Bajo a medio, proporcional a partidas; es la vía realista para un HTML5 sin presupuesto de adquisición | Capa de plataforma con eventos de juego y anuncios; build sin service worker ni enlaces externos; CrazyGames: descarga inicial <= 50 MB y <= 20 MB para portada móvil (el juego pesa 3,4 MB); Poki: se cita un objetivo de < 8 MB iniciales | Aceptar los términos del portal; el consentimiento de anuncios lo gestiona el portal | Bajo si solo hay recompensados y pausas en la aldea |
 | C. Anuncios propios en Pages (AdSense para juegos H5 u otra red) | Control total | Tráfico propio casi nulo; hay que montar consentimiento (RGPD), política de privacidad y pasar la aprobación de la red; elegibilidad no verificada | Muy bajo con el tráfico actual | SDK de anuncios, gestor de consentimiento | Política de privacidad, consentimiento en EEE, declarar público objetivo | Medio: riesgo de anuncios invasivos |
 | D. Play Store con TWA, gratis con compra única "Apoyar al estudio" (quita anuncios + cosméticos) | Presencia en tienda, instalación real, compra única honesta | Cuenta de desarrollador de pago; las cuentas personales nuevas necesitan prueba cerrada con 12 testers durante 14 días seguidos; las compras digitales deben usar Play Billing (Digital Goods API + Payment Request en TWA); mantenimiento de fichas y políticas | Bajo a medio; depende de la retención | Proyecto TWA, Digital Asset Links, dominio estable, productos en Play Console, asociar compras al jugador | Política de privacidad, ficha de seguridad de datos, clasificación por edades | Bajo |
 | E. Premium de pago (itch o Steam con envoltorio) | Modelo limpio, encaja con el género en PC | El juego nació móvil y web; exige controles y resolución de PC pulidos, y una versión con más contenido | Incierto; es otra apuesta | Envoltorio de escritorio, logros de plataforma | Alta de tienda | Ninguno negativo |
@@ -157,7 +158,7 @@ No se dan cifras de ingresos: dependen del tráfico y de la retención, que hoy 
 ### 2.2 Recomendación por fases
 
 1. **Ahora (tras F0 y F1): opción A.** Publicar en itch.io gratis con donación voluntaria. Objetivo: comentarios de jugadores reales y primeras cifras de retención con analítica propia sin datos personales.
-2. **Cuando D1 y la duración de sesión sean decentes: opción B.** Capa de plataforma única (`G.Platform`) y envío a CrazyGames (lanzamiento básico sin monetización, después completo con reparto) y solicitud a Poki. Antes hay que decidir la exclusividad web que Poki prefiere. Recompensados diseñados en la aldea y en el botín, nunca en combate.
+2. **Cuando D1 y la duración de sesión sean decentes: opción B.** Capa de plataforma única (`G.Platform`) y envío a CrazyGames (lanzamiento básico sin monetización, después completo con reparto) y solicitud a Poki. La exclusividad web que Poki prefiere solo se acepta si paga muy bien. Recompensados diseñados en la aldea y en el botín, nunca en combate.
 3. **Solo si B demuestra retención: opción D.** Play Store con TWA y compra única de apoyo. Los datos del portal dirán si compensa el coste de la cuenta, los 12 testers y el mantenimiento.
 4. **Descartado por ahora:** C (poco tráfico y mucha carga legal), F (prematuro). E queda como idea para una edición de PC si el juego tiene tirón.
 
@@ -230,7 +231,7 @@ Reglas:
 Decisiones sobre agentes:
 - No se crea un "director de cinemáticas" aparte: lo cubre `art-director`, porque el motor de cinemáticas ya existe y lo pendiente es arte y ritmo.
 - No se amplía `game-designer` con el balance: quien diseña una mecánica no debe ser quien certifica sus números.
-- A los agentes existentes solo se les añade la línea `model:`; su texto no cambia. `ceo` queda sin ella a propósito: es el agente de la sesión principal y usa el modelo que elija el dueño al abrirla. La mención a Phaser y la lista de equipo de `ceo.md` se corrigen en T-F0-09, con permiso del dueño.
+- A los agentes existentes solo se les añade la línea `model:`; su texto no cambia. `ceo` queda sin ella a propósito: es el agente de la sesión principal y usa el modelo que elija el dueño al abrirla. La mención a Phaser y la lista de equipo de `ceo.md` se corrigen en T-F0-09 (permiso del dueño concedido el 2026-11-13).
 
 ---
 
@@ -238,7 +239,7 @@ Decisiones sobre agentes:
 
 Formato de cada tarea: **objetivo y por qué** · **pasos** · **archivos** · **responsable (modelo, esfuerzo)** y apoyo · **dependencias** · **aceptación** · **pruebas** · **riesgo y reversión** · **tamaño** · **decisión del dueño**.
 
-Resumen: F0 con 13 tareas, F1 con 11, F2 con 8, F3 con 10, F4 con 6. Total: 48.
+Resumen: F0 con 13 tareas, F1 con 10 (T-F1-10 descartada por el dueño), F2 con 8, F3 con 10, F4 con 6 y un cierre con 1 tarea (T-FIN-01, retirar la inmortalidad). Total: 48 (13 + 10 + 8 + 10 + 6 + 1).
 
 ### F0. Limpieza y deudas (13 tareas)
 
@@ -247,7 +248,7 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 #### T-F0-01 Reparar las herramientas de prueba (ruta del navegador)
 - **Objetivo y por qué.** Hoy ninguna prueba ni bot arranca en el contenedor actual. Sin pruebas no se puede tocar nada con seguridad; es la base de todo lo demás.
 - **Pasos.** (1) Crear `tools/lib/browser.js` que exporte `launch()` y resuelva el ejecutable en este orden: variable `PW_CHROME`, `/opt/pw-browsers/chromium`, el navegador por defecto de Playwright. (2) Sustituir la ruta fija en los 57 archivos de `tools/` que la contienen. (3) Hacer que `tests.js` no ejecute `stamp.py` sobre el repo: que trabaje sobre una copia temporal. (4) Pasar `tests.js all` y anotar el número real de comprobaciones.
-- **Archivos.** `tools/lib/browser.js` (nuevo), `tools/card-swarm-bot/*.js`, `tools/card-swarm-iso/*.js`, `tools/fx2-lab/*.js`, `tools/card-swarm-clasico-*/**`.
+- **Archivos.** `tools/lib/browser.js` (nuevo), `tools/card-swarm-bot/*.js`, `tools/card-swarm-iso/*.js`, `tools/fx2-lab/*.js`. (Los de `tools/card-swarm-clasico-*` se retiraron en T-F0-13: ya no hay que tocarlos y los archivos afectados son menos de 57.)
 - **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo bajo (el diseño del ayudante es corto; la sustitución es mecánica y puede delegarse en Haiku). Apoyo: `qa-tester` (Haiku) pasa la batería.
 - **Dependencias.** Ninguna.
 - **Aceptación.** `grep -r "chromium-1194" tools/` devuelve 0; `tests.js all` termina con 0 fallos; tras pasarla, `git status` está limpio.
@@ -266,16 +267,17 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 - **Riesgo y reversión.** Pruebas inestables que bloqueen despliegues: permitir un reintento y marcar las inestables. Revertir el workflow.
 - **Tamaño.** M. **Decisión del dueño.** Aceptar que un despliegue tarde unos minutos más.
 
-#### T-F0-03 Retirar la inmortalidad por defecto y cerrar los parámetros de depuración
-- **Objetivo y por qué.** El juego publicado es inmortal salvo `?god=0` (`src/main.js:20`). Mientras siga así, nadie juega el reto real y el balance no se puede validar. Además `?give`, `?pf`, `?cmul`, `?reset=1` funcionan en producción.
-- **Pasos.** (1) `G.god` pasa a valer 0 por defecto. (2) Todos los parámetros que alteran progreso o dificultad solo se leen si la URL lleva `?dev=1` o el host es `localhost`. (3) `?reset=1` pide confirmación. (4) Los bots añaden `dev=1`.
+#### T-F0-03 Cerrar los parámetros de depuración en producción (la inmortalidad se retira al final: T-FIN-01)
+- **Estado.** Reducida por decisión del dueño (2026-11-13): la inmortalidad por defecto **se queda por ahora** para que el dueño pruebe funcionalidades y se retira AL FINAL del plan (T-FIN-01). Aquí solo se cierran los parámetros de depuración.
+- **Objetivo y por qué.** `?give`, `?pf`, `?cmul`, `?reset=1` funcionan en producción: cualquier récord o compra sería falseable y `?reset=1` borra la partida con un enlace.
+- **Pasos.** (1) Los parámetros que alteran progreso o dificultad (`give`, `pf`, `cmul` y similares) solo se leen si la URL lleva `?dev=1` o el host es `localhost`. (2) `?reset=1` pide confirmación. (3) Los bots añaden `dev=1`. (4) **`?god` NO se toca aquí**: `G.god` sigue valiendo 1 por defecto y `?god=0` sigue funcionando sin `dev=1`, para no romper las pruebas del dueño ni los bots. Si cerrar alguno de los demás parámetros rompe lo que el dueño usa hoy para probar, se le avisa y se aplaza ese parámetro (puede seguir con `?dev=1`).
 - **Archivos.** `src/main.js`, `src/save.js`, `src/armor.js`, `src/fusion.js`, `src/cine.js`, `tools/card-swarm-bot/*.js`.
 - **Responsable.** `programmer` con Sonnet 5.5, esfuerzo bajo. Revisión: `qa-tester` (Sonnet).
-- **Dependencias.** T-F0-01. Conviene hacerla después de T-F0-12, para que el dueño acabe sus pruebas actuales.
-- **Aceptación.** En URL limpia `G.god === false`; `?give=all:30` sin `dev=1` no cambia el guardado; la batería pasa.
-- **Pruebas.** Grupo nuevo `dev` en `tests.js`: 6 comprobaciones, una por parámetro sensible, con y sin `dev=1`.
-- **Riesgo y reversión.** Que el dueño pierda su modo de prueba: conserva `?dev=1&god=1`. Revertir el commit.
-- **Tamaño.** S. **Decisión del dueño.** Fecha a partir de la cual quiere jugar sin inmortalidad.
+- **Dependencias.** T-F0-01. Conviene hacerla después de T-F0-12.
+- **Aceptación.** `?give=all:30` sin `dev=1` no cambia el guardado; `?reset=1` pide confirmación; con `?dev=1` todo sigue funcionando; la batería pasa.
+- **Pruebas.** Grupo nuevo `dev` en `tests.js`: una comprobación por parámetro sensible, con y sin `dev=1`.
+- **Riesgo y reversión.** Que el dueño pierda algún atajo de prueba: conserva `?dev=1`. Revertir el commit.
+- **Tamaño.** S. **Decisión del dueño.** Resuelta: la inmortalidad se retira al final (T-FIN-01).
 
 #### T-F0-04 Deshacer la doble definición de `Assets.cine3`
 - **Objetivo y por qué.** Audio y arte escriben la misma propiedad y funciona por orden de carga. Un cambio de orden (por ejemplo al empaquetar en T-F0-10) dejaría el epílogo sin arte o sin sonido.
@@ -290,14 +292,14 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 
 #### T-F0-05 Simulación reproducible con `?seed` y dificultad igual en todos los dispositivos
 - **Objetivo y por qué.** Sin reproducibilidad no hay balance fiable, ni reto diario, ni récords comparables. Y hoy el móvil juega con menos enemigos que el PC (`src/mobile.js:24-26`, `src/waves.js:145`).
-- **Pasos.** (1) Auditar qué lee la simulación fuera de `G.rng` y de `G.time`: reloj real, `G.Q.enemyMul`, `G.Q.projCap`, topes de partículas, `performance.now()`. (2) Separar "calidad visual" de "reglas": `enemyMul` y `projCap` dejan de depender de la calidad o se compensan de forma que el reto sea equivalente. (3) Modo de prueba que avance por pasos fijos (`G.step`) sin reloj real. (4) Prueba: dos ejecuciones con la misma semilla y las mismas entradas dan el mismo estado en 12 puntos de control.
+- **Pasos.** (1) Auditar qué lee la simulación fuera de `G.rng` y de `G.time`: reloj real, `G.Q.enemyMul`, `G.Q.projCap`, topes de partículas, `performance.now()`. (2) Separar "calidad visual" de "reglas". Decisión del dueño: en móviles lentos, **menos enemigos pero más duros y un poco más rápidos**. Se define un perfil de compensación por calidad (menos enemigos, más vida y algo más de velocidad) con presión de combate equivalente, que fija `balance-designer`; el mismo perfil se aplica siempre para una calidad dada. Como la calidad adaptativa puede cambiar a mitad de partida, las pruebas de semilla fijan la calidad (`?q=`) y la reproducibilidad se exige por calidad. (3) Modo de prueba que avance por pasos fijos (`G.step`) sin reloj real. (4) Prueba: dos ejecuciones con la misma semilla y las mismas entradas dan el mismo estado en 12 puntos de control.
 - **Archivos.** `src/main.js`, `src/mobile.js`, `src/waves.js`, `src/enemies.js`, `src/fx.js`, `tools/card-swarm-bot/tests.js`.
 - **Responsable.** `programmer` con Sonnet 5.5, esfuerzo alto. Diseño y revisión: `balance-designer` con Fable 5.2 (decide cómo se compensa la calidad BAJA; es una decisión de reto). Apoyo: `performance-engineer`.
 - **Dependencias.** T-F0-01.
 - **Aceptación.** Misma semilla y mismas entradas: estado idéntico (vida, bajas, posición, nivel) a los 60, 180 y 420 s, en ALTA y en BAJA.
 - **Pruebas.** Grupo nuevo `seed` (al menos 12 puntos de control por calidad).
-- **Riesgo y reversión.** Quitar la reducción de enemigos puede bajar los fps en móviles modestos: medir con T-F2-07 y, si hace falta, compensar con enemigos más duros en vez de menos. Revertir por commit.
-- **Tamaño.** M. **Decisión del dueño.** Si acepta que un móvil lento vea menos enemigos pero más resistentes, o prefiere el mismo número aunque baje la fluidez.
+- **Riesgo y reversión.** La compensación (menos enemigos, más duros y rápidos) puede cambiar el reto en móvil: comprobar con el banco de T-F2-01 que la presión equivale a la de PC. Medir los fps con T-F2-07. Revertir por commit.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: menos enemigos pero más duros y un poco más rápidos en móviles lentos.
 
 #### T-F0-06 Quitar las pistas de teclado en pantallas táctiles
 - **Objetivo y por qué.** "E", "Tab", "Q/E" y "Enter" en un teléfono confunden y dan aspecto de port sin terminar.
@@ -310,38 +312,34 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 - **Riesgo y reversión.** Bajo. Revertir.
 - **Tamaño.** S. **Decisión del dueño.** Ninguna.
 
-#### T-F0-07 Marlo: mapache o corderito
+#### T-F0-07 Marlo es mapache: corregir el texto
+- **Estado.** Decidido por el dueño (2026-11-13): Marlo es MAPACHE. No se rehace el sprite (la opción 2b queda descartada).
 - **Objetivo y por qué.** El protagonista se dibuja como mapache y el guion lo llama corderito. La identidad del personaje es parte de la marca.
-- **Pasos.** (1) El dueño elige. (2a) Si es mapache: reescribir las líneas que dicen "cordero" o "corderito" y la frase de la intro. (2b) Si es cordero: rediseñar el sprite de Marlo y sus variantes con armadura.
-- **Archivos.** (2a) `src/cine_intro.js`, `src/aldea.js`, `DESIGN-v9-cinematicas.md`. (2b) `src/assets.js`, `src/assets_armor*.js`, `src/assets_cine*.js`.
-- **Responsable.** (2a) `game-designer` con Sonnet 5.5, esfuerzo bajo, para los textos y `programmer` con Haiku para aplicarlos. (2b) `art-director` con Opus 5.5, esfuerzo alto.
-- **Dependencias.** Decisión del dueño.
-- **Aceptación.** Ningún texto contradice al sprite; `textcheck` pasa.
-- **Pruebas.** Comprobación de que las cadenas antiguas ya no aparecen (2a) o capturas aprobadas por el dueño (2b).
-- **Riesgo y reversión.** (2b) es cara y toca muchas piezas. Revertir por commit.
-- **Tamaño.** S (2a) o L (2b). **Decisión del dueño.** Sí: qué es Marlo.
-
-#### T-F0-08 Aprobar los nombres de los créditos
-- **Objetivo y por qué.** Los créditos llevan nombres cómicos sin aprobar; es la firma del estudio.
-- **Pasos.** (1) Listar los textos de `CRED` en `src/assets_cine3.js:568`. (2) El dueño los aprueba o cambia. (3) Aplicar.
-- **Archivos.** `src/assets_cine3.js`, `src/ending.js`.
-- **Responsable.** `marketing-manager` con Haiku 5.5, esfuerzo bajo.
+- **Pasos.** Reescribir las líneas que dicen "cordero" o "corderito" referidas a Marlo (`src/cine_intro.js:147`, `src/aldea.js:104`, `:108`, `:213`, y la frase de la intro) y los documentos que lo repiten (`DESIGN-v9-cinematicas.md`, `DESIGN-v3-aldea.md`). No tocar el sprite ni las variantes con armadura. Cuidado: "cordero" puede ser legítimo en otros contextos (la bufanda, el rebaño de Ember Flock); revisar cada caso.
+- **Archivos.** `src/cine_intro.js`, `src/aldea.js`, `src/player.js` (si hay comentarios), `games/card-swarm/DESIGN-v9-cinematicas.md`, `DESIGN-v3-aldea.md`.
+- **Responsable.** `game-designer` con Sonnet 5.5, esfuerzo bajo, para los textos y `programmer` con Haiku para aplicarlos.
 - **Dependencias.** Ninguna.
-- **Aceptación.** Lista firmada por el dueño en el PR.
-- **Pruebas.** `textcheck` sobre la pantalla de créditos.
-- **Riesgo y reversión.** Nulo.
-- **Tamaño.** S. **Decisión del dueño.** Sí: los nombres.
+- **Aceptación.** Ningún texto contradice al sprite; `textcheck` pasa.
+- **Pruebas.** Comprobación de que las cadenas antiguas ya no aparecen.
+- **Riesgo y reversión.** Bajo. Revertir por commit.
+- **Tamaño.** S. **Decisión del dueño.** Resuelta: mapache.
 
-#### T-F0-09 Poner al día la documentación del estudio
-- **Objetivo y por qué.** `STUDIO.md` y `programmer.md` hablan de Phaser, `ceo.md` no conoce a todo el equipo, el README cita conteos de pruebas antiguos. Los agentes leen esto al empezar y heredan los errores.
-- **Pasos.** (1) Corregir la mención a Phaser por "Canvas 2D sin librerías". (2) Añadir a `ceo.md` la lista completa de agentes. (3) Actualizar los conteos del README con el resultado de T-F0-01. (4) Marcar con una cabecera los documentos heredados del clásico. (5) Decidir si `games/card-swarm-clasico` sale de `main` (ya existe la rama de archivo).
-- **Archivos.** `studio/STUDIO.md`, `.claude/agents/ceo.md`, `.claude/agents/programmer.md`, `games/card-swarm/README.md`, `games/card-swarm/*.md`.
+#### T-F0-08 Nombres de los créditos (RESUELTA)
+- **Estado.** Resuelta el 2026-11-13: el dueño aprobó los nombres de los créditos, incluido el bloque "Nuestro jefe supremo". No hay cambio de código.
+- **Pendiente menor.** Si algún texto de `CRED` (`src/assets_cine3.js:568`) cambia más adelante, `textcheck` sobre la pantalla de créditos.
+- **Tamaño.** Cerrada. **Decisión del dueño.** Resuelta.
+
+#### T-F0-09 Poner al día la documentación del estudio (hecha salvo los conteos)
+- **Estado (2026-11-13).** Hecha: Phaser corregido a "Canvas 2D sin librerías", `ceo.md` con el equipo completo, `STUDIO.md` y `ROADMAP.md` al día, clásico y Ember Flock marcados como retirados. Pendiente: actualizar los conteos del README con el resultado de T-F0-01.
+- **Objetivo y por qué.** `STUDIO.md` y `programmer.md` hablaban de Phaser, `ceo.md` no conocía a todo el equipo, el README cita conteos de pruebas antiguos.
+- **Pasos.** (1) Corregir la mención a Phaser. (2) Añadir a `ceo.md` la lista completa de agentes. (3) Actualizar los conteos del README con el resultado de T-F0-01 (pendiente). (4) Marcar con una cabecera los documentos heredados del clásico. (5) El clásico sale de `main` (hecho en T-F0-13).
+- **Archivos.** `studio/STUDIO.md`, `studio/docs/ROADMAP.md`, `.claude/agents/ceo.md`, `.claude/agents/programmer.md`, `games/card-swarm/README.md`, `games/card-swarm/*.md`.
 - **Responsable.** `release-manager` con Haiku 5.5, esfuerzo bajo.
-- **Dependencias.** T-F0-01.
+- **Dependencias.** Solo el paso 3 depende de T-F0-01.
 - **Aceptación.** Ninguna mención a Phaser como stack del juego; conteos coinciden con la batería.
 - **Pruebas.** Ninguna automática.
 - **Riesgo y reversión.** Nulo.
-- **Tamaño.** S. **Decisión del dueño.** Permiso para editar `ceo.md` y `programmer.md`; si se retira el clásico de `main`.
+- **Tamaño.** S. **Decisión del dueño.** Resuelta: permiso concedido para `ceo.md` y `programmer.md`; el clásico sale de `main`.
 
 #### T-F0-10 Empaquetado para producción (un solo archivo minificado)
 - **Objetivo y por qué.** 92 peticiones y 3,4 MB de JS sin minificar penalizan la primera carga, que es donde se pierde al jugador de portal. Además deja el juego listo para los límites de los portales.
@@ -376,42 +374,36 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 - **Riesgo y reversión.** Ninguno.
 - **Tamaño.** S. **Decisión del dueño.** Sí: dedicar 20 minutos.
 
-#### T-F0-13 Ember Flock en el sitio público
-- **Objetivo y por qué.** El índice de Pages enlaza un juego sin controles táctiles. Quien entre desde el móvil se lleva mala impresión del estudio.
-- **Pasos.** (1) Elegir: retirarlo del índice, marcarlo "solo escritorio" o darle joystick. (2) Aplicar en `tools/site/index.html` y, si procede, en `pages.yml`.
-- **Archivos.** `tools/site/index.html`, `.github/workflows/pages.yml`, `games/survival-lamb/`.
-- **Responsable.** `release-manager` con Haiku 5.5, esfuerzo bajo (retirar o etiquetar). Si se le dan controles: `programmer` con Sonnet 5.5.
-- **Dependencias.** Ninguna.
-- **Aceptación.** Desde un móvil no se llega a un juego injugable.
-- **Pruebas.** Comprobación manual.
-- **Riesgo y reversión.** Nulo.
-- **Tamaño.** S. **Decisión del dueño.** Sí: qué hacer con Ember Flock.
+#### T-F0-13 Retirar Ember Flock y el clásico de `main` y del sitio (HECHA)
+- **Estado.** Hecha el 2026-11-13 por decisión del dueño. Se eliminaron `games/survival-lamb` (12 archivos, 226 KB), `games/card-swarm-clasico` (85 archivos, 3,32 MB), `tools/card-swarm-clasico-balance-bot` (44 archivos, 470 KB) y `tools/card-swarm-clasico-boss-bot` (10 archivos, 47 KB). El historial de git los conserva; el clásico también está en la rama `archive/card-swarm-clasico-v5.6`. El índice y `pages.yml` ya no los mencionan; `/card-swarm-fusion/` sigue redirigiendo a `/card-swarm/`.
+- **Pendiente.** `tools/asset-preview` abre por defecto `games/survival-lamb` y `tools/card-swarm-bot/baseline_bot.js` compara con el clásico: ambos quedan obsoletos y se ajustan o retiran cuando `tools-engineer` termine T-F0-01 (no se tocaron para no pisar ese trabajo).
+- **Tamaño.** Cerrada. **Decisión del dueño.** Resuelta: se retiran del sitio y de `main`.
 
-### F1. Retención y primera sesión (11 tareas)
+### F1. Retención y primera sesión (10 tareas)
 
-Meta de la fase: que un jugador nuevo esté combatiendo en menos de un minuto, entienda qué hacer, quiera otra partida y tenga un motivo para volver mañana. Y poder medirlo.
+Meta de la fase: que un jugador nuevo llegue al combate sin rodeos tras la intro, entienda qué hacer, quiera otra partida y tenga un motivo para volver mañana. Y poder medirlo.
 
 #### T-F1-01 Analítica mínima y respetuosa
 - **Objetivo y por qué.** Sin datos, la retención y el balance se ajustan a ciegas, y ningún portal ni tienda se puede evaluar.
-- **Pasos.** (1) `monetization-analyst` define el esquema: `session_start`, `intro_end`, `run_start`, `level_up`, `fusion`, `run_end` (causa, tiempo, bioma, Peligro), `boss_start`, `boss_end`, `craft`, `quit_point`. (2) Capa `G.Track(evento, datos)` que siempre guarda un resumen local y, si hay consentimiento y proveedor, lo envía en lotes. (3) Sin identificadores personales: un id aleatorio por instalación. (4) Panel "Mis estadísticas" con el resumen local.
+- **Pasos.** (1) `monetization-analyst` define el esquema: `session_start`, `intro_end`, `run_start`, `level_up`, `fusion`, `run_end` (causa, tiempo, bioma, Peligro), `boss_start`, `boss_end`, `craft`, `quit_point`. (2) Capa `G.Track(evento, datos)` que siempre guarda un resumen local y, si hay consentimiento y proveedor, lo envía en lotes. (3) Sin identificadores personales: un id aleatorio por instalación. (4) Panel "Mis estadísticas" con el resumen local. (5) Decisión del dueño: analítica **anónima con envío a un servicio**, con aviso de privacidad. Antes de activar el envío: elegir el servicio (propuesta de `monetization-analyst`, pendiente), redactar un aviso de privacidad breve (adelanta el paso 2 de T-F3-01) y un interruptor en Ajustes. Revisión legal (consentimiento en la UE) pendiente de un profesional.
 - **Archivos.** `src/track.js` (nuevo), llamadas en `src/main.js`, `src/loot.js`, `src/cards.js`, `src/fusion.js`, `src/boss.js`, `src/panels.js`.
 - **Responsable.** `monetization-analyst` con Opus 5.5, esfuerzo medio (esquema, privacidad). Implementa `programmer` con Sonnet 5.5.
 - **Dependencias.** T-F0-03.
-- **Aceptación.** Una partida completa genera la secuencia esperada de eventos; sin consentimiento no sale ninguna petición de red; el resumen local sobrevive a recargar.
-- **Pruebas.** Grupo `track`: 10 comprobaciones de secuencia y una de "cero red sin consentimiento".
-- **Riesgo y reversión.** Privacidad: empezar solo con el modo local. Un interruptor apaga el envío.
-- **Tamaño.** M. **Decisión del dueño.** Sí: solo local, o envío a un servicio (cuál) con aviso de privacidad.
+- **Aceptación.** Una partida completa genera la secuencia esperada de eventos; antes de mostrar el aviso o con el interruptor apagado no sale ninguna petición de red; el resumen local sobrevive a recargar.
+- **Pruebas.** Grupo `track`: 10 comprobaciones de secuencia y una de "cero red con el envío apagado o sin aviso mostrado".
+- **Riesgo y reversión.** Privacidad: el envío va detrás del aviso y de un interruptor que lo apaga; los eventos llevan el valor de `god` para separar partidas inmortales de las de reto.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: envío anónimo a un servicio con aviso de privacidad. Falta elegir el servicio.
 
-#### T-F1-02 Primera sesión: combate en menos de 60 segundos
-- **Objetivo y por qué.** Hoy hay ~27 s de intro obligatoria y luego una aldea con 7 NPC antes de jugar. El jugador debe sentir el juego antes de leer.
-- **Pasos.** (1) `ux-designer` especifica el flujo nuevo: título, toque, 6-8 s de intro abreviada (el resto se ve al volver), primera expedición directa en el Bosque. (2) Tres avisos contextuales dentro de esa partida: moverse, recoger gemas, elegir carta; el cuarto llega con la primera fusión. (3) Al volver, la aldea se presenta por pasos: primero Lanudo y el Portal; el resto de NPC aparece con las salidas 2, 3 y 4. (4) La intro completa queda en el Archivo.
-- **Archivos.** `src/cine_intro.js`, `src/cine.js`, `src/aldea.js`, `src/hud.js`, `src/cards.js`, `src/save.js` (flags nuevos, sin subir de versión si solo son `flags`).
+#### T-F1-02 Primera sesión: de la intro al combate sin rodeos
+- **Objetivo y por qué.** Tras la intro hay una aldea con 7 NPC antes de jugar. El jugador debe sentir el juego antes de leer. Decisión del dueño (2026-11-13): **la intro NO se acorta la primera vez**; el recorte se hace en lo que viene después.
+- **Pasos.** (1) `ux-designer` especifica el flujo nuevo: título, toque, intro completa (~27 s), y primera expedición guiada al Bosque con la aldea reducida a lo imprescindible. (2) Tres avisos contextuales dentro de esa partida: moverse, recoger gemas, elegir carta; el cuarto llega con la primera fusión. (3) Al volver, la aldea se presenta por pasos: primero Lanudo y el Portal; el resto de NPC aparece con las salidas 2, 3 y 4. (4) Propuesta, sujeta a confirmar con el dueño: que la intro se pueda saltar a partir de la segunda vez (hoy está en el Archivo).
+- **Archivos.** `src/cine_intro.js` (solo si se añade el salto en visitas posteriores), `src/cine.js`, `src/aldea.js`, `src/hud.js`, `src/cards.js`, `src/save.js` (flags nuevos, sin subir de versión si solo son `flags`).
 - **Responsable.** `ux-designer` con Opus 5.5, esfuerzo alto (especificación con guion de pantallas). Implementa `programmer` con Sonnet 5.5, esfuerzo alto. Apoyo: `game-designer`, `art-director`.
 - **Dependencias.** T-F0-06, T-F1-01 (para medir el antes y el después).
-- **Aceptación.** En cuenta nueva, del primer toque al primer enemigo pasan menos de 60 s; el embudo `session_start` → `run_start` se mide; las cuentas con progreso no ven nada nuevo.
-- **Pruebas.** Grupo `fte` (primera vez): tiempos, avisos mostrados una sola vez, cuentas antiguas intactas.
+- **Aceptación.** En cuenta nueva, del final de la intro al primer enemigo pasan menos de 30 s (cifra a confirmar con la medición; el objetivo anterior de 60 s desde el primer toque ya no es alcanzable sin acortar la intro); el embudo `session_start` -> `run_start` se mide; las cuentas con progreso no ven nada nuevo.
+- **Pruebas.** Grupo `fte` (primera vez): tiempos, avisos mostrados una sola vez, cuentas antiguas intactas, intro completa la primera vez.
 - **Riesgo y reversión.** Tocar el arranque puede romper la migración de cuentas existentes: probar con guardados v9-v12. Un flag devuelve el flujo antiguo.
-- **Tamaño.** L. **Decisión del dueño.** Sí: si acepta acortar la intro la primera vez.
+- **Tamaño.** L. **Decisión del dueño.** Resuelta: no se acorta la intro la primera vez.
 
 #### T-F1-03 Ritmo de los primeros 90 segundos de la expedición
 - **Objetivo y por qué.** El primer minuto es plano (medido). Hay que dar acción y una primera decisión pronto, sin bajar el reto del resto de la partida.
@@ -470,14 +462,14 @@ Meta de la fase: que un jugador nuevo esté combatiendo en menos de un minuto, e
 
 #### T-F1-08 Legibilidad y uso de la pantalla en móvil
 - **Objetivo y por qué.** Textos de 6 a 9 px reales y un 18 % de pantalla en negro. Si no se lee, no se juega.
-- **Pasos.** (1) Con los datos de T-F0-12, fijar mínimos reales: 11 px CSS en menús y 9 px CSS en combate a 844x390. (2) Elegir la vía: (a) ancho lógico variable (de 960 a ~1170) para llenar 19,5:9, o (b) mantener 960x540 y sacar joystick y botones a las franjas. (3) Incluir una fuente propia con licencia libre para que las métricas sean iguales en todos los dispositivos. (4) Rehacer las rejillas densas (árbol, Archivo) con zoom o paginación.
+- **Pasos.** (1) Con los datos de T-F0-12, fijar mínimos reales: 11 px CSS en menús y 9 px CSS en combate a 844x390. (2) Vía decidida por el dueño: **ensanchar el área de juego en teléfonos alargados** (ancho lógico variable, de 960 a ~1170, para llenar 19,5:9); joystick y botones pueden ocupar el espacio ganado sin tapar la arena. La opción de solo mover controles a las franjas queda descartada. (3) Incluir una fuente propia con licencia libre para que las métricas sean iguales en todos los dispositivos. (4) Rehacer las rejillas densas (árbol, Archivo) con zoom o paginación.
 - **Archivos.** `src/mobile.js`, `src/main.js`, `src/hud.js`, `src/fusion.js`, `src/boss.js`, `src/tree.js`, `src/panels.js`, `index.html`, `studio/assets/ASSETS.md`.
-- **Responsable.** `ux-designer` con Opus 5.5, esfuerzo alto (sube a Fable si se elige la vía a, que toca todo el HUD). Implementa `programmer` con Sonnet 5.5, esfuerzo alto. Apoyo: `asset-scout` (Haiku) busca la fuente; `performance-engineer` vigila el coste.
+- **Responsable.** `ux-designer` con Opus 5.5, esfuerzo alto (con Fable para el diseño de la vía elegida, que toca todo el HUD). Implementa `programmer` con Sonnet 5.5, esfuerzo alto. Apoyo: `asset-scout` (Haiku) busca la fuente; `performance-engineer` vigila el coste.
 - **Dependencias.** T-F0-12.
 - **Aceptación.** `textcheck` no encuentra texto por debajo de los mínimos en ninguna pantalla a 844x390 y 740x360; el dueño lee las 15 frases de la hoja sin acercar el móvil.
 - **Pruebas.** Ampliar `textcheck.js` a combate y a dos tamaños de pantalla.
-- **Riesgo y reversión.** La vía (a) puede romper posiciones fijas en muchas pantallas: hacerla detrás de un ajuste y por pantallas. Revertir por commit.
-- **Tamaño.** L. **Decisión del dueño.** Sí: vía (a) o (b).
+- **Riesgo y reversión.** La vía elegida puede romper posiciones fijas en muchas pantallas: hacerla detrás de un ajuste y por pantallas. Revertir por commit.
+- **Tamaño.** L. **Decisión del dueño.** Resuelta: ensanchar el área de juego.
 
 #### T-F1-09 Respuesta física y sonora en los momentos clave
 - **Objetivo y por qué.** Subir de nivel, fusionar y romper una parte de jefe deben sentirse. Es barato y aumenta el placer del bucle.
@@ -490,16 +482,9 @@ Meta de la fase: que un jugador nuevo esté combatiendo en menos de un minuto, e
 - **Riesgo y reversión.** Molestia: ajuste para apagarlo.
 - **Tamaño.** S. **Decisión del dueño.** Ninguna.
 
-#### T-F1-10 Evaluar una expedición corta para sesiones de móvil
-- **Objetivo y por qué.** La partida mínima dura 7 minutos más la aldea. En portales y en móvil, muchas sesiones son de 3-5 minutos.
-- **Pasos.** (1) Diseñar una "Incursión" de 4 minutos con jefe reducido o minijefe y botín proporcional. (2) Simular su efecto en la economía. (3) Prototipo detrás de `?len=4`. (4) Decidir con datos de T-F1-01.
-- **Archivos.** `src/loot.js` (`L.DUR`), `src/main.js`, `src/boss.js`, `src/panels.js`.
-- **Responsable.** `balance-designer` con Fable 5.2, esfuerzo medio. Implementa `programmer` con Sonnet 5.5.
-- **Dependencias.** T-F0-05, T-F1-01.
-- **Aceptación.** Botín por minuto de la Incursión entre el 85 % y el 100 % del de la Rápida; no desbloquea Peligro.
-- **Pruebas.** Fila nueva en las pruebas de duraciones.
-- **Riesgo y reversión.** Convertirse en la forma óptima de farmear: por eso el tope de botín por minuto. Es una fila de tabla.
-- **Tamaño.** M. **Decisión del dueño.** Sí: si quiere un modo corto.
+#### T-F1-10 Expedición corta de 4 minutos (DESCARTADA)
+- **Estado.** Descartada por el dueño el 2026-11-13: no habrá modo corto de 4 minutos. No se diseña ni se prototipa (`?len=4`). La tarea no cuenta en el plan.
+- **Nota.** Si los datos de T-F1-01 mostraran sesiones muy cortas, se puede volver a proponer, pero hace falta una decisión nueva del dueño.
 
 #### T-F1-11 Guardado a prueba de pérdidas
 - **Objetivo y por qué.** Perder el progreso es la forma más segura de perder al jugador. Hoy depende de un único `localStorage`.
@@ -518,7 +503,7 @@ Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas
 
 #### T-F2-01 Banco de balance fiable
 - **Objetivo y por qué.** Las mediciones actuales tienen n=12 y un ruido de +-30 s; el bot llega casi siempre al jefe, así que no distingue cambios. Sin un instrumento mejor, el balance final es opinión.
-- **Pasos.** (1) `balance-designer` define la matriz: 6 biomas x Peligro I-V x 3 equipos (sin armadura, set del tier +1, set del tier +3) x 2 perfiles de bot (torpe y hábil). (2) Bot que esquiva telegrafías y recoge gemas, con habilidad regulable. (3) Ejecución por lotes con semillas fijas, n >= 30 por celda, intervalo de confianza. (4) Salida en CSV y resumen en Markdown. (5) Métricas: victoria, vida mínima, tiempo de pelea, daño evitado, muerte por fuente.
+- **Pasos.** (1) `balance-designer` define la matriz: 6 biomas x Peligro I-V x 3 equipos (sin armadura, set del tier +1, set del tier +3) x 2 perfiles de bot (torpe y hábil). (2) Bot que esquiva telegrafías y recoge gemas, con habilidad regulable. (3) Ejecución por lotes con semillas fijas, n >= 30 por celda, intervalo de confianza. (4) Salida en CSV y resumen en Markdown. (5) Métricas: victoria, vida mínima, tiempo de pelea, daño evitado, muerte por fuente. (6) La salida compara cada celda con el objetivo de victorias del dueño por Peligro (sección "Decisiones del dueño"): I 50 %, II 40 %, III 30 %, IV 20 %, V 10 %.
 - **Archivos.** `tools/card-swarm-balance/` (nuevo), reutiliza `play_bot.js`, `boss_fight.js`, `dodge_fusion.js`.
 - **Responsable.** `tools-engineer` con Sonnet 5.5, esfuerzo alto. Diseño del experimento: `balance-designer` con Fable 5.2, esfuerzo alto. Lotes y tablas: `qa-tester` con Haiku 5.5.
 - **Dependencias.** T-F0-01, T-F0-05.
@@ -529,14 +514,14 @@ Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas
 
 #### T-F2-02 Calibrar el daño por zona y la armadura
 - **Objetivo y por qué.** Hay que demostrar que con la armadura de su tier el bioma sigue siendo un reto, y que sin ella es claramente más duro. Hoy `zoneDmg` x1,18-x1,44 es valor de diseño sin medir.
-- **Pasos.** (1) Fijar objetivos por celda, por ejemplo victoria del bot hábil en Peligro I entre el 55 % y el 70 % con set del tier +1, y al menos 20 puntos menos sin armadura. (2) Barrer `?zdmg=`, `?armk=`, `?armcap=`. (3) Proponer valores y aplicarlos. (4) Repetir el banco.
+- **Pasos.** (1) Objetivos por Peligro fijados por el dueño para un jugador competente: I 50 %, II 40 %, III 30 %, IV 20 %, V 10 % de victorias. `balance-designer` traduce esas cifras a objetivos del bot hábil por celda (con el set del tier del bioma; el bot hábil es un sustituto del jugador competente y se contrasta con T-F2-06) y propone una tolerancia. Sin armadura debe ser claramente más difícil (diferencia mínima a proponer). (2) Barrer `?zdmg=`, `?armk=`, `?armcap=`. (3) Proponer valores y aplicarlos. (4) Repetir el banco.
 - **Archivos.** `src/armor.js`, `src/armor_data.js`, README (tabla de valores).
 - **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto. Aplica `programmer` con Haiku 5.5 (cambio de constantes).
 - **Dependencias.** T-F2-01.
-- **Aceptación.** Las 6 x 3 celdas de Peligro I quedan dentro de los objetivos acordados.
+- **Aceptación.** Las celdas de Peligro I-V con el equipo de su tier quedan dentro de 50/40/30/20/10 % y la tolerancia acordada; sin armadura quedan por debajo.
 - **Pruebas.** Actualizar las comprobaciones de `armor` y `armor2` que fijan cifras.
 - **Riesgo y reversión.** Sobreajustar al bot. Los valores son perillas: revertir es restaurar la tabla.
-- **Tamaño.** M. **Decisión del dueño.** Sí: los objetivos de victoria por nivel (qué significa "reto").
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: objetivos 50/40/30/20/10 % para Peligro I-V.
 
 #### T-F2-03 Peligro IV y V de Karceron, Letea y Cenizar
 - **Objetivo y por qué.** Están por debajo del objetivo de dificultad. El tramo alto es lo que retiene al jugador experto.
@@ -544,10 +529,10 @@ Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas
 - **Archivos.** `src/boss.js` (`PELIGRO`), `src/boss_karceron.js`, `src/boss_letea.js`, `src/boss_cenizar*.js`.
 - **Responsable.** `balance-designer` con Fable 5.2, esfuerzo alto. Implementa `programmer` con Sonnet 5.5. Revisión de justicia de patrones: `game-designer` con Opus 5.5.
 - **Dependencias.** T-F2-01.
-- **Aceptación.** Victoria del bot hábil en Peligro V por debajo del umbral acordado en los tres jefes; ninguna telegrafía por debajo de la regla `250 + 1000 * px / 190` ms.
+- **Aceptación.** Victoria del bot hábil en Peligro IV y V dentro de los objetivos del dueño (20 % y 10 %, con la tolerancia de T-F2-02) en los tres jefes; ninguna telegrafía por debajo de la regla `250 + 1000 * px / 190` ms.
 - **Pruebas.** Comprobación automática de la regla de esquiva sobre todos los ataques.
 - **Riesgo y reversión.** Dificultad injusta en vez de difícil: revisión de patrones y práctica del dueño. Revertir por commit.
-- **Tamaño.** M. **Decisión del dueño.** Ver los resultados antes de publicar.
+- **Tamaño.** M. **Decisión del dueño.** Objetivos resueltos (IV 20 %, V 10 %); ver los resultados antes de publicar.
 
 #### T-F2-04 Corrosión y topes de daño a jefes
 - **Objetivo y por qué.** El Virote corrosivo sube el daño a jefes; hay que saber cuánto y si rompe los topes por uso.
@@ -569,14 +554,14 @@ Meta de la fase: demostrar con datos que el juego es un reto en todos los biomas
 - **Aceptación.** Informe con horas por hito para jugador torpe, medio y hábil; el final cae entre 12 y 20 horas para el jugador medio (rango a confirmar).
 - **Pruebas.** Pruebas unitarias del simulador con tablas pequeñas.
 - **Riesgo y reversión.** El simulador simplifica: contrastar con `playMs` del dueño. No toca el juego.
-- **Tamaño.** M. **Decisión del dueño.** Confirmar la meta de horas.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: la meta de ~16 horas se mantiene.
 
 #### T-F2-06 Playtest humano estructurado
-- **Objetivo y por qué.** El bot no sabe si algo es divertido o injusto. El dueño sí, pero ahora juega inmortal.
+- **Objetivo y por qué.** El bot no sabe si algo es divertido o injusto. El dueño sí, pero ahora juega inmortal (se retira al final del plan, T-FIN-01; para el playtest usa `?god=0`).
 - **Pasos.** (1) Guion de 5 sesiones: cuenta nueva hasta el Pastor, Karceron con armadura, un Peligro III, Cenizar, y una libre. (2) Tras cada una, 6 preguntas fijas y exportación de estadísticas. (3) `balance-designer` cruza las respuestas con el banco.
 - **Archivos.** `studio/docs/PLAYTEST.md` (nuevo).
 - **Responsable.** `qa-tester` con Sonnet 5.5, esfuerzo medio. Lectura: `balance-designer` con Fable 5.2.
-- **Dependencias.** T-F0-03, T-F1-01.
+- **Dependencias.** T-F0-03, T-F1-01. Mientras la inmortalidad siga por defecto (hasta T-FIN-01), las sesiones se juegan con `?god=0`.
 - **Aceptación.** 5 sesiones registradas con causa de cada muerte y nota de diversión.
 - **Pruebas.** No aplica.
 - **Riesgo y reversión.** Una sola persona no es una muestra: sirve para detectar problemas, no para afinar décimas.
@@ -610,14 +595,14 @@ Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con u
 
 #### T-F3-01 Decisión de modelo, privacidad y edad
 - **Objetivo y por qué.** Todo lo demás de la fase depende de qué se monetiza, dónde y con qué obligaciones.
-- **Pasos.** (1) Confirmar en la documentación oficial los datos de la sección 2 marcados como no verificados. (2) Redactar una política de privacidad breve y la ficha de datos. (3) Fijar el público objetivo (no dirigido a menores). (4) Cerrar la lista de recompensas permitidas (sección 2.3).
+- **Pasos.** (1) Confirmar en la documentación oficial los datos de la sección 2 marcados como no verificados. (2) Redactar una política de privacidad breve y la ficha de datos. (3) Fijar el público objetivo (no dirigido a menores). (4) Cerrar la lista de recompensas permitidas (sección 2.3). (5) Guía paso a paso para que el dueño cree y gestione sus cuentas (itch.io, CrazyGames/Poki, Play Console) en `studio/docs/guias/`, sin credenciales ni datos de cobro en el repositorio.
 - **Archivos.** `studio/docs/MONETIZACION.md` (nuevo), `games/card-swarm/privacy.html` (nuevo).
 - **Responsable.** `monetization-analyst` con Opus 5.5, esfuerzo alto (sube a Fable para la recomendación final: afecta a dinero y privacidad).
 - **Dependencias.** T-F1-01 con al menos 2 semanas de datos, si se quiere decidir con cifras.
 - **Aceptación.** Documento con decisión firmada por el dueño, política publicada y lista de recompensas cerrada.
 - **Pruebas.** No aplica.
 - **Riesgo y reversión.** Decidir sin datos: por eso la fase 1 va antes. Es un documento.
-- **Tamaño.** M. **Decisión del dueño.** Sí: modelo, exclusividad con Poki, cuentas y datos de cobro. **Aviso:** conviene que un profesional revise lo legal; este plan no es asesoría jurídica.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta en lo principal: no hay nada vetado (donación, anuncios recompensados, compra de apoyo); exclusividad con Poki solo si pagan muy bien; las cuentas las crea y es titular el dueño (con guías del estudio, nunca credenciales). Los principios de la sección 2 (nada de pagar por ganar, anuncios solo si el jugador los pide y nunca en combate, sin azar de pago) siguen vigentes; revivir en combate y saltar jefes siguen fuera salvo nueva indicación. Falta: datos de cobro (los pone el dueño). **Aviso:** conviene que un profesional revise lo legal; este plan no es asesoría jurídica.
 
 #### T-F3-02 Capa de plataforma
 - **Objetivo y por qué.** Un único punto donde el juego habla con Pages, itch, cada portal o la tienda, para no ensuciar el código con SDK distintos.
@@ -650,7 +635,7 @@ Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con u
 - **Aceptación.** Con idioma `en`, la primera sesión completa y los menús principales no muestran ninguna cadena en español; `textcheck` pasa en los dos idiomas.
 - **Pruebas.** Comprobación de claves sin traducir y de desbordes de texto por idioma.
 - **Riesgo y reversión.** Cambio muy extenso: hacerlo por archivos, con la batería entre cada uno. El idioma por defecto sigue siendo español.
-- **Tamaño.** L. **Decisión del dueño.** Sí: si quiere inglés y si los nombres propios se traducen.
+- **Tamaño.** L. **Decisión del dueño.** Resuelta: inglés para empezar y varios idiomas a futuro (la capa de i18n debe admitir más de dos). Pendiente de aclarar: si los nombres de personajes y cartas se traducen (la respuesta no lo cubría) y si el español sigue siendo el idioma por defecto.
 
 #### T-F3-05 Builds por destino
 - **Objetivo y por qué.** Cada destino pide cosas distintas: sin service worker en portales, sin enlaces externos, zip para itch.
@@ -672,29 +657,29 @@ Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con u
 - **Aceptación.** Página publicada; el juego carga y guarda dentro del marco de itch en móvil y escritorio.
 - **Pruebas.** Prueba manual en el marco de itch.
 - **Riesgo y reversión.** Primera impresión pobre si se publica antes de F1: respetar las dependencias. La página se puede ocultar.
-- **Tamaño.** S. **Decisión del dueño.** Sí: crear la cuenta y aprobar la página.
+- **Tamaño.** S. **Decisión del dueño.** Resuelta: la cuenta la crea y es titular el dueño; el estudio prepara una guía paso a paso (sin credenciales). Falta que la cree y apruebe la página.
 
 #### T-F3-07 Envío a portales web
 - **Objetivo y por qué.** Es la vía con más tráfico para un HTML5 y la que de verdad puede dar ingresos.
-- **Pasos.** (1) Adaptador de CrazyGames y envío en lanzamiento básico. (2) Corregir lo que pida su revisión. (3) Solicitud a Poki con build y cifras de retención. (4) Decidir exclusividad según las respuestas.
+- **Pasos.** (1) Adaptador de CrazyGames y envío en lanzamiento básico. (2) Corregir lo que pida su revisión. (3) Solicitud a Poki con build y cifras de retención. (4) Exclusividad: solo se acepta una oferta de Poki si paga muy bien; `monetization-analyst` evalúa cada oferta con cifras y el dueño decide. (5) Guía de alta en cada portal en `studio/docs/guias/`.
 - **Archivos.** `src/platform_crazygames.js`, `src/platform_poki.js`.
 - **Responsable.** `release-manager` con Sonnet 5.5, esfuerzo medio. Apoyo: `programmer` (adaptadores), `monetization-analyst` (términos, con Opus 5.5).
 - **Dependencias.** T-F3-02, T-F3-03, T-F3-04, T-F3-05.
 - **Aceptación.** Juego aceptado en al menos un portal y eventos del SDK validados en su herramienta de pruebas.
 - **Pruebas.** Las de `platform` con el SDK real en su modo de pruebas.
 - **Riesgo y reversión.** Rechazo: es información útil; se corrige y se reenvía. Retirar el juego del portal.
-- **Tamaño.** M. **Decisión del dueño.** Sí: cuentas, términos y exclusividad.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: cuentas del dueño con guía del estudio; exclusividad con Poki solo si pagan muy bien. Los términos de cada portal los acepta el dueño.
 
 #### T-F3-08 Identidad y material de marca
 - **Objetivo y por qué.** Sin capturas, icono cuidado y un vídeo corto, nadie hace clic.
-- **Pasos.** (1) Comprobar que "Swarm Hand" no choca con otro juego o marca. (2) Guía de una página: logotipo, paleta, tono. (3) 8 capturas y un vídeo de 20-30 s grabados con los bots. (4) Textos corto y largo en español e inglés.
+- **Pasos.** (1) Comprobar que "Swarm Hand" no choca con otro juego o marca (el nombre ya es definitivo; esto solo detecta un conflicto legal para avisar). (2) Guía de una página: logotipo, paleta, tono. (3) 8 capturas y un vídeo de 20-30 s grabados con los bots. (4) Textos corto y largo en español e inglés.
 - **Archivos.** `studio/docs/marketing/`, `games/card-swarm/icons/`.
 - **Responsable.** `art-director` con Opus 5.5, esfuerzo medio, para la guía y la selección; `marketing-manager` con Sonnet 5.5 para textos y montaje; capturas con Haiku 5.5.
 - **Dependencias.** T-F0-07, T-F1-08.
 - **Aceptación.** Carpeta con material listo para itch y portales, aprobada por el dueño.
 - **Pruebas.** No aplica.
 - **Riesgo y reversión.** Nombre en conflicto: mejor saberlo antes de publicar.
-- **Tamaño.** M. **Decisión del dueño.** Sí: nombre definitivo y aprobación del material.
+- **Tamaño.** M. **Decisión del dueño.** Resuelta: "Swarm Hand" es el nombre definitivo (si la comprobación del paso 1 encuentra un conflicto, se informa al dueño; no se renombra por cuenta propia). Falta la aprobación del material.
 
 #### T-F3-09 Evaluar la Play Store con TWA
 - **Objetivo y por qué.** Tener presencia en tienda puede valer la pena, pero cuesta dinero, tiempo y obligaciones. Se decide con datos del portal.
@@ -705,7 +690,7 @@ Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con u
 - **Aceptación.** Informe con costes, plazos y recomendación; prototipo instalable en un dispositivo.
 - **Pruebas.** Instalación en el móvil del dueño.
 - **Riesgo y reversión.** Gastar en una cuenta que no se usa: por eso primero el informe.
-- **Tamaño.** M. **Decisión del dueño.** Sí: pagar la cuenta de desarrollador y conseguir 12 testers.
+- **Tamaño.** M. **Decisión del dueño.** La cuenta la crea y es titular el dueño (guía del estudio). Sigue pendiente de decidir: pagar la cuenta de desarrollador y conseguir 12 testers.
 
 #### T-F3-10 Compra de apoyo y cosméticos (solo diseño)
 - **Objetivo y por qué.** Preparar una compra única honesta para cuando haya tienda: quitar anuncios y un lote cosmético.
@@ -716,7 +701,7 @@ Meta de la fase: sacar el juego de GitHub Pages hacia donde hay jugadores, con u
 - **Aceptación.** Especificación aprobada; nada se implementa hasta T-F3-09.
 - **Pruebas.** No aplica.
 - **Riesgo y reversión.** Ninguno.
-- **Tamaño.** S. **Decisión del dueño.** Sí: si quiere vender algo y qué.
+- **Tamaño.** S. **Decisión del dueño.** La compra de apoyo no está vetada; falta decidir qué incluye.
 
 ### F4. Contenido y eventos en vivo (6 tareas)
 
@@ -790,7 +775,22 @@ Meta de la fase: dar motivos para seguir jugando después del final. Solo empiez
 
 ---
 
-## 6. Preguntas que solo el dueño puede decidir
+### Cierre del plan (1 tarea)
+
+#### T-FIN-01 Retirar la inmortalidad por defecto
+- **Objetivo y por qué.** El juego es inmortal salvo `?god=0` (`src/main.js:20`) para que el dueño pruebe funcionalidades. Decisión del dueño (2026-11-13): se retira AL FINAL del plan. Mientras tanto el reto real no se juega por defecto y el balance se valida con `?god=0` (bots y playtest).
+- **Pasos.** (1) `G.god` pasa a valer 0 por defecto. (2) `?god=1` solo se lee con `?dev=1` o en `localhost` (conserva el modo de prueba del dueño). (3) Los bots ya usan `?god=0`/`dev=1`. (4) Revisar que analítica y récords ignoren partidas con `god=1`.
+- **Archivos.** `src/main.js`, `src/save.js`, `tools/card-swarm-bot/*.js`.
+- **Responsable.** `programmer` con Sonnet 5.5, esfuerzo bajo. Revisión: `qa-tester`.
+- **Dependencias.** Todo el plan que el dueño quiera probar con inmortalidad; T-F0-03.
+- **Aceptación.** En URL limpia `G.god === false`; con `?dev=1&god=1` sigue el modo inmortal; la batería pasa.
+- **Pruebas.** Ampliar el grupo `dev` de T-F0-03.
+- **Riesgo y reversión.** **Dudoso, a confirmar con el dueño:** T-F3-06 (itch) y T-F3-07 (portales) publican el juego a jugadores reales. Publicar con inmortalidad por defecto daría una imagen falsa del reto; propuesta: esas publicaciones salen con `god` apagado (perfil de build) o T-FIN-01 se adelanta a antes de T-F3-06. Revertir el commit.
+- **Tamaño.** S. **Decisión del dueño.** Resuelta: se retira al final del plan (la fecha exacta respecto a la publicación queda por confirmar).
+
+---
+
+## 6. Preguntas al dueño (respondidas el 2026-11-13; ver "Decisiones del dueño")
 
 1. **Inmortalidad.** ¿Desde cuándo quieres jugar sin ella? Mientras esté puesta no se puede validar el reto (T-F0-03).
 2. **Marlo.** ¿Mapache o corderito? (T-F0-07)
@@ -810,13 +810,47 @@ Meta de la fase: dar motivos para seguir jugando después del final. Solo empiez
 16. **Meta de horas.** ¿Siguen siendo ~16 horas hasta el final? (T-F2-05)
 17. **Permisos.** ¿Permites corregir `ceo.md` y `programmer.md` para quitar la mención a Phaser y listar a todo el equipo? (T-F0-09)
 
+## Decisiones del dueño (2026-11-13)
+
+Respuestas a las 17 preguntas de la sección 6 y qué tareas ajustan.
+
+| # | Tema | Decisión | Tareas afectadas |
+|---|---|---|---|
+| 1 | Inmortalidad | Se retira AL FINAL del plan; por ahora se queda para probar funcionalidades. En T-F0-03 solo queda cerrar los parámetros de depuración (`give`, `pf`, `cmul`, `reset`) tras `?dev=1`; `?god` no se toca. Si eso rompe lo que el dueño usa para probar, se avisa y se aplaza. | T-F0-03 (reducida), T-FIN-01 (nueva), T-F2-06 |
+| 2 | Marlo | Es MAPACHE. Se corrige el texto/lore que dice corderito; el sprite no se rehace. | T-F0-07 |
+| 3 | Créditos | Nombres aprobados, incluido el bloque "Nuestro jefe supremo". | T-F0-08 (resuelta) |
+| 4 | Qué es "reto" | Objetivo de victorias de un jugador competente: Peligro I 50 %, II 40 %, III 30 %, IV 20 %, V 10 %. Primero respondió "50, 40, 30, 20" (cuatro cifras para tres niveles) y después aclaró la serie completa. Ya no está pendiente. | T-F2-01, T-F2-02, T-F2-03 |
+| 5 | Móviles lentos | Menos enemigos pero más duros y un poco más rápidos. | T-F0-05 |
+| 6 | Intro | NO se acorta la primera vez. | T-F1-02 |
+| 7 | Pantalla | Ensanchar el área de juego en teléfonos alargados. | T-F1-08 |
+| 8 | Modo corto | NO: descartado. | T-F1-10 (descartada) |
+| 9 | Analítica | Anónima, con envío a un servicio y aviso de privacidad. Falta elegir el servicio. | T-F1-01, T-F3-01 |
+| 10 | Ingresos | Nada vetado: donación, anuncios recompensados y compra de apoyo. Los principios de la sección 2 siguen. | T-F3-01, T-F3-03, T-F3-10 |
+| 11 | Idioma | Inglés para empezar; a futuro varios idiomas. Sin aclarar: nombres propios y cartas, e idioma por defecto. | T-F3-04 |
+| 12 | Cuentas | Las crea y es titular el dueño; el estudio prepara guías paso a paso, nunca credenciales. | T-F3-01, T-F3-06, T-F3-07, T-F3-09 |
+| 13 | Poki | Exclusividad solo si pagan muy bien. | T-F3-07 |
+| 14 | Nombre | "Swarm Hand" es definitivo. | T-F3-08 |
+| 15 | Ember Flock y clásico | Se retiran del sitio y de `main`. Hecho. | T-F0-13 (hecha), T-F0-09 |
+| 16 | Meta de horas | ~16 horas, se mantiene. | T-F2-05 |
+| 17 | Permisos | Concedido para corregir `ceo.md` y `programmer.md`. Hecho. | T-F0-09 |
+
+Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducción de nombres propios e idioma por defecto (11), datos de cobro (12), y si se publica en itch o portales con la inmortalidad aún activa (ver T-FIN-01).
+
+### Aclaraciones posteriores del dueño (2026-11-13)
+
+- **Inmortalidad y publicación.** Las versiones que se publiquen en itch.io, portales o tienda (T-F3-05, T-F3-06, T-F3-07, T-F3-09) salen con la inmortalidad APAGADA. En GitHub Pages se mantiene activa para las pruebas del dueño hasta T-FIN-01.
+- **Inglés (T-F3-04).** Se traducen también los nombres de personajes y cartas. El español sigue siendo el idioma por defecto.
+- **Servicio de analítica (T-F1-01).** Sigue pendiente: `monetization-analyst` trae opciones comparadas para que el dueño elija.
+
 ## 7. Los 5 primeros pasos recomendados
+
+Hecho el 2026-11-13: T-F0-13 (retirada de Ember Flock y del clásico), T-F0-09 (salvo los conteos del README) y la resolución de T-F0-08. Decididas pero con trabajo pendiente: T-F0-07 (texto de Marlo).
 
 1. **T-F0-01**: reparar las herramientas de prueba. Hoy no corre ninguna y todo lo demás depende de ellas.
 2. **T-F0-12**: que el dueño haga la sesión guiada de 20 minutos en su móvil. Es la mayor incógnita y no cuesta desarrollo.
-3. **T-F0-02 y T-F0-03**: pruebas en cada PR y retirar la inmortalidad por defecto, en ese orden.
-4. **T-F0-05**: simulación reproducible y dificultad igual en todos los dispositivos. Desbloquea el balance, el reto diario y los récords.
-5. **T-F1-01 y T-F1-02**: analítica mínima y primera sesión en menos de 60 segundos. A partir de ahí cada cambio se puede medir.
+3. **T-F0-02 y T-F0-03**: pruebas en cada PR y cerrar los parámetros de depuración (la inmortalidad se queda hasta T-FIN-01), en ese orden.
+4. **T-F0-05**: simulación reproducible y dificultad equivalente en todos los dispositivos (menos enemigos, más duros y rápidos en móviles lentos). Desbloquea el balance, el reto diario y los récords.
+5. **T-F1-01 y T-F1-02**: analítica mínima (con aviso de privacidad) y la primera sesión sin rodeos tras la intro completa. A partir de ahí cada cambio se puede medir.
 
 ## 8. Qué quedó sin revisar
 
@@ -825,4 +859,4 @@ Meta de la fase: dar motivos para seguir jugando después del final. Solo empiez
 - Lectura línea a línea de los ~17.000 renglones de arte procedural y de los archivos de sonido: solo se revisó su estructura y sus puntos de contacto.
 - Balance de Peligro IV-V y de Corrosión: no se volvió a medir.
 - Documentación oficial de CrazyGames y Poki: no accesible desde esta sesión.
-- `games/survival-lamb` y `games/card-swarm-clasico`: solo estructura y estado, no su código.
+- `games/survival-lamb` y `games/card-swarm-clasico`: solo estructura y estado, no su código (retirados de `main` el 2026-11-13).

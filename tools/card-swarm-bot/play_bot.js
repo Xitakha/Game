@@ -3,7 +3,7 @@
 // Esquiva alejándose de los enemigos (mismo bot de movimiento que baseline_bot.js), elige cartas (prioriza fusiones mientras haya hueco de poder, luego refuerzos),
 // usa AUTO (F) para los poderes y reporta supervivencia / victoria / poderes usados. all=1 desbloquea todas las cartas (si no: cuenta vacía, solo las cartas iniciales).
 // Con sinPoderes=1 no fusiona nunca (las cartas quedan como infusiones y armas auxiliares).
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const N = +process.argv[2] || 3, CM = process.argv[3] || '', NOACT = process.argv[4] === '1', base = process.argv[5] || 'http://localhost:8811', SPEED = +process.argv[6] || 4;
 const ALL = process.argv[7] === '1', EXTRA = process.argv[8] || '', PAR = +process.env.PAR || 1;   // PAR=3: partidas en paralelo (una página por partida)
 const BOT = () => {
@@ -46,7 +46,7 @@ const BOT = () => {
   }, 80);
 };
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const res = []; let next = 0;
   async function one(g) {
     const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];

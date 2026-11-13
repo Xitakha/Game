@@ -1,6 +1,6 @@
 # Swarm Hand - Diseño v8: la Armera (Herrero de armaduras), defensa y más horas
 
-Estado: DISEÑO / PLAN, sin código. Aplica a la versión Fusión (`games/card-swarm`); el clásico (`games/card-swarm-clasico`) no se toca. Amplía `DESIGN-v3-aldea.md` (Grum, PF, Rango de forja), `DESIGN-v4-jefes.md` (jefes, trofeos, Peligro), `DESIGN-v5-biomas.md` (familias, Tundra, Panal) y `DESIGN-fusion.md`/`README.md` (balance medido con bots).
+Estado: DISEÑO / PLAN, sin código. Aplica a la versión Fusión (`games/card-swarm`); el clásico ya no está en `main` (ver nota en `README.md`). Amplía `DESIGN-v3-aldea.md` (Grum, PF, Rango de forja), `DESIGN-v4-jefes.md` (jefes, trofeos, Peligro), `DESIGN-v5-biomas.md` (familias, Tundra, Panal) y `DESIGN-fusion.md`/`README.md` (balance medido con bots).
 Pedido del dueño: (1) subir el juego de ~10 h a algo más; (2) un herrero nuevo que fabrique ARMADURAS con partes de monstruos; (3) el oso actual sigue como está salvo sugerencia; (4) reajustar el balance. Las cifras son punto de partida y se calibran con los bots (`tools/card-swarm-bot/`). Las horas son estimaciones de modelo sobre las ~10 h que da el dueño (no hay telemetría de tiempo de juego en el código: se propone una, ver 6.3).
 
 ---

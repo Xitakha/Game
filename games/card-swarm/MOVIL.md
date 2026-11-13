@@ -9,7 +9,6 @@
 ## 2. URL final
 - Índice: https://xitakha.github.io/Game/
 - Swarm Hand: https://xitakha.github.io/Game/card-swarm/
-- Ember Flock: https://xitakha.github.io/Game/survival-lamb/
 
 Todas las rutas son relativas, así que funciona bajo la subruta `/Game/` (manifest y service worker incluidos, ámbito `/Game/card-swarm/`).
 
@@ -29,7 +28,6 @@ Ajustes -> **Exportar guardado** (texto + archivo, copiar o compartir) e **Impor
 - Vertical: solo muestra el aviso "gira el teléfono" (no hay layout vertical).
 - iOS Safari: sin pantalla completa dentro del navegador y el audio solo arranca tras el primer toque; iOS puede borrar los datos de sitios que no se abren en ~7 días si no está instalada: exporta tu guardado.
 - Calidad Auto baja efectos y topes de enemigos/proyectiles (hasta -25 % de enemigos vivos en Baja) si los fps bajan de 45; no vuelve a subir sola (se recuerda entre sesiones; vuelve a Auto desde Ajustes).
-- Ember Flock solo tiene viewport y escalado básicos: no tiene controles táctiles.
 - Para probar en local con service worker: `?nosw=1` lo desactiva y borra su caché (desarrollo). Tras tocar archivos del juego ejecuta `python3 tools/card-swarm-pwa/stamp.py` (el workflow lo hace solo).
 
 ## 7. Prueba termica de 15 min en movil real (con `?perf=1`)

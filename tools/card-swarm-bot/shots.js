@@ -1,8 +1,8 @@
 // Capturas JPEG pequeñas (844x390 táctil) para studio/docs/capturas-fusion/. Uso: node tools/card-swarm-bot/shots.js [base]
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const path = require('path'), base = process.argv[2] || 'http://localhost:8811', out = path.join(__dirname, '..', '..', 'studio', 'docs', 'capturas-fusion');
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const mk = async url => { const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx; pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push(e.message)); await pg.goto(`${base}/index.html?nosw=1&${url}`); await pg.waitForTimeout(900); return pg; };
   const shot = (pg, n) => pg.screenshot({ path: path.join(out, n), type: 'jpeg', quality: 45 });
   let pg = await mk('reset=1&god=1'); await pg.waitForTimeout(700); await shot(pg, '1_inicio_infusion.jpg');

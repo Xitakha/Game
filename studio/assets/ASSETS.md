@@ -3,6 +3,8 @@
 | Recurso | Tipo | Fuente (URL) | Autor | Licencia | Usado en |
 |---|---|---|---|---|---|
 
+> Nota (2026-11-13): `games/survival-lamb` (Ember Flock) se retiró de `main`; sigue en el historial de git. Las dos secciones siguientes son históricas.
+
 ## survival-lamb — intento de descarga (2026-10-13)
 Resultado: NINGÚN recurso descargado. El proxy de salida (política de organización) rechaza CONNECT (403) a:
 kenney.nl, cdn.kenney.nl, opengameart.org, static.opengameart.org, itch.io, freesound.org, fonts.google.com, pixabay.com, craftpix.net, web.archive.org, cdn.jsdelivr.net, codeberg.org.

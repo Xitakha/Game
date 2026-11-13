@@ -1,11 +1,11 @@
 // Genera los iconos PWA de Swarm Hand por código (canvas de Chromium) y los guarda como PNG pequeños en games/card-swarm/icons/.
 // Uso: node make-icons.js   (usa el Playwright/Chromium del estudio)
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const fs = require('fs'), path = require('path');
 const OUT = path.join(__dirname, '..', '..', 'games', 'card-swarm', 'icons');
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const b = await launch({ args: ['--no-sandbox'] });
   const pg = await b.newPage();
   const jobs = [['icon-192.png', 192, 'any'], ['icon-512.png', 512, 'any'], ['maskable-192.png', 192, 'mask'], ['maskable-512.png', 512, 'mask'], ['apple-touch-icon.png', 180, 'apple']];
   for (const [name, size, kind] of jobs) {

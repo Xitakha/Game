@@ -1,6 +1,6 @@
 // Línea base: el MISMO bot de esquiva sobre el juego CLASICO (games/card-swarm-clasico servido en otro puerto), para comparar con play_bot.js.
 //   python3 tools/serve.py card-swarm-clasico 8812 &   node tools/card-swarm-bot/baseline_bot.js <n> [base=http://localhost:8812]
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const N = +process.argv[2] || 3, base = process.argv[3] || 'http://localhost:8812';
 const PAR = +process.env.PAR || 1;
 const BOT = () => {
@@ -28,7 +28,7 @@ const BOT = () => {
   }, 80);
 };
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const res = []; let next = 0;
   async function one(g) {
     const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage();

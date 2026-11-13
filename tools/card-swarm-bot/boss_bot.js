@@ -1,7 +1,7 @@
 // Bot de jefes del prototipo Fusión (copia adaptada del boss-bot del original, sin tocarlo): pelea contra cada jefe con 4 poderes fijados por URL y el
 // mismo bot de esquiva que play_bot.js. Dispara los poderes con AUTO (F); con sinPoderes=1 no se dan poderes (solo básico + infusiones + armas auxiliares).
 //   node tools/card-swarm-bot/boss_bot.js <n_por_jefe> [jefes=pastor,karceron,letea,yarlak,melaria,cenizar] [sinPoderes=0|1] [base] [speed=4] [extra=&cmul=..]
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 const N = +process.argv[2] || 2, BOSSES = (process.argv[3] || 'pastor,karceron,letea,yarlak,melaria,cenizar').split(','), NOACT = process.argv[4] === '1';
 const base = process.argv[5] || 'http://localhost:8811', SPEED = +process.argv[6] || 4, EXTRA = process.argv[7] || '';
 // Poderes y mano por jefe (sinergias con sus debilidades, ver DESIGN-v4..v7 y card-swarm/DESIGN-fusion.md)
@@ -34,7 +34,7 @@ const BOT = () => {
   }, 80);
 };
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const all = {};
   const jobs = []; for (const bo of BOSSES) { all[bo] = []; for (let g = 0; g < N; g++) jobs.push([bo, g]); }
   let nj = 0;

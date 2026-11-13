@@ -1,6 +1,6 @@
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+const { launch } = require('../lib/browser.js');
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const b = await launch({ args: ['--no-sandbox'] });
   for (let r = 0; r < 2; r++) for (const v of ['flat', 'iso']) {
     const pg = await b.newPage({ viewport: { width: 960, height: 540 } });
     await pg.goto(`http://localhost:${process.argv[2] || 8766}/index.html?view=${v}&reset=1&god=1&t=200&hand=spark:3,dart:3,shard:2,dagger:2,fang:2`);
