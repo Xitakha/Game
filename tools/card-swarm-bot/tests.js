@@ -85,7 +85,7 @@ async function flow() {
   const r0 = await E(pg, () => G.Cards.offerRect(0)); await tap(pg, r0.x + 100, r0.y + 100);
   let modal = await E(pg, () => G.Cards.off && G.Cards.off.modal && { title: G.Cards.off.modal.title, b: G.Cards.off.modal.buttons.map(x => x.label) });
   ok(modal && /Vapor/.test(modal.title) && /FUSIONAR YA/.test(modal.b[0]) && /conservas/.test(modal.b[0]), 'ventana de fusión visible: ' + (modal && modal.b[0]));
-  const png = await pg.screenshot({ type: 'jpeg', quality: 40 }); fs.writeFileSync(process.env.SHOT_MODAL || '/tmp/claude-0/-home-user-Game/ac8df0e6-87e6-5837-9d6a-fa8dcc4300ed/scratchpad/modal.jpg', png);
+  const png = await pg.screenshot({ type: 'jpeg', quality: 40 }); fs.writeFileSync(process.env.SHOT_MODAL || path.join(os.tmpdir(), 'swarmhand-modal.jpg'), png);
   await sleep(pg, 300); await key(pg, 'Digit1'); await sleep(pg, 300);
   ok(await waitState(pg, 'play'), 'FUSIONAR YA cierra la oferta');
   let s = await E(pg, () => G.Fusion.snapshot());
