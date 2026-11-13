@@ -53,6 +53,7 @@
     else if (cur === 'settings') { if (esc || cl) { cur = 'menu'; return false; } }
     else if (cur === 'cine') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'cine2') { if (esc || cl) { cur = 'cine'; return false; } }
+    else if (cur === 'errlog') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
     else if (esc || cl) return true;
     if (cur === 'vesper') return updVesper();
@@ -65,6 +66,7 @@
     if (cur === 'settings') return updSettings();
     if (cur === 'cine') return updCine();
     if (cur === 'cine2') return updCine2();
+    if (cur === 'errlog') return updErr();
     return true;
   };
   P.draw = function (c) {
@@ -81,6 +83,7 @@
     else if (cur === 'settings') drawSettings(c);
     else if (cur === 'cine') drawCine(c);
     else if (cur === 'cine2') drawCine2(c);
+    else if (cur === 'errlog') drawErr(c);
   };
 
   // ============================================================= VESPER
@@ -880,6 +883,29 @@
     G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 380, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
+  // ---- Informe de errores (diag.js): los últimos 20 errores de este dispositivo; se copian para pegarlos al estudio. No se envía nada.
+  var ER = { copy: { x: 150, y: 368, w: 320, h: 52 }, clear: { x: 490, y: 368, w: 320, h: 52 } };
+  function updErr() {
+    if (onR(ER.copy) && Diag.count()) { Diag.copy().then(function (ok) { st.errMsg = ok ? 'Informe copiado: pégalo donde te lo pidan.' : 'No se pudo copiar: este navegador lo impide.'; }); G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(ER.clear) && Diag.count()) { Diag.clear(); st.errMsg = 'Registro vaciado.'; G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(CB.back)) cur = 'settings';
+    return false;
+  }
+  function drawErr(c) {
+    bg(c, 'INFORME DE ERRORES'); var es = Diag.entries().reverse(), i;
+    G.txt(c, es.length ? es.length + ' errores guardados en este dispositivo (los más nuevos arriba). Versión ' + Diag.build + '.' : 'No hay errores guardados.', 480, 72, 13, '#b4a8c8', 'center');
+    for (i = 0; i < es.length && i < 5; i++) {
+      var e = es[i], y = 92 + i * 50;
+      c.fillStyle = 'rgba(20,12,32,0.7)'; c.fillRect(60, y, 840, 46);
+      G.txt(c, (e.n > 1 ? 'x' + e.n + '  ' : '') + e.msg.slice(0, 80), 72, y + 14, 13, '#ffd2c8', 'left');
+      G.txt(c, (e.src ? e.src + ':' + e.line + '  ' : '') + e.kind + '  ' + e.at.slice(0, 19).replace('T', ' ') + '  ' + (e.ctx && e.ctx.state || ''), 72, y + 33, 12, '#9a8fb0', 'left');
+    }
+    if (es.length > 5) G.txt(c, '... y ' + (es.length - 5) + ' más (van en el informe copiado)', 480, 352, 12, '#9a8fb0', 'center');
+    U.button(c, ER.copy, 'COPIAR INFORME', { size: 18, off: !es.length, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
+    U.button(c, ER.clear, 'VACIAR', { size: 18, off: !es.length, color: '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
+    if (st.errMsg) G.txt(c, st.errMsg, 480, 430, 13, '#9dffb4', 'center');
+    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+  }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
   function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
   var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
@@ -888,7 +914,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    man: { x: 770, y: 64, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -908,6 +934,7 @@
     if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
+    if (onR(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
     if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
@@ -933,6 +960,7 @@
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
+    U.button(c, SB.err, 'Informe de errores', { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
     U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');

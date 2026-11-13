@@ -559,6 +559,7 @@
     G.Hud.draw(ctx);
     drawJoy(ctx);
     if (G.state === 'play') G.Sys.drawBar(ctx);
+    if (window.Diag) Diag.drawNotice(ctx);   // aviso discreto tras un error registrado
   }
 
   // ---------------------------------------------------------------- Bucle
@@ -569,9 +570,11 @@
     try { var sv = G.Save.data.stats; sv.playMs += d; if (sv.playMs - (G._pmSaved || 0) > 30000) { G._pmSaved = sv.playMs; G.Save.save(); } } catch (ep) { /* contador de tiempo de juego (stats.playMs) */ }
     G.Sys.frame(raw);
     var n = 0, maxN = Math.ceil(6 * G.speed);
-    while (acc >= G.STEP && n < maxN) { step(); acc -= G.STEP; n++; }
-    if (n === maxN) acc = 0;
-    draw();
+    try {   // T-F0-11: un fallo en un fotograma se registra (Diag) y el bucle sigue; no se deja la pantalla congelada o en negro
+      while (acc >= G.STEP && n < maxN) { step(); acc -= G.STEP; n++; }
+      if (n === maxN) acc = 0;
+      draw();
+    } catch (ef) { acc = 0; if (window.Diag) Diag.log(ef && ef.message, { kind: 'fotograma', stack: ef && ef.stack }); console.error(ef); }
     requestAnimationFrame(frame);
   }
 

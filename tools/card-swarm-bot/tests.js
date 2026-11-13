@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|diag|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -1081,8 +1081,46 @@ async function manual() {
   await done(pg, 'manual-pausa'); await b.close();
 }
 
+// ---------------------------------------------------------------- Registro de errores en el dispositivo (src/diag.js, T-F0-11)
+async function diag() {
+  console.log('--- diag: captura de error y de promesa rechazada, límite de 20, copia del informe y pantalla en Ajustes');
+  const b = await launch(); const pg = await mk(b, 'reset=1&speed=0');
+  await pg.ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+  ok(await E(pg, () => typeof Diag === 'object' && Diag.count() === 0), 'Diag existe y empieza vacío');
+  // 1. captura: error con archivo y línea, y promesa rechazada
+  await E(pg, () => {
+    window.dispatchEvent(new ErrorEvent('error', { message: 'prueba rota', filename: 'http://x/src/hud.js', lineno: 42, colno: 7, error: new Error('prueba rota') }));
+    window.dispatchEvent(new PromiseRejectionEvent('unhandledrejection', { promise: Promise.resolve(), reason: new Error('promesa rota') }));
+  });
+  const en = await E(pg, () => Diag.entries());
+  ok(en.length === 2 && en[0].msg === 'prueba rota' && en[0].src === 'hud.js' && en[0].line === 42 && en[0].ctx.state && en[0].build, 'captura: mensaje, archivo, línea, estado del juego y versión (' + JSON.stringify(en[0]).slice(0, 120) + ')');
+  ok(en[1].kind === 'promesa' && en[1].msg === 'promesa rota', 'captura: unhandledrejection');
+  ok(await E(pg, () => JSON.parse(localStorage.getItem('swarmhand.fusion.errlog')).length === 2), 'se guarda en localStorage (swarmhand.fusion.errlog)');
+  // 2. límite de 20 (se conservan los más nuevos) y repetidos agrupados
+  const lim = await E(pg, () => { for (let i = 0; i < 30; i++) Diag.log('fallo ' + i); for (let i = 0; i < 5; i++) Diag.log('bucle'); const e = Diag.entries(); return { n: e.length, last: e[e.length - 1], first: e[0].msg, stored: JSON.parse(localStorage.getItem('swarmhand.fusion.errlog')).length }; });
+  ok(lim.n === 20 && lim.stored === 20 && lim.last.msg === 'bucle' && lim.last.n === 5 && lim.first === 'fallo 11', 'límite de 20 (más nuevos) y el mismo fallo en bucle se cuenta (n=' + lim.n + ', bucle x' + lim.last.n + ', primero ' + lim.first + ')');
+  // 3. informe y copia
+  const rep = await E(pg, () => Diag.copy().then(ok => ({ ok, txt: Diag.text() })));
+  ok(rep.ok && /bucle/.test(rep.txt) && /version: /.test(rep.txt), 'copiar informe: devuelve true y el texto lleva versión y errores');
+  const clip = await E(pg, () => navigator.clipboard.readText().catch(() => null));
+  ok(clip === null || /informe de errores/.test(clip), 'el portapapeles recibe el informe' + (clip === null ? ' (lectura no permitida en este navegador)' : ''));
+  // 4. pantalla en Ajustes (táctil, sin pistas de teclado ni solapes) y vaciar
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
+  await tap(pg, 855, 144); await sleep(pg, 300);
+  ok(await E(pg, () => G.Panels.current()) === 'errlog', 'Ajustes: el botón Informe de errores abre la pantalla');
+  const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 11.5 }); ok(iss.length === 0 && kbdHints(d).length === 0, 'pantalla del informe: ' + d.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
+  await tap(pg, 650, 394); await sleep(pg, 300);
+  ok(await E(pg, () => Diag.count()) === 0, 'VACIAR borra el registro');
+  // 5. un fallo dentro del bucle se registra y el juego sigue
+  await E(pg, () => { G.Aldea.open(false); const o = G.Hud.draw; G.Hud.draw = function () { G.Hud.draw = o; throw new Error('fallo de dibujo'); }; G.state = 'play'; });
+  await sleep(pg, 400);
+  const fr = await E(pg, () => ({ n: Diag.count(), k: Diag.entries().map(e => e.kind + ':' + e.msg).join('|') }));
+  ok(fr.n >= 1 && /fotograma:fallo de dibujo/.test(fr.k), 'un fallo en un fotograma se registra y el bucle sigue (' + fr.k + ')');
+  pg.errs = []; await done(pg, 'diag'); await b.close();
+}
+
 (async () => {
-  const run = { manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { diag, manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
