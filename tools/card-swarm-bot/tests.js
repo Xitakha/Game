@@ -1084,7 +1084,7 @@ async function manual() {
 // ---------------------------------------------------------------- Registro de errores en el dispositivo (src/diag.js, T-F0-11)
 async function diag() {
   console.log('--- diag: captura de error y de promesa rechazada, límite de 20, copia del informe y pantalla en Ajustes');
-  const b = await launch(); const pg = await mk(b, 'reset=1&speed=0');
+  const b = await launch(); const pg = await mk(b, 'reset=1');
   await pg.ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   ok(await E(pg, () => typeof Diag === 'object' && Diag.count() === 0), 'Diag existe y empieza vacío');
   // 1. captura: error con archivo y línea, y promesa rechazada
