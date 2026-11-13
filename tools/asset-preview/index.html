@@ -30,7 +30,7 @@
 </head>
 <body>
 <h1>Asset Preview - Ember Flock</h1>
-<p class="sub">Recursos generados en runtime por <code>games/survival-lamb/src/assets.js</code>. Sin ficheros externos.</p>
+<p class="sub">Recursos generados en runtime por <code>games/card-swarm/src/assets.js</code>. Sin ficheros externos.</p>
 
 <h2>Arena de prueba (960x540, animada)</h2>
 <div style="margin-bottom:8px">
@@ -174,8 +174,8 @@
 <div class="btns" id="sfx"></div>
 
 <script>
-// ?game=card-swarm carga tambien assets_enemies2.js; por defecto survival-lamb
-(function () { var g = new URLSearchParams(location.search).get('game') || 'survival-lamb', b = '../../games/' + g + '/src/';
+// ?game=card-swarm carga tambien assets_enemies2.js; por defecto card-swarm
+(function () { var g = new URLSearchParams(location.search).get('game') || 'card-swarm', b = '../../games/' + g + '/src/';
   document.write('<script src="' + b + 'assets.js"><\/script>');
   if (g === 'card-swarm') { document.write('<script src="' + b + 'assets_enemies2.js"><\/script>'); document.write('<script src="' + b + 'assets_village.js"><\/script>'); document.write('<script src="' + b + 'assets_boss.js"><\/script>'); document.write('<script src="' + b + 'assets_boss2.js"><\/script>'); document.write('<script src="' + b + 'assets_boss3.js"><\/script>'); document.write('<script src="' + b + 'assets_boss4.js"><\/script>'); document.write('<script src="' + b + 'assets_tree.js"><\/script>'); document.write('<script src="' + b + 'assets_fam1.js"><\/script>'); document.write('<script src="' + b + 'assets_fam2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam3.js"><\/script>'); document.write('<script src="' + b + 'assets_mini2.js"><\/script>'); document.write('<script src="' + b + 'assets_fam4.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam1.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam2.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam3.js"><\/script>'); document.write('<script src="' + b + 'sfx_yarlak.js"><\/script>'); document.write('<script src="' + b + 'sfx_minis.js"><\/script>'); document.write('<script src="' + b + 'sfx_fam4.js"><\/script>'); document.write('<script src="' + b + 'sfx_melaria.js"><\/script>'); } })();
 </script>

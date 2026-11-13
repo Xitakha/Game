@@ -4,7 +4,7 @@
    ?armset=esquila:1[,carcelero:2] (equipa ese set con ese refuerzo, solo en memoria) ?armtier=1&armref=1 ?armcost=1 ?armhp=1 ?smith=1 (Carapa desbloqueada) ?give=horn:3,carnero:2 */
 (function () {
   'use strict';
-  var G = window.G, D = G.ArmorData, A = G.Armor = {}, q = location.search;
+  var G = window.G, D = G.ArmorData, A = G.Armor = {}, q = Dev.search;
   function qnum(name, def) { var m = new RegExp('[?&]' + name + '=(-?[\\d.]+)').exec(q); return m ? parseFloat(m[1]) : def; }
   A.OFF = qnum('arm', 1) === 0;
   A.K = qnum('armk', 120); A.CAP = qnum('armcap', 0.45); A.COSTMUL = qnum('armcost', 1); A.HPMUL = qnum('armhp', 1);

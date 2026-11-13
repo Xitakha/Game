@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|diag|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|dev|diag|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -15,7 +15,7 @@ const launch = () => pwLaunch({ args: ['--no-sandbox', '--autoplay-policy=no-use
 async function mk(b, url) {
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
-  await pg.goto(`${base}/index.html?nosw=1&${url}`); await pg.waitForTimeout(600);
+  await pg.goto(`${base}/index.html?${/(^|&)nodev(&|$)/.test(url) ? '' : 'dev=1&'}nosw=1&${url}`);   // dev=1: los parámetros de trampa (give, pf, cmul, reset...) solo valen con él (src/dev.js); 'nodev' lo omite await pg.waitForTimeout(600);
   return pg;
 }
 const done = async (pg, name) => { ok(pg.errs.length === 0, `${name}: 0 errores de consola` + (pg.errs.length ? ' -> ' + pg.errs.slice(0, 3).join(' | ') : '')); await pg.close(); await pg.ctx.close(); };
@@ -267,7 +267,7 @@ async function ui() {
   await done(pg, 'ui');
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }), pv = await ctx.newPage(); pv.errs = []; pv.ctx = ctx;
   pv.on('console', m => { if (m.type() === 'error') pv.errs.push(m.text()); }); pv.on('pageerror', e => pv.errs.push('PAGEERR ' + e.message));
-  await pv.goto(`${base}/index.html?nosw=1&reset=1&direct=1&all=1`); await sleep(pv, 800);
+  await pv.goto(`${base}/index.html?dev=1&nosw=1&reset=1&direct=1&all=1`); await sleep(pv, 800);
   ok(await E(pv, () => [...document.querySelectorAll('div')].some(d => /gira/i.test(d.textContent) && getComputedStyle(d).display !== 'none')), 'vertical 390x844: aviso "gira el teléfono"');
   await done(pv, 'vertical'); await b.close();
 }
@@ -1119,8 +1119,41 @@ async function diag() {
   pg.errs = []; await done(pg, 'diag'); await b.close();
 }
 
+// ---------------------------------------------------------------- Parámetros de depuración cerrados sin ?dev=1 (src/dev.js, T-F0-03 reducida)
+async function dev() {
+  console.log('--- dev: give / pf / len / all / cmul / hand / peligro / reset / smith cerrados sin ?dev=1; ?god y ?seed no se tocan');
+  const b = await launch(), E1 = (pg, fn) => E(pg, fn);
+  // 1. sin dev=1: nada de lo que da recursos o cambia la dificultad
+  let pg = await mk(b, 'nodev&give=all:30,brasas:900&pf=5&len=3&all=1&cmul=1&smith=1&speed=0&hand=spark:3&peligro=4');
+  const r = await E1(pg, () => ({ dev: Dev.on, brasas: G.Save.data.brasas, parts: Object.keys(G.Save.data.parts).length, pf: G.Save.data.pf.earned, len: G.lenOverride || 0, all: G.fusionAll, smith: G.Armor.smithOn(), spd: G.speed, cmul: G.B.cardDmgMul, pel: G.peligroUrl, search: Dev.search }));
+  ok(!r.dev && r.brasas === 0 && r.parts === 0 && r.pf === 1, 'sin dev=1: give y pf no cambian el guardado (brasas ' + r.brasas + ', partes ' + r.parts + ', pf ' + r.pf + ')');
+  ok(!r.len && !r.all && !r.smith && r.spd === 1 && Math.abs(r.cmul - 0.98 * 3.5) < 1e-9 && !r.pel, 'sin dev=1: len, all, smith, speed, cmul y peligro se ignoran (cmul ' + r.cmul + ', speed ' + r.spd + ')');
+  ok(!/give|cmul|pf=|smith|all=/.test(r.search), 'Dev.search no deja pasar los parámetros cerrados: "' + r.search + '"');
+  await done(pg, 'dev-cerrado');
+  // 2. reset=1 sin dev=1 no borra el guardado
+  pg = await mk(b, 'nodev');
+  await E1(pg, () => { G.Save.data.brasas = 777; G.Save.save(); });
+  await pg.goto(`${base}/index.html?nosw=1&reset=1`); await sleep(pg, 600);
+  ok((await E1(pg, () => G.Save.data.brasas)) === 777, 'sin dev=1: ?reset=1 no borra la partida');
+  await pg.goto(`${base}/index.html?nosw=1&dev=1&reset=1`); await sleep(pg, 600);
+  ok((await E1(pg, () => G.Save.data.brasas)) === 0, 'con dev=1: ?reset=1 borra la partida');
+  await done(pg, 'dev-reset');
+  // 3. con dev=1 todo sigue funcionando
+  pg = await mk(b, 'reset=1&give=all:30,brasas:900&pf=5&len=3&all=1&cmul=1&smith=1&speed=0&peligro=4');
+  const w = await E1(pg, () => ({ dev: Dev.on, brasas: G.Save.data.brasas, pf: G.Save.data.pf.earned, len: G.lenOverride, all: G.fusionAll, smith: G.Armor.smithOn(), spd: G.speed, cmul: G.B.cardDmgMul, pel: G.peligroUrl }));
+  ok(w.dev && w.brasas === 900 && w.pf === 6 && w.len === 3 && w.all && w.smith && w.spd === 0 && Math.abs(w.cmul - 0.98) < 1e-9 && w.pel, 'con dev=1: give, pf, len, all, smith, speed, cmul y peligro funcionan (' + JSON.stringify(w) + ')');
+  await done(pg, 'dev-abierto');
+  // 4. ?god y ?seed no dependen de dev=1
+  pg = await mk(b, 'nodev&god=0&seed=7');
+  ok(await E1(pg, () => G.god === false), '?god=0 sigue funcionando sin dev=1');
+  await done(pg, 'dev-god');
+  pg = await mk(b, 'nodev');
+  ok(await E1(pg, () => typeof G.god === 'boolean'), '?god no se toca (sin parámetro: por defecto ' + (await E1(pg, () => G.god)) + ')');
+  await done(pg, 'dev-god2'); await b.close();
+}
+
 (async () => {
-  const run = { diag, manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { dev, diag, manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

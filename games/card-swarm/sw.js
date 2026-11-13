@@ -2,12 +2,13 @@
    La lista FILES y la VERSION las regenera tools/card-swarm-pwa/stamp.py (la VERSION es un hash del contenido: cualquier cambio en el juego
    cambia este archivo, el navegador instala el worker nuevo y el juego avisa "hay una versión nueva" sin recargar por su cuenta).
    Todas las rutas son relativas al propio sw.js, así que sirve igual en / que en una subruta (https://usuario.github.io/Game/card-swarm/). */
-const VERSION = '639c43f6e6';
+const VERSION = '0197cac83a';
 const CACHE = 'fusionhand-' + VERSION;
 const FILES = /*FILES*/[
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./src/dev.js",
   "./src/diag.js",
   "./src/assets.js",
   "./src/assets_enemies2.js",

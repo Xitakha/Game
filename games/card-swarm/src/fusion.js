@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   var G = window.G, B = G.B, C = G.Cards, CB = G.Combat, W = G.Weapons, fx = G.fx, inp = G.input, F = G.Fusion = {};
-  function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
+  function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(Dev.search); return m ? parseFloat(m[1]) : def; }
   function A2() { return G.FusionArt2 || null; }
 
   var NS = 4;   // slots de poderes
@@ -21,7 +21,7 @@
 
   // ------------------------------------------------------------- Pool: todas las cartas (el desbloqueo lo decide Loot.unlocked / la forja)
   F.inPool = function () { return true; };
-  G.fusionAll = /[?&]all=1/.test(location.search);   // ?all=1: todas las cartas desbloqueadas (pruebas / bots con cuenta vacía)
+  G.fusionAll = /[?&]all=1/.test(Dev.search);   // ?all=1: todas las cartas desbloqueadas (pruebas / bots con cuenta vacía)
   F.unlockedCard = function (id) { return !!C.def(id) && (G.fusionAll || G.Loot.unlocked(id)); };
   var INF_TXT = {
     fire: 'Quema (3 dps). Nv3: el impacto explota.', ice: 'Ralentiza 25 %. Nv3: congela 0,5 s la 1.ª vez.', lightning: 'Encadena 1 salto (-20 %). Nv3: 2 saltos.',
@@ -114,7 +114,7 @@
     var p = G.player; p.actives = []; for (var i = 0; i < NS; i++) p.actives.push(null);
     F.fused = 0; F.auto = false; F.fields = []; F.fxs = []; F.timers = []; F.axes = []; bT = 300; hitN = 0; p.ward = 0;
     F.stats = { fusions: [], uses: {}, dmg: {}, firstFusionT: null, basicShots: 0 };
-    var u = /[?&]actives=([\w,]+)/.exec(location.search);
+    var u = /[?&]actives=([\w,]+)/.exec(Dev.search);
     if (u) u[1].split(',').slice(0, NS).forEach(function (k) { var m = /^([a-z]+?)(2)?$/.exec(k); if (m && RBY[m[1]]) F.grant(m[1], m[2] ? 2 : 1); });
   };
   F.grant = function (id, lvl) {   // prueba / ?actives=: da un poder sin fusionar

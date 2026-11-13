@@ -8,7 +8,7 @@ const scene = process.argv[2] || 'all', out = process.argv[3] || '/tmp/fx2_' + s
   const b = await launch({ args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 900, height: 1000 }, deviceScaleFactor: +process.env.DSF || 1 }), pg = await ctx.newPage(); const errs = [];
   pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => m.type() === 'error' && errs.push(m.text()));
-  await pg.goto(base + '/index.html?nosw=1&reset=1&direct=1&god=1&cine=0&biome=crater&nobos=1&seed=1'); await pg.waitForTimeout(900);
+  await pg.goto(base + '/index.html?dev=1&nosw=1&reset=1&direct=1&god=1&cine=0&biome=crater&nobos=1&seed=1'); await pg.waitForTimeout(900);
   const r = await pg.evaluate((scene) => {
     const B = G.FusionArt2, F2 = G.Fx2, W = 450, H = 250, list = scene === 'all' ? ['ward', 'ice', 'boom', 'status'] : [scene];
     const cv = document.createElement('canvas'); cv.width = W * 2; cv.height = H * list.length; cv.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;width:' + W * 2 + 'px;height:' + H * list.length + 'px;max-width:none;max-height:none'; document.body.appendChild(cv);

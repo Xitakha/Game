@@ -20,12 +20,12 @@ const only = process.argv[3];
   const auto = (pg) => pg.evaluate(() => { setInterval(() => { if (G.state === 'cards' && G.Cards.off) { try { G.Cards.off.mode === 'level' ? G.Cards.skip() : G.Cards.pick(0); } catch (e) { } } }, 100); });
   const sc = {
     horda: async (pg, v, shot) => {
-      await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&reset=1&god=1&t=400&hand=${HAND}`);
+      await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&reset=1&god=1&t=400&hand=${HAND}`);
       await pg.evaluate(() => G.startGame()); await auto(pg);
       await pg.waitForTimeout(5000); await shot('01_horda');
     },
     mini_coloso: async (pg, v, shot) => {
-      await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&reset=1&god=1&t=212&hand=${HAND}`);
+      await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&reset=1&god=1&t=212&hand=${HAND}`);
       await pg.evaluate(() => G.startGame()); await auto(pg);
       for (let i = 0; i < 60; i++) { await pg.waitForTimeout(250); if (await pg.evaluate(() => G.Enemies.minis().length)) break; }
       await pg.waitForTimeout(1500);
@@ -38,7 +38,7 @@ const only = process.argv[3];
       await f('shields', 450, '05_coloso_escudos');
     },
     mini_colmena: async (pg, v, shot) => {
-      await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&reset=1&god=1&t=332&hand=${HAND}`);
+      await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&reset=1&god=1&t=332&hand=${HAND}`);
       await pg.evaluate(() => G.startGame()); await auto(pg);
       for (let i = 0; i < 60; i++) { await pg.waitForTimeout(250); if (await pg.evaluate(() => G.Enemies.minis().length)) break; }
       await pg.waitForTimeout(1500);
@@ -52,7 +52,7 @@ const only = process.argv[3];
   };
   function bossSc(phase, attacks, pre) {
     return async (pg, v, shot) => {
-      await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&boss=pastor&god=1&reset=1&nointro=1&phase=${phase}&hand=${HAND}&hpcal=6`);
+      await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&boss=pastor&god=1&reset=1&nointro=1&phase=${phase}&hand=${HAND}&hpcal=6`);
       await auto(pg);
       await pg.waitForTimeout(4200);
       await shot(pre + '_f' + phase + '_inicio');
@@ -64,7 +64,7 @@ const only = process.argv[3];
   sc.boss2 = bossSc(2, [['esporas', 700], ['estampida', 500], ['pisoton', 1500]], '20');
   sc.boss3 = bossSc(3, [['barrido', 600], ['abanico', 450], ['estampida', 500], ['salto', 700], ['pisoton', 1400]], '30');
   sc.aldea = async (pg, v, shot) => {
-    await pg.goto(`http://localhost:${PORT}/index.html?view=${v}&reset=1`); await pg.waitForTimeout(1500); await shot('40_aldea');
+    await pg.goto(`http://localhost:${PORT}/index.html?dev=1&view=${v}&reset=1`); await pg.waitForTimeout(1500); await shot('40_aldea');
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
     await pg.mouse.click(480, 250); await pg.waitForTimeout(300); await shot('41_menu');
   };

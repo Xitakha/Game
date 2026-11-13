@@ -159,7 +159,7 @@
   Q.offers = function () {
     var key = Q.boardKey() + ':' + Q.times('bombs') + ':' + Q.unlockedBiomes().length;
     if (cache.key === key) return cache.list;
-    var forced = (/[?&]quests=([\w,]+)/.exec(location.search) || [])[1], out = [];
+    var forced = (/[?&]quests=([\w,]+)/.exec(Dev.search) || [])[1], out = [];
     if (forced) forced.split(',').forEach(function (id) { if (BY[id]) out.push(BY[id]); });
     else {
       var r = rng(hash(Q.boardKey()));

@@ -10,7 +10,7 @@
   var ATKS = S.ATKS, ATK = S.ATK, TAU = Math.PI * 2, DEG = Math.PI / 180, B = G.B;
   var ease = U.ease, angTo = U.angTo, sfx = U.sfx, pel = U.pel, expose = U.expose;
   // Calibración con el bot (README, Yarlak P4): el bot esquiva casi todo, así que el daño por golpe lleva un multiplicador propio (D.dmgK; ?ydmg=1.4 para probar). Nunca pasa de HIT_CAP 32
-  function dmgK() { var m = /[?&]ydmg=([\d.]+)/.exec(location.search); return m ? +m[1] : (S.DEFS.yarlak.dmgK || 1); }
+  function dmgK() { var m = /[?&]ydmg=([\d.]+)/.exec(Dev.search); return m ? +m[1] : (S.DEFS.yarlak.dmgK || 1); }
   function hurt(e, base, src, o) { return U.hurt(e, src === 'boss_embestida' ? base : Math.min(32, base * dmgK()), src, o); }
   function PL() { return G.player; }
   function A() { return S.A; }
@@ -42,7 +42,7 @@
     h: { camW: 0.35 }
   };
   var D = S.DEFS.yarlak, H = D.h;
-  (function () { var m = /[?&]yheart=(\d+)/.exec(location.search); if (m) D.gateHearts = +m[1]; })();   // P8: calibración, corazones por puerta
+  (function () { var m = /[?&]yheart=(\d+)/.exec(Dev.search); if (m) D.gateHearts = +m[1]; })();   // P8: calibración, corazones por puerta
   [['ytusk', 'trophy_yarlak_tusk', 'Colmillo de Yarlak'], ['yplate', 'trophy_yarlak_plate', 'Placa Glaciar'], ['yheart', 'trophy_yarlak_heart', 'Corazón de Escarcha']].forEach(function (t) {
     Object.defineProperty(S.TROPHY, t[0], { enumerable: true, configurable: true, get: function () { return { spr: G.hasSpr(t[1]) ? t[1] : 'trophy_pastor_horn', name: t[2] }; } });
   });
@@ -96,7 +96,7 @@
     a.open = false; a.openU = 0; a.cracks = []; a.warns = []; a.bands = []; a.gust = 0; a.stepT = 0; a.coldK = pel().n >= 4 ? 1.3 : 1; a.des = null; a.fires = null; a.hitCool = 0;
     BZ.clearR = BZ.clearR0 * (pel().n >= 4 ? 300 / 330 : 1);   // Peligro IV: ventisca de r 300
     setBz(0);
-    a.cad0 = (/[?&]ycad=([\d.]+)/.exec(location.search) || [0, D.cadK || 1])[1] * 1; e.cadMul = a.cad0; e.rise = 1; e.foot = D.gy;   // ?ycad=1.2 = calibración (más / menos cadencia)
+    a.cad0 = (/[?&]ycad=([\d.]+)/.exec(Dev.search) || [0, D.cadK || 1])[1] * 1; e.cadMul = a.cad0; e.rise = 1; e.foot = D.gy;   // ?ycad=1.2 = calibración (más / menos cadencia)
     e.parts.corazon.spawnT = 99999;
     S.cds.y_latido = 9000; S.cds.y_ventisca = 6000; S.cds.y_alud = 5000; S.cds.y_llamada = 4000; S.cds.y_aliento = 2500;
     S.obs.length = 0;   // Yarlak no usa los troncos del Pastor: sus obstáculos son las estalagmitas de la Tundra

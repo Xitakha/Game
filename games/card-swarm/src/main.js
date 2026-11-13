@@ -16,14 +16,14 @@
   G.runT = 0;                    // reloj de la RUN: se congela mientras el jefe vive (v4). G.time sigue corriendo (temporizadores, animaciones)
   G.vt = function () { return G.runT * G.tk; };
 
-  function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
+  function qnum(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(Dev.search); return m ? parseFloat(m[1]) : def; }
   G.speed = qnum('speed', 1); G.god = qnum('god', (navigator.webdriver ? 0 : 1)) > 0; /* TEMPORAL (pruebas del dueño): inmortal por defecto salvo bots; ?god=0 lo desactiva. Revertir este commit para quitarlo. */ G.t0 = qnum('t', 0) * 1000;
   // Jefes v4: ?boss=pastor salta a la pelea, ?peligro=<n> (1-5), ?phase=2|3, ?hp=0.3, ?nointro=1, ?hand=spark:3,ember:2 (mano de prueba)
-  G.bossUrl = (/[?&]boss=(\w+)/.exec(location.search) || [])[1] || null; G.peligro = qnum('peligro', 1);
+  G.bossUrl = (/[?&]boss=(\w+)/.exec(Dev.search) || [])[1] || null; G.peligro = qnum('peligro', 1);
   // J3: ?hunt=<jefe> arranca una cacería (sin hordas, 6 ofertas de preparación), ?practice=1 la modalidad PRACTICAR (con ?hunt= o ?boss=), ?prep=0 salta las 6 ofertas, ?zoom=0.9 zoom de combate opcional
-  G.huntUrl = (/[?&]hunt=(\w+)/.exec(location.search) || [])[1] || null; G.practiceUrl = qnum('practice', 0) > 0; G.noPrep = qnum('prep', 1) === 0;
-  G.peligroUrl = /[?&]peligro=/.test(location.search); G.combatZoom = qnum('zoom', 0) || 0; G.mode = 'run';   // G.mode: 'run' | 'hunt' | 'practice'
-  G.pelx = (/[?&]pelx=([\w.:,]+)/.exec(location.search) || [])[1] || null;   // ?pelx=hp:1.1,dmg3:1.05,tele:1 sobrescribe la tabla de Peligro (calibración; sufijo = solo ese nivel)
+  G.huntUrl = (/[?&]hunt=(\w+)/.exec(Dev.search) || [])[1] || null; G.practiceUrl = qnum('practice', 0) > 0; G.noPrep = qnum('prep', 1) === 0;
+  G.peligroUrl = /[?&]peligro=/.test(Dev.search); G.combatZoom = qnum('zoom', 0) || 0; G.mode = 'run';   // G.mode: 'run' | 'hunt' | 'practice'
+  G.pelx = (/[?&]pelx=([\w.:,]+)/.exec(Dev.search) || [])[1] || null;   // ?pelx=hp:1.1,dmg3:1.05,tele:1 sobrescribe la tabla de Peligro (calibración; sufijo = solo ese nivel)
   G.dbgHpCal = qnum('hpcal', 0); G.dbgPhase = qnum('phase', 0); G.dbgHp = qnum('hp', 0); G.nointro = G.nointroUrl = qnum('nointro', 0) > 0;
 
   // ---------------------------------------------------------------- Balance (único objeto)
@@ -147,19 +147,19 @@
     var a = (n >>> 0) || 1; G.seed = n;
     G.rng = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   };
-  if (/[?&]seed=\d+/.test(location.search)) G.rngSeed(qnum('seed', 0));
+  if (/[?&]seed=\d+/.test(Dev.search)) G.rngSeed(qnum('seed', 0));
   G.rnd = function (a, b) { return a + G.rng() * (b - a); };
   G.rndFx = function (a, b) { return a + Math.random() * (b - a); };
   G.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   G.dist = function (ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); };
   G.angDiff = function (a, b) { var d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
   G.hasSpr = function (n) { try { return !!Assets.info(n); } catch (e) { return false; } };   // los sprites nuevos pueden no existir aún
-  G.dbg = /[?&]dbg=1/.test(location.search) ? { dmg: {} } : null;   // ?dbg=1 cuenta el daño recibido por fuente (window.G.dbg.dmg)
+  G.dbg = /[?&]dbg=1/.test(Dev.search) ? { dmg: {} } : null;   // ?dbg=1 cuenta el daño recibido por fuente (window.G.dbg.dmg)
   G.sfx = function (n, o) { try { if (window.Assets) Assets.sfx(n, o); } catch (e) { /* audio opcional */ } };
   // P8: texto con contorno cacheado. Cada cadena (texto + tamaño + colores + escala) se pinta una vez en un lienzo pequeño y después se copia con drawImage:
   // strokeText + fillText en Chromium sin GPU cuestan ~0,1 ms cada par (el HUD de una pelea lleva ~32). Solo se cachea a partir de la 2.ª vez que se ve la cadena
   // (las que cambian cada fotograma no reservan lienzos) y solo con transformaciones sin giro y a la escala del lienzo (el zoom de cámara pinta con vectores). ?txc=0 lo apaga.
-  var TXC = {}, TXN = 0, TXON = !/[?&]txc=0/.test(location.search), TXS = G.txStats = { hit: 0, make: 0, raw: 0 };
+  var TXC = {}, TXN = 0, TXON = !/[?&]txc=0/.test(Dev.search), TXS = G.txStats = { hit: 0, make: 0, raw: 0 };
   function txtRaw(c, s, x, y, size, color, align, stroke) {
     c.font = 'bold ' + size + 'px "Courier New", monospace';
     c.textAlign = align || 'left'; c.textBaseline = 'middle';
@@ -345,7 +345,7 @@
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
     G.final = false;
     if (!rq && !G.biomeUrl && !G.bossUrl && biome === 'crater' && G.Save.craterOpen()) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.Save.pelSel('cenizar'), phase: 0, final: true };   // P6.5: el Cráter es el Asalto (estilo cacería, HP completo)
-    if (!rq && /[?&]assault=1/.test(location.search)) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.peligroUrl ? qnum('peligro', 1) : 1, phase: 0, final: true };
+    if (!rq && /[?&]assault=1/.test(Dev.search)) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.peligroUrl ? qnum('peligro', 1) : 1, phase: 0, final: true };
     if (rq && rq.final) { G.final = true; G.mode = 'hunt'; G.huntHpMul = 1; G.lastReq = { mode: 'hunt', boss: 'cenizar', peligro: rq.peligro, phase: 0, final: true }; }
     if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[rq.boss] || biome;
     else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[G.bossUrl] || biome;
@@ -379,7 +379,7 @@
       G.Save.save();
       G.nointro = G.nointroUrl || (G.mode === 'practice' && rec.tries > 1);
     }
-    var hq = /[?&]hand=([^&]+)/.exec(location.search);
+    var hq = /[?&]hand=([^&]+)/.exec(Dev.search);
     if (G.mode === 'practice' && G.practiceHand && G.practiceHand.boss === G.bossId && !hq) {   // reinicio rápido: misma mano del intento anterior
       G.practiceHand.hand.forEach(function (h) { if (h) for (var n = 0; n < h.lvl; n++) G.Cards.add(h.id); });
       (G.practiceHand.actives || []).forEach(function (a) { if (a) G.Fusion.grant(a.id, a.lvl); });   // FUSION
@@ -587,14 +587,14 @@
     G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
     G.Tree.sync();
-    var bq = /[?&]biome=(\w+)/.exec(location.search) || (G.Minis && G.Minis.urlBiome() ? [0, G.Minis.urlBiome()] : null); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
+    var bq = /[?&]biome=(\w+)/.exec(Dev.search) || (G.Minis && G.Minis.urlBiome() ? [0, G.Minis.urlBiome()] : null); if (bq) { Assets.setBiome(bq[1]); G.biomeUrl = bq[1]; }   // 'tundra' no existe en assets.js: setBiome devuelve false
     else if (G.Save.data.biome) Assets.setBiome(G.Save.data.biome);
     G.ground = buildGround(G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : null); G.groundBiome = G.biomeUrl === 'tundra' ? 'tundra' : G.biomeUrl === 'panal' ? 'panal' : Assets.getBiome();   // (el suelo de la Tundra lo hornea tundra.js con Assets.arena)
     G.reset();
     G.Aldea.open(false);
     var boot = function () {
-      if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(location.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
-      if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(location.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
+      if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(Dev.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
+      if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(Dev.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     };
     if (!(G.Cine && G.Cine.boot(boot))) boot();   // v9: pantalla de título + intro (solo URL limpia o ?cine=1; ?cine=0 y los bots la saltan)
     requestAnimationFrame(function (t) { last = t; frame(t); });

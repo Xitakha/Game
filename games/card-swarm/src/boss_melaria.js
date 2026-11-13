@@ -11,13 +11,13 @@
   var ease = U.ease, angTo = U.angTo, sfx = U.sfx, pel = U.pel, expose = U.expose;
   var OUT = '#1b1124', COS30 = Math.cos(Math.PI / 6);
   // Calibración con el bot (README, Melaria P6): el daño por golpe lleva un multiplicador propio (D.dmgK; ?mdmg=1.4 para probar). Nunca pasa de HIT_CAP 32
-  function dmgK() { var m = /[?&]mdmg=([\d.]+)/.exec(location.search); return m ? +m[1] : (S.DEFS.melaria.dmgK || 1); }
+  function dmgK() { var m = /[?&]mdmg=([\d.]+)/.exec(Dev.search); return m ? +m[1] : (S.DEFS.melaria.dmgK || 1); }
   function hurt(e, base, src, o) { return U.hurt(e, Math.min(32, base * dmgK()), src, o); }
   function PL() { return G.player; }
   function A() { return S.A; }
   function ART() { try { return !!(Assets.drawBoss && Assets.bossIds().indexOf('melaria') >= 0 && G.hasSpr('boss_reina_thorax')); } catch (x) { return false; } }
   function winSt() { var a = A(); if (G.time - (a.winT || -1e9) < 900) return; a.winT = G.time; try { G.Snd.play('stg_melaria_window'); } catch (x) { /* audio */ } }
-  function qn(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(location.search); return m ? parseFloat(m[1]) : def; }
+  function qn(name, def) { var m = new RegExp('[?&]' + name + '=([\\d.]+)').exec(Dev.search); return m ? parseFloat(m[1]) : def; }
 
   S.DEFS.melaria = {
     id: 'melaria', name: 'Melaria, la Reina Abeja', title: 'La que devoró a sus hermanas', furia: 'DE MELARIA', hp: 7200, r: 70, gy: 84, deathMs: 3500, noFire: true,

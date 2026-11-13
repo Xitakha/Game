@@ -51,7 +51,7 @@ const BOT = () => {
   async function one(g) {
     const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); const errs = [];
     pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); pg.on('pageerror', e => errs.push('PAGEERR ' + e.message));
-    await pg.goto(`${base}/index.html?nosw=1&reset=1&direct=1&speed=${SPEED}${CM ? '&cmul=' + CM : ''}${ALL ? '&all=1' : ''}${EXTRA}${process.env.SEED ? '&seed=' + (+process.env.SEED + g) : ''}`); await pg.waitForTimeout(500);
+    await pg.goto(`${base}/index.html?dev=1&nosw=1&reset=1&direct=1&speed=${SPEED}${CM ? '&cmul=' + CM : ''}${ALL ? '&all=1' : ''}${EXTRA}${process.env.SEED ? '&seed=' + (+process.env.SEED + g) : ''}`); await pg.waitForTimeout(500);
     await pg.evaluate(NOACT => { window.__noact = NOACT; }, NOACT);
     await pg.evaluate(BOT);
     const t0 = Date.now(); let r = null;
