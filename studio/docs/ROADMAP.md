@@ -4,13 +4,14 @@
 Detalle de cada tarea, responsable y modelo en [`PLAN-MAESTRO.md`](PLAN-MAESTRO.md). Lo que sigue más abajo es histórico.
 - [x] Revisión integral del proyecto y plan maestro
 - [x] Agentes nuevos: balance-designer, performance-engineer, ux-designer, art-director, monetization-analyst, release-manager, marketing-manager
-- [ ] **F0 Limpieza y deudas** (13 tareas): reparar las pruebas (ruta del navegador), CI antes de desplegar, retirar la inmortalidad por defecto, simulación reproducible, pistas de teclado en táctil, Marlo, créditos, documentación, empaquetado, registro de errores, sesión en móvil real, Ember Flock
-- [ ] **F1 Retención y primera sesión** (11 tareas): analítica mínima, combate en menos de 60 s, ritmo del primer minuto, pantalla de fin, reto diario, objetivos diarios, economía por pasos, legibilidad móvil, respuesta háptica, modo corto, guardado a prueba de pérdidas
+- [ ] **F0 Limpieza y deudas** (13 tareas): reparar las pruebas (ruta del navegador), CI antes de desplegar, cerrar parámetros de depuración (la inmortalidad se retira al final, T-FIN-01), simulación reproducible, pistas de teclado en táctil, Marlo, créditos, documentación, empaquetado, registro de errores, sesión en móvil real; ya hechas: Ember Flock y clásico retirados (T-F0-13), documentación (T-F0-09, salvo conteos), créditos aprobados (T-F0-08); Marlo es mapache (texto por corregir)
+- [ ] **F1 Retención y primera sesión** (10 tareas; el modo corto de 4 minutos se descartó): analítica mínima, primera sesión sin rodeos (intro completa), ritmo del primer minuto, pantalla de fin, reto diario, objetivos diarios, economía por pasos, legibilidad móvil, respuesta háptica, guardado a prueba de pérdidas
 - [ ] **F2 Balance final** (8 tareas): banco de balance, daño por zona y armadura, Peligro IV-V, Corrosión, simulador de progresión (meta ~16 h), playtest humano, rendimiento en combate denso, presupuesto en CI
 - [ ] **F3 Monetización y publicación** (10 tareas): decisión de modelo y privacidad, capa de plataforma, recompensas opcionales, inglés, builds por destino, itch.io, portales web, marca, evaluación de Play Store, compra de apoyo
 - [ ] **F4 Contenido y eventos** (6 tareas): mutadores semanales, final extendido, cosméticos, más builds, repaso de arte, música por bioma
-- Primeros pasos: T-F0-01, T-F0-12, T-F0-02 + T-F0-03, T-F0-05, T-F1-01 + T-F1-02
-- Decisiones del dueño (2026-11-13): las 17 preguntas están respondidas y registradas en la sección "Decisiones del dueño" del plan. Pendiente de aclarar: las cifras de "reto" por nivel de Peligro (antes de F2)
+- [ ] **Cierre** (1 tarea): retirar la inmortalidad por defecto (T-FIN-01)
+- Primeros pasos: T-F0-01, T-F0-12, T-F0-02 + T-F0-03 (reducida), T-F0-05, T-F1-01 + T-F1-02
+- Decisiones del dueño (2026-11-13): las 17 preguntas están respondidas y registradas en la sección "Decisiones del dueño" del plan. Objetivo de victorias que define "reto": Peligro I 50 %, II 40 %, III 30 %, IV 20 %, V 10 %
 
 ## Histórico
 > Todo lo que sigue es histórico. `games/survival-lamb` (Ember Flock) y `games/card-swarm-clasico` se retiraron de `main` el 2026-11-13; siguen en el historial de git (el clásico, también en la rama `archive/card-swarm-clasico-v5.6`). Las rutas citadas abajo ya no existen en `main`.
