@@ -843,6 +843,12 @@ Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducció
 - **Inglés (T-F3-04).** Se traducen también los nombres de personajes y cartas. El español sigue siendo el idioma por defecto.
 - **Servicio de analítica (T-F1-01).** Sigue pendiente: `monetization-analyst` trae opciones comparadas para que el dueño elija.
 
+### Decisiones del dueño sobre la F1 (2026-11-14)
+
+- **Analítica (T-F1-01).** PostHog Cloud región UE por API directa; aviso al abrir el juego por primera vez, después de la cinemática de inicio; sin id de jugador; previsto en Pages e itch.io. Umbral de 18 años en el aviso. No se envía nada desde Europa hasta tener representante o asesoría. El envío queda APAGADO en producción hasta que todo eso esté listo (se implementa la capa completa). Responsable para la política: Alex Jacome, Bogotá (Colombia); el correo de contacto lo indicó el dueño y va solo en la página de la política.
+- **Reto diario (T-F1-05).** Siempre sin inmortalidad (la inmortalidad es solo para las pruebas del dueño y se retira antes del balance final). Hora UTC para todo. Se abre tras la 3.ª expedición. Pendiente de aclarar con el dueño: el tipo de premio y si cada jugador usa su propio equipo.
+- **Primera sesión (T-F1-02).** La primera expedición sale directa tras la intro, sin pasar por la aldea. Criterio: 1 toque y 6 s o menos en las pruebas; 30 s queda como alarma en la analítica. El aviso de privacidad sirve a la vez de botón para empezar, con dos botones del mismo peso.
+
 ## 7. Los 5 primeros pasos recomendados
 
 Hecho el 2026-11-13: T-F0-13 (retirada de Ember Flock y del clásico), T-F0-09 (salvo los conteos del README) y la resolución de T-F0-08. Decididas pero con trabajo pendiente: T-F0-07 (texto de Marlo).
