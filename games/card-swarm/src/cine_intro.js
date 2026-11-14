@@ -185,7 +185,7 @@
   C.openTitle = function (next) { T = { t: 0, next: next, going: false }; G.state = 'title'; };
   function afterTitle() {
     var next = T.next; T = null;
-    var go = function () { try { Assets.music.stop(); } catch (e) { /* audio */ } G.state = 'aldea'; if (next) next(); };
+    var go = function () { try { Assets.music.stop(); } catch (e) { /* audio */ } G.state = 'aldea'; if (G.Track) G.Track.prompt(next); else if (next) next(); };   // T-F1-01: el aviso de privacidad sale tras la intro, antes de la aldea
     if (C.off) { go(); return; }
     if (!C.introSeen() || C.force) { if (!C.playIntro({ replay: C.introSeen(), onEnd: go })) go(); }
     else go();

@@ -9,7 +9,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const args = process.argv.slice(2);
 const flag = n => args.includes('--' + n);
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 && args[i + 1] ? args[i + 1] : d; };
-if (flag('help')) { console.log('Uso: node tools/build/build.js [--out dist/card-swarm] [--sourcemap] [--no-god] [--no-mangle]'); process.exit(0); }
+if (flag('help')) { console.log('Uso: node tools/build/build.js [--out dist/card-swarm] [--sourcemap] [--no-god] [--no-mangle] [--track=posthog|none|portal [--track-host=URL --track-key=phc_...]]'); process.exit(0); }
 const SRC = path.join(ROOT, 'games', 'card-swarm');
 const OUT = path.resolve(ROOT, opt('out', 'dist/card-swarm'));
 if (OUT === SRC || SRC.startsWith(OUT + path.sep) || ROOT.startsWith(OUT)) { console.error('Carpeta de salida peligrosa: ' + OUT); process.exit(1); }
@@ -29,7 +29,11 @@ if (OUT === SRC || SRC.startsWith(OUT + path.sep) || ROOT.startsWith(OUT)) { con
   const between = html.slice(first, last).replace(re, '').trim();
   if (between) throw new Error('Hay contenido entre los <script>, no se puede reemplazar el bloque: ' + between.slice(0, 80));
 
-  let godOff = false;
+  // Analítica (T-F1-01): por defecto el adaptador del código fuente ('none'). --track=<adaptador> lo cambia; con posthog hacen falta host y clave PÚBLICA (phc_...).
+  const trk = (args.find(a => a.startsWith('--track=')) || '').slice(8), trkHost = (args.find(a => a.startsWith('--track-host=')) || '').slice(13), trkKey = (args.find(a => a.startsWith('--track-key=')) || '').slice(12);
+  if (trk && !['none', 'posthog', 'portal'].includes(trk)) throw new Error('--track: usa none, posthog o portal');
+  if (trk === 'posthog' && (!/^https:\/\/[\w.-]+$/.test(trkHost) || !/^phc_\w+$/.test(trkKey))) throw new Error('--track=posthog exige --track-host=https://<host> y --track-key=phc_... (clave pública; nunca una phx_)');
+  let godOff = false, trkDone = !trk;
   const maps = []; let out = '', line = 0, bytesIn = 0;
   for (const p of parts) {
     let code = p.code !== undefined ? p.code : fs.readFileSync(path.join(SRC, p.file), 'utf8');
@@ -37,6 +41,11 @@ if (OUT === SRC || SRC.startsWith(OUT + path.sep) || ROOT.startsWith(OUT)) { con
       const from = "qnum('god', (navigator.webdriver ? 0 : 1))";
       if (!code.includes(from)) throw new Error('--no-god: no se encuentra «' + from + '» en src/main.js (¿cambió?). Actualiza tools/build/build.js.');
       code = code.replace(from, "qnum('god', 0)"); godOff = true;
+    }
+    if (trk && p.file === 'src/track.js') {
+      const from = "T.CFG = { adapter: 'none', host: '', key: '', sample: 1 };";
+      if (!code.includes(from)) throw new Error('--track: no se encuentra «' + from + '» en src/track.js (¿cambió?). Actualiza tools/build/build.js.');
+      code = code.replace(from, "T.CFG = { adapter: '" + trk + "', host: '" + (trk === 'posthog' ? trkHost : '') + "', key: '" + (trk === 'posthog' ? trkKey : '') + "', sample: 1 };"); trkDone = true;
     }
     bytesIn += Buffer.byteLength(code);
     const r = await esbuild.transform(code, {
@@ -49,6 +58,7 @@ if (OUT === SRC || SRC.startsWith(OUT + path.sep) || ROOT.startsWith(OUT)) { con
   }
   if (flag('no-god') && !godOff) throw new Error('--no-god: src/main.js no está en index.html');
 
+  if (!trkDone) throw new Error('--track: src/track.js no está en index.html');
   const hash = crypto.createHash('sha1').update(out).digest('hex').slice(0, 8);
   const bundle = 'swarm.' + hash + '.js';
   fs.rmSync(OUT, { recursive: true, force: true });
@@ -58,12 +68,12 @@ if (OUT === SRC || SRC.startsWith(OUT + path.sep) || ROOT.startsWith(OUT)) { con
   fs.writeFileSync(path.join(OUT, 'index.html'), html.slice(0, first) + '<script src="' + bundle + '"></script>' + html.slice(last));
 
   // Estáticos: manifest, iconos y el sw.js base (stamp.py lo regenera para esta salida). Nunca *.md ni src/.
-  for (const f of ['manifest.webmanifest', 'sw.js']) fs.copyFileSync(path.join(SRC, f), path.join(OUT, f));
+  for (const f of ['manifest.webmanifest', 'sw.js', 'privacidad.html', 'privacy.html']) fs.copyFileSync(path.join(SRC, f), path.join(OUT, f));
   fs.cpSync(path.join(SRC, 'icons'), path.join(OUT, 'icons'), { recursive: true });
   const stamp = execFileSync('python3', [path.join(ROOT, 'tools', 'card-swarm-pwa', 'stamp.py'), OUT]).toString().trim();
 
   const sz = fs.statSync(path.join(OUT, bundle)).size;
   console.log(`build: ${parts.length} scripts -> ${bundle}: ${(bytesIn / 1024).toFixed(0)} KB -> ${(sz / 1024).toFixed(0)} KB`);
   console.log(`build: ${stamp}`);
-  console.log(`build: god por defecto ${godOff ? 'APAGADO (versión externa)' : 'como en el código fuente (Pages)'}; mapas de fuente ${flag('sourcemap') ? 'sí' : 'no'}; salida ${path.relative(ROOT, OUT)}`);
+  console.log(`build: analítica ${trk || 'none (por defecto)'}; god por defecto ${godOff ? 'APAGADO (versión externa)' : 'como en el código fuente (Pages)'}; mapas de fuente ${flag('sourcemap') ? 'sí' : 'no'}; salida ${path.relative(ROOT, OUT)}`);
 })().catch(e => { console.error('build FALLÓ: ' + e.message); process.exit(1); });

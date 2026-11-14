@@ -484,6 +484,9 @@
       case 'title':
         G.Cine.titleUpdate(dt);
         break;
+      case 'privacy':
+        G.TrackUI.update(dt);   // T-F1-01: aviso de privacidad (track_ui.js)
+        break;
       case 'cine':
         G.Cine.update(dt);   // v9: cinemática a pantalla completa (solo dibujo y audio; no avanza G.time ni la simulación)
         break;
@@ -520,6 +523,7 @@
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
     if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
+    if (G.state === 'privacy') { G.TrackUI.draw(ctx); return; }
     if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }
     if (G.state === 'cine') { G.Cine.draw(ctx); return; }
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
@@ -616,6 +620,7 @@
     G.ctx = ctx; canvas.focus();
     bindInput();
     G.Save.applyUrl();
+    if (G.Track) G.Track.init();   // T-F1-01: analítica con consentimiento (apagada por defecto; ver track.js)
     G.Sys.init(canvas);   // móvil: escala, calidad, pausa automática, audio, pantalla completa (mobile.js)
     G.Proj.initFromUrl();   // vista plana (por defecto) o inclinada (?view=iso / Ajustes)
     G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1;   // accesibilidad: reducir sacudidas
@@ -629,7 +634,7 @@
       if (!G.bossUrl && !G.huntUrl && /[?&]direct=1/.test(Dev.search)) G.startGame();   // FUSION v1: abre la aldea como el original; ?direct=1 salta a la partida (pruebas / bots)
       if (G.bossUrl || G.huntUrl || /[?&]assault=1/.test(Dev.search)) G.startGame();   // ?boss=pastor / ?hunt=pastor: salta directo a la pelea (cacería con &practice=1: práctica)
     };
-    if (!(G.Cine && G.Cine.boot(boot))) boot();   // v9: pantalla de título + intro (solo URL limpia o ?cine=1; ?cine=0 y los bots la saltan)
+    if (!(G.Cine && G.Cine.boot(boot))) { if (G.Track) G.Track.prompt(boot); else boot(); }   // sin título (?cine=0): el aviso de privacidad, si toca, sale antes de la partida directa   // v9: pantalla de título + intro (solo URL limpia o ?cine=1; ?cine=0 y los bots la saltan)
     requestAnimationFrame(function (t) { last = t; frame(t); });
   };
 })();
