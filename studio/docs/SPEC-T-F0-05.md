@@ -7,6 +7,18 @@ Las referencias `archivo:línea` son de `games/card-swarm/` en el commit `d74089
 
 ---
 
+## Decisiones aprobadas (2026-11-13)
+
+El dueño resolvió las tres decisiones de la sección 9:
+
+1. El perfil de dificultad se **FIJA AL EMPEZAR** la expedición. Si la calidad adaptativa cambia a mitad, solo cambian los gráficos hasta la siguiente expedición.
+2. Se **ACEPTA el daño extra por golpe** en MEDIA y BAJA (+5 % y +10 %).
+3. Se **MANTIENE la reducción de enemigos**: -10 % en MEDIA y -25 % en BAJA.
+
+Implementación de la parte 2 (2026-11-14): sección 12. Los valores de la tabla 4.4 quedan como valores de partida en una tabla de datos única (`G.B.diff`, `src/main.js`) con perillas por URL (`?dev=1`); el diseñador de balance los calibra después.
+
+---
+
 ## 0. Resumen
 
 1. **La simulación NO es reproducible hoy, ni siquiera avanzando por pasos con `G.step()` y calidad fija.** Dos corridas con la misma semilla y las mismas entradas divergen antes del tick 600 (10 s) en los 15 escenarios probados. La causa no es el reloj: son tres fugas del RNG sembrado, todas localizadas y comprobadas con parche.
@@ -399,3 +411,39 @@ Paso 2, perfil de dificultad (cambio de reglas, detrás de perillas hasta calibr
 - Copia fija del juego con `git archive d740894` servida con `tools/serve.py`; Chromium de Playwright vía `tools/lib/browser.js`, vista 844x390 táctil salvo donde se indica escritorio.
 - Los bots de `tools/` necesitan ya `dev=1` en la URL para `hand`, `actives`, `speed`, `cmul`, `reset` y `all`.
 - El arnés (entradas por tick, hash, parches en caliente) no está en el repo; la prueba `seed` de la sección 3.5 y el banco de T-F2-01 deben absorber lo que haga falta de él. Punto clave a conservar: los ticks se cuentan como `round(G.time / G.STEP)` desde el inicio de la expedición, nunca desde que se instala el bot.
+
+---
+
+## 12. Implementación de la parte 2 (2026-11-14) y medición posterior
+
+### 12.1 Qué se hizo
+
+- Tabla única `G.B.diff` en `src/main.js`, perfil `G.D = G.diffProfile(G.Q.level)` en `G.startGame` (fijado al empezar la expedición). Perillas con `?dev=1` (en `CLOSED` de `src/dev.js`): `?dq=` y `?dn ?dh ?dd ?ds ?dx`.
+- `enemyMul` y `projCap` fuera de `LV` (`src/mobile.js`); `G.B.projCap = 400` (enemigos; jugador 1,5 veces) como regla común (`enemies.js`, `weapons.js`).
+- `waves.js`: presupuesto por pulso `* G.D.n` y tope `round(cap * G.D.n)` (también con el jefe vivo, sobre `bm.mul` y `bm.cap`).
+- `enemies.js`: al nacer, un normal del director en modo `run` (no jefe, no élite, no `summoned`, no `noprof`, no Asalto) lleva `hp * h`, `dmg * d`, `e.dRew = x` y `e.dSpd = s`; `update` multiplica solo el desplazamiento (`speedMul * dSpd`). La escolta de minijefes (`waves.js`, `minis.js`) nace con `noprof`.
+- Recompensas por `e.dRew`: XP y Ceniza (con resto en `G.D.ashAcc`), corazón, 50 % de Ceniza del gusano/arquero/bomba, botín y botín "huésped" (`loot.js`, tope 1), Colmillo, Pacto ardiente, Sangre envenenada (contador que suma `x` y cura al cruzar cada múltiplo de 15), escudo del set Reina (ídem cada 20), encargos (`G.D.questAcc`). `G.kills` y `R.kills` cuentan bajas reales. Pantano no cambia. La probabilidad de Esencia por pity no se escala (no está en el inventario 4.9).
+- `G.D.id` en `G.Loot.summary.diff`; el perfil entra en el hash de `seed`.
+- ALTA exacta: todos los factores valen 1 (multiplicación exacta) y los acumuladores solo actúan con `x != 1`. Comprobado: hash con semilla 1234 en los ticks 600, 1800 y 3600 idéntico al del commit anterior (3569930420, 1065409925, 1194979460); prueba `diff`.
+- Pruebas nuevas, grupo `diff` de `tools/card-swarm-bot/tests.js`: perfil fijado y estable ante `setQuality`, siguiente expedición cambia; tabla; perillas (y que sin `dev=1` se ignoran); multiplicadores en gusano y jabalí y ausencia en minijefe, jefe, invocado, escolta y cacería; velocidad; XP y Ceniza de 100 bajas; presupuesto y tope; ALTA idéntica. `seed` mezcla `G.D` en el hash (ALTA, MEDIA y BAJA con semilla).
+- La prueba "enemyMul / projCap por calidad" del punto 10 de la sección 8 no existía (grep sin resultados): no hubo nada que adaptar.
+
+### 12.2 Medición posterior a la implementación (sin retocar valores)
+
+`node tools/card-swarm-bot/diff_bot.js 8 both bosque`: bosque, semillas 1 a 8 iguales en las tres calidades, por pasos, hasta el jefe (7:30), bot de guion (movimiento por tick, primera oferta de cada nivel, `god=0` con la vida repuesta cada tick, por tanto con la invulnerabilidad normal de 600 ms), `dbg=1`. Valores por defecto de la tabla. Media +- error estándar, n = 8 por celda.
+
+| Régimen | Calidad | Bajas | Nivel final | Nivel min 5 | Ceniza | Daño recibido |
+|---|---|---|---|---|---|---|
+| Normal | ALTA | 1078 +- 5 | 13,0 +- 0,0 | 8,9 +- 0,1 | 1816 +- 164 | 410 +- 65 |
+| Normal | MEDIA | 976 +- 7 | 13,6 +- 0,3 | 8,6 +- 0,3 | 2112 +- 150 | 426 +- 56 |
+| Normal | BAJA | 834 +- 14 | 13,3 +- 0,3 | 8,4 +- 0,3 | 1776 +- 160 | 545 +- 177 |
+| Saturado (`cmul=1`) | ALTA | 940 +- 14 | 13,0 +- 0,2 | 9,0 +- 0,3 | 1729 +- 151 | 1656 +- 183 |
+| Saturado | MEDIA | 890 +- 14 | 13,0 +- 0,3 | 8,9 +- 0,3 | 1388 +- 123 | 1614 +- 122 |
+| Saturado | BAJA | 792 +- 8 | 12,1 +- 0,1 | 8,1 +- 0,2 | 1462 +- 95 | 1400 +- 120 |
+
+Lectura (sin ajustar nada; la calibración es del diseñador de balance):
+- Bajas reales: MEDIA 0,91 y BAJA 0,77 de ALTA en normal; 0,95 y 0,84 en saturado. Es lo esperado (n 0,90 y 0,75, un poco más por el director).
+- Nivel final y Ceniza: en régimen normal MEDIA y BAJA quedan dentro de unos 2 errores estándar de ALTA (Ceniza de MEDIA +16 %, 1,3 errores estándar de la diferencia aproximadamente). En saturado BAJA queda 0,9 niveles y un 15 % de Ceniza por debajo y MEDIA un 20 % de Ceniza por debajo: la compensación `x` no basta en saturado en este bot.
+- Daño recibido: normal, +4 % MEDIA y +33 % BAJA con un error de +-30 % (no distinguible de cero). Saturado: -2 % MEDIA y -15 % BAJA (unos 1,2 errores estándar de la diferencia en BAJA): el daño extra por golpe no compensa en ese régimen en esta medición, contrario a lo que daba la emulación de 4.5 (+3 % con `d` 1,08).
+- Las cifras de daño recibido no son comparables con las de 4.1 y 4.5 (aquí unos 410 frente a 1888): otro bot, y la pérdida de reproducibilidad de la parte 1 cambió las semillas. Solo valen las comparaciones entre filas de esta tabla.
+- Alcance: un bioma, un bot de guion, sin muerte; no sustituye a las fases A a D de la sección 5.
