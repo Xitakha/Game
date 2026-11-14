@@ -1,11 +1,37 @@
 # SPEC T-F1-01: analítica anónima con aviso de privacidad (diseño)
 
-Estado: **borrador 1, solo diseño**. Autor: `monetization-analyst`. Implementa: `programmer`. Fecha: 2026-11-14.
+Estado: **borrador 2, solo diseño (decisiones del dueño del 2026-11-14 incorporadas)**. Autor: `monetization-analyst`. Implementa: `programmer`. Fecha: 2026-11-14.
 No se ha tocado el código del juego. Las referencias `archivo:línea` son de `games/card-swarm/` en la rama `claude/serene-pascal-bsxbz3` a esta fecha.
 
 Decisión del dueño que enmarca esta spec (PLAN-MAESTRO, "Decisiones del dueño", fila 9 y fila 12): analítica **anónima, con envío a un servicio y aviso de privacidad**. Las cuentas las crea y las tiene el dueño; el estudio asesora y **nunca** guarda credenciales en el repositorio ni en el chat.
 
 **Esto no es asesoría jurídica.** Todo lo que toca RGPD, ePrivacy (cookies y almacenamiento en el dispositivo), menores y textos legales debe revisarlo un profesional antes de activar el envío.
+
+---
+
+## Decisiones del dueño (2026-11-14)
+
+Respuestas a las 5 preguntas de la sección 8 y cambios que provocan en esta spec:
+
+| # | Pregunta | Decisión | Qué cambia |
+|---|---|---|---|
+| 1 | Servicio | **PostHog Cloud, región UE, por API directa** (lo recomendado) | Adaptador `posthog`; Umami queda solo como respaldo documentado |
+| 2 | Momento del aviso | **Al abrir el juego por primera vez, DESPUÉS de la cinemática de inicio** (no al volver de la primera expedición) | Sección 5.1 reescrita |
+| 3 | Identificador | **Retención sin id de jugador** (lo recomendado) | Sin cambios: sección 3.1 tal cual |
+| 4 | Destinos con envío | **Pages (incluida la PWA) e itch.io** | Sección 6.3: tabla de adaptadores por destino; portales sin terceros |
+| 5 | Revisión legal | El dueño **no tiene a nadie**; pide que la haga el estudio | Hecha en `studio/docs/REVISION-PRIVACIDAD.md` (no es asesoría jurídica; recomienda revisión profesional igualmente) |
+
+Datos aportados para la política: responsable en **Colombia**; nombre provisional **"Xitakha Studio" (pendiente de confirmar)**; correo como marcador `[CORREO DE CONTACTO]` hasta que el coordinador confirme que se puede publicar.
+
+Cambios que trae la revisión de privacidad (pendientes de que el dueño los confirme, ver `REVISION-PRIVACIDAD.md`, sección 15):
+- Botón "Acepto (tengo 18 años o más)": el umbral pasa de 14 a **18 años**, el más estricto (Colombia).
+- **Filtro por zona horaria europea**: en esos dispositivos no se muestra el aviso ni se envía nada mientras no haya representante en la UE (RGPD art. 27).
+- Antes del consentimiento **no se escribe nada de analítica en `localStorage`** (la cola previa va solo en memoria).
+- Todos los eventos llevan `pv` (versión del aviso), como prueba del consentimiento.
+- Ajustes muestra los ids de las últimas 10 sesiones (solo en local) para poder ejercer los derechos.
+- Peticiones con `credentials: 'omit'` y `referrerPolicy: 'no-referrer'`; GeoIP desactivado en PostHog.
+
+Los textos del aviso y de la política vigentes son los de `REVISION-PRIVACIDAD.md` (sección 11); los de la sección 5 de esta spec quedan como historial.
 
 ---
 
@@ -183,10 +209,17 @@ Todos se construyen en PostHog con "Insights" y se agrupan en un tablero "Swarm 
 ## 5. Aviso de privacidad, interruptor y menores
 
 ### 5.1 Cuándo y cómo se muestra
-- **No interrumpe la intro ni el combate.** Aparece en la aldea, la primera vez que se vuelve de la primera expedición (o en la segunda sesión si se cerró antes). Hasta entonces los eventos se guardan solo en local (cola) y **no salen**.
+- **Decisión del dueño (2026-11-14):** se muestra **al abrir el juego por primera vez, justo después de la cinemática de inicio** y antes de la aldea. Nunca interrumpe la intro ni el combate.
+- Si la intro no se reproduce (`?cine=0`, cinemáticas apagadas), el aviso aparece al llegar por primera vez a la aldea.
+- Si el jugador cierra el juego durante la intro, se muestra al terminarla en la siguiente sesión.
+- No se muestra en dispositivos con zona horaria europea mientras esté activo el filtro de `REVISION-PRIVACIDAD.md` (sección 9), ni si `localStorage` no está disponible.
+- Hasta que el jugador decide, `first_open`, `session_start` e `intro_end` esperan **solo en memoria** (nada en `localStorage`) y **no salen**. Si acepta, se envían con su `t` original; si rechaza, se descartan.
+- *Texto anterior, sustituido:* "Aparece en la aldea, la primera vez que se vuelve de la primera expedición".
 - Dos botones del **mismo tamaño, color y posición equivalente**: "Aceptar" y "No, gracias". Sin casillas premarcadas, sin "seguir jugando = aceptar".
 - Si rechaza: se **borra la cola** y no se vuelve a preguntar (salvo desde Ajustes).
 - Enlace "Más información" a `privacy.html` (página de T-F3-01, que esta tarea adelanta en versión mínima; Poki exige política publicada y enlazada desde el juego si algún día se aprobara un servicio externo allí [B]).
+
+> **Sustituido (2026-11-14):** los textos vigentes del aviso (versión `pv = 2026-11-14a`, umbral de 18 años, mención de PostHog y de la IP) están en `REVISION-PRIVACIDAD.md`, sección 11.1. Los de 5.2 y 5.3 quedan como historial.
 
 ### 5.2 Texto en español (pantalla del juego)
 
@@ -250,13 +283,25 @@ Interfaz: `{ name, send(batch) -> Promise<bool> }`. Uno solo activo.
 | `umami` | Si el dueño elige la alternativa | `POST` a su endpoint de envío, un evento por petición [N: confirmar formato] |
 | `portal` | Builds de portal | Reenvía solo hitos de juego a `G.Platform` (T-F3-02): inicio y fin de partida. Nada a terceros |
 
+**Adaptador por destino (decisión del dueño, 2026-11-14):**
+
+| Destino | Adaptador | Envío a terceros | Cómo se elige |
+|---|---|---|---|
+| GitHub Pages (web y PWA instalada) | `posthog` | Sí, con consentimiento, a PostHog UE | Valor por defecto de `CFG` en el código fuente una vez exista la clave |
+| itch.io | `posthog` | Sí, con consentimiento, a PostHog UE. Si `localStorage` no está disponible en el iframe: ni aviso ni envío | `build.js --track=posthog` |
+| Portales (CrazyGames, Poki y similares) | `portal` (o `none` hasta que exista `G.Platform`) | **No**, nunca | `build.js --track=portal` |
+| Play Store (TWA), si llega | Por decidir (ficha de seguridad de datos) | — | — |
+| Local, bots, `?dev=1` | `none` / `log` | No | Sección 6.6 |
+
+En todos los destinos con `posthog` se aplican además el filtro por zona horaria europea (si el dueño lo confirma) y la lista de comprobación de `REVISION-PRIVACIDAD.md`, sección 13. Todas las peticiones salen con `credentials: 'omit'` y `referrerPolicy: 'no-referrer'`.
+
 Configuración (datos **públicos**, se pueden commitear): `G.Track.CFG = { adapter: 'none', host: '', key: '', sample: 1 }` al principio de `track.js`. La clave de proyecto de PostHog (`phc_...`) está pensada para ir en el cliente; **la clave personal de API (`phx_...`) es secreta y no se usa nunca**.
 
 ### 6.4 Cola sin conexión
 - Clave `localStorage`: `swarmhand.fusion.track` → `{ v:1, iid, cohort, lastDay, sessN, runN, consent, sampled, firstUse:{}, openRun:null, q:[...] }`. Con `localStorage` bloqueado (itch en iframe, modo privado): todo en memoria, sin `day_return` ni `first_open` fiables (se marca `ls:false` en `session_start`).
 - **Tope: 300 eventos o 96 KB serializados** (lo que llegue antes). Al pasarse, se descartan primero los más viejos que no sean `first_open`, `day_return`, `run_end` o `boss_end`.
 - Eventos con más de 7 días en cola se descartan (no aportan y el proveedor podría rechazarlos [N]).
-- Sin consentimiento aún (`consent: null`): se encola hasta el tope. Con `consent: false`: no se encola nada y se borra la cola.
+- Sin consentimiento aún (`consent: null`): la cola vive **solo en memoria** (no se escribe nada de analítica en `localStorage`, ni siquiera `iid` o `cohort`). Al aceptar se crea el estado persistente (`cohort` = hoy; si se acepta más tarde desde Ajustes, `late: true` para excluirlo de la retención). Con `consent: false` solo se guarda la elección, para no volver a preguntar. Ver `REVISION-PRIVACIDAD.md`, sección 13.
 - Persistencia de la cola: con retardo (cada 10 s como mucho y en `pagehide`), nunca en cada evento.
 
 ### 6.5 Envío, muestreo y rendimiento
@@ -310,7 +355,7 @@ Hazlo tú, con tu correo. **No nos pases contraseñas, códigos ni claves person
 2. **Elige la región "EU"** (Unión Europea) en el registro. Es importante: no se puede cambiar después sin crear otra cuenta [N: confirmar].
 3. Crea la organización (pon "Swarm Hand" o tu estudio) y un proyecto llamado "Swarm Hand".
 4. Si te ofrece instalar su fragmento de código, **sáltalo**: no lo usamos.
-5. En los ajustes del proyecto, busca la opción de **descartar o no guardar la IP del cliente** y actívala, si existe [N].
+5. En Settings > Project > "IP data capture configuration", activa **"Discard client IP data"**. Según la doc. de PostHog, en las organizaciones de la UE viene activado por defecto, pero compruébalo [B, https://posthog.com/docs/privacy/data-storage]. Desactiva también el enriquecimiento GeoIP (o al menos que no guarde ciudad ni coordenadas) si la consola lo permite, y dinos qué opciones viste.
 6. No actives grabación de sesiones, encuestas ni nada más: no las usamos.
 7. Revisa el plan: debe ser el gratuito. **No añadas tarjeta.** Si te la pide, para y avísanos.
 8. Busca y lee el acuerdo de tratamiento de datos (DPA) que ofrezca PostHog: lo necesitará el profesional que revise lo legal.
@@ -323,6 +368,8 @@ Cuando nos lo pases, `programmer` lo pone en `CFG`, se publica en Pages con el e
 ---
 
 ## 8. Preguntas para el dueño
+
+**Respondidas el 2026-11-14:** ver "Decisiones del dueño (2026-11-14)" al principio. Las nuevas preguntas que abre la revisión de privacidad están en `REVISION-PRIVACIDAD.md`, sección 15.
 
 1. **¿PostHog (recomendado) o Umami?** PostHog: más límite gratis y embudos/retención listos, consola más compleja. Umami: más simple, menos límite.
 2. **¿Mostrar el aviso tras la primera expedición (recomendado) o al abrir el juego por primera vez?** Al abrir es más simple, pero añade otra pantalla antes de jugar.
