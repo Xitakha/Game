@@ -8,6 +8,7 @@
     'reset', 'give', 'pf', 'len', 'all', 'manual', 'smith', 'quests', 'brasasmin',   // progreso y economía
     'cmul', 'hand', 'actives', 'hp', 'hpcal', 'phase', 'peligro', 'speed', 'xpfirst', 'xpmul', 'pelx', 'txc', 'zoom', 'nonew',   // dificultad y ventajas
     'bdmg', 'bcd', 'pcd', 'pinf', 'pmul', 'vdmg', 'vmax', 'vpow', 'vstep', 'infmul', 'corr', 'lvheal', 'fuseheal', 'fuseAsh', 'bosscap', 'bossmul', 'aux', 'auxcd', 'auxmul',
+    'dq', 'dn', 'dh', 'dd', 'ds', 'dx',   // perfil de dificultad por calidad (T-F0-05)
     'arm', 'armk', 'armcap', 'armcost', 'armhp', 'armdmg', 'armset', 'armtier', 'armref', 'zdmg', 'zdmgall', 'mdmg', 'ydmg', 'ycad', 'yheart'
   ];
   var q = location.search, on = /[?&]dev=1(&|$)/.test(q);

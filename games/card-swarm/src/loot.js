@@ -196,11 +196,12 @@
       return;
     }
     var d = (e.fe && e.fe.drop) || L.DROPS[t]; if (!d) return;   // v5 P2: una familia puede cambiar la parte que suelta un rol (entrada `drop: [parte, prob]`; p. ej. Perro pastor -> Mecha)
-    if (G.rng() < d[1] * L.DROP_MUL * L.dur().parts) drop(e, d[0], 1);
+    var rx = e.dRew || 1;   // T-F0-05: recompensa por baja del perfil de dificultad
+    if (G.rng() < (rx === 1 ? d[1] * L.DROP_MUL * L.dur().parts : Math.min(1, d[1] * L.DROP_MUL * L.dur().parts * rx))) drop(e, d[0], 1);
     // v5 P2: partes "huésped" (economía inicial): el Bosque perdió Escudero / Bomba / Espectro / Ascua, así que Placa, Mecha y Estática ya no caían; la familia puede declarar
     // `host: [[parte, prob], ...]` = tiradas extra por cada baja de enemigo normal que no sea el gusano (x DROP_MUL x duración). Medido en README "Economía v5 en los biomas con familia".
     var hf = B.famOf(), hs = hf && hf.host;
-    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (G.rng() < hs[hi][1] * L.DROP_MUL * L.dur().parts) drop(e, hs[hi][0], 1);
+    if (hs && t !== 'worm') for (var hi = 0; hi < hs.length; hi++) if (G.rng() < (rx === 1 ? hs[hi][1] * L.DROP_MUL * L.dur().parts : Math.min(1, hs[hi][1] * L.DROP_MUL * L.dur().parts * rx))) drop(e, hs[hi][0], 1);
     if (B.enemy[t].cost >= L.RARE_MIN_COST && G.rng() < pityP) drop(e, 'rare', 1);
   };
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
@@ -257,7 +258,7 @@
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
-    L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, blocked: Math.round((G.Armor && G.Armor.run && G.Armor.run.blocked) || 0), rawDmg: Math.round((G.Armor && G.Armor.run && G.Armor.run.raw) || 0), won: won, kills: G.kills, quest: q, pfGained: R.pf || 0, boss: binfo };
+    L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, blocked: Math.round((G.Armor && G.Armor.run && G.Armor.run.blocked) || 0), rawDmg: Math.round((G.Armor && G.Armor.run && G.Armor.run.raw) || 0), won: won, kills: G.kills, diff: G.D && G.D.id, quest: q, pfGained: R.pf || 0, boss: binfo };
   };
   // Fin de una PRÁCTICA: ni botín ni progreso; solo el resumen de la pelea y el contador de victorias de práctica
   L.endPractice = function (won) {

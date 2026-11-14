@@ -21,11 +21,11 @@
   Sys.isIOS = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 
   // ------------------------------------------------------------------ Calidad
-  // s = factor de resolución interna máximo; pm = fracción de partículas; flat = sin degradados en zonas / telegrafías; enemyMul = tope de enemigos vivos
+  // s = factor de resolución interna máximo; pm = fracción de partículas; flat = sin degradados en zonas / telegrafías; (las reglas de dificultad por calidad viven en G.B.diff, main.js)
   var LV = {
-    alta:  { name: 'ALTA',  s: 2,   pm: 1,   cpsCap: 500, partCap: 500, fog: 2, vig: true,  flies: 60, nums: 70, agg: false, flat: false, projCap: 400, enemyMul: 1 },
-    media: { name: 'MEDIA', s: 1.5, pm: 0.6, cpsCap: 260, partCap: 220, fog: 1, vig: true,  flies: 24, nums: 40, agg: false, flat: false, projCap: 260, enemyMul: 0.9 },
-    baja:  { name: 'BAJA',  s: 1,   pm: 0.3, cpsCap: 110, partCap: 90,  fog: 0, vig: false, flies: 0,  nums: 18, agg: true,  flat: true,  projCap: 150, enemyMul: 0.75 }
+    alta:  { name: 'ALTA',  s: 2,   pm: 1,   cpsCap: 500, partCap: 500, fog: 2, vig: true,  flies: 60, nums: 70, agg: false, flat: false },
+    media: { name: 'MEDIA', s: 1.5, pm: 0.6, cpsCap: 260, partCap: 220, fog: 1, vig: true,  flies: 24, nums: 40, agg: false, flat: false },
+    baja:  { name: 'BAJA',  s: 1,   pm: 0.3, cpsCap: 110, partCap: 90,  fog: 0, vig: false, flies: 0,  nums: 18, agg: true,  flat: true }
   };
   var ORDER = ['alta', 'media', 'baja'];
   var Q = G.Q = {};

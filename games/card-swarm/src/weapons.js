@@ -17,7 +17,7 @@
 
   // ------------------------------------------------------------- Proyectiles del jugador
   function spawnProj(o) {
-    if (G.projectiles.length > G.Q.projCap * 1.5) return null;
+    if (G.projectiles.length > G.B.projCap * 1.5) return null;
     var nq = { team: 'p', x: o.x, y: o.y, vx: Math.cos(o.ang) * o.speed, vy: Math.sin(o.ang) * o.speed, ang: o.ang, dmg: o.dmg,
       tag: o.tag, id: o.id, kind: o.kind, r: o.r || 6, life: o.life || 1600, pierce: !!o.pierce, explode: o.explode || 0,
       o: o.o || {}, hit: new Set(), t: 0, rot: 0, back: false, speed: o.speed, bounce: o.bounce || 0 };

@@ -180,7 +180,7 @@
     }
     if (e.hp <= 0) {
       G.Enemies.kill(e, false, tag);
-      if (o.lifesteal && G.rng() < B.heal.chance) G.Player.heal(p, o.lifesteal, 'fang');   // robo de vida: 20 % por kill
+      if (o.lifesteal && G.rng() < B.heal.chance * (e.dRew || 1)) G.Player.heal(p, o.lifesteal, 'fang');   // robo de vida: 20 % por kill
     }
     return dmg;
   };
@@ -327,15 +327,16 @@
   var killTimes = [], stopCd = 0;
   C.onKill = function (e, tag) {
     var a = A(), p = G.player, d = B.enemy[e.type];
-    if (G.Armor && !e.summoned) { if (e.poisonN > 0) G.Armor.onPoisonKill(); G.Armor.onKillCount(); }   // v8.1: bonos de 4 piezas Escama (Piel de pantano) y Jalea (Reina de la colmena)
+    if (G.Armor && !e.summoned) { if (e.poisonN > 0) G.Armor.onPoisonKill(); G.Armor.onKillCount(e.dRew || 1); }   // v8.1: bonos de 4 piezas Escama (Piel de pantano) y Jalea (Reina de la colmena)
     if (e.hemoT > 0) G.Fusion.hemoDeath(e);   // FUSION: Hemotoxina
     if (tag === 'fire' && G.Tundra.on) G.Tundra.fireKill();   // P3: cada baja con Fuego baja el Frío (máx. -4 %/s)
-    var elite = d.elite, drops = e.type === 'boss' ? 6 : 1;
-    for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops);
+    var elite = d.elite, drops = e.type === 'boss' ? 6 : 1, rx = e.dRew || 1;   // rx: recompensa por baja del perfil de dificultad (T-F0-05; 1 = ALTA, jefes, minijefes, invocados)
+    for (var i = 0; i < drops; i++) C.dropGem(e.x, e.y, 'xp', d.xp / drops * rx);
     if (elite) { for (var q = 0; q < 4; q++) C.dropGem(e.x, e.y, 'ash', d.ash / 4); C.dropGem(e.x, e.y, 'heart', B.player.heal * 2); }
-    else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (G.rng() < 0.5) C.dropGem(e.x, e.y, 'ash', 2); }
-    else for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
-    if (G.rng() < B.player.heartP) C.dropGem(e.x, e.y, 'heart', B.player.heal);
+    else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (G.rng() < 0.5 * rx) C.dropGem(e.x, e.y, 'ash', 2); }
+    else if (rx === 1) for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
+    else { var ac = G.D.ashAcc + d.ash * rx, an = Math.floor(ac + 1e-9); G.D.ashAcc = ac - an; if (an >= 1) C.dropGem(e.x, e.y, 'ash', an); }   // el resto fraccionario se acumula (la gema se redondea al recoger)
+    if (G.rng() < B.player.heartP * rx) C.dropGem(e.x, e.y, 'heart', B.player.heal);
     G.Loot.onKill(e);
     if (e.burnT > 0) {
       var tf = G.Tree.fx;
@@ -358,9 +359,9 @@
     }
     if (M().set4.poison && e.poisonN > 0) C.zone({ kind: 'pool', x: e.x, y: e.y, r: 40, life: 2500, dps: 5, tag: 'poison', poison: true, interval: 500 });   // Epidemia (set Veneno 4+): charco venenoso al morir un envenenado
     if (a.frenzy) p.frenzyT = 1500;
-    if (a.pact && tag === 'fire' && G.rng() < B.heal.chance) G.Player.heal(p, B.heal.pact, 'pact');
+    if (a.pact && tag === 'fire' && G.rng() < B.heal.chance * rx) G.Player.heal(p, B.heal.pact, 'pact');
     if (e.poisonN > 0) {
-      if (a.bloodpoison) { p.poisonKills++; if (p.poisonKills % 15 === 0) G.Player.heal(p, B.heal.bloodpoison, 'bloodpoison'); }
+      if (a.bloodpoison) { var pk0 = p.poisonKills; p.poisonKills += rx; if (Math.floor(p.poisonKills / 15 + 1e-9) > Math.floor(pk0 / 15 + 1e-9)) G.Player.heal(p, B.heal.bloodpoison, 'bloodpoison'); }
       if (a.plague || e.fusPlague) {
         var n = 0, L = C.inRange(e.x, e.y, 70);
         for (var k = 0; k < L.length && n < 3; k++) if (L[k] !== e) { C.poison(L[k], 1); fx.bolt(e.x, e.y, L[k].x, L[k].y, '#7be34a', 2); n++; }

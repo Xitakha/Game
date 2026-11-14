@@ -189,12 +189,16 @@
     S().prog[d.id] = Math.min(d.goal, p + (n || 1));
     if (S().prog[d.id] >= d.goal) done(d);
   }
+  function incX(d, e) {   // T-F0-05: la baja de un normal con perfil suma x (parte entera, resto acumulado); sin perfil, 1
+    var x = e && e.dRew; if (!x || x === 1 || !G.D) return inc(d);
+    G.D.questAcc += x; var n = Math.floor(G.D.questAcc + 1e-9); G.D.questAcc -= n; if (n > 0) inc(d, n);
+  }
   Q.onKill = function (type, e) {
     if (G.mode === 'practice') return;
     var d = Q.active(); if (!d || Q.progress(d.id) >= d.goal) return;
     var tk = d.kind === 'mini' ? (e && e.mini ? 'slot' + e.slot : type === 'mini_bulwark' ? 'slot1' : type === 'mini_hive' ? 'slot2' : type) : type;   // P4.5: los minijefes cuentan por SLOT
-    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === tk && (!d.biome || G.curBiome === d.biome)) { if (!d.needBurn || (e && e.cauterized)) inc(d); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
-    else if (d.kind === 'kills') inc(d);
+    if ((d.kind === 'hunt' || d.kind === 'mini') && d.target === tk && (!d.biome || G.curBiome === d.biome)) { if (!d.needBurn || (e && e.cauterized)) incX(d, e); }   // needBurn: solo cuenta la muerte por cauterización (Cabeza menor)
+    else if (d.kind === 'kills') incX(d, e);
     else if (d.kind === 'clean') Q.tick();
   };
   // P4.5: parte de minijefe rota (Minis.breakPart) / cabeza cauterizada (Minis.cauterHit)

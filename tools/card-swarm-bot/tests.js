@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|dev|diag|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|dev|diag|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -621,6 +621,7 @@ async function seedRun(b, url, cps, block, wait) {
       G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
       G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
       mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
+      mix(G.D.id); mix(G.D.n); mix(G.D.ashAcc); mix(G.D.questAcc);   // T-F0-05: el perfil de dificultad forma parte del estado
       return { hash: h, kills: G.kills, en: G.enemies.length, tick: __tick() };
     };
   });
@@ -671,6 +672,118 @@ async function seed() {
   console.log(`       ${SC.length} escenarios, ${ticks} ticks simulados en total (2 corridas cada uno)`);
   const C = await seedRun(b, `${SEED_BASE}&seed=99&q=alta`, [600, 1800, 3600], 600, 10);
   ok(h1 && C.hs[1] !== h1[2], 'otra semilla (99) => otra partida');
+  await b.close();
+}
+
+// ---------------------------------------------------------------- T-F0-05 parte 2: perfil de dificultad por calidad (G.D)
+async function diff() {
+  console.log('--- perfil de dificultad por calidad: fijado al empezar, multiplicadores, recompensa, tope, ALTA identica a antes');
+  const b = await launch(); const U = 'reset=1&god=1&direct=1&all=1&noanchor=1&nointro=1&speed=0&hand=spark:1';
+  let pg = await mk(b, U + '&q=baja');
+  // 1. el perfil se fija en startGame y no cambia con la calidad adaptativa; la siguiente expedicion usa el nuevo
+  const p1 = await E(pg, () => {
+    const a = { id: G.D.id, q: G.Q.level, n: G.D.n };
+    G.Sys.setQuality('alta', true); const b1 = { id: G.D.id, q: G.Q.level };
+    G.state = 'play'; G.startGame(); const c = { id: G.D.id, q: G.Q.level, n: G.D.n };
+    return { a, b1, c, noRule: G.Q.enemyMul === undefined && G.Q.projCap === undefined, pc: G.B.projCap, tabla: JSON.stringify(G.B.diff) };
+  });
+  ok(p1.a.id === 'baja' && p1.a.n === 0.75, 'q=baja: el perfil de la expedicion es BAJA (n 0,75)');
+  ok(p1.b1.id === 'baja' && p1.b1.q === 'alta', 'cambiar la calidad a mitad de la expedicion cambia los graficos pero NO el perfil');
+  ok(p1.c.id === 'alta' && p1.c.n === 1, 'la siguiente expedicion (startGame) toma el perfil de la calidad vigente');
+  ok(p1.noRule && p1.pc === 400, 'la calidad grafica ya no lleva reglas (sin enemyMul ni projCap en G.Q; G.B.projCap = 400 comun)');
+  const T = JSON.parse(p1.tabla);
+  ok(T.alta.n === 1 && T.alta.h === 1 && T.alta.d === 1 && T.alta.s === 1 && T.alta.x === 1 && T.media.n === 0.9 && T.media.h === 1.083 && T.media.d === 1.05 && T.media.s === 1.03 && T.media.x === 1.08 && T.baja.n === 0.75 && T.baja.h === 1.25 && T.baja.d === 1.1 && T.baja.s === 1.08 && T.baja.x === 1.22, 'tabla G.B.diff con los valores de partida de la especificacion (4.4)');
+  // 2. perillas ?dq ?dn ... (con dev=1): ?dq fuerza el perfil sin tocar los graficos; ?dh pisa un valor
+  await done(pg, 'diff-perfil');
+  pg = await mk(b, U + '&q=alta&dq=media&dh=1.5');
+  const p2 = await E(pg, () => ({ id: G.D.id, q: G.Q.level, h: G.D.h, n: G.D.n }));
+  ok(p2.id === 'media' && p2.q === 'alta' && p2.h === 1.5 && p2.n === 0.9, '?dq=media fuerza el perfil sin cambiar los graficos; ?dh pisa la vida (' + JSON.stringify(p2) + ')');
+  await done(pg, 'diff-perillas');
+  pg = await mk(b, 'nodev&reset=1&direct=1&speed=0&god=1&q=alta&dq=baja&dn=0.1');
+  ok(await E(pg, () => G.D.id === 'alta' && G.D.n === 1), 'sin dev=1 las perillas ?dq/?dn se ignoran');
+  await done(pg, 'diff-nodev');
+  // 3. multiplicadores: un normal los lleva; minijefe, jefe e invocado no
+  pg = await mk(b, U + '&q=baja');
+  const v = await E(pg, () => {
+    const E = G.Enemies, out = {}, one = (prof, type, o) => { G.D = G.diffProfile(prof); const e = E.spawn(type, 400, 400, o); return { hp: e.maxHp, dmg: e.dmg, sb: e.spdBase, rew: e.dRew, sp: e.dSpd }; };
+    ['worm', 'boar'].forEach(t => { out[t] = { a: one('alta', t), b: one('baja', t), m: one('media', t) }; });
+    out.mini = { a: one('alta', 'mini_bulwark'), b: one('baja', 'mini_bulwark') };
+    out.sum = { a: one('alta', 'worm', { summoned: true }), b: one('baja', 'worm', { summoned: true }) };
+    out.esc = { a: one('alta', 'worm', { noprof: true }), b: one('baja', 'worm', { noprof: true }) };
+    out.boss = { a: one('alta', 'boss', { hp: 1000 }), b: one('baja', 'boss', { hp: 1000 }) };
+    G.mode = 'hunt'; out.hunt = { a: one('alta', 'worm'), b: one('baja', 'worm') }; G.mode = 'run'; G.enemies.length = 0;
+    return out;
+  });
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  for (const t of ['worm', 'boar']) {
+    ok(near(v[t].b.hp / v[t].a.hp, 1.25) && near(v[t].b.dmg / v[t].a.dmg, 1.1) && near(v[t].b.rew, 1.22) && near(v[t].b.sp, 1.08) && v[t].a.rew === 1 && near(v[t].b.sb, v[t].a.sb), `${t} normal en BAJA: vida x1,25, dano x1,10, recompensa 1,22, velocidad 1,08 (en dSpd, spdBase intacta); ALTA x1`);
+    ok(near(v[t].m.hp / v[t].a.hp, 1.083) && near(v[t].m.dmg / v[t].a.dmg, 1.05) && near(v[t].m.rew, 1.08), `${t} normal en MEDIA: vida x1,083, dano x1,05, recompensa 1,08`);
+  }
+  const same = k => v[k].a.hp === v[k].b.hp && v[k].a.dmg === v[k].b.dmg && v[k].b.rew === undefined && v[k].b.sp === undefined;
+  ok(same('mini') && same('sum') && same('esc') && same('boss') && same('hunt'), 'minijefe, jefe, invocados, escolta de minijefe y cacerias: sin perfil (' + ['mini', 'sum', 'esc', 'boss', 'hunt'].map(k => k + ':' + same(k)).join(' ') + ')');
+  // velocidad: el desplazamiento se escala en update junto a speedMul, la telegrafia no
+  const sp = await E(pg, () => { const r = {}; ['alta', 'baja'].forEach(pf => { G.D = G.diffProfile(pf); G.enemies.length = 0; const e = G.Enemies.spawn('worm', G.player.x + 300, G.player.y, {}); e.spawnT = 0; G.Enemies.update(16); r[pf] = e.spd; }); return r; });
+  ok(near(sp.baja / sp.alta, 1.08), 'velocidad de desplazamiento de un normal en BAJA = x1,08 (' + (sp.baja / sp.alta).toFixed(4) + ')');
+  // 4. recompensa por baja: XP y Ceniza de 100 bajas
+  const rw = await E(pg, () => {
+    const tot = {};
+    ['alta', 'baja'].forEach(pf => {
+      G.D = G.diffProfile(pf); let xp = 0, ash = 0, hearts = 0;
+      for (let i = 0; i < 100; i++) {
+        G.enemies.length = 0; G.gems.length = 0;
+        const e = G.Enemies.spawn('boar', 400, 400); e.spawnT = 0; G.Combat.onKill(e, 'neutral');
+        G.gems.forEach(g => { if (g.kind === 'xp') xp += g.v; else if (g.kind === 'ash') ash += Math.round(g.v); else hearts++; });
+      }
+      tot[pf] = { xp, ash, hearts };
+    });
+    return tot;
+  });
+  ok(near(rw.baja.xp / rw.alta.xp, 1.22), 'XP por gemas de 100 bajas: BAJA = ALTA x1,22 (' + rw.alta.xp + ' -> ' + rw.baja.xp + ')');
+  ok(Math.abs(rw.baja.ash - rw.alta.ash * 1.22) <= 1.5, 'Ceniza de 100 bajas: BAJA = ALTA x1,22 con el resto fraccionario acumulado (' + rw.alta.ash + ' -> ' + rw.baja.ash + ')');
+  await done(pg, 'diff-valores');
+  // 5. presupuesto y tope: BAJA = ALTA x n
+  pg = await mk(b, U + '&q=alta&seed=5&len=9');
+  const cp = await E(pg, () => {
+    const W = G.Waves, B = G.B, r = {};
+    ['alta', 'baja'].forEach(pf => {
+      G.D = G.diffProfile(pf); G.enemies.length = 0; W.budget = 0; W.t = 1499; G.runT = G.time = 120000; W.starT = 99999;
+      const before = G.enemies.length; G.step(); const spent = G.enemies.reduce((s, e) => s + B.enemy[e.type].cost, 0);
+      r[pf] = { budget: W.budget + spent, n: G.enemies.length - before };
+      // tope: 70 perros vivos; ALTA (tope 80 a los 5 min) aun deja entrar, BAJA (60) no
+      G.enemies.length = 0; for (let i = 0; i < 70; i++) G.Enemies.spawn('dog', 300 + i, 300, { noprof: true });
+      W.budget = 50; W.t = 1499; G.runT = G.time = 300000; const n0 = G.enemies.length; G.step(); r[pf].cap = G.enemies.length - n0;
+    });
+    return r;
+  });
+  ok(Math.abs(cp.baja.budget / cp.alta.budget - 0.75) < 0.02, 'presupuesto por pulso (min 2): BAJA = ALTA x 0,75 (' + cp.alta.budget.toFixed(2) + ' -> ' + cp.baja.budget.toFixed(2) + ')');
+  ok(cp.alta.cap > 0 && cp.baja.cap === 0, 'tope de enemigos en el min 5: con 70 vivos ALTA (80) aun genera (' + cp.alta.cap + ') y BAJA (60) no (' + cp.baja.cap + ')');
+  await done(pg, 'diff-presupuesto');
+  // 6. ALTA identica a antes: hash de la simulacion con semilla igual al medido en el commit anterior a la parte 2 (sin G.D en el hash)
+  const GOLD = [3569930420, 1065409925, 1194979460];
+  pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta`);
+  await E(pg, () => {
+    window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
+    window.__adv = (n) => {
+      const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
+      for (let i = 0, g = 0; i < n && g < n * 4; g++) {
+        if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
+        const t = __tick(), blk = Math.floor(t / 45);
+        const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
+        G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
+        const before = G.time; G.step(); if (G.time !== before) i++;
+      }
+      const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+      mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
+      G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
+      G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
+      mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
+      return h;
+    };
+  });
+  const gh = [];
+  for (const cpt of [600, 1800, 3600]) { const t = await E(pg, () => __tick()); gh.push(await E(pg, n => __adv(n), cpt - t)); }
+  ok(gh.every((h, i) => h === GOLD[i]), 'ALTA con semilla 1234: mismo hash que antes de la parte 2 (' + gh.join(',') + ')');
+  await done(pg, 'diff-alta-igual');
   await b.close();
 }
 
@@ -1209,7 +1322,7 @@ async function dev() {
 }
 
 (async () => {
-  const run = { dev, diag, manual, text, seed, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { dev, diag, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
