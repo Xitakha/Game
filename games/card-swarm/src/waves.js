@@ -39,7 +39,7 @@
     var pos = spawnPos(), E = G.Enemies;
     var el = E.spawn(type, pos[0], pos[1]), vr = G.curBiome === 'cripta' && type === 'mini_bulwark' ? 'warden' : G.curBiome === 'asfodelo' && type === 'mini_hive' ? 'wraith' : G.curBiome === 'tundra' ? (type === 'mini_bulwark' ? 'yeti' : 'ventisquero') : null;
     if (vr) E.variant(el, vr);   // guardián propio del bioma (J3)
-    if (type === 'mini_bulwark') { var esc = B.famOf() && G.curBiome === 'asfodelo' ? 'worm' : 'shield'; E.spawn(esc, pos[0] + 45, pos[1] + 20); E.spawn(esc, pos[0] - 45, pos[1] + 20); }   // el Asfódelo no tiene Escudero: el Coloso trae 2 Almas errantes
+    if (type === 'mini_bulwark') { var esc = B.famOf() && G.curBiome === 'asfodelo' ? 'worm' : 'shield'; E.spawn(esc, pos[0] + 45, pos[1] + 20, { noprof: true }); E.spawn(esc, pos[0] - 45, pos[1] + 20, { noprof: true }); }   // el Asfódelo no tiene Escudero: el Coloso trae 2 Almas errantes
     G.Hud.banner('¡GUARDIÁN: ' + (vr ? G.Enemies.VARIANTS[vr].name : B.enemy[type].name) + '!', 2000, '#ffb347');
     G.sfx('boss_roar', { pitch: 1.3, vol: 0.6 });
     W.eliteBoost = 25000;
@@ -139,10 +139,10 @@
     if (W.t < 1500) return;
     W.t -= 1500;
     var bm = boss ? G.Boss.spawnMode() : null;   // por fase del jefe: multiplicador, tipos permitidos y tope de normales
-    var fbp = B.famOf(), bp = B.bp(m) * (bm ? bm.mul : 1) * (fbp && fbp.bp && m >= (fbp.bpFrom || 0) ? fbp.bp : 1);   // fam.bp = multiplicador del presupuesto por pulso desde el minuto bpFrom (Asfódelo 0,95 desde el 2: sus emboscadores y cabezas fijas viven más y no gastan presupuesto al reponerse; censo A.2)
+    var fbp = B.famOf(), bp = B.bp(m) * G.D.n * (bm ? bm.mul : 1) * (fbp && fbp.bp && m >= (fbp.bpFrom || 0) ? fbp.bp : 1);   // fam.bp = multiplicador del presupuesto por pulso desde el minuto bpFrom (Asfódelo 0,95 desde el 2: sus emboscadores y cabezas fijas viven más y no gastan presupuesto al reponerse; censo A.2)
     if (MN && E.minis().some(function (q) { return q.mini; })) bp *= MN.hordeMulNow();   // P4.5: mientras vive un minijefe nuevo la horda aprieta menos (calibración de muertes)
     W.budget = Math.min(W.budget + bp, bp * 2.5);
-    var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.Q.enemyMul)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
+    var cap = Math.max(6, Math.round((bm ? bm.cap : B.cap(m)) * G.D.n)), alive = bm ? G.Boss.normalsAlive() : G.enemies.length, counts = {};
     if (bm && bm.mul <= 0) return;
     G.enemies.forEach(function (e) { if (!e.dead) counts[e.type] = (counts[e.type] || 0) + 1; });
     var types = [];

@@ -29,15 +29,66 @@ jobs:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
 
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Instalar esbuild y Playwright (versiones fijadas en tools/package-lock.json)
+        working-directory: tools
+        run: npm ci
+
+      - name: Empaquetar el juego (un solo JS minificado; ver tools/build/README.md)
+        # Para una versión externa (itch, portales) se añadiría --no-god; en Pages NO se usa. Sin --sourcemap: los mapas no se publican.
+        run: node tools/build/build.js --out dist/card-swarm
+
+      - name: Caché del navegador
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/package-lock.json') }}
+
+      - name: Instalar Chromium y sus librerías del sistema
+        working-directory: tools
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      # Prueba de humo del paquete: la batería completa ya pasó (job pruebas) con los archivos sueltos; aquí se comprueba que el
+      # minificado/concatenado no rompe el juego (en local la batería completa contra dist/ dio lo mismo que con archivos sueltos).
+      - name: Prueba de humo contra el paquete (puerto 8822)
+        run: |
+          set -o pipefail
+          python3 tools/serve.py dist/card-swarm 8822 > servidor.log 2>&1 &
+          echo $! > servidor.pid
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null http://localhost:8822/index.html && break
+            sleep 1
+          done
+          rc=0
+          for m in dev diag flow boss iso; do
+            node tools/card-swarm-bot/tests.js $m http://localhost:8822 2>&1 | tee -a humo.log
+            [ "${PIPESTATUS[0]}" = 0 ] || rc=1
+          done
+          kill "$(cat servidor.pid)" 2>/dev/null || true
+          exit $rc
+
       - name: Ensamblar el sitio
         run: |
           set -euo pipefail
           mkdir -p _site/card-swarm
           cp tools/site/index.html _site/index.html
           touch _site/.nojekyll
-          cp -a games/card-swarm/. _site/card-swarm/
+          # el paquete de dist/ (index.html + un JS + sw.js ya sellado + manifest + iconos); sin src/ ni documentación
+          cp -a dist/card-swarm/. _site/card-swarm/
           find _site -type f -name '*.md' -delete
-          # versión del service worker = hash del contenido; falla si falta algún archivo del precache
+          # comprueba que sw.js precachea justo lo publicado (falla si falta algún archivo)
           python3 tools/card-swarm-pwa/stamp.py _site/card-swarm
           # enlaces antiguos del prototipo: /card-swarm-fusion/ redirige al juego (el SW clásico y el nuevo solo controlan /card-swarm/)
           mkdir -p _site/card-swarm-fusion

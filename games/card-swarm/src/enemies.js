@@ -23,6 +23,9 @@
       else if (fe.fbSpr && G.hasSpr(fe.fbSpr)) { spr = fe.fbSpr; fbSkin = fe.fbSkin || null; }   // P2: sprite existente teñido mientras no haya arte propio
     }
     if (!G.hasSpr(spr)) spr = 'worm';   // un rol nuevo sin arte nunca rompe el dibujo
+    // T-F0-05: perfil de dificultad por calidad (G.D) solo en normales del director de una expedicion: ni jefes, ni minijefes (ni su escolta), ni invocados, ni cacerias
+    var prof = type !== 'boss' && !d.elite && !o.summoned && !o.noprof && G.mode === 'run' && !G.final ? G.D : null;
+    if (prof) { hp *= prof.h; dmg *= prof.d; }
     if (o.hp) hp = o.hp;
     var sc = o.scale || (fe && fe.sc) || 1, r = d.r * sc, mg = G.WALL + r;
     var e = {
@@ -32,6 +35,7 @@
       acc: { fire: 0, poison: 0, blood: 0 }, numAcc: 0, numT: 0, dotAcc: 0, dotT: 0, boomDepth: 0, lastTag: 'neutral', summoned: !!o.summoned, src: o.src || null,
       shootT: G.rnd(1200, 2600), sumT: G.rnd(2500, 6000), atkT: 2000, ai: 0, strafe: G.rng() < 0.5 ? 1 : -1, fa: 0
     };
+    if (prof) { e.dRew = prof.x; e.dSpd = prof.s; }   // recompensa por baja y velocidad del perfil (undefined = 1)
     e.spawnMax = e.spawnT; if (fe && fe.nosep) e.nosep = true;
     if (B.mat.on && !o.nofam && type !== 'boss' && !d.elite) { var me = B.matEntry(type); if (me && me.mat) { e.mat = me.mat; e.mx = me.mx || null; } }   // material para G.B.matMul (A.8)
     if (G.Tundra.on) E.tunInit(e, d, fe);   // P3: hielo (derrape, tau 300 ms) y estado propio de los 9 monstruos de la Tundra (enemies_tundra.js)
@@ -189,7 +193,7 @@
   E.shoot = function (team, x, y, ang, speed, dmg, spr, o) {
     o = o || {};
     if (!G.hasSpr(spr)) spr = o.fb || null;
-    if (G.projectiles.length > G.Q.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
+    if (G.projectiles.length > G.B.projCap && !o.orb) return;   // calidad adaptativa: tope de proyectiles en pantalla
     G.projectiles.push({ team: team, x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, ang: ang, dmg: dmg,
       spr: spr, r: o.r || 7, life: o.life || 4000, pierce: !!o.pierce, hit: new Set(), t: 0, hp: o.hp || 0, slow: o.slow || null, src: o.src || 'proj', orb: !!o.orb, kind: o.kind || null, ox: o.ox, oy: o.oy, sfxHit: o.sfxHit || null, sfxBrk: o.sfxBrk || null, cold: o.cold || 0, onEnd: o.onEnd || null });
   };
@@ -1048,7 +1052,7 @@
       // estados (quemado, veneno, sangrado...) y ralentización
       if (G.Combat.tickStatus(e, dt)) continue;
       var slowF = (e.slowT > 0 ? 1 - e.slowPct : 1) * (G.Panal.on ? G.Panal.enemySlow(e) : 1);   // P5: la miel ralentiza 35 % a los terrestres (los voladores y la Babosa no)
-      e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul);   // velocidad creciente (B.speedRamp)
+      e.spd = e.spdBase * slowF * ((e.type === 'boss' || B.enemy[e.type].elite || e.bossAdd) ? 1 : speedMul * (e.dSpd || 1));   // velocidad creciente; dSpd = perfil de dificultad (B.speedRamp)
       if (e.stunT > 0) { e.anim += 0; continue; }
       var pp = e.blindT > 0 ? G.Fusion.blindTarget(e, p, dt) : p;   // FUSION: un enemigo cegado (Vapor) persigue un punto al azar en vez de al jugador
       var dx = pp.x - e.x, dy = pp.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);

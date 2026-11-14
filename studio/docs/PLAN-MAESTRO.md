@@ -300,6 +300,7 @@ Meta de la fase: que lo publicado sea el juego real (con reto), que las pruebas 
 - **Pruebas.** Grupo nuevo `seed` (al menos 12 puntos de control por calidad).
 - **Riesgo y reversión.** La compensación (menos enemigos, más duros y rápidos) puede cambiar el reto en móvil: comprobar con el banco de T-F2-01 que la presión equivale a la de PC. Medir los fps con T-F2-07. Revertir por commit.
 - **Tamaño.** M. **Decisión del dueño.** Resuelta: menos enemigos pero más duros y un poco más rápidos en móviles lentos.
+- **Decisiones aprobadas (2026-11-13).** (1) El perfil de dificultad se fija al empezar la expedición; si la calidad adaptativa cambia a mitad, solo cambian los gráficos hasta la siguiente. (2) Se acepta el daño extra por golpe en MEDIA (+5 %) y BAJA (+10 %). (3) Se mantiene la reducción de enemigos: -10 % en MEDIA y -25 % en BAJA. Valores de partida en `G.B.diff` (`src/main.js`), calibración pendiente del diseñador de balance. Detalle y medición en `studio/docs/SPEC-T-F0-05.md`.
 
 #### T-F0-06 Quitar las pistas de teclado en pantallas táctiles
 - **Objetivo y por qué.** "E", "Tab", "Q/E" y "Enter" en un teléfono confunden y dan aspecto de port sin terminar.

@@ -89,7 +89,7 @@
   A.bogMul = function () { return A.set4('pantano') ? 0.5 : 1; };
   A.lvHealAdd = function () { return A.set4('reina') ? 0.05 : 0; };
   A.onPoisonKill = function () { if (!A.set4('pantano') || !G.player || G.player.dead) return; var R = A.run; if (G.time - R.bogAt < 20000) return; R.bogAt = G.time; G.Player.heal(G.player, 2, 'pantano'); };
-  A.onKillCount = function () { if (!A.set4('reina')) return; var R = A.run, p = G.player; R.kc = (R.kc || 0) + 1; if (R.kc % 20 === 0 && p && !p.dead) { p.shield = (p.shield || 0) + 6; try { G.fx.num(p.x, p.y - 30, 'ESCUDO +6', '#ffd23a', true); } catch (e) { /* fx */ } } };
+  A.onKillCount = function (x) { if (!A.set4('reina')) return; var R = A.run, p = G.player, k0 = R.kc || 0; R.kc = k0 + (x || 1); if (Math.floor(R.kc / 20 + 1e-9) > Math.floor(k0 / 20 + 1e-9) && p && !p.dead) { p.shield = (p.shield || 0) + 6; try { G.fx.num(p.x, p.y - 30, 'ESCUDO +6', '#ffd23a', true); } catch (e) { /* fx */ } } };
   A.lastEmber = function (p) { if (!A.set4('ultima') || p.revived) return false; p.revived = true; p.hp = 1; p.hurtT = 1500; try { G.Hud.banner('¡ÚLTIMA BRASA!', 1800, '#ff9a3c'); G.fx.shake(8, 250); G.fx.ring(p.x, p.y, 8, 90, 500, '#ff9a3c', 4); } catch (e) { /* hud */ } return true; };
   A.zone = function () { if (A.OFF) return 1; var b = G.curBiome || 'bosque'; return A.zoneOn(b) ? (ZT[b] || 1) : 1; };
   A.engaged = function () { if (A.OFF) return false; var m = A.get(); return m.any || A.zone() !== 1; };

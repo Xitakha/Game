@@ -3,6 +3,7 @@
   "private": true,
   "description": "Dependencias de las pruebas automáticas (solo CI y desarrollo local). El juego no usa Node.",
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "1.63.0"
   }
 }

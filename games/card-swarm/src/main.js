@@ -113,6 +113,18 @@
     // (G.vt, igual que hpMult/dmgMult: a 7 y 10 min se llega al mismo valor al mismo punto relativo de la run), con tope +25 % (se alcanzaría a los ~31 min virtuales).
     // Solo escala la velocidad de DESPLAZAMIENTO (e.spd): las telegrafías y las velocidades de ataque (carga del jabalí, dash del Ascua, flechas) no cambian.
     speedRamp: { perMin: 0.008, cap: 0.25 },
+    // ---- Perfil de dificultad por calidad (T-F0-05, parte 2) -------------------------------------------------------------------------------------
+    // Tabla UNICA de datos. Se FIJA al empezar la expedicion (G.startGame -> G.D) y no cambia si la calidad adaptativa baja a mitad de partida.
+    // n = flujo de aparicion (presupuesto por pulso) y tope de enemigos; h = vida; d = dano (contacto y proyectil); s = velocidad de desplazamiento
+    // (solo e.spd, como speedMul); x = recompensa por baja (XP, Ceniza, botin, corazones y efectos "por baja"). Solo enemigos NORMALES del director:
+    // jefes, minijefes (y su escolta), invocados y cacerias quedan fuera. ALTA = 1 en todo (simulacion identica a antes).
+    // d de BAJA (1,10) es una interpolacion entre 1,08 y 1,15; h y s no estan calibrados. Perillas con ?dev=1: ?dq=alta|media|baja y ?dn ?dh ?dd ?ds ?dx.
+    diff: {
+      alta:  { n: 1,    h: 1,     d: 1,    s: 1,    x: 1 },
+      media: { n: 0.9,  h: 1.083, d: 1.05, s: 1.03, x: 1.08 },
+      baja:  { n: 0.75, h: 1.25,  d: 1.1,  s: 1.08, x: 1.22 }
+    },
+    projCap: 400,                                                    // tope de proyectiles enemigos (regla comun a todas las calidades; el del jugador es 1,5x)
     speedMul: function (m) { return 1 + Math.min(G.B.speedRamp.cap, G.B.speedRamp.perMin * m); },
     // ---- Experiencia (v5) ----------------------------------------------------------------------------------------------------------------------
     // XP para pasar del nivel L al L+1:  first (L=1)  /  round(base + lin*L + quad*L^2)  (L >= 2).  Antes: 8 + 6L (la build completa llegaba al min 3-4).
@@ -327,6 +339,13 @@
     G.cam.y = G.Proj.clampCamY(G.player.y - G.VH / 2);
   };
 
+  // Perfil de dificultad (G.D): se calcula UNA vez por expedicion a partir de la calidad vigente (o ?dq=) y entra en el estado de la partida (hash de la prueba de semilla).
+  G.diffProfile = function (level) {
+    var lv = /[?&]dq=(alta|media|baja)/.exec(Dev.search); lv = lv ? lv[1] : (level || 'alta');
+    var t = G.B.diff[lv] || G.B.diff.alta;
+    return { id: lv, n: qnum('dn', t.n), h: qnum('dh', t.h), d: qnum('dd', t.d), s: qnum('ds', t.s), x: qnum('dx', t.x), ashAcc: 0, questAcc: 0 };
+  };
+  G.D = G.diffProfile('alta');
   G.startGame = function () {
     try { Assets.unlock(); } catch (e) { /* sin audio */ }
     G.setLen(G.lenOverride || G.Save.data.len || 9);
@@ -336,6 +355,7 @@
     if (prac) { G.runBuff.dish = null; G.runBuff.fx = {}; }
     else try { G.Cook.begin(); } catch (e0) { G.runBuff.dish = null; G.runBuff.fx = {}; }   // Fase 2b: plato de Tía Castaña (consume pending.dish y deja su buff en G.runBuff.fx)
     G.Loot.beginRun();
+    G.D = G.diffProfile(G.Q.level);   // T-F0-05: perfil fijado al empezar (un cambio de calidad a mitad solo cambia los graficos)
     G.reset();
     // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (bosque = Pastor, cripta = Karceron, asfodelo = Letea).
     // Cripta exige haber vencido al Pastor y Asfodelo a Karceron (persistido en Save.data.bossKills); ?biome= y ?boss= saltan el bloqueo.

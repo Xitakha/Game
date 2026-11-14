@@ -163,7 +163,7 @@
     pos = pos || W.spawnPos();
     var e = E.spawn('mini_' + id, pos[0], pos[1]);
     if (d.escort) for (var i = 0; i < d.escort.n; i++) {   // escoltas de entrada: cuentan para el tope de 3 adds (no son 'summoned': sueltan botín como siempre)
-      var role = B.has(d.escort.role) ? d.escort.role : 'worm', q = E.spawn(role, pos[0] + (i ? -45 : 45), pos[1] + 20); q.mown = e; q.src = e;
+      var role = B.has(d.escort.role) ? d.escort.role : 'worm', q = E.spawn(role, pos[0] + (i ? -45 : 45), pos[1] + 20, { noprof: true }); q.mown = e; q.src = e;
     }
     e.banner = 2000;
     G.Hud.banner('¡GUARDIÁN: ' + d.name + '!', 2000, '#ffb347');
