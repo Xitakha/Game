@@ -37,7 +37,7 @@ Desvíos respecto al texto del plan (justificados en su sección):
 | Pestañas del Portal SALIDA / CARTAS | `src/panels.js:321`, `:419` | Nueva pestaña RETO |
 | Pantalla de fin y botones | `src/base.js:8-12`, `:50-52`, `:143-147` | Variante del reto |
 | Parámetros cerrados tras `?dev=1` | `src/dev.js:7-13` | Nuevo parámetro `today` (fecha simulada) |
-| Guardado v12 y migraciones con copia | `src/save.js:22`, `:58-133`, `:141`, `:149-178` | Migración v12 -> v13 |
+| Guardado v12 con escritura segura, copias rotativas, IndexedDB, validador y recuperación (T-F1-11) | `src/save.js:29`, `:56-200`, `:276-351` (migrate), `:370-397` (load), `:400-429` (adopt), `:433-468` (exportar/importar) | Migración v12 -> v13 apoyada en todo eso (3.2) |
 
 ---
 
@@ -392,16 +392,35 @@ daily: {
 
 Más `stats.dailyRuns` (número de retos jugados, oficiales + reintentos) y `flags.dseen` (último día de objetivos vistos).
 
-### 3.2 Migración v12 -> v13
+### 3.2 Migración v12 -> v13 (sobre el guardado seguro de T-F1-11)
 
-Patrón igual al de v11 -> v12 (`src/save.js:125-131`):
-- `VERSION = 13` (`src/save.js:22`).
-- La copia de seguridad ya la hace `S.load` antes de migrar: `swarmhand.fusion.save.v12` (`src/save.js:141`).
-- En `migrate`: `if (d.v === 12) { d.v = 13; d.flags.migrated13 = 1; d.daily = freshDaily(); }`. Solo añade campos; no toca nada de lo existente.
-- En `fresh()` (`src/save.js:28-45`): `daily: freshDaily()`.
-- En `S.adopt` (`src/save.js:149-178`): añadir `'daily'` a la lista de objetos obligatorios (`:153`) y rellenar los subcampos que falten con los de `freshDaily()`, igual que `cine` (`:165-166`). Validar tipos: `hist` es lista y se recorta a 30; `claims` es objeto con 60 claves como mucho; `streak.wood` entre 0 y 2.
-- Cuentas existentes: racha 0 con 2 Leñas. El reto aparece en cuanto se cumple la condición (casi todas las cuentas con progreso ya la cumplen). Los objetivos se generan en la primera visita a la aldea.
-- `importText` (`src/save.js:185-198`) migra igual los guardados v12 o anteriores; los v13 entran tal cual. La cadena v9 -> v13 se prueba entera.
+T-F1-11 (otro agente, `src/save.js`) ya pone la escritura segura, las copias y la recuperación, y no sube la versión (sigue en v12, `src/save.js:2`, `:29`). Esta migración **no duplica nada de eso**: añade el paso v12 -> v13 y declara el campo nuevo en su validador. Lo que se reutiliza tal cual:
+- **Copia antes de migrar:** `S.load` escribe `swarmhand.fusion.save.v12` antes de llamar a `migrate` (`src/save.js:378`). No hay que añadir ninguna copia.
+- **Escritura segura, copias rotativas (`.reciente`, `.dia`, `.semana`) e IndexedDB:** `S.save` (`src/save.js:194-200`). El campo `daily` viaja dentro del guardado sellado con `_sum` (`:85-94`) sin hacer nada más.
+- **Recuperación:** `fromBackups` (`src/save.js:361-369`) migra cualquier copia con `migrate()`. Al subir a `VERSION = 13`, `candidates()` ya incluye `.v12` (`:358`), y `S.backups()` la enseña en Ajustes (`:473`).
+- **Exportar e importar:** `exportText` e `importText` (`src/save.js:433-468`) pasan por `readRaw(json, true)` + `migrate`. Un texto v12 exportado antes se importa y migra; uno v13 entra tal cual.
+
+Cambios propios de v13 (todos en `src/save.js`):
+1. `VERSION = 13` (`:29`) y una línea v13 en la cabecera de historial (`:9`).
+2. `function freshDaily()` con la estructura de 3.1, junto a `freshCine` / `freshArmor` (`:54-55`), y `daily: freshDaily()` en `fresh()` (`:35-52`).
+3. En `migrate`, tras el paso v11 -> v12 (`:343-349`): `if (d.v === 12) { d.v = 13; d.flags = isObj(d.flags) ? d.flags : {}; d.flags.migrated13 = 1; if (!isObj(d.daily)) d.daily = freshDaily(); }`. Solo añade; no toca nada de lo existente.
+4. **Validador** (`rules`, `:120-151`): `'daily'` entra en la lista de `obj(d, k)` (`:138`) y lleva un bloque propio de rangos. Con él, al cargar se corrige y al importar se rechaza, igual que el resto:
+   - Días (`maxDay`, `obj.day`, `obj.rerollDay`, `streak.last`, `reto.seenDay`, `reto.extraDay`): 0 a 1e6. Semana (`obj.week`): 0 a 2e5.
+   - `streak.n` y `streak.best`: 0 a 1e5. `streak.wood`: 0 a 2. `streak.woodAcc`: 0 a 5.
+   - Puntuaciones (`score`, `base`, `retry.best`, `best.score`): 0 a 1e7. Medalla: 0 a 3. Peligro: 2 a 4.
+   - `obj.wpaid.brasas`: 0 a 1e4; `parts`: 0 a 1e4; `rare`: 0 a 10.
+   - `claims` con `map(..., 0, 1)`.
+5. **Límites de `clean()`** (`:96-118`: listas de 64 como máximo, 1.000 claves, profundidad 8 y textos de 200): el diseño cabe con margen. `hist` llega a 30 entradas, `claims` a 60 claves, `list` a 3, `wlist` a 2 y la entrada más honda está a profundidad 5 (`daily.reto.hist[i].meta.pfSpent`). Así que **el recorte de `hist` a 30 y de `claims` a 60 lo hace `G.Daily` al escribir**, no el validador. En los resultados no se guarda ningún texto largo (el texto para compartir se genera al vuelo).
+6. **`S.adopt`** (`:400-429`): añadir `'daily'` a la lista de objetos obligatorios (`:404`) y rellenar los subcampos que falten con los de `freshDaily()`, como hace `cine` (`:416-417`). `hist` debe ser lista (si no, `[]`).
+7. **Tamaño:** 30 entradas de ~300 bytes = ~9 KB, muy lejos de `MAX_RAW` = 512 KB (`:64`).
+
+Cuentas existentes: racha 0 con 2 Leñas. El reto aparece en cuanto se cumple la condición (casi todas las cuentas con progreso ya la cumplen). Los objetivos se generan en la primera visita a la aldea. Cadena v9 -> v13 probada entera.
+
+**Dónde tocamos lo de T-F1-11:**
+- Restaurar a mano una copia `.dia` o `.semana`, o importar un texto viejo, devuelve también un `daily` viejo. El oficial de hoy podría volver a jugarse, pero también se pierde lo que se cobró, así que no hay ganancia neta (5.4).
+- La recuperación automática de IndexedDB comprueba que no se haya jugado desde el arranque mirando `runs` y `brasas` (`src/save.js:266`). El reto no sube `runs`, pero sí paga Brasas, así que esa guarda sigue funcionando.
+
+**Orden de trabajo:** primero se cierra T-F1-11 (grupo `save2`). Esta migración va en un commit aparte encima, para que la revisión de `qa-tester` sea limpia.
 
 ### 3.3 Reloj y zona horaria
 
@@ -410,7 +429,7 @@ Patrón igual al de v11 -> v12 (`src/save.js:125-131`):
 - **Reloj atrás más de 2 días:** se asume que el reloj anterior estaba mal (por ejemplo, un móvil con el año equivocado). `maxDay` se reajusta al reloj actual y el juego sigue. `claims` impide cobrar dos veces un oficial ya cobrado, y los objetivos ya pagados de un día no se regeneran porque `obj.day` solo avanza.
 - **Reloj adelante:** da acceso anticipado al día futuro, pero no duplica nada. Al volver al reloj real, ese día ya figura en `claims`. La racha puede bajar por el hueco que crea el propio salto: se lo hace uno mismo.
 - **Racha con el reloj atrás:** si `hoy < streak.last`, se fija `streak.last = hoy` sin sumar ni restar.
-- **Sin paranoia:** no se detecta trampa, no hay avisos acusadores, no se bloquea la cuenta. El único texto es el informativo de la sección 4 (C9).
+- **Sin paranoia:** no se detecta trampa, no hay avisos acusadores, no se bloquea la cuenta. El único texto es el informativo de la sección 4 (E9).
 - **Fecha simulada para pruebas:** `?dev=1&today=AAAA-MM-DD` (nuevo parámetro cerrado en `src/dev.js:8`). `G.Daily.now()` es la única fuente de fecha de todo este diseño.
 
 ---
@@ -542,7 +561,7 @@ Con victoria, la última línea es `Jefe vencido en 1:42 - 812 bajas`.
 | `src/panels.js` | Portal: pestaña RETO (`ptabRect(2)`, `:321`; `updPortal`/`drawPortal`, `:369-498`), mover la pista Tab (`:420`) y confirmación modal. Vesper: pestaña DIARIO (`tabRect(2)`, `:112`, `:178`, `:187`); panel DIARIO también abrible desde la aldea (`P.open('diario')`) |
 | `src/aldea.js` | Marca dorada del Portal (`drawMarks`, `:533-543`), marca de objetivos en Vesper, chip de la hoguera (toque = panel DIARIO), burbujas (`:341`) y línea de Lanudo (`:176`). Cosméticos de racha (farolillos, guirnalda, chispas, hoguera mayor) |
 | `src/hud.js` | Chip del reto (B6), banners de medalla asegurada (B7) y de objetivos (E1-E2). Botón TERMINAR INTENTO en la pausa |
-| `src/save.js` | v13: `freshDaily()`, `migrate` v12 -> v13, `fresh`, `adopt` (3.2) |
+| `src/save.js` | Solo lo de 3.2, encima de T-F1-11 y en un commit aparte: `VERSION = 13`, `freshDaily()`, paso v12 -> v13 en `migrate`, `daily` en `fresh`, `adopt` y el validador `rules`. Nada de copias ni de escritura: eso ya lo hace T-F1-11 |
 | `src/dev.js` | Añadir `'today'` a `CLOSED` (`:8`) |
 | `index.html` | Cargar `daily.js` y `objectives.js` (después de `quests.js` y `loot.js`). El precache del service worker sale de `index.html` (`README.md:153`) |
 | `src/track.js` (si ya existe T-F1-01) | Eventos `daily_start`, `daily_end` (medalla, puntos, `dq`, `god`), `obj_done`, `streak` |
@@ -566,7 +585,8 @@ Con victoria, la última línea es `Jefe vencido en 1:42 - 812 bajas`.
 12. Corte a mitad: con `daily.live` guardado y la página recargada, el intento se cierra con esa puntuación y se paga su medalla una vez (aviso C12).
 13. Inmortalidad: con la inmortalidad por defecto, el reto arranca con `G.god === false`; con `?dev=1&god=1` el resultado es `dev: 1`, no entra en `hist` ni en `best` y no gasta el oficial.
 14. Sin efecto en la campaña: tras un reto, `runs`, `wins`, `bossKills`, `pelWins`, `peligro`, `trophies`, `insignias`, `pf`, `pity`, `quest` y `shop` quedan iguales (comparación profunda) y el Tablón no rota.
-15. Migración v12 -> v13: existe `swarmhand.fusion.save.v12`; `daily` tiene sus valores por defecto; el resto del guardado es idéntico (comparación profunda sin `v`, `flags.migrated13` ni `daily`). Cadena v9 -> v13.
+15. Migración v12 -> v13: existe `swarmhand.fusion.save.v12` (la escribe `S.load`); `daily` tiene sus valores por defecto; el resto del guardado es idéntico (comparación profunda sin `v`, `flags.migrated13`, `daily` ni `_sum`). Cadena v9 -> v13.
+15b. Con T-F1-11: un v13 con `daily` sobrevive a escribir, sellar, borrar el principal y recuperar desde `.reciente` y desde IndexedDB. Importar un v13 con `streak.wood = 7` o `score = -1` se rechaza (`rango`), y al cargarlo se corrige y queda anotado en `S.repairs`. Restaurar una copia `.v12` la migra a v13. El grupo `save2` sigue pasando entero.
 16. Historial: con 31 retos, quedan 30 entradas; el texto para compartir coincide carácter a carácter con 4.C.
 17. Mutadores MVP: con cada uno activo, la métrica que cambia lo hace en el sentido esperado (velocidad, número de enemigos, sin corazones, recogida, daño recibido, baraja, reroll bloqueado, vida de los guardianes).
 
@@ -603,7 +623,7 @@ Con victoria, la última línea es `Jefe vencido en 1:42 - 812 bajas`.
 | Abuso | Efecto | Respuesta |
 |---|---|---|
 | Adelantar el reloj | Juega antes los días futuros; no duplica | Aceptado |
-| Exportar el guardado, jugar el oficial e importar la copia (`src/save.js:181-198`) para repetir hasta sacar Oro | Al importar también se pierde el premio cobrado, así que solo "mejora" la medalla | Aceptado. Opcional y barato: guardar `claims` también en una clave aparte `swarmhand.fusion.daily` y unirla al importar |
+| Exportar el guardado, o restaurar una copia `.dia` / `.semana` de T-F1-11 (`src/save.js:433-490`), jugar el oficial y volver a la copia para repetir hasta sacar Oro | Al volver a la copia también se pierde el premio cobrado, así que solo "mejora" la medalla | Aceptado. Opcional y barato: guardar `claims` también en una clave aparte `swarmhand.fusion.dailyclaims`, fuera de las copias rotativas, y unirla (máximo) al importar o restaurar. Si se hace, se pacta con T-F1-11 para que `freeSpace()` (`:192`) no la borre |
 | Aprender el día en otro navegador y luego jugar el oficial | Ventaja de conocer el día | Aceptado (no hay tabla en línea) |
 | Cerrar el juego para "repetir" el oficial | No funciona: se gasta al empezar y el punto de control lo cierra | Cerrado |
 | Salidas de 60 s para encender la racha | Solo da cosméticos | Aceptado |
