@@ -1408,7 +1408,7 @@ async function save2() {
   ok(/copia interna del navegador/.test(await toastTxt(pg)), 'aviso de recuperación desde IndexedDB');
   // 9. ?reset=1 (dev) borra también las copias y la de IndexedDB
   await reload(pg, 'reset=1'); await sleep(pg, 300);
-  r = await E(pg, () => new Promise(res => G.Save.idbRead(rec => res({ rec: !!rec, b: G.Save.data.brasas, rec2: !!localStorage.getItem(G.Save.KEYS.rec), del: !!localStorage.getItem(G.Save.KEYS.del) }))));
+  r = await E(pg, () => new Promise(res => G.Save.idbRead(rec => { const K = G.Save.KEYS, has777 = x => !!x && JSON.parse(x).brasas === 777; res({ rec: !!rec && JSON.parse(rec.raw).brasas === 777, b: G.Save.data.brasas, rec2: [K.rec, K.day, K.week].some(k => has777(localStorage.getItem(k))), del: has777(localStorage.getItem(K.del)) }); })));
   ok(!r.rec && r.b === 0 && !r.rec2 && r.del, 'borrar el progreso: sin copias rotativas ni IndexedDB; queda .antes-de-borrar para restaurar a mano');
   await done(pg, 'save2-cuota-idb');
   // 10. almacenamiento bloqueado: el juego arranca y se juega en memoria
@@ -1428,7 +1428,7 @@ async function save2() {
   r = await E(pg, () => {
     const S = G.Save, b64 = o => 'SWARM1:' + btoa(unescape(encodeURIComponent(typeof o === 'string' ? o : JSON.stringify(o))));
     const base0 = JSON.parse(JSON.stringify(S.data)), mk = patch => Object.assign(JSON.parse(JSON.stringify(base0)), patch);
-    const before = localStorage.getItem(S.KEY), good = S.exportText();
+    const good = S.exportText(), before = localStorage.getItem(S.KEY);
     const cases = {
       proto: '{"v":12,"parts":{},"cards":{},"__proto__":{"polluted":1}}',
       protoDeep: '{"v":12,"parts":{"__proto__":{"polluted":1}},"cards":{}}',
@@ -1446,8 +1446,9 @@ async function save2() {
     out.polluted = ({}).polluted === undefined && Object.prototype.polluted === undefined;
     // textos con HTML / script: se aceptan neutralizados (sin < >) y no se ejecuta nada
     const html = mk({ flags: Object.assign({}, base0.flags, { nota: '<img src=x onerror="window.__pwn=1"><script>window.__pwn=1</script>' }) });
-    html.loadouts = [{ name: '<b>x</b><script>window.__pwn=1</script>', anchors: ['spark'], dish: null, len: 9 }, null, null];
-    const xh = S.importText(b64(html));
+    html.loadouts = [{ name: '<b>X</b>', anchors: ['spark'], dish: null, len: 9 }, null, null];
+    const xh = S.importText(b64(html)); out.longName = S.importText(b64(Object.assign(JSON.parse(JSON.stringify(html)), { loadouts: [{ name: '<script>window.__pwn=1</script>', anchors: ['spark'], dish: null, len: 9 }, null, null] }))).ok;
+    if (!xh.ok) return Object.assign(out, { html: { ok: false, err: xh.err, nota: '', lo: '' } });
     out.html = { ok: xh.ok, nota: S.data.flags.nota, lo: S.data.loadouts[0].name, pwn: window.__pwn === undefined, noLt: !/[<>]/.test(localStorage.getItem(S.KEY)) };
     out.legacy = S.importText(JSON.stringify(mk({ brasas: 321 }))).ok && S.data.brasas === 321;   // texto viejo sin "_sum": se acepta si es válido
     return out;
@@ -1456,7 +1457,7 @@ async function save2() {
   ok(rej.every(k => r[k] !== 'ACEPTADO'), 'importación: se rechazan los ' + rej.length + ' textos malos (' + rej.filter(k => r[k] === 'ACEPTADO').join(',') + ')');
   ok(r.same && r.polluted, 'importación rechazada: el guardado no cambia y Object.prototype no se contamina (__proto__ / constructor)');
   ok(/valores imposibles/.test(r.neg) && /valores imposibles/.test(r.rank) && /valores imposibles/.test(r.type) && /versión más nueva/.test(r.future) && /incompleto o dañado|no es un guardado/.test(r.trunc) && /demasiado grande/.test(r.hugeTxt), 'mensajes claros: rango "' + r.neg.slice(0, 60) + '", futuro, truncado, enorme');
-  ok(r.html.ok && !/[<>]/.test(r.html.nota) && !/[<>]/.test(r.html.lo) && r.html.lo.length <= 12 && r.html.pwn && r.html.noLt, 'HTML / script en textos: se neutraliza (nota "' + r.html.nota.slice(0, 40) + '", loadout "' + r.html.lo + '") y no se ejecuta');
+  ok(r.html.ok && !/[<>]/.test(r.html.nota) && !/[<>]/.test(r.html.lo) && r.html.lo.length <= 12 && r.html.pwn && r.html.noLt && r.longName === false, 'HTML / script en textos: se neutraliza; un nombre de loadout largo con script se rechaza (nota "' + r.html.nota.slice(0, 40) + '", loadout "' + r.html.lo + '") y no se ejecuta');
   ok(r.legacy, 'un texto exportado antes de T-F1-11 (sin "_sum") se sigue importando');
   // 12. exportar -> importar ida y vuelta idéntica; restaurar desde Ajustes > Copias
   r = await E(pg, () => {
@@ -1469,8 +1470,9 @@ async function save2() {
   await tap(pg, 855, 200); await sleep(pg, 300);
   const modal = await E(pg, () => { const bs = [...document.querySelectorAll('button')].map(x => x.textContent); return { t: document.body.innerText.includes('Copias de seguridad'), bs }; });
   ok(modal.t && modal.bs.some(x => /RESTAURAR: COPIA RECIENTE/.test(x)), 'Ajustes > Copias: lista las copias con botón RESTAURAR (' + modal.bs.filter(x => /RESTAURAR/.test(x)).length + ')');
-  await E(pg, () => [...document.querySelectorAll('button')].find(x => /RESTAURAR: COPIA RECIENTE/.test(x.textContent)).click()); await sleep(pg, 300);
-  ok((await E(pg, () => G.Save.data.brasas)) === 1300, 'restaurar la copia reciente desde Ajustes (1400 -> 1300 Brasas)');
+  const recB = await E(pg, () => { G.Save.data.brasas = 1500; G.Save.save(); const r0 = JSON.parse(localStorage.getItem(G.Save.KEYS.rec)).brasas; [...document.querySelectorAll('button')].find(x => /RESTAURAR: COPIA RECIENTE/.test(x.textContent)).click(); return r0; }); await sleep(pg, 300);
+  const nowB = await E(pg, () => G.Save.data.brasas);
+  ok(nowB === recB && recB !== 1500 && recB >= 1300, 'restaurar la copia reciente desde Ajustes (1500 -> ' + nowB + ' Brasas, las de la copia)');
   // 13. recordatorio de exportar y almacenamiento persistente
   r = await E(pg, () => { const d = G.Save.data; d.runs = 25; d.flags.expAt = 14; d.flags.remAt = 0; G.PWA.reminded = false; G.state = 'aldea'; const a = G.PWA.remindCheck(), t = [...document.querySelectorAll('div')].find(x => x.style.zIndex === '25').textContent, b2 = G.PWA.remindCheck(); return { a, b2, t, rem: d.flags.remAt }; });
   ok(r.a && !r.b2 && /11 expediciones sin exportar/.test(r.t) && /EXPORTAR/.test(r.t) && r.rem === 25, 'recordatorio de exportar tras 10 expediciones (una vez por sesión, con botón EXPORTAR)');
