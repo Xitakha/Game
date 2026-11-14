@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|dev|diag|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -1321,8 +1321,165 @@ async function dev() {
   await done(pg, 'dev-god2'); await b.close();
 }
 
+// ---------------------------------------------------------------- Guardado a prueba de pérdidas (src/save.js + src/pwa.js, T-F1-11)
+async function save2() {
+  console.log('--- save2: suma de comprobación, copias rotativas, corrupción, cuota llena, almacenamiento bloqueado, IndexedDB, importación maliciosa, ida y vuelta');
+  const b = await launch();
+  const reload = async (pg, extra) => { await pg.goto(`${base}/index.html?dev=1&nosw=1&${extra || ''}`); await sleep(pg, 900); };
+  const toastTxt = pg => E(pg, () => { const t = [...document.querySelectorAll('div')].find(d => d.style.zIndex === '25' && d.style.display !== 'none'); return t ? t.textContent : ''; });
+  let pg = await mk(b, 'reset=1');
+  // 1. guardado sellado y copias rotativas
+  const s1 = await E(pg, () => {
+    const S = G.Save, K = S.KEYS;
+    S.data.brasas = 500; S.save(); S.data.brasas = 600; S.save();
+    const main = localStorage.getItem(S.KEY), rec = localStorage.getItem(K.rec), idx = JSON.parse(localStorage.getItem(K.idx));
+    return { sealed: /,"_sum":"[0-9a-z]+\.[0-9a-z]+"\}$/.test(main), okMain: !!S.readRaw(main).d, mainB: JSON.parse(main).brasas, recB: JSON.parse(rec).brasas, idx, boot: S.boot, keys: Object.keys(localStorage) };
+  });
+  ok(s1.sealed && s1.okMain && s1.mainB === 600, 'el principal se guarda sellado con "_sum" y pasa la comprobación');
+  ok(s1.recB === 500 && s1.idx.main >= s1.idx.reciente && s1.idx.reciente > 0, 'copia .reciente = la versión anterior (500 Brasas) con fecha en .copias');
+  ok(s1.keys.every(k => k.startsWith('swarmhand.fusion.')), 'claves nuevas con el prefijo swarmhand.fusion.: ' + s1.keys.join(','));
+  const rot = await E(pg, () => {
+    const S = G.Save, K = S.KEYS, ix = JSON.parse(localStorage.getItem(K.idx)), old = Date.now() - 2 * 864e5;
+    ix.dia = old; localStorage.setItem(K.idx, JSON.stringify(ix)); localStorage.setItem(K.day, localStorage.getItem(K.rec));
+    S.data.brasas = 700; S.save();
+    const ix2 = JSON.parse(localStorage.getItem(K.idx));
+    return { day: JSON.parse(localStorage.getItem(K.day)).brasas, week: JSON.parse(localStorage.getItem(K.week)).brasas, tw: ix2.semana === old, td: ix2.dia > old };
+  });
+  ok(rot.day === 600 && rot.week === 500 && rot.tw && rot.td, 'rotación: la copia del día (>24 h) pasa a la de la semana y la del día se renueva (' + JSON.stringify(rot) + ')');
+  // 2. JSON truncado -> copia más reciente, aviso al jugador, el dañado queda en .danado
+  await E(pg, () => { const k = G.Save.KEY, m = localStorage.getItem(k); localStorage.setItem(k, m.slice(0, Math.floor(m.length / 2))); });
+  await reload(pg);
+  let r = await E(pg, () => ({ rc: G.Save.recovered, b: G.Save.data.brasas, st: G.state, bad: !!localStorage.getItem(G.Save.KEYS.bad), fixed: !!G.Save.readRaw(localStorage.getItem(G.Save.KEY)).d }));
+  ok(r.rc && r.rc.from === 'reciente' && r.rc.reason === 'dañado' && r.b === 600 && r.fixed && r.bad, 'JSON truncado: se recupera la copia reciente (600 Brasas), el principal vuelve a ser válido y el dañado queda en .danado');
+  ok(/dañado: se recuperó la copia más reciente/.test(await toastTxt(pg)) && (r.st === 'aldea' || r.st === 'title'), 'aviso claro al jugador: "' + (await toastTxt(pg)).slice(0, 90) + '" (estado ' + r.st + ')');
+  // 3. sin principal (borrado) -> la última instantánea
+  await E(pg, () => { G.Save.data.brasas = 610; G.Save.save(); G.Save.data.brasas = 620; G.Save.save(); localStorage.removeItem(G.Save.KEY); });
+  await reload(pg);
+  r = await E(pg, () => ({ rc: G.Save.recovered, b: G.Save.data.brasas }));
+  ok(r.rc && r.rc.from === 'reciente' && r.rc.reason === 'ausente' && r.b === 610, 'principal borrado: recarga y recupera la última instantánea (610 Brasas)');
+  // 4. suma que no cuadra (valor cambiado a mano en un JSON válido) -> no se usa el valor alterado
+  await E(pg, () => { G.Save.data.brasas = 630; G.Save.save(); G.Save.data.brasas = 640; G.Save.save(); const k = G.Save.KEY; localStorage.setItem(k, localStorage.getItem(k).replace('"brasas":640', '"brasas":999999')); });
+  await reload(pg);
+  r = await E(pg, () => ({ rc: G.Save.recovered, b: G.Save.data.brasas }));
+  ok(r.rc && r.rc.from === 'reciente' && r.b === 630, 'suma de comprobación alterada: se descarta y se usa la copia (630, no 999999)');
+  // 5. forma imposible (parts no es un objeto) -> copia; tipos erróneos y fuera de rango en un guardado viejo sin sello -> se corrigen
+  await E(pg, () => { const k = G.Save.KEY, d = JSON.parse(localStorage.getItem(k)); d.parts = 'nada'; delete d._sum; localStorage.setItem(k, JSON.stringify(d)); });
+  await reload(pg);
+  r = await E(pg, () => ({ rc: G.Save.recovered, b: G.Save.data.brasas, parts: typeof G.Save.data.parts }));
+  ok(r.rc && r.rc.from === 'reciente' && r.parts === 'object', 'tipo erróneo en un campo base (parts = "nada"): se recupera la copia');
+  await E(pg, () => { const k = G.Save.KEY, d = JSON.parse(localStorage.getItem(k)); delete d._sum; Object.assign(d, { brasas: 'mucho', runs: -4, pity: 9 }); d.parts = { wick: -5, frost: 7 }; d.cards.spark = 99; d.peligro.pastor = 50; d.pf.earned = 1e6; d.settings = { master: 7, music: 0.5, sfx: 0.5 }; localStorage.setItem(k, JSON.stringify(d)); });
+  await reload(pg);
+  r = await E(pg, () => { const d = G.Save.data; return { rc: G.Save.recovered, fx: G.Save.repairs.length, b: d.brasas, runs: d.runs, pity: d.pity, wick: d.parts.wick, frost: d.parts.frost, spark: d.cards.spark, pel: G.Save.pelMax('pastor'), pf: d.pf.earned, vol: d.settings.master, st: G.state }; });
+  ok(!r.rc && r.fx >= 8 && r.b === 0 && r.runs === 0 && r.pity <= 1 && r.wick === 0 && r.frost === 7 && r.spark === 3 && r.pel === 5 && r.pf === 24 && r.vol === 1, 'valores fuera de rango y tipos erróneos en un guardado sin sello: se corrigen al cargar (' + r.fx + ' campos) y se conserva lo sano');
+  // 6. versión futura en el principal: se conserva y no se pisa
+  await E(pg, () => { const k = G.Save.KEY, d = JSON.parse(localStorage.getItem(k)); delete d._sum; d.v = 13; d.brasas = 1313; localStorage.setItem(k, JSON.stringify(d)); });
+  await reload(pg);
+  r = await E(pg, () => { const S = G.Save, before = localStorage.getItem(S.KEY); S.data.brasas = 1; const sv = S.save(); return { hold: S.hold, sv, same: localStorage.getItem(S.KEY) === before, v13: !!localStorage.getItem(S.KEY + '.v13'), v: JSON.parse(before).v }; });
+  ok(r.hold && r.sv === false && r.same && r.v === 13 && r.v13, 'guardado de una versión futura: no se sobrescribe (copia .v13) y se juega en memoria');
+  ok(/versión más nueva/.test(await toastTxt(pg)), 'aviso de versión futura con RECARGAR');
+  await done(pg, 'save2-corrupcion');
+  // 7. cuota llena simulada (total y parcial) y vuelta a la normalidad
+  pg = await mk(b, 'reset=1');
+  r = await E(pg, () => {
+    const S = G.Save, K = S.KEYS, orig = Storage.prototype.setItem; S.data.brasas = 50; S.save();
+    const before = localStorage.getItem(S.KEY);
+    Storage.prototype.setItem = function () { throw new DOMException('lleno', 'QuotaExceededError'); };
+    S.data.brasas = 4242; let threw = false, sv; try { sv = S.save(); } catch (e) { threw = true; }
+    const o = { threw, sv, ok: S.ok, err: S.lastError, same: localStorage.getItem(S.KEY) === before, mem: S.data.brasas };
+    localStorage.removeItem('x');
+    // parcial: el principal no cabe mientras exista la copia de la semana (se libera y se reintenta)
+    Storage.prototype.setItem = orig; localStorage.setItem(K.week, before);
+    Storage.prototype.setItem = function (k, v) { if (k === S.KEY && this.getItem(K.week) !== null) throw new DOMException('lleno', 'QuotaExceededError'); return orig.call(this, k, v); };
+    S.data.brasas = 4343; o.sv2 = S.save(); o.week = localStorage.getItem(K.week); o.b2 = JSON.parse(localStorage.getItem(S.KEY)).brasas;
+    Storage.prototype.setItem = orig; S.data.brasas = 4444; o.sv3 = S.save(); o.ok3 = S.ok; o.b3 = JSON.parse(localStorage.getItem(S.KEY)).brasas;
+    return o;
+  });
+  ok(!r.threw && r.sv === false && !r.ok && r.err === 'quota' && r.same && r.mem === 4242, 'cuota llena: save() no lanza, devuelve false, el principal anterior queda intacto y el progreso sigue en memoria');
+  ok(/No queda espacio/.test(await toastTxt(pg)), 'cuota llena: aviso "No queda espacio..." (exportar)');
+  ok(r.sv2 === true && r.week === null && r.b2 === 4343, 'cuota casi llena: libera lo prescindible (copia de la semana) y el principal se escribe');
+  ok(r.sv3 === true && r.ok3 && r.b3 === 4444, 'cuando vuelve el espacio, se guarda con normalidad');
+  // 8. copia en IndexedDB: si el navegador borra localStorage, se recupera de ahí
+  r = await E(pg, () => new Promise(res => { G.Save.data.brasas = 777; G.Save.data.runs = 3; G.Save.save(); G.Save.flushIdb(ok => G.Save.idbRead(rec => res({ ok, b: rec && JSON.parse(rec.raw).brasas }))); }));
+  ok(r.ok && r.b === 777, 'segunda copia en IndexedDB escrita (777 Brasas)');
+  await E(pg, () => localStorage.clear());
+  await reload(pg); await sleep(pg, 600);
+  r = await E(pg, () => ({ rc: G.Save.recovered, b: G.Save.data.brasas, runs: G.Save.data.runs, main: JSON.parse(localStorage.getItem(G.Save.KEY)).brasas }));
+  ok(r.rc && r.rc.from === 'idb' && r.b === 777 && r.runs === 3 && r.main === 777, 'localStorage vacío: se recupera la copia de IndexedDB y se vuelve a escribir el principal');
+  ok(/copia interna del navegador/.test(await toastTxt(pg)), 'aviso de recuperación desde IndexedDB');
+  // 9. ?reset=1 (dev) borra también las copias y la de IndexedDB
+  await reload(pg, 'reset=1'); await sleep(pg, 300);
+  r = await E(pg, () => new Promise(res => G.Save.idbRead(rec => res({ rec: !!rec, b: G.Save.data.brasas, rec2: !!localStorage.getItem(G.Save.KEYS.rec), del: !!localStorage.getItem(G.Save.KEYS.del) }))));
+  ok(!r.rec && r.b === 0 && !r.rec2 && r.del, 'borrar el progreso: sin copias rotativas ni IndexedDB; queda .antes-de-borrar para restaurar a mano');
+  await done(pg, 'save2-cuota-idb');
+  // 10. almacenamiento bloqueado: el juego arranca y se juega en memoria
+  {
+    const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(() => { Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('bloqueado', 'SecurityError'); } }); });
+    const p2 = await ctx.newPage(); p2.errs = []; p2.ctx = ctx;
+    p2.on('console', m => { if (m.type() === 'error') p2.errs.push(m.text()); }); p2.on('pageerror', e => p2.errs.push('PAGEERR ' + e.message));
+    await p2.goto(`${base}/index.html?dev=1&nosw=1&direct=1`); await sleep(p2, 1200);
+    r = await E(p2, () => { const sv = G.Save.save(); return { ok: G.Save.ok, boot: G.Save.boot, sv, st: G.state, v: G.Save.data.v }; });
+    ok(!r.ok && r.boot === 'sin-almacen' && r.sv === false && r.v === 12 && (r.st === 'play' || r.st === 'cards'), 'almacenamiento bloqueado: arranca y se juega (estado ' + r.st + '), save() devuelve false sin lanzar');
+    ok(/bloquea el guardado/.test(await toastTxt(p2)), 'almacenamiento bloqueado: aviso al jugador');
+    await done(p2, 'save2-bloqueado');
+  }
+  // 11. importación: maliciosa, dañada, fuera de rango, futura; nada cambia si se rechaza
+  pg = await mk(b, 'reset=1&give=all:3,brasas:250');
+  r = await E(pg, () => {
+    const S = G.Save, b64 = o => 'SWARM1:' + btoa(unescape(encodeURIComponent(typeof o === 'string' ? o : JSON.stringify(o))));
+    const base0 = JSON.parse(JSON.stringify(S.data)), mk = patch => Object.assign(JSON.parse(JSON.stringify(base0)), patch);
+    const before = localStorage.getItem(S.KEY), good = S.exportText();
+    const cases = {
+      proto: '{"v":12,"parts":{},"cards":{},"__proto__":{"polluted":1}}',
+      protoDeep: '{"v":12,"parts":{"__proto__":{"polluted":1}},"cards":{}}',
+      ctor: JSON.stringify(mk({ flags: { constructor: { prototype: { polluted: 1 } } } })),
+      hugeStr: JSON.stringify(mk({ biome: 'x'.repeat(100000) })),
+      hugeTxt: 'SWARM1:' + 'A'.repeat(900000),
+      hugeArr: JSON.stringify(mk({ anchors: new Array(5000).fill('spark') })),
+      neg: b64(mk({ brasas: -5 })), big: b64(mk({ brasas: 1e15 })), rank: b64(mk({ cards: { spark: 99 } })), pf: b64(mk({ pf: { earned: 999 } })), type: b64(mk({ runs: '5' })), inf: '{"v":12,"parts":{},"cards":{},"brasas":1e999}',
+      future: b64(mk({ v: 13 })), noVer: b64(mk({ v: 'doce' })), trunc: good.slice(0, Math.floor(good.length * 0.6)), flip: good.slice(0, 40) + (good[40] === 'A' ? 'B' : 'A') + good.slice(41),
+      garbage: 'hola, esto no es un guardado', js: 'alert(1)', arr: '[1,2,3]', badB64: 'SWARM1:%%%<script>'
+    };
+    const out = {};
+    for (const k in cases) { const x = S.importText(cases[k]); out[k] = x.ok ? 'ACEPTADO' : x.err; }
+    out.same = localStorage.getItem(S.KEY) === before && S.data.brasas === base0.brasas;
+    out.polluted = ({}).polluted === undefined && Object.prototype.polluted === undefined;
+    // textos con HTML / script: se aceptan neutralizados (sin < >) y no se ejecuta nada
+    const html = mk({ flags: Object.assign({}, base0.flags, { nota: '<img src=x onerror="window.__pwn=1"><script>window.__pwn=1</script>' }) });
+    html.loadouts = [{ name: '<b>x</b><script>window.__pwn=1</script>', anchors: ['spark'], dish: null, len: 9 }, null, null];
+    const xh = S.importText(b64(html));
+    out.html = { ok: xh.ok, nota: S.data.flags.nota, lo: S.data.loadouts[0].name, pwn: window.__pwn === undefined, noLt: !/[<>]/.test(localStorage.getItem(S.KEY)) };
+    out.legacy = S.importText(JSON.stringify(mk({ brasas: 321 }))).ok && S.data.brasas === 321;   // texto viejo sin "_sum": se acepta si es válido
+    return out;
+  });
+  const rej = ['proto', 'protoDeep', 'ctor', 'hugeStr', 'hugeTxt', 'hugeArr', 'neg', 'big', 'rank', 'pf', 'type', 'inf', 'future', 'noVer', 'trunc', 'flip', 'garbage', 'js', 'arr', 'badB64'];
+  ok(rej.every(k => r[k] !== 'ACEPTADO'), 'importación: se rechazan los ' + rej.length + ' textos malos (' + rej.filter(k => r[k] === 'ACEPTADO').join(',') + ')');
+  ok(r.same && r.polluted, 'importación rechazada: el guardado no cambia y Object.prototype no se contamina (__proto__ / constructor)');
+  ok(/valores imposibles/.test(r.neg) && /valores imposibles/.test(r.rank) && /valores imposibles/.test(r.type) && /versión más nueva/.test(r.future) && /incompleto o dañado|no es un guardado/.test(r.trunc) && /demasiado grande/.test(r.hugeTxt), 'mensajes claros: rango "' + r.neg.slice(0, 60) + '", futuro, truncado, enorme');
+  ok(r.html.ok && !/[<>]/.test(r.html.nota) && !/[<>]/.test(r.html.lo) && r.html.lo.length <= 12 && r.html.pwn && r.html.noLt, 'HTML / script en textos: se neutraliza (nota "' + r.html.nota.slice(0, 40) + '", loadout "' + r.html.lo + '") y no se ejecuta');
+  ok(r.legacy, 'un texto exportado antes de T-F1-11 (sin "_sum") se sigue importando');
+  // 12. exportar -> importar ida y vuelta idéntica; restaurar desde Ajustes > Copias
+  r = await E(pg, () => {
+    const S = G.Save; S.data.brasas = 1234; S.data.runs = 7; S.data.loadouts[1] = { name: 'TANQUE', anchors: ['spark', 'dart'], dish: null, len: 10 }; S.data.hunts = { pastor: { 2: { wins: 1, tries: 3, best: 61.5 } } }; S.save();
+    const t1 = S.exportText(), j1 = JSON.stringify(S.data), r1 = S.importText(t1), t2 = S.exportText(), j2 = JSON.stringify(S.data);
+    return { ok: r1.ok, same: t1 === t2, sameData: j1 === j2, imp: !!localStorage.getItem(S.KEYS.imp) };
+  });
+  ok(r.ok && r.same && r.sameData && r.imp, 'exportar -> importar -> exportar: texto y datos idénticos; el anterior queda en .antes-de-importar');
+  await E(pg, () => { G.Save.data.brasas = 1300; G.Save.save(); G.Save.data.brasas = 1400; G.Save.save(); G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
+  await tap(pg, 855, 200); await sleep(pg, 300);
+  const modal = await E(pg, () => { const bs = [...document.querySelectorAll('button')].map(x => x.textContent); return { t: document.body.innerText.includes('Copias de seguridad'), bs }; });
+  ok(modal.t && modal.bs.some(x => /RESTAURAR: COPIA RECIENTE/.test(x)), 'Ajustes > Copias: lista las copias con botón RESTAURAR (' + modal.bs.filter(x => /RESTAURAR/.test(x)).length + ')');
+  await E(pg, () => [...document.querySelectorAll('button')].find(x => /RESTAURAR: COPIA RECIENTE/.test(x.textContent)).click()); await sleep(pg, 300);
+  ok((await E(pg, () => G.Save.data.brasas)) === 1300, 'restaurar la copia reciente desde Ajustes (1400 -> 1300 Brasas)');
+  // 13. recordatorio de exportar y almacenamiento persistente
+  r = await E(pg, () => { const d = G.Save.data; d.runs = 25; d.flags.expAt = 14; d.flags.remAt = 0; G.PWA.reminded = false; G.state = 'aldea'; const a = G.PWA.remindCheck(), t = [...document.querySelectorAll('div')].find(x => x.style.zIndex === '25').textContent, b2 = G.PWA.remindCheck(); return { a, b2, t, rem: d.flags.remAt }; });
+  ok(r.a && !r.b2 && /11 expediciones sin exportar/.test(r.t) && /EXPORTAR/.test(r.t) && r.rem === 25, 'recordatorio de exportar tras 10 expediciones (una vez por sesión, con botón EXPORTAR)');
+  ok(await E(pg, () => new Promise(res => G.Save.persist(p => res(p === null || typeof p === 'boolean')))), 'navigator.storage.persist() se pide sin errores');
+  await done(pg, 'save2-import'); await b.close();
+}
+
 (async () => {
-  const run = { dev, diag, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { save2, dev, diag, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

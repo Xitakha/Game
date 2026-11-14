@@ -914,7 +914,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, bak: { x: 770, y: 176, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -935,6 +935,7 @@
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
     if (onR(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
+    if (onR(SB.bak)) G.PWA.backups();   // T-F1-11: copias de seguridad y restaurar
     if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
     return false;
@@ -961,6 +962,7 @@
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
     U.button(c, SB.err, 'Informe de errores', { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
+    var Sv = G.Save; U.button(c, SB.bak, 'Copias', { size: 13, color: Sv.recovered ? '#7a4a2a' : '#4a3a66', hot: '#6a5a86', border: Sv.recovered ? '#ffd27a' : '#8a7aa6', sub: Sv.recovered ? 'se recuperó una copia' : 'de seguridad' });
     U.button(c, SB.back, 'ATRÁS', { size: 20 });
     U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');
