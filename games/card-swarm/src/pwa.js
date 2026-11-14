@@ -2,6 +2,8 @@
    - Service worker (sw.js, rutas relativas: vale en la raíz y en una subruta de GitHub Pages) con aviso "hay una versión nueva" y recarga solo si el jugador lo pide.
    - Instalación: botón Instalar (beforeinstallprompt en Android / Chrome / Edge) y ayuda para iOS (Compartir > Añadir a pantalla de inicio). ?install=1 lo abre al primer toque.
    - Guardado: aviso si el navegador bloquea localStorage y exportar / importar el progreso como texto o archivo (G.Save.exportText / importText).
+   - T-F1-11: aviso si el arranque recuperó una copia, copia de IndexedDB al arrancar (G.Save.checkIdb), navigator.storage.persist() con progreso,
+     recordatorio de exportar cada 10 expediciones (en iPhone / iPad sin instalar, aviso propio y el primero a las 3) y la ventana Copias de seguridad.
    ?nosw=1 desactiva y borra el service worker (desarrollo). */
 (function () {
   'use strict';
@@ -111,6 +113,26 @@
       row.insertBefore(b, row.lastChild);
     }
   };
+  // Tras sustituir el guardado (importar, restaurar o recuperar de IndexedDB): que el resto del juego lea los datos nuevos
+  P.refresh = function () {
+    try { G.Tree.sync(); } catch (e) { /* árbol */ }
+    try { G.Sys.reloadSettings(); G.Proj.initFromUrl(); G.Aldea.applySettings(); G.shakeMul = (G.Save.data.settings && G.Save.data.settings.shake) ? 1 / 3 : 1; } catch (e2) { /* ajustes */ }
+    try { if (G.state === 'aldea') G.Aldea.open(false); } catch (e3) { /* aldea ya cargada */ }
+  };
+  function ago(t) {
+    if (!t) return '';
+    var m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    return m < 2 ? ' (de hace un momento)' : m < 120 ? ' (de hace ' + m + ' min)' : m < 2880 ? ' (de hace ' + Math.round(m / 60) + ' h)' : ' (de hace ' + Math.round(m / 1440) + ' días)';
+  }
+  var SRC = { reciente: 'la copia más reciente', dia: 'la copia de ayer', semana: 'la copia de la semana', idb: 'la copia interna del navegador', principal: 'lo que se pudo leer del guardado dañado' };
+  P.recoveredText = function (rc) {
+    if (!rc) return '';
+    if (rc.reason === 'futuro') return 'Tu guardado es de una versión más nueva del juego. Recarga para actualizar; mientras tanto no se guarda nada para no estropearlo.';
+    var why = rc.reason === 'ausente' ? 'No se encontró tu guardado' : 'Tu guardado estaba dañado';
+    if (!rc.from) return why + ' y no había copias: empiezas de cero. Si exportaste tu progreso, impórtalo en Ajustes.';
+    var src = SRC[rc.from] || ('la copia de la versión ' + String(rc.from).replace(/^v/, ''));
+    return why + ': se recuperó ' + src + ago(rc.t) + '. Puede faltar lo último que hiciste.';
+  };
   P.importSave = function () {
     var m = G.Sys.modal({
       title: 'Importar guardado', text: 'Pega aquí el texto exportado o elige el archivo. ATENCIÓN: sustituye tu progreso actual (se guarda una copia por si acaso).',
@@ -120,8 +142,9 @@
         { label: 'IMPORTAR Y SUSTITUIR', color: '#a02030', fn: function (ta, close) {
           var r = G.Save.importText(ta.value);
           if (!r.ok) { G.Sys.toast(r.err, { ms: 4000 }); return false; }
-          try { G.Tree.sync(); G.Sys.reloadSettings(); G.Proj.initFromUrl(); G.Aldea.applySettings(); G.Aldea.open(false); } catch (e) { /* aldea ya cargada */ }
-          G.Sys.toast('Guardado importado.', { ms: 3000 });
+          P.refresh(); try { G.Aldea.open(false); } catch (e) { /* aldea ya cargada */ }
+          G.Sys.toast(r.saved ? 'Guardado importado.' : 'Guardado importado, pero el navegador no deja guardarlo: exporta antes de cerrar.', { ms: 4000 });
+          G.Save.persist();
         } },
         { label: 'CANCELAR' }
       ]
@@ -129,14 +152,58 @@
     var fileIn = document.createElement('input'); fileIn.type = 'file'; fileIn.accept = '.txt,.json,text/plain,application/json'; fileIn.style.display = 'none';
     fileIn.onchange = function () {
       var f = fileIn.files && fileIn.files[0]; if (!f) return;
+      if (f.size > 1024 * 1024) { G.Sys.toast('Ese archivo es demasiado grande para ser un guardado.', { ms: 3000 }); return; }
       var rd = new FileReader(); rd.onload = function () { m.area.value = String(rd.result || ''); }; rd.readAsText(f);
     };
     m.box.appendChild(fileIn);
   };
 
+  // ------------------------------------------------------------------ Copias de seguridad (Ajustes)
+  P.backups = function () {
+    var Sv = G.Save, list = Sv.backups(), lines = [], btns = [];
+    var when = function (t) { if (!t) return 'fecha desconocida'; var d = new Date(t); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0, 5); };
+    if (Sv.recovered) lines.push('AVISO: ' + P.recoveredText(Sv.recovered), '');
+    if (!list.length) lines.push('No hay copias en este navegador.');
+    list.forEach(function (b) {
+      lines.push(b.label + ': ' + (b.ok ? when(b.t) + ' - ' + b.runs + ' expediciones, ' + b.brasas + ' Brasas' + (b.v < G.Save.VERSION ? ' (v' + b.v + ')' : '') : 'DAÑADA'));
+      if (b.ok && b.name !== 'main' && btns.length < 4) btns.push({ label: 'RESTAURAR: ' + b.label.toUpperCase(), color: '#7a4a2a', fn: function () {
+        var r = Sv.restore(b.name);
+        if (!r.ok) { G.Sys.toast(r.err, { ms: 3500 }); return false; }
+        P.refresh(); try { G.Aldea.open(false); } catch (e) { /* aldea */ }
+        G.Sys.toast(r.saved ? 'Copia restaurada. Tu guardado anterior queda en "Antes de importar / restaurar".' : 'Copia restaurada solo en memoria: el navegador no deja guardar.', { close: true, ms: 6000 });
+      } });
+    });
+    lines.push('', 'También hay una copia interna (IndexedDB) que se usa sola si el guardado desaparece.');
+    lines.push('Almacenamiento persistente: ' + (Sv.persisted === true ? 'sí' : Sv.persisted === false ? 'no (el navegador puede borrar los datos si falta espacio)' : 'no disponible'));
+    lines.push('Lo más seguro sigue siendo Exportar guardado y conservar el texto o el archivo.');
+    btns.push({ label: 'CERRAR' });
+    G.Sys.modal({ title: 'Copias de seguridad', text: lines.join('\n'), buttons: btns });
+  };
+
+  // ------------------------------------------------------------------ Recordatorio de exportar (cada 10 expediciones; en iPhone / iPad sin instalar, aviso propio y el primero a las 3)
+  P.remindCheck = function () {
+    var Sv = G.Save, d = Sv.data; if (!d || !d.flags || G.state !== 'aldea' || P.reminded) return false;
+    var ios = G.Sys.isIOS && !G.Sys.standalone(), last = Math.max(d.flags.expAt || 0, d.flags.remAt || 0), runs = d.runs || 0;
+    var every = ios && !last ? 3 : 10;
+    if (runs - last < every) return false;
+    P.reminded = true; d.flags.remAt = runs; Sv.save();
+    G.Sys.toast(ios ? 'En iPhone, Safari puede borrar los datos de las webs no instaladas tras 7 días sin abrirlas. Instala el juego o exporta tu guardado.' : 'Llevas ' + (runs - last) + ' expediciones sin exportar tu guardado. Haz una copia por si el navegador lo borra.',
+      { btn: 'EXPORTAR', onbtn: P.exportSave, close: true, ms: 12000 });
+    return true;
+  };
+
   P.init = function () {
     swInit(); installInit();
-    try { localStorage.setItem('swarmhand.fusion.probe', '1'); localStorage.removeItem('swarmhand.fusion.probe'); } catch (e) { G.Save.ok = false; }
-    if (G.Save.ok === false) G.Sys.toast('Tu navegador bloquea el guardado (modo privado?). Se juega igual, pero no se guarda: exporta tu progreso en Ajustes.', { close: true, ms: 9000 });
+    var Sv = G.Save;
+    try { localStorage.setItem('swarmhand.fusion.probe', '1'); localStorage.removeItem('swarmhand.fusion.probe'); } catch (e) { Sv.ok = false; }
+    P.started = true;
+    if (Sv.recovered) G.Sys.toast(P.recoveredText(Sv.recovered), Sv.hold ? { btn: 'RECARGAR', onbtn: function () { location.reload(); }, close: true } : { close: true, ms: 15000 });
+    else if (Sv.ok === false) G.Sys.toast('Tu navegador bloquea el guardado (modo privado?). Se juega igual, pero no se guarda: exporta tu progreso en Ajustes.', { close: true, ms: 9000 });
+    else if (Sv.pendingWarn) G.Sys.toast(Sv.pendingWarn, { close: true, ms: 9000 });
+    Sv.pendingWarn = null;
+    Sv.checkIdb(function (rc) { P.refresh(); G.Sys.toast(P.recoveredText(rc), { close: true, ms: 15000 }); });
+    // Persistente cuando ya hay algo que perder (cuenta con progreso o app instalada): así no se pregunta en la primera visita
+    Sv.persist(null, Sv.hasProgress(Sv.data) || G.Sys.standalone());
+    if (!navigator.webdriver || /[?&]remind=1/.test(location.search)) setInterval(P.remindCheck, 4000);   // los bots no ven el recordatorio salvo ?remind=1
   };
 })();
