@@ -375,7 +375,7 @@ async function balance() {
 async function ritmoRun(b, seed, mov, extra, secs) {
   const pg = await mk(b, `god=0&dbg=1&direct=1&nointro=1&speed=0&biome=bosque&dq=${(extra && /dq=/.test(extra)) ? '' : 'alta'}&seed=${seed}${extra || ''}`);
   const r = await E(pg, ({ mov, secs }) => {
-    const out = { offer: -1, maxAlive: 0, kills30: 0, firstHit: -1, lvl: 0, xp: 0, xp2: G.B.xpNeed(2), xn: [G.B.xpNeed(1), G.B.xpNeed(2), G.B.xpNeed(3)], prof: G.D.id };
+    const out = { offer: -1, maxAlive: 0, kills30: 0, firstHit: -1, lvl: 0, xp: 0, xp2: G.B.xpNeed(2), xn: [G.B.xpNeed(1), G.B.xpNeed(2), G.B.xpNeed(3)], pk1: G.B.player.pickup1, prof: G.D.id };
     let guard = 0, nvT = 0, nvS = 12345, nvD = [0, 0];
     if (mov === 'hab') G.Fusion.auto = true;   // habil: recolector con los poderes en AUTO
     while (G.runT < secs * 1000 && guard++ < 40000) {
@@ -422,7 +422,9 @@ async function ritmo(b) {
   const f = (a, k) => a.map(x => x[k]);
   const rng = a => Math.min(...a).toFixed(1) + '..' + Math.max(...a).toFixed(1);
   ok(JSON.stringify(R[0].xn) === '[6,39,34]', 'xpNeed(1,2,3) = 6, 39, 34 (' + R[0].xn + ')');
-  ok(f(R, 'offer').every(v => v > 0 && v <= 14), 'primera oferta de carta <= 14 s en cada semilla (' + rng(f(R, 'offer')) + ')');
+  // Sin C4 (el dueño mantiene el radio de recogida en 60 px): umbrales medidos con C1+C2+C3 solos; la especificacion validaba <= 14 s con C4 (150 px)
+  ok(f(R, 'offer').every(v => v > 0 && v <= 20), 'recolector: primera oferta de carta <= 20 s en cada semilla (' + rng(f(R, 'offer')) + ')');
+  ok(f(R, 'offer').reduce((a, v) => a + v, 0) / 8 <= 15, 'recolector: primera oferta media <= 15 s (' + (f(R, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + ')');
   ok(f(R, 'maxAlive').every(v => v >= 15), 'maximo de vivos entre 10 y 30 s >= 15 en cada semilla (' + rng(f(R, 'maxAlive')) + ')');
   ok(f(R, 'kills30').every(v => v >= 42), 'bajas en 0-30 s >= 42 en cada semilla (' + rng(f(R, 'kills30')) + ')');
   ok(f(R, 'lvl').every(v => v === 6), 'nivel 6 a los 180 s en cada semilla (' + rng(f(R, 'lvl')) + ')');
@@ -430,7 +432,9 @@ async function ritmo(b) {
   const N = [], H = [];
   for (const s of SEEDS) N.push(await ritmoRun(b, s, 'nov', '', 90));
   for (const s of SEEDS) H.push(await ritmoRun(b, s, 'hab', '', 40));
-  console.log('ritmo MED: novato primera oferta ' + rng(f(N, 'offer')) + ' (media ' + (f(N, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + '), habil ' + rng(f(H, 'offer')) + ' (media ' + (f(H, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + '), habil vivos max ' + rng(f(H, 'maxAlive')) + ' bajas30 ' + rng(f(H, 'kills30')));
+  ok(f(N, 'offer').every(v => v > 0 && v <= 28) && f(N, 'offer').reduce((a, v) => a + v, 0) / 8 <= 25, 'novato (direccion al azar cada 1,3 s): primera oferta <= 28 s por semilla y <= 25 s de media (' + rng(f(N, 'offer')) + ')');
+  ok(f(H, 'offer').every(v => v > 0 && v <= 20) && f(H, 'maxAlive').every(v => v >= 15), 'habil (recolector + poderes AUTO): primera oferta <= 20 s y vivos max >= 15 (' + rng(f(H, 'offer')) + ' / ' + rng(f(H, 'maxAlive')) + ')');
+  ok(R[0].pk1 === 60, 'radio de recogida del nivel 1 = 60 px por defecto (decision del dueño; ?pk1= lo cambia solo con dev=1) (' + R[0].pk1 + ')');
   // perillas: ?open=0&pk1=60&xp2=0 devuelve el arranque anterior
   const O = [];
   for (const s of [1, 2, 3, 4]) O.push(await ritmoRun(b, s, 'rec', '&open=0&pk1=60&xp2=0', 30));
@@ -864,7 +868,7 @@ async function diff() {
   await done(pg, 'diff-presupuesto');
   // 6. ALTA identica a antes: hash de la simulacion con semilla igual al medido en el commit anterior a la parte 2 (sin G.D en el hash)
   // regenerado en T-F1-03: los rebaños de apertura (5 s y 19 s) consumen G.rng y suman 18 Corderos; con ?open=0&pk1=60&xp2=0 sale el valor anterior (3569930420,1065409925,1194979460)
-  for (const [GOLD, X, LAB] of [[[114209734, 3310879533, 1847262794], '', ''], [[3569930420, 1065409925, 1194979460], '&open=0&pk1=60&xp2=0', ' con ?open=0&pk1=60&xp2=0 (arranque anterior a T-F1-03)']]) {
+  for (const [GOLD, X, LAB] of [[[114209734, 4015489566, 1778485474], '', ''], [[3569930420, 1065409925, 1194979460], '&open=0&pk1=60&xp2=0', ' con ?open=0&pk1=60&xp2=0 (arranque anterior a T-F1-03)']]) {
     pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta${X}`);
     await E(pg, () => {
       window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
