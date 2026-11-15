@@ -249,3 +249,37 @@ Lectura honesta:
 
 **Manual** (`src/manual.js`, `src/assets_manual.js`): desde Pausa (MANUAL), Menú de la aldea y Ajustes. 28 cartas + 15 fusiones con efecto, niveles, etiquetas, receta A+B, cooldown, daño / duración y consejos; páginas de 5 por botones o deslizando, filtro por etiqueta (un toque), buscador (ventana nativa, solo busca en lo descubierto). Desbloqueo: carta desbloqueada en la forja / fusión ya creada (`combosSeen`); el resto `???`; `?manual=all` lo muestra todo. Cada entrada tiene una **demostración animada** en bucle de 5 s dibujada con el arte existente (`G.FusionArt`, `G.FusionArt2`) y escenas esquemáticas para las armas propias y las pasivas; no hay vídeos. La demo tiene reloj propio, no usa `G.rng` ni `Math.random`, no crea entidades, no avanza si no se dibuja (pausa fuera de pantalla), y con Reducir destellos arranca en pausa, a 0,6x y sin destellos. Guardado: `manualSeen` (marca NUEVO) sin subir la versión (sigue en 12). Test: `tests.js manual`.
 Desvíos: el Menú de la aldea tiene 5 botones (MANUAL debajo de CERRAR); el visor es una zona del lienzo principal, no un lienzo aparte; el arte lee `G.time` y se sustituye solo durante el dibujo de la demo.
+
+### Ritmo de los primeros 30 s (T-F1-03)
+
+Especificación: `studio/docs/SPEC-T-F1-03.md`. Valen para todas las expediciones en modo `run`.
+
+| # | Qué | Antes | Después |
+|---|---|---|---|
+| C1 | Rebaño de apertura 1 | no existe | a los 5 s: 8 Corderos juntos (dispersión 55 px), además del goteo; sin gastar presupuesto |
+| C2 | Rebaño de apertura 2 | no existe | a los 19 s: 10 Corderos juntos |
+| C3 | XP del nivel 2 al 3 | 30 | 39 (`G.B.xp.early`) |
+| C4 | Radio de recogida en nivel 1 | 60 px | 150 px (`G.B.player.pickup1`; PENDIENTE de confirmar por el dueño: cambiarlo a 60 es tocar ese número) |
+
+Los rebaños escalan con el perfil de calidad (`G.D.n`): ALTA 8+10, MEDIA 7+9, BAJA 6+8. Perillas con `?dev=1`: `?open=0` (sin rebaños), `?pk1=<px>`, `?xp2=<n>`; `?open=0&pk1=60&xp2=0` devuelve el arranque anterior (hash de la prueba de semilla verificado). Reversión: `open.packs: []`, `early: {}`, `pickup1: 60`. La prueba de semilla de ALTA (`tests.js diff`) cambió de hash porque los rebaños consumen `G.rng`; se comprueba el hash nuevo y el antiguo con las perillas.
+
+Medición tras implementar (Bosque, recolector sin poderes, cuenta nueva, ALTA, semillas 1..8, `tests.js balance`, punto `ritmo`):
+
+| Métrica | Medido | Umbral |
+|---|---|---|
+| Primera oferta de carta | 9,2..12,2 s (media 10,8) | <= 14 s |
+| Máximo de vivos 10-30 s | 17..21 | >= 15 |
+| Bajas 0-30 s | 47..51 | >= 42 |
+| Nivel a los 180 s | 6 en las 8 | 6 |
+| Quieto: primer golpe | 25,6..27,7 s (media 27,0) | 15-35 s |
+| Con perillas a la base: primera oferta (n=4) | 14,1 s; bajas 0-30 s 37..41 | 13-16 s |
+
+`diff_bot.js 8 normal bosque` (equivalencia de calidades; bot de guion, `all=1`, hasta el jefe, n=8, media +- error estándar):
+
+| Calidad | Bajas antes -> después | Nivel final | Ceniza | Daño recibido |
+|---|---|---|---|---|
+| ALTA | 1078 +- 5 -> 1084 +- 6 | 13,0 +- 0,0 -> 14,3 +- 0,3 | 1816 -> 1889 | 410 -> 457 |
+| MEDIA | 976 +- 7 -> 990 +- 5 | 13,6 -> 13,5 | 2112 -> 1848 | 426 -> 418 |
+| BAJA | 834 +- 14 -> 872 +- 13 | 13,3 -> 13,3 | 1776 -> 1527 | 545 -> 280 |
+
+Orden entre calidades (bajas ALTA > MEDIA > BAJA) se conserva. El nivel final de ALTA sube 1,3 en este bot (con `all=1`); la medición de la especificación con cuenta nueva da el mismo nivel a los 180 s. No verificado: expedición entera con cuenta nueva y biomas 2-6.

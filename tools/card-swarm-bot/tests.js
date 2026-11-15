@@ -841,7 +841,7 @@ async function diff() {
   const cp = await E(pg, () => {
     const W = G.Waves, B = G.B, r = {};
     ['alta', 'baja'].forEach(pf => {
-      G.D = G.diffProfile(pf); G.enemies.length = 0; W.budget = 0; W.t = 1499; G.runT = G.time = 120000; W.starT = 99999;
+      G.D = G.diffProfile(pf); G.enemies.length = 0; W.budget = 0; W.t = 1499; G.runT = G.time = 120000; W.starT = 99999; W.openI = 99;   // T-F1-03: sin rebaños de apertura (el salto de reloj los lanzaria y contarian como gasto)
       const before = G.enemies.length; G.step(); const spent = G.enemies.reduce((s, e) => s + B.enemy[e.type].cost, 0);
       r[pf] = { budget: W.budget + spent, n: G.enemies.length - before };
       // tope: 70 perros vivos; ALTA (tope 80 a los 5 min) aun deja entrar, BAJA (60) no
@@ -854,31 +854,33 @@ async function diff() {
   ok(cp.alta.cap > 0 && cp.baja.cap === 0, 'tope de enemigos en el min 5: con 70 vivos ALTA (80) aun genera (' + cp.alta.cap + ') y BAJA (60) no (' + cp.baja.cap + ')');
   await done(pg, 'diff-presupuesto');
   // 6. ALTA identica a antes: hash de la simulacion con semilla igual al medido en el commit anterior a la parte 2 (sin G.D en el hash)
-  const GOLD = [3569930420, 1065409925, 1194979460];
-  pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta`);
-  await E(pg, () => {
-    window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
-    window.__adv = (n) => {
-      const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
-      for (let i = 0, g = 0; i < n && g < n * 4; g++) {
-        if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
-        const t = __tick(), blk = Math.floor(t / 45);
-        const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
-        G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
-        const before = G.time; G.step(); if (G.time !== before) i++;
-      }
-      const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
-      mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
-      G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
-      G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
-      mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
-      return h;
-    };
-  });
-  const gh = [];
-  for (const cpt of [600, 1800, 3600]) { const t = await E(pg, () => __tick()); gh.push(await E(pg, n => __adv(n), cpt - t)); }
-  ok(gh.every((h, i) => h === GOLD[i]), 'ALTA con semilla 1234: mismo hash que antes de la parte 2 (' + gh.join(',') + ')');
-  await done(pg, 'diff-alta-igual');
+  // regenerado en T-F1-03: los rebaños de apertura (5 s y 19 s) consumen G.rng y suman 18 Corderos; con ?open=0&pk1=60&xp2=0 sale el valor anterior (3569930420,1065409925,1194979460)
+  for (const [GOLD, X, LAB] of [[[114209734, 3310879533, 1847262794], '', ''], [[3569930420, 1065409925, 1194979460], '&open=0&pk1=60&xp2=0', ' con ?open=0&pk1=60&xp2=0 (arranque anterior a T-F1-03)']]) {
+    pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta${X}`);
+    await E(pg, () => {
+      window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
+      window.__adv = (n) => {
+        const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
+        for (let i = 0, g = 0; i < n && g < n * 4; g++) {
+          if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
+          const t = __tick(), blk = Math.floor(t / 45);
+          const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
+          G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
+          const before = G.time; G.step(); if (G.time !== before) i++;
+        }
+        const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+        mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
+        G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
+        G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
+        mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
+        return h;
+      };
+    });
+    const gh = [];
+    for (const cpt of [600, 1800, 3600]) { const t = await E(pg, () => __tick()); gh.push(await E(pg, n => __adv(n), cpt - t)); }
+    ok(gh.every((h, i) => h === GOLD[i]), 'ALTA con semilla 1234: mismo hash que antes de la parte 2' + LAB + ' (' + gh.join(',') + ')');
+    await done(pg, 'diff-alta-igual' + X);
+  }
   await b.close();
 }
 
