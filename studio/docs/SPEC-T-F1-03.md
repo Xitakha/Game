@@ -12,7 +12,7 @@ Leyenda: [M] medido por mí en esta tarea, [H] heredado de otro documento y aún
 | 1. Medición del estado actual | Hecho: Bosque n=24 con 4 perfiles; otros 5 biomas n=12 con 2 perfiles; expedición entera n=16 |
 | 2. Diagnóstico con archivo:línea | Hecho |
 | 3. Objetivos de ritmo | Hecho |
-| 4. Cambios antes -> después y validación | Hecho a 180 s en Bosque (n=24, 4 perfiles). EN CURSO: expedición entera con la propuesta (economía al llegar al jefe) y los otros 5 biomas |
+| 4. Cambios antes -> después y validación | Hecho: Bosque 180 s (n=24, 4 perfiles), expedición entera (n=16, 2 perfiles) y otros 5 biomas (n=12, 2 perfiles). EN CURSO: lote de confirmación de la economía del recolector (semillas 17..32) |
 | 5. Lista para el programador, pruebas, riesgos, preguntas | Hecho |
 
 ## 1. Medición del estado actual
@@ -230,9 +230,42 @@ Sentido del cambio en dificultad, dicho claro: **la propuesta no baja la dificul
 | Propuesta + rebaños pagados del presupuesto a los 38 y 66 s | Hábil: % sin nada que hacer 0-90 s 63 ± 2 frente a 64 ± 2 (sin diferencia). Recolector sin poderes: daño 0-90 s 53,8 ± 7,5 frente a 42,3 ± 7,2 (dentro del ruido) | No aporta nada medible |
 | Segundo rebaño de 14 en dos grupos opuestos, +11 de XP | Hábil: % sin nada 0-30 s 47 ± 2. Recolector sin poderes: daño 0-90 s 77,5 ± 7,3 | Más pico, pero casi dobla el daño del que no usa el poder |
 
-### 4.4 Economía al llegar al jefe y otros biomas
+### 4.4 Economía al llegar al jefe y otros biomas [M]
 
-EN CURSO (lotes lanzados; se rellena en la siguiente versión de este documento).
+Bosque, expedición entera hasta que aparece el jefe (450 s), n=16, semillas 1..16. "Dif." es después menos antes; "EE dif." es el error estándar de esa diferencia.
+
+| Perfil | Métrica | Antes | Después | Dif. | EE dif. | Lectura |
+|---|---|---|---|---|---|---|
+| hábil | Bajas | 1065 ± 5 | 1089 ± 3 | +24 | 6 | los 18 Corderos nuevos (+ ruido) |
+| hábil | Nivel | 13,38 ± 0,13 | 13,50 ± 0,13 | +0,12 | 0,18 | dentro del ruido |
+| hábil | XP acumulada | 1043 ± 7 | 1057 ± 10 | +14 (+5 descontando los 9 añadidos a la curva) | 12 | dentro del ruido |
+| hábil | Ceniza | 1473 ± 17 | 1485 ± 13 | +12 (+0,8 %) | 21 | dentro del ruido; lo esperado por 18 Corderos es +18 |
+| hábil | Daño bruto recibido | 325 ± 24 | 370 ± 32 | +45 | 40 | dentro del ruido |
+| hábil | Nivel 6 / 8 / 10 / 12 (s) | 151,4 / 220,6 / 296,4 / 371,0 | 151,1 / 222,3 / 297,4 / 372,0 | <= 1,7 s | 1,5-2,7 | dentro del ruido |
+| recolector (sin poderes) | Bajas | 1058 ± 5 | 1076 ± 4 | +18 | 6 | los 18 Corderos nuevos |
+| recolector | Nivel | 13,19 ± 0,10 | 13,31 ± 0,12 | +0,12 | 0,16 | dentro del ruido |
+| recolector | XP acumulada | 1010 ± 12 | 1048 ± 10 | +38 (+29 descontando 9) | 16 | 1,8 errores: dudoso, ver nota |
+| recolector | Ceniza | 1413 ± 16 | 1477 ± 18 | +64 (+4,5 %) | 24 | 2,7 errores: **más de lo esperado (+18)**, ver nota |
+| recolector | Daño bruto recibido | 499 ± 32 | 460 ± 27 | -39 | 42 | dentro del ruido |
+
+Nota sobre el recolector: las bajas suben justo lo previsto (+18), pero la XP y la Ceniza recogidas suben más. Con las mismas bajas, eso solo puede venir de recoger una fracción mayor de gemas, es decir, de la mano de cartas que le tocó (desde el segundo 5 la secuencia de azar ya es otra y las ofertas cambian). Con n=16 no se puede separar eso de un efecto real. Hay un lote de confirmación en marcha (semillas 17..32); hasta tenerlo, O8 queda **cumplido para el hábil y sin confirmar para el recolector**.
+
+Otros biomas con la propuesta, 180 s, n=12, semillas 1..12 (antes -> después):
+
+| Bioma | Perfil | Primera carta (s) | Primer golpe (s) | % sin nada 0-30 s | Daño 0-90 s | Nivel a 180 s |
+|---|---|---|---|---|---|---|
+| Cripta | recolector | 14,2 -> 10,8 ± 0,2 | 88,6 -> 62,8 ± 8,9 | 73 -> 43 ± 2 | 5,7 -> 34,6 ± 8,2 | 6,08 -> 6,00 |
+| Cripta | novato | 35,4 -> 16,2 ± 1,1 | 38,5 -> 24,4 ± 4,7 | 78 -> 60 ± 1 | 27,2 -> 33,4 ± 6,4 | 4,08 -> 4,00 |
+| Asfódelo | recolector | 13,8 -> 11,0 ± 0,2 | 110,2 -> 50,3 ± 7,0 | 75 -> 33 ± 1 | 3,2 -> 27,5 ± 7,0 | 6,08 -> 6,00 |
+| Asfódelo | novato | 34,0 -> 16,0 ± 0,8 | 39,9 -> 27,5 ± 5,2 | 77 -> 55 ± 1 | 26,4 -> 40,6 ± 4,4 | 5,00 -> 4,92 ± 0,08 |
+| Tundra | recolector | 14,1 -> 11,3 ± 0,3 | 98,0 -> 42,6 ± 3,8 | 73 -> 38 ± 2 | 4,9 -> 47,0 ± 8,0 | 6,08 -> 6,08 |
+| Tundra | novato | 36,4 -> 17,2 ± 0,8 | 45,8 -> 49,2 ± 13,8 | 77 -> 57 ± 2 | 15,0 -> 11,6 ± 2,8 | 4,17 -> 4,67 ± 0,14 |
+| Panal | recolector | 13,9 -> 10,7 ± 0,2 | 91,5 -> 55,6 ± 3,6 | 72 -> 36 ± 2 | 7,8 -> 23,8 ± 4,0 | 6,25 -> 6,33 ± 0,14 |
+| Panal | novato | 35,4 -> 14,9 ± 1,0 | 61,9 -> 41,8 ± 10,4 | 75 -> 52 ± 2 | 6,8 -> 14,8 ± 3,1 | 4,75 -> 4,75 |
+| Cráter (forzado) | recolector | 14,4 -> 10,8 ± 0,3 | 87,8 -> 56,0 ± 6,8 | 73 -> 41 ± 3 | 7,8 -> 39,6 ± 7,2 | 6,08 -> 6,00 |
+| Cráter (forzado) | novato | 31,4 -> 15,6 ± 0,9 | 49,9 -> 23,2 ± 3,6 | 77 -> 59 ± 2 | 13,6 -> 32,2 ± 4,9 | 4,58 -> 4,50 ± 0,15 |
+
+El efecto es el mismo en los seis biomas. Única celda que se sale: el novato de la Tundra sube medio nivel a los 180 s (4,17 ± 0,11 -> 4,67 ± 0,14, unas 2,8 veces el error de la diferencia); con 10 celdas comparadas, una así entra en lo esperable por azar, pero se anota. En el Panal el parche no comprobó `G.Panal.inside` para la dispersión del rebaño (el punto base sí); la implementación real debe hacerlo (5.1). El perfil hábil no se midió fuera del Bosque.
 
 ### 4.5 Lo que esta propuesta no arregla [M]
 
@@ -287,7 +320,7 @@ Además, repetir `diff_bot.js` (ALTA / MEDIA / BAJA) tras el cambio para comprob
 
 1. **El que no usa su primer poder recibe más daño** (42 ± 7 en 90 s frente a 5; medido con un bot que nunca pulsa el poder). No es letal con 100 de vida y la cura del 20 % al subir de nivel, pero depende de que el aviso `power` de T-F1-02 funcione. Si el playtest del dueño lo ve duro, la perilla es el tamaño del segundo rebaño (10 -> 8) con `xp.early` 9 -> 8.
 2. **Quedarse quieto mata antes** (265 de daño en 90 s frente a 131). Es intencionado (O3); coincide con el aviso `move` de T-F1-02.
-3. **Ceniza**: + 24 a los 180 s (medido); el efecto al llegar al jefe está en 4.4. Si no se quiere ni eso, los Corderos de rebaño pueden no soltar Ceniza (un indicador en `E.spawn`), a costa de una regla más.
+3. **Ceniza**: + 24 a los 180 s (medido); al llegar al jefe, +0,8 % con el hábil (dentro del ruido) y +4,5 % con el recolector (sin confirmar, ver 4.4). Si no se quiere ni eso, los Corderos de rebaño pueden no soltar Ceniza (un indicador en `E.spawn`), a costa de una regla más.
 4. **Aviso `gems` de T-F1-02**: con 150 px en el nivel 1 las gemas cercanas vuelan solas; la condición de cierre "recoge 3 gemas" se cumplirá casi siempre sin que el jugador haga nada. El aviso sigue siendo cierto, pero conviene que `ux-designer` decida si lo mantiene en el nivel 1 o lo mueve al nivel 2, cuando el radio vuelve a 60 px.
 5. **Los bots no son jugadores**: el movimiento del recolector es simple (no esquiva en grupo). Las cifras ordenan opciones; el juicio de "se siente bien" es del playtest del dueño. Con la inmortalidad activa por defecto (`src/main.js:20`) el dueño no notará el daño: hay que probar con `?god=0`.
 6. **Biomas 2-6 con equipo**: validado solo con cuenta nueva. Con árbol y armadura el jugador mata más rápido y los rebaños pesan menos; no puede ser más difícil que lo medido.
