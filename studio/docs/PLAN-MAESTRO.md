@@ -853,7 +853,7 @@ Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducció
 
 - **Aviso de privacidad.** Se muestra aunque el envío esté apagado (se deja como está).
 - **Kits del reto diario (T-F1-05).** Las piezas de sets no descubiertos se muestran completas y marcadas "PRESTADO", sin contar como descubiertas. Se empieza con los 8 kits (no con 4): la calibración es la completa del diseño. La variedad dentro de la semana viene del día (bioma, Peligro, mutadores y etiquetas de acompañamiento).
-- **Ritmo inicial (T-F1-03).** Se acepta que el primer medio minuto sea más exigente para quien no se mueve o no usa su primer poder. Vale para todas las expediciones. Radio de recogida en nivel 1: pendiente de confirmar (hoy 60 px; propuesta 150 px solo en nivel 1).
+- **Ritmo inicial (T-F1-03).** Se acepta que el primer medio minuto sea más exigente para quien no se mueve o no usa su primer poder. Vale para todas las expediciones. Radio de recogida: se mantiene como está (60 px en todos los niveles); el cambio C4 de la especificación no se aplica.
 
 ## 7. Los 5 primeros pasos recomendados
 
