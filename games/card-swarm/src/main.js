@@ -28,7 +28,7 @@
 
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
-    player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, pickup1: qnum('pk1', 150), heartP: 0.02, heal: 12 },
+    player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, pickup1: qnum('pk1', 60), heartP: 0.02, heal: 12 },
     anchorSlots: 1,  // FUSION: 1 carta ancla (2 con el nodo del tronco)                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {

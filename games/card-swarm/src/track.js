@@ -20,13 +20,16 @@
   T.SCHEMA = {
     first_open: { has_save: B.b }, session_start: { sess_n: B.s, bg_return: B.b, ls: B.b }, day_return: {},
     intro_end: { watched_s: B.n, skipped: B.b, first: B.b },
-    run_start: { biome: B.s, peril: B.n, mode: B.s, dur: B.n, run_n: B.s },
+    run_start: { biome: B.s, peril: B.n, mode: B.s, dur: B.n, run_n: B.s, from: B.s },
     run_end: { biome: B.s, peril: B.n, mode: B.s, result: B.s, cause: B.s, dur_s: B.n, level: B.n, kills: B.s, boss_reached: B.b, first_card_s: B.n, fusions: B.n, powers: B.s, run_n: B.s },
     boss_start: { boss: B.s, peril: B.n, run_s: B.n, hp_pct: B.n }, boss_end: { boss: B.s, peril: B.n, result: B.s, fight_s: B.n, hp_pct: B.n, parts: B.n },
     fusion: { id: B.s, replaced: B.s, run_s: B.n, first: B.b }, power_first_use: { id: B.s, run_s: B.n },
     shop_buy: { where: B.s, item: B.s, cur: B.s, cost: B.s, run_n: B.s }, manual_open: { from: B.s, open_s: B.n },
     settings_quality: { from: B.s, to: B.s, auto: B.b }, error: { kind: B.s, msg: B.s, src: B.s, line: B.n, state: B.s },
-    session_end: { dur_s: B.n, play_s: B.n, runs: B.n, state: B.s }, analytics_on: { where: B.s, at: B.s }
+    session_end: { dur_s: B.n, play_s: B.n, runs: B.n, state: B.s }, analytics_on: { where: B.s, at: B.s },
+    // T-F1-02 / T-F1-04 (primera sesión y pantalla de fin): sin datos personales, solo ids de la tabla y cifras
+    hint_shown: { id: B.s }, hint_done: { id: B.s, ms: B.n, by: B.s }, npc_intro: { id: B.s }, aldea_open: { n_run: B.n, npcs: B.n },
+    end_screen: { kind: B.s, record_new: B.b, ms_on_screen: B.n, choice: B.s, goal_ids: B.s }
   };
   T.COMMON = { sv: B.n, pv: B.s, build: B.s, plat: B.s, dev: B.s, q: B.s, god: B.b, lang: B.s, cohort: B.s, day_n: B.n, t: B.s };
   var KEEP = { first_open: 1, day_return: 1, run_end: 1, boss_end: 1 }, LATE_OK = { run_end: 1, boss_end: 1, session_end: 1 };
@@ -265,7 +268,7 @@
       var rn = sessB(S ? S.runN : sessRuns);
       R = { t0: G.time, biome: G.curBiome || 'bosque', peril: peril(), mode: MODE[G.mode] || 'normal', dur: Math.round(G.RUN_LEN / 60000), rn: rn, boss: null, card: null };
       if (S) S.openRun = { biome: R.biome, peril: R.peril, mode: R.mode, dur: R.dur, at: Date.now(), rn: rn };
-      enqueue('run_start', { biome: R.biome, peril: R.peril, mode: R.mode, dur: R.dur, run_n: rn });
+      enqueue('run_start', { biome: R.biome, peril: R.peril, mode: R.mode, dur: R.dur, run_n: rn, from: String((G.Fte && G.Fte.from && G.Fte.from()) || 'portal') });
       if (consent === true) persistNow();
     }));
     wrap(G.Cards, 'open', bt(function (r, p, a) { if (R && R.card == null && a[0] === 'level') R.card = runS(); }));

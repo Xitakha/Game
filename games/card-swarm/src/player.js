@@ -39,6 +39,7 @@
     if (o.slow) P.slow(p, o.slow[0], o.slow[1]);
     var a = Math.atan2(p.y - sy, p.x - sx), k = 12 * (o.kb != null ? o.kb : 1);
     if (G.Armor && G.Armor.apl()) k *= 1 - G.Armor.apl();   // Aplomo: menos retroceso
+    try { var LR = G.Loot && G.Loot.run; if (LR && !G.Boss.noHurt) { var dk = (G.Boss.active && G.bossId ? 'boss' : (o.src || '?')); LR.dmgBy = LR.dmgBy || {}; LR.dmgBy[dk] = (LR.dmgBy[dk] || 0) + dmg; } } catch (eD) { /* T-F1-04: daño por fuente (solo memoria), para el consejo de la pantalla de fin */ }
     if (G.dbg) { var D = G.dbg.dmg; D[o.src || '?'] = (D[o.src || '?'] || 0) + dmg; }
     if (G.god) { p.hurtT = 300; return false; }
     // Fase 2b: Bastión (Acero, -10 %), platos de Tía Castaña (resistencia por familia de enemigo), escudo de Sed (set Sangre)

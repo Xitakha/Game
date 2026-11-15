@@ -443,7 +443,9 @@
     U.wrap(c, dd.name + ': ' + dd.tag, 460, 13).slice(0, 2).forEach(function (l) { G.txt(c, l, 470, yy, 13, '#ffe9a0', 'left'); yy += 19; });
     G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 470, yy, 13, '#9dffb4', 'left'); yy += 19;
     G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 470, yy, 13, '#ffb08a', 'left');
-    // encargo y compras pendientes
+    // encargo y compras pendientes (T-F1-02: solo con los NPC ya presentes; el destino, el jefe y su debilidad se ven siempre)
+    var fg = G.Fte && G.Fte.engaged(), showQ = !fg || G.Fte.npcVisible('vesper'), showBuy = !fg || G.Fte.npcVisible('rufo') || G.Fte.npcVisible('castana'), showPel = !fg || pmax > 1;
+    if (showQ) {
     U.panel(c, 470, 272, 470, 78);
     G.txt(c, 'ENCARGO ACTIVO', 484, 290, 13, '#b4a8c8', 'left');
     var ql = Q.statusLine();
@@ -451,12 +453,15 @@
     for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 484, 312 + i * 19, 13, ql ? '#ffe9a0' : '#b4a8c8', 'left');
     var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
     if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 926, 290, 12, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 926, 290, 12, '#9dffb4', 'right'); }
+    }
+    if (showBuy) {
     U.panel(c, 470, 358, 470, 82);
     G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 484, 376, 13, '#b4a8c8', 'left');
     var dsh = G.Cook.pending();
     G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 484, 398, 13, '#ffe9a0', 'left');
     if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 484, 398, 13, '#b4a8c8', 'left');
     G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 484, 420, 13, dsh ? '#ffd0dc' : '#b4a8c8', 'left');
+    }
     // ---- columna izquierda: destinos (2 x 3 chips de 132 x 54), su información y el Peligro
     U.panel(c, DEST.x, DEST.y, DEST.w, DEST.h, { border: '#4a5a8a' });
     G.txt(c, 'DESTINO  (toca uno)  -  Jefe: ' + cb.boss, DEST.x + 12, DEST.y + 15, 13, '#b4a8c8', 'left');
@@ -490,14 +495,14 @@
       }
       U.wrap(c, ib.hint, 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, ib.fire ? '#ffc890' : '#d4c8ec', 'left'); iy += 19; });
     }
-    G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO') + '  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
-    for (i = 0; i < 5; i++) {
+    if (showPel) G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO') + '  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
+    for (i = 0; i < 5 && showPel; i++) {
       var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
       U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 18, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
     }
     var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : ''), py = 440;
-    G.txt(c, pl1, 14, py, 13, '#ffe9a0', 'left'); py += 19;
-    U.wrap(c, P.pelText(bid, psel), 440, 13).slice(0, 3).forEach(function (ln2) { G.txt(c, ln2, 14, py, 13, '#d4c8ec', 'left'); py += 19; });
+    if (showPel) { G.txt(c, pl1, 14, py, 13, '#ffe9a0', 'left'); py += 19;
+    U.wrap(c, P.pelText(bid, psel), 440, 13).slice(0, 3).forEach(function (ln2) { G.txt(c, ln2, 14, py, 13, '#d4c8ec', 'left'); py += 19; }); }
     U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: G.hint('Enter  -  ' + names, names) });
   }
 

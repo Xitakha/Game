@@ -857,7 +857,7 @@
       if (s.st) { c.strokeStyle = r.color; c.lineWidth = 4; c.beginPath(); c.arc(b.x, b.y, b.r + 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * (s.st.t / s.st.dur)); c.stroke(); }
       if (s.readyT > 0) { c.strokeStyle = 'rgba(255,233,160,' + s.readyT / 700 + ')'; c.lineWidth = 3; c.beginPath(); c.arc(b.x, b.y, b.r + 4 + (700 - s.readyT) / 700 * 16, 0, 6.283); c.stroke(); }
       if (s.cd > 0) G.txt(c, (s.cd >= 10000 ? Math.ceil(s.cd / 1000) : (s.cd / 1000).toFixed(1)), b.x, b.y + 2, 20, '#fff', 'center');
-      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, 10, ready ? '#ffe9a0' : '#d8cfe8', 'center');
+      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, 12, ready ? '#ffe9a0' : '#d8cfe8', 'center');
       if (!touch) { c.fillStyle = '#0c0814'; c.fillRect(b.x - b.r + 4, b.y - b.r + 4, 24, 20); G.txt(c, KEYL[i] === '_' ? 'ESP' : KEYL[i], b.x - b.r + 16, b.y - b.r + 14, 12, '#ffd27a', 'center'); }
       c.restore();
     }
@@ -867,12 +867,14 @@
   F.chipRects = function () { var out = []; for (var i = 0; i < NS; i++) out.push({ x: 8 + i * 84, y: 8, w: 80, h: 34 }); return out; };
   F.drawChips = function (c) {   // pantalla de oferta: panel PODERES arriba a la derecha (4 slots)
     var p = G.player, rc = F.chipRects();
-    G.txt(c, 'PODERES', 8, 51, 10, '#9a8fb0', 'left');
+    var any = p.actives.some(Boolean);   // sin ningún poder no se pintan ni el rótulo ni los huecos 'libre' (pisaban el título de la oferta)
+    if (any) G.txt(c, 'PODERES', 8, 51, 12, '#9a8fb0', 'left');
     for (var i = 0; i < NS; i++) {
       var s = p.actives[i], q = rc[i];
+      if (!any) break;
       c.save(); c.fillStyle = 'rgba(12,8,20,0.7)'; c.fillRect(q.x, q.y, q.w, q.h); c.strokeStyle = s ? RBY[s.id].color : 'rgba(160,140,190,0.35)'; c.lineWidth = 2; c.strokeRect(q.x + 1, q.y + 1, q.w - 2, q.h - 2);
-      if (s) { G.FusionArt.icon(c, s.id, q.x + 17, q.y + 17, 11); G.txt(c, RBY[s.id].short, q.x + 55, q.y + 12, 10, '#fff', 'center'); G.txt(c, 'Nv' + s.lvl, q.x + 55, q.y + 25, 11, '#ffd24a', 'center'); }
-      else G.txt(c, 'libre', q.x + q.w / 2, q.y + q.h / 2, 11, 'rgba(180,160,210,0.5)', 'center');
+      if (s) { G.FusionArt.icon(c, s.id, q.x + 17, q.y + 17, 11); G.txt(c, RBY[s.id].short, q.x + 55, q.y + 12, 12, '#fff', 'center'); G.txt(c, 'Nv' + s.lvl, q.x + 55, q.y + 25, 11, '#ffd24a', 'center'); }
+      else if (any) G.txt(c, 'libre', q.x + q.w / 2, q.y + q.h / 2, 12, 'rgba(180,160,210,0.5)', 'center');
       c.restore();
     }
   };

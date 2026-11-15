@@ -164,6 +164,7 @@
 
   function close() {
     var O = C.off;
+    if (G.Fte) G.Fte.onPick(O);
     if (O.mode === 'level') { G.pendingLevels = Math.max(0, G.pendingLevels - 1); if (!G.prep && G.Fusion.onLevel) G.Fusion.onLevel(); }   // FUSION: cura al subir de nivel
     C.off = null; G.state = 'play'; G.input.lock = 200;
   }
@@ -409,7 +410,7 @@
     var rk = G.Save.rank(slot.id);
     if (rk > 1) G.txt(c, U_roman(rk), x + 9 * f, y + 24 * f, Math.round(10 * f), '#ffd24a', 'center');
     // nombre
-    G.txt(c, d.short, x + w / 2, y + h - 11 * f, Math.round(10 * f), '#fff', 'center');
+    G.txt(c, d.short, x + w / 2, y + h - 11 * f, Math.max(12, Math.round(10 * f)), '#fff', 'center');
     // cooldown (barrido)
     if (!o.nocd && d.type === 'attack' && slot.cdMax && !ORB[d.id] && d.kind !== 'aura' && slot.cd > 0) {
       var fr = G.clamp(slot.cd / slot.cdMax, 0, 1);
@@ -471,7 +472,10 @@
     c.save();
     c.fillStyle = 'rgba(8,4,14,0.82)'; c.fillRect(0, 0, G.W, G.H);
     var title = O.mode === 'start' ? 'ELIGE TU PRIMERA INFUSIÓN' : G.prep ? 'PREPARACIÓN ' + (G.prep.total - G.pendingLevels + 1) + '/' + G.prep.total + '  -  ELIGE UNA CARTA' : '¡NIVEL ' + p.level + '!  ELIGE UNA CARTA';
-    G.txt(c, title, G.W / 2, 28, 26, '#ffd27a', 'center');
+    // el título no pisa los huecos de poderes (arriba a la izquierda): se desplaza a la derecha lo justo
+    c.font = 'bold 26px "Courier New", monospace'; var tw2 = c.measureText(title).width, na = (p.actives || []).filter(Boolean).length, tx0 = G.W / 2;
+    if (na) tx0 = Math.max(tx0, 8 + na * 84 + 12 + tw2 / 2);
+    G.txt(c, title, Math.min(tx0, G.W - 8 - tw2 / 2), 28, 26, '#ffd27a', 'center');
     var hoverIdx = -1;
     for (i = 0; i < O.cards.length; i++) if (inR(C.offerRect(i), m) && !O.replacing) hoverIdx = i;
     // tags de la mano que se iluminarían con la carta señalada
@@ -543,6 +547,7 @@
     G.Fusion.drawChips(c);
     // ayuda
     if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 524, 14, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
+    else if (G.Fte && G.Fte.pickHint(O)) G.txt(c, G.Fte.pickHint(O), G.W / 2, 524, 14, '#ffe9a0', 'center');   // T-F1-02: aviso 'pick' de la 1.ª oferta
     else G.txt(c, tch ? 'Toca una carta para elegirla' : '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 524, 13, '#d8cfe8', 'center');
     if (O.modal) {
       var M = O.modal, n = M.buttons.length, br = modalRect(n);

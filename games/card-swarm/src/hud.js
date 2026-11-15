@@ -8,6 +8,7 @@
 
   H.update = function (dt) {
     if (bn.t > 0) bn.t -= dt;
+    if (G.Fte) G.Fte.tick(dt);   // T-F1-02: avisos de la 1.ª expedición (solo estado de UI)
     var f = G.Cards.flash;
     for (var k in f) if (f[k] > 0) f[k] -= dt;
   };
@@ -105,10 +106,10 @@
     else if (G.Panal.noBoss()) G.txt(c, 'Panal: prueba sin jefa  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#f3a31f', 'center');
     else if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
     var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
-    G.txt(c, DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : ''), G.W / 2, 58, 10, '#8a7f96', 'center');
+    G.txt(c, DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : ''), G.W / 2, 60, 12, '#8a7f96', 'center');
     }
     // kills, ceniza
-    G.txt(c, 'Kills ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
+    G.txt(c, 'Bajas ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
     c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();
     G.txt(c, 'Ceniza ' + p.ash, G.W - 16, 44, 15, '#ff9a3c', 'right');
     // contador de partes recogidas en la expedición
@@ -127,12 +128,14 @@
     G.Fusion.drawHud(c);   // FUSION: botones de poderes activos con enfriamiento
     H.drawCdSlow(c, p);
     var need = B.xpNeed(p.level);
-    c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - 7, G.W, 7);
-    c.fillStyle = '#4dd870'; c.fillRect(0, G.H - 6, G.W * G.clamp(p.xp / need, 0, 1), 4);
+    var xh = G.Fte && G.Fte.xpBig() ? 12 : 8;   // barra de experiencia legible (antes 4 px = 2,9 px reales); más alta mientras el aviso de gemas está activo
+    c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - xh - 2, G.W, xh + 2);
+    c.fillStyle = '#4dd870'; c.fillRect(0, G.H - xh - 1, G.W * G.clamp(p.xp / need, 0, 1), xh);
     G.txt(c, 'NV ' + p.level, 408, G.H - 20, 15, '#9dffb4', 'left');   // FUSION: la mano ocupa la esquina inferior izquierda
     // ayuda inicial
     var since = G.time - G.t0;
-    if (since < 9000 && G.state === 'play') {
+    if (G.Fte && G.Fte.engaged()) G.Fte.draw(c);   // T-F1-02: cuatro avisos de una línea en la 1.ª expedición (sustituyen la ayuda de dos líneas)
+    else if (since < 9000 && G.state === 'play') {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
       G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 300, 16, '#ffffff', 'center');
       G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: ' + G.hint('botones o Q E R Espacio', 'usa sus botones') + ').', G.W / 2, 322, 13, '#d8cfe8', 'center');
