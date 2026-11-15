@@ -63,6 +63,7 @@
     var st = fromRun ? Lay.spots.portalReturn : (M.booted ? { x: M.x, y: M.y } : Lay.spots.marloStart);
     M.x = st.x; M.y = st.y; M.booted = true; M.moving = false;
     var S = G.Save.data, nAv = G.Tree.availableCount();
+    var arr = G.Fte && G.Fte.arrival(); if (arr) flash(arr);   // T-F1-02: la llegada del NPC nuevo es el primer aviso
     if (fromRun) {
       // luz: Día tras ganar, Ocaso tras perder, Noche con 3 derrotas seguidas o cada 5 expediciones (doc A.7)
       A.timeMode = (S.runs > 0 && S.runs % 5 === 0) || (S.lossStreak || 0) >= 3 ? 'noche' : G.won ? 'dia' : 'ocaso';
@@ -79,7 +80,6 @@
     if (lv !== lvSeen && lvSeen >= 0) lvAt = Date.now();   // la mejora recién alcanzada aparece animada
     lvSeen = lv;
     if (fromRun && G.Ending && G.Ending.dawn) { G.Ending.dawn = false; dawnT = 4200; A.timeMode = 'dia'; }   // tras el final: cartel "Amanece en Rescoldo"
-    var arr = G.Fte && G.Fte.arrival(); if (arr) flash(arr);
     M.opened = true;
     try { G.Ach.check().forEach(function (a) { flash('Logro: ' + a.name + ' (habla con Lanudo)'); }); } catch (e) { /* logros */ }
     applySettings();

@@ -3,6 +3,17 @@
 Autor: `ux-designer`. Fecha: 2026-11-14. Estado: especificación lista para implementar. Solo quedan las capturas de después.
 Tareas del plan: `studio/docs/PLAN-MAESTRO.md`, T-F1-02 y T-F1-04. Respeta las decisiones del dueño del 2026-11-13: la intro no se acorta la primera vez, no hay modo corto, el juego es un reto, Marlo es mapache, en táctil no hay pistas de teclado y la inmortalidad de pruebas no se toca.
 
+## Decisiones del dueño (2026-11-15): mandan sobre el resto del documento
+
+1. La primera expedición sale DIRECTA tras la intro, sin pasar por la aldea (solo cuentas nuevas; las existentes no cambian; `?fte=0` devuelve el flujo antiguo). La intro NO se acorta.
+2. Criterio de aceptación: 1 toque y 6 s o menos desde el fin de la intro hasta el combate en las pruebas; 30 s queda como alarma para la analítica.
+3. El aviso de privacidad hace de botón para empezar: tarjeta "Antes de salir" justo después de la intro, con DOS botones del MISMO peso visual que lanzan la primera expedición. Se usa el componente existente (`G.TrackUI.open(cb, { fte: true })`) SIN cambiar el texto legal ni los botones ("Acepto (tengo 18 años o más)" / "No, gracias"): solo se añaden el rótulo "ANTES DE SALIR" y una nota igual para los dos botones. Por eso la versión del aviso (`pv`) no cambia. Sustituye a los textos de botón "ENVIAR DATOS ANÓNIMOS / SOLO EN MI DISPOSITIVO" de A.5. El aviso se muestra aunque el envío esté apagado.
+4. Aldea por pasos tras cada salida (Lanudo y el Portal; Grum y Vesper; Ulalume y Rufo; Castaña), cuatro avisos de una línea en la 1.ª expedición que se cierran al hacer la acción, y Lanudo dice "esquiva y recoge las gemas".
+5. Pantalla de fin: botón principal "OTRA EXPEDICIÓN" con el objetivo, récord por bioma, "TE FALTA POCO", consejo, lo ganado en dos líneas y botín completo al tocar; sin textos en inglés ni pistas de teclado en táctil.
+6. Se arreglan los problemas de legibilidad medidos de estos flujos (barra de XP, título NIVEL 2 pisado, textos de ~7 px reales en intro y combate). El rediseño general del HUD y el ensanchado de pantalla son T-F1-08.
+
+Estado de la implementación (src/fte.js, src/endinfo.js, src/base.js; grupos de prueba `fte` y `end`): ver el informe de la tarea. Desvíos respecto al texto de abajo: el subtítulo del aviso `pick` va en la línea de ayuda inferior de la oferta (no hay hueco bajo el título); los objetivos 5 (carta por forjar) no está implementado; cacería, asalto y práctica conservan su pantalla de siempre (ya es el "detalle") con los botones nuevos; la analítica añade `hint_shown`, `hint_done`, `npc_intro`, `aldea_open`, `end_screen` y `run_start.from` al esquema existente de `track.js` (no se añaden `level_up`, `card_pick`, `quit_point`).
+
 Notación: **[M]** medido en esta sesión; **[I]** inferido; **[P]** propuesta. "px lógicos" = lienzo de 960x540; "px CSS" = lo que ve el dueño. A 844x390 el lienzo se dibuja a 693x390 (escala 0,722 [M]); a 740x360, a 640x360 (escala 0,667, calculada).
 
 Mínimos que uso en toda la especificación (de T-F1-08 y del lienzo):
