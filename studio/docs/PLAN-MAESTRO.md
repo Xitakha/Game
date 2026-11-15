@@ -849,6 +849,12 @@ Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducció
 - **Reto diario (T-F1-05).** Siempre sin inmortalidad (la inmortalidad es solo para las pruebas del dueño y se retira antes del balance final). Hora UTC para todo. Se abre tras la 3.ª expedición. Premio: solo materiales y medallas, sin PF. Equipo: un kit igual para todos que rota cada semana (el diseño se amplía en `games/card-swarm/DESIGN-v10-retencion.md`; la calibración de los kits es trabajo de `balance-designer`).
 - **Primera sesión (T-F1-02).** La primera expedición sale directa tras la intro, sin pasar por la aldea. Criterio: 1 toque y 6 s o menos en las pruebas; 30 s queda como alarma en la analítica. El aviso de privacidad sirve a la vez de botón para empezar, con dos botones del mismo peso.
 
+### Decisiones del dueño sobre la F1 (2026-11-15)
+
+- **Aviso de privacidad.** Se muestra aunque el envío esté apagado (se deja como está).
+- **Kits del reto diario (T-F1-05).** Las piezas de sets no descubiertos se muestran completas y marcadas "PRESTADO", sin contar como descubiertas. Se empieza con los 8 kits (no con 4): la calibración es la completa del diseño. La variedad dentro de la semana viene del día (bioma, Peligro, mutadores y etiquetas de acompañamiento).
+- **Ritmo inicial (T-F1-03).** Se acepta que el primer medio minuto sea más exigente para quien no se mueve o no usa su primer poder. Vale para todas las expediciones. Radio de recogida: se mantiene como está (60 px en todos los niveles); el cambio C4 de la especificación no se aplica.
+
 ## 7. Los 5 primeros pasos recomendados
 
 Hecho el 2026-11-13: T-F0-13 (retirada de Ember Flock y del clásico), T-F0-09 (salvo los conteos del README) y la resolución de T-F0-08. Decididas pero con trabajo pendiente: T-F0-07 (texto de Marlo).

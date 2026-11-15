@@ -138,6 +138,19 @@
     ['pf', 'nodes', 'quest', 'shop', 'pending', 'flags', 'pelWins', 'hunts', 'practice', 'stats', 'armor', 'cine', 'settings'].forEach(function (k) { obj(d, k); });
     if (isObj(d.pf)) { num(d.pf, 'earned', 0, L.PF_CAP || 24, 'pf.'); num(d.pf, 'frag', 0, BIG, 'pf.'); }
     if (isObj(d.stats)) num(d.stats, 'playMs', 0, HUGE, 'stats.');
+    if (isObj(d.flags) && isObj(d.flags.fte)) {   // T-F1-02: estado de la primera sesión (flags.fte)
+      var ft = d.flags.fte;
+      num(ft, 'runs', 0, BIG, 'flags.fte.'); num(ft, 'ann', 0, BIG, 'flags.fte.'); map(ft, 'hints', 0, 1, 'flags.fte.'); map(ft, 'seen', 0, 1, 'flags.fte.'); obj(ft, 'hints', 'flags.fte.'); obj(ft, 'seen', 'flags.fte.');
+      if (['', 'run1', 'village', 'done'].indexOf(ft.step) < 0) { bad.push('flags.fte.step'); ft.step = ''; }
+      if (ft.priv != null && ft.priv !== 'on' && ft.priv !== 'off') { bad.push('flags.fte.priv'); delete ft.priv; }
+    } else if (isObj(d.flags) && d.flags.fte != null) { bad.push('flags.fte'); delete d.flags.fte; }
+    if (isObj(d.stats) && isObj(d.stats.best)) {   // T-F1-04: récord por bioma { t (s), bossPct (0-100), lvl, kills }
+      for (var bb in d.stats.best) {
+        var be = d.stats.best[bb];
+        if (!isObj(be)) { bad.push('stats.best.' + bb); delete d.stats.best[bb]; continue; }
+        num(be, 't', 0, HUGE, 'stats.best.' + bb + '.'); num(be, 'bossPct', 0, 100, 'stats.best.' + bb + '.'); num(be, 'lvl', 0, 999, 'stats.best.' + bb + '.'); num(be, 'kills', 0, BIG, 'stats.best.' + bb + '.');
+      }
+    } else if (isObj(d.stats) && d.stats.best != null) { bad.push('stats.best'); delete d.stats.best; }
     if (isObj(d.shop)) for (var sk in d.shop) num(d.shop, sk, 0, BIG, 'shop.');
     if (isObj(d.settings)) ['master', 'music', 'sfx'].forEach(function (k) { num(d.settings, k, 0, 1, 'settings.'); });
     if (isObj(d.armor)) { map(d.armor, 'owned', 0, 50, 'armor.'); if (isObj(d.armor.stats)) { num(d.armor.stats, 'blocked', 0, HUGE, 'armor.stats.'); num(d.armor.stats, 'crafts', 0, BIG, 'armor.stats.'); } }
@@ -406,6 +419,14 @@
     if (!Array.isArray(ar.equipped) || ar.equipped.length !== 4) ar.equipped = [null, null, null, null];
     if (typeof ar.stats.blocked !== 'number') ar.stats.blocked = 0; if (typeof ar.stats.crafts !== 'number') ar.stats.crafts = 0;
     if (typeof d.stats.playMs !== 'number') d.stats.playMs = 0;
+    if (!d.stats.best || typeof d.stats.best !== 'object' || Array.isArray(d.stats.best)) d.stats.best = {};   // T-F1-04
+    var ft = d.flags.fte;   // T-F1-02: cuentas con progreso (no solo haber visto la intro) = legacy: aldea completa, sin avisos ni tarjeta del flujo nuevo. Ante la duda, legacy.
+    if (!ft || typeof ft !== 'object' || Array.isArray(ft)) {
+      var prog = (d.runs || 0) > 0 || (d.brasas || 0) > 0 || Object.keys(d.parts || {}).length > 0 || ((d.pf && d.pf.earned) || 0) > 1 || Object.keys(d.bossKills || {}).length > 0 || Object.keys(d.bossSeen || {}).length > 0 || !!d.endingSeen;
+      ft = d.flags.fte = prog ? { v: 1, step: 'done', legacy: 1 } : { v: 1, step: '' };
+    }
+    if (typeof ft.step !== 'string') ft.step = ''; if (typeof ft.runs !== 'number') ft.runs = 0; if (typeof ft.ann !== 'number') ft.ann = 0;
+    if (!ft.hints || typeof ft.hints !== 'object') ft.hints = {}; if (!ft.seen || typeof ft.seen !== 'object') ft.seen = {};
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });

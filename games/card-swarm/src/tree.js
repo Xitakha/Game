@@ -296,6 +296,21 @@
     return n;
   };
 
+  // T-F1-04: nodo comprable más cercano y lo que falta ({ node, name, miss: [{ k: 'pf'|'brasas'|part, n, label }], total }); null si no hay ninguno (o ya se puede comprar todo)
+  T.nearest = function () {
+    var S = SV(), best = null;
+    NODES.forEach(function (n) {
+      if (n.type === 'root' || T.status(n) !== 'avail') return;
+      var c = T.cost(n), miss = [], tot = 0, k;
+      if (c.pf > T.pfFree()) { miss.push({ k: 'pf', n: c.pf - T.pfFree(), label: 'Puntos de Forja' }); tot += (c.pf - T.pfFree()) * 20; }
+      for (k in c.parts) { var m = c.parts[k] - (S.parts[k] || 0); if (m > 0) { var pd = L.part(k); miss.push({ k: k, n: m, label: pd ? pd.short : k }); tot += m; } }
+      if (S.brasas < c.brasas) { miss.push({ k: 'brasas', n: Math.ceil(c.brasas - S.brasas), label: 'Brasas' }); tot += (c.brasas - S.brasas) / 5; }
+      if (!miss.length) return;
+      if (!best || tot < best.total) best = { node: n, name: n.name || n.id, miss: miss, total: tot };
+    });
+    return best;
+  };
+
   T.buy = function (id, choice) {
     var n = BY[id], S = SV(); if (!n || n.type === 'root') return { ok: false, msg: '' };
     var st = T.status(n);

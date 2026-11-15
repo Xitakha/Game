@@ -3,6 +3,12 @@
 Estado: **completo, pendiente de decisión del dueño**. Autor: diseño de balance. Fecha: 2026-11-14.
 No toca código del juego: es una especificación para el programador.
 
+## Decisión del dueño (2026-11-15)
+
+- Aceptado: el primer medio minuto es más exigente para quien no se mueve o no usa su primer poder; vale para todas las expediciones.
+- **C4 NO se aplica: el radio de recogida se mantiene en 60 px en todos los niveles.** En el código `player.pickup1` queda como dato con valor 60 y la perilla `?pk1=` (solo con `?dev=1`) permite medir 150 u otro valor. Se implementan C1+C2+C3 solos.
+- Consecuencia medida (sección "Medición tras implementar", abajo): sin C4 la primera carta ya no llega a los objetivos O1/O2 de la sección 3 (el novato queda en ~21,6 s de media, no en 14,5 s; el recolector en ~13,3 s). Los umbrales de `tests.js` (punto `ritmo`) se fijaron a lo medido sin C4. Las cifras de las secciones 1 a 4 validaron C1+C2+C3+C4 juntos.
+
 Leyenda: [M] medido por mí en esta tarea, [H] heredado de otro documento y aún sin verificar aquí, [C] leído en el código, [I] inferido.
 
 ## 0. Estado de este documento

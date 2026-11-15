@@ -28,7 +28,7 @@
 
   // ---------------------------------------------------------------- Balance (único objeto)
   G.B = {
-    player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, heartP: 0.02, heal: 12 },
+    player: { hp: 100, speed: 190, r: 10, invuln: 600, kb: 60, pickup: 60, pickup1: qnum('pk1', 60), heartP: 0.02, heal: 12 },
     anchorSlots: 1,  // FUSION: 1 carta ancla (2 con el nodo del tronco)                // cartas ancla con las que parte la expedición (de 5 slots); cambiar a 3 es trivial
     // maxAlive = tope simultáneo por tipo; elite = lo genera el director en un instante fijo (no por presupuesto)
     enemy: {
@@ -124,6 +124,8 @@
       media: { n: 0.9,  h: 1.083, d: 1.05, s: 1.03, x: 1.08 },
       baja:  { n: 0.75, h: 1.25,  d: 1.1,  s: 1.08, x: 1.22 }
     },
+    // Rebaños de apertura (T-F1-03): [ms de tiempo virtual, nº de Corderos] juntos en un punto del anillo; ?open=0 los quita. No salen del presupuesto del director.
+    open: { packs: qnum('open', 1) > 0 ? [[5000, 8], [19000, 10]] : [], spread: 55 },
     projCap: 400,                                                    // tope de proyectiles enemigos (regla comun a todas las calidades; el del jugador es 1,5x)
     speedMul: function (m) { return 1 + Math.min(G.B.speedRamp.cap, G.B.speedRamp.perMin * m); },
     // ---- Experiencia (v5) ----------------------------------------------------------------------------------------------------------------------
@@ -140,8 +142,8 @@
     //   9 min ahora  3,0   5,0   6,0   8,0  10,0  12,0  14,0  15,0  15,0        build completa a los 6:55  (77 %; jefe a 7:30)
     //  10 min antes  5,0   7,9  10,1  13,1  17,0  20,0  24,0  27,9  29,8  30,0  build completa a los 4:02
     //  10 min ahora  3,0   4,0   6,0   7,0   9,0  11,0  12,0  14,0  15,0  15,0  build completa a los 7:46  (78 %; jefe a 8:20)
-    xp: { first: qnum('xpfirst', 6), base: 26, lin: 0, quad: 0.9, gemMul: 0.5 * qnum('xpmul', 1), lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]] },
-    xpNeed: function (L) { var x = G.B.xp; return L === 1 ? x.first : Math.round(x.base + x.lin * L + x.quad * L * L); },
+    xp: { first: qnum('xpfirst', 6), base: 26, lin: 0, quad: 0.9, gemMul: 0.5 * qnum('xpmul', 1), lenMul: [[7, 1.30], [9, 1.00], [10, 0.885]], early: { 2: qnum('xp2', 9) } },   // early: XP extra por nivel (T-F1-03: +9 al 2->3 = la XP de los 18 Corderos de los rebaños de apertura)
+    xpNeed: function (L) { var x = G.B.xp; return (L === 1 ? x.first : Math.round(x.base + x.lin * L + x.quad * L * L)) + (x.early[L] || 0); },
     xpGem: function () {   // multiplicador de XP por gema según la duración elegida
       var x = G.B.xp, t = x.lenMul, m = G.RUN_LEN / 60000, i;
       if (m <= t[0][0]) return x.gemMul * t[0][1];

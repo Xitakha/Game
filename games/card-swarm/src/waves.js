@@ -5,7 +5,7 @@
   var G = window.G, B = G.B, W = G.Waves = {};
 
   W.MINI_LAST = 45000;   // ms reales: un minijefe pendiente no entra en los últimos 45 s antes del jefe final
-  W.reset = function () { if (G.Minis) G.Minis.reset(); W.cleanT = null; W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; };
+  W.reset = function () { if (G.Minis) G.Minis.reset(); W.cleanT = null; W.t = 0; W.budget = 0; W.bossSpawned = false; W.bossWarn = false; W.elitesDone = {}; W.star = null; W.starT = 0; W.eliteBoost = 0; W.openI = 0; };
   W.reset();
 
   // Posición en anillo fuera de cámara (cae dentro de la arena)
@@ -120,11 +120,28 @@
     for (var i = 0; i < 3; i++) G.Enemies.spawn('worm', G.clamp(pos[0] + G.rnd(-40, 40), G.WALL + 30, G.AW - G.WALL - 30), G.clamp(pos[1] + G.rnd(-40, 40), G.WALL + 30, G.AH - G.WALL - 30));
   }
 
+  // Rebaño de apertura: n Corderos (x perfil de dificultad) en un solo punto del anillo, sin gastar presupuesto
+  function spawnOpen(num) {
+    var pos = spawnPos(), n = Math.max(1, Math.round(num * G.D.n)), sp = B.open.spread, m = G.WALL + 30, PN = G.Panal.on;
+    for (var i = 0; i < n; i++) {
+      var x, y, t = 0;
+      do {
+        x = G.clamp(pos[0] + G.rnd(-sp, sp), m, G.AW - m); y = G.clamp(pos[1] + G.rnd(-sp, sp), m, G.AH - m); t++;
+      } while (PN && !G.Panal.inside(x, y, 30) && t < 20);
+      if (PN && !G.Panal.inside(x, y, 30)) { x = pos[0]; y = pos[1]; }
+      G.Enemies.spawn('worm', x, y);
+    }
+  }
+
   W.update = function (dt) {
     if (G.frozen) return;   // intro del jefe
     if (G.mode !== 'run') { huntUpdate(dt); return; }
     var vt = G.vt(), m = vt / 60000, boss = G.Enemies.boss(), E = G.Enemies, qt = qTarget();
     if (!W.bossSpawned && G.runT >= G.BOSS_T && !G.Tundra.noBoss() && !G.Panal.noBoss()) spawnBoss();   // P3: la Tundra no tiene jefe hasta la P4 (o con ?nobos=1)
+    if (W.openI < B.open.packs.length) {   // T-F1-03: rebaños de apertura (solo run; con ?t= o jefe ya fuera se saltan)
+      if (W.bossSpawned || G.t0 > 0) W.openI = B.open.packs.length;
+      else while (W.openI < B.open.packs.length && vt >= B.open.packs[W.openI][0]) spawnOpen(B.open.packs[W.openI++][1]);
+    }
     if (W.eliteBoost > 0) W.eliteBoost -= dt;
     try { if (!W.bossSpawned) Assets.music.setIntensity(Math.min(0.9, 0.12 + 0.09 * m + (W.eliteBoost > 0 ? 0.15 : 0))); } catch (e) { /* audio */ }
     // v5: los dos minijefes nunca coexisten (la Madre Colmena espera a que el Coloso caiga) y ninguno entra en el último minuto previo al jefe final

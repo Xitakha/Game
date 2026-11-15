@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -365,7 +365,115 @@ async function balance() {
   pg = await mk(b, 'reset=1&god=1&direct=1&all=1&bcd=300&pmul=1&bossmul=1&lvheal=0&vstep=0&nosw=1');
   const Q = await E(pg, () => { const p = G.Fusion.P; return [p.basicCd, p.pmul, p.bossMul, p.lvHeal, p.vstep]; });
   ok(JSON.stringify(Q) === '[300,1,1,0,0]', 'perillas ?bcd ?pmul ?bossmul ?lvheal ?vstep se leen de la URL: ' + Q);
-  await done(pg, 'balance-url'); await b.close();
+  await done(pg, 'balance-url');
+  await ritmo(b);
+  await b.close();
+}
+
+// T-F1-03: ritmo de los primeros 30 s. Bot de guion por pasos (G.step), cuenta nueva, Bosque, ALTA, vida repuesta cada tick, nunca usa poderes.
+// mov: 'rec' (recolector: se aparta de enemigos a < 70 px, si no va a la gema de XP mas cercana) o 'quieto'. Devuelve metricas por semilla.
+async function ritmoRun(b, seed, mov, extra, secs) {
+  const pg = await mk(b, `god=0&dbg=1&direct=1&nointro=1&speed=0&biome=bosque&dq=${(extra && /dq=/.test(extra)) ? '' : 'alta'}&seed=${seed}${extra || ''}`);
+  const r = await E(pg, ({ mov, secs }) => {
+    const out = { offer: -1, maxAlive: 0, kills30: 0, firstHit: -1, lvl: 0, xp: 0, xp2: G.B.xpNeed(2), xn: [G.B.xpNeed(1), G.B.xpNeed(2), G.B.xpNeed(3)], pk1: G.B.player.pickup1, prof: G.D.id };
+    let guard = 0, nvT = 0, nvS = 12345, nvD = [0, 0];
+    if (mov === 'hab') G.Fusion.auto = true;   // habil: recolector con los poderes en AUTO
+    while (G.runT < secs * 1000 && guard++ < 40000) {
+      G.player.hp = G.player.maxHp;
+      if (G.state === 'cards') {
+        if (out.offer < 0 && G.runT > 0) out.offer = G.runT / 1000;
+        const C = G.Cards, O = C.off;
+        if (O) {
+          O.modal = null; let i = O.cards.findIndex(id => id && G.Fusion.optionsFor(C.def(id).tag).length > 0); if (i < 0) i = 0;
+          try { C.pick(i); if (C.off && C.off.modal) { const bs = C.off.modal.buttons; (bs[0]).fn(); } } catch (e) { try { C.skip(); } catch (e2) { /* nada */ } }
+        }
+        if (G.state === 'cards') G.state = 'play';
+      }
+      let dx = 0, dy = 0;
+      if (mov === 'nov') {   // novato: cambia de direccion cada 1,3 s (LCG propio: no toca G.rng), no busca gemas
+        if (G.runT >= nvT) { nvT = G.runT + 1300; nvS = (Math.imul(nvS, 1664525) + 1013904223) >>> 0; const an = nvS / 4294967296 * 6.2832; nvD = [Math.cos(an), Math.sin(an)]; }
+        dx = nvD[0]; dy = nvD[1];
+      }
+      if (mov === 'rec' || mov === 'hab') {
+        const p = G.player; let near = null, nd = 1e9;
+        for (const e of G.enemies) { const d = Math.hypot(e.x - p.x, e.y - p.y) - (e.r || 0); if (d < nd) { nd = d; near = e; } }
+        if (near && nd < 70) { dx = p.x - near.x; dy = p.y - near.y; }
+        else { let bg = null, bd = 1e9; for (const g of G.gems) { if (g.kind && g.kind !== 'xp' && g.type !== 'xp') continue; const d = Math.hypot(g.x - p.x, g.y - p.y); if (d < bd) { bd = d; bg = g; } } if (bg && bd > 4) { dx = bg.x - p.x; dy = bg.y - p.y; } }
+      }
+      const l = Math.hypot(dx, dy);
+      G.input.joy = l > 0 ? { active: true, id: 1, ox: 100, oy: 400, x: dx / l, y: dy / l } : { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 };
+      G.step();
+      const t = G.runT / 1000;
+      if (t >= 10 && t <= 30) out.maxAlive = Math.max(out.maxAlive, G.enemies.length);
+      if (t < 30) out.kills30 = G.kills;
+      if (out.firstHit < 0) { let d = 0; for (const k in G.dbg.dmg) d += G.dbg.dmg[k]; if (d > 0) out.firstHit = t; }
+    }
+    out.lvl = G.player.level; out.xp = G.player.xp; out.kills = G.kills;
+    return out;
+  }, { mov, secs });
+  await done(pg, `ritmo ${mov} semilla ${seed}`);
+  return r;
+}
+async function ritmo(b) {
+  console.log('--- ritmo (T-F1-03): rebaños de apertura, XP del nivel 2 y radio de recogida del nivel 1');
+  const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8], R = [], Q = [];
+  for (const s of SEEDS) R.push(await ritmoRun(b, s, 'rec', '', 180));
+  for (const s of SEEDS) Q.push(await ritmoRun(b, s, 'quieto', '', 40));
+  const f = (a, k) => a.map(x => x[k]);
+  const rng = a => Math.min(...a).toFixed(1) + '..' + Math.max(...a).toFixed(1);
+  ok(JSON.stringify(R[0].xn) === '[6,39,34]', 'xpNeed(1,2,3) = 6, 39, 34 (' + R[0].xn + ')');
+  // Sin C4 (el dueño mantiene el radio de recogida en 60 px): umbrales medidos con C1+C2+C3 solos; la especificacion validaba <= 14 s con C4 (150 px)
+  ok(f(R, 'offer').every(v => v > 0 && v <= 20), 'recolector: primera oferta de carta <= 20 s en cada semilla (' + rng(f(R, 'offer')) + ')');
+  ok(f(R, 'offer').reduce((a, v) => a + v, 0) / 8 <= 15, 'recolector: primera oferta media <= 15 s (' + (f(R, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + ')');
+  ok(f(R, 'maxAlive').every(v => v >= 15), 'maximo de vivos entre 10 y 30 s >= 15 en cada semilla (' + rng(f(R, 'maxAlive')) + ')');
+  ok(f(R, 'kills30').every(v => v >= 42), 'bajas en 0-30 s >= 42 en cada semilla (' + rng(f(R, 'kills30')) + ')');
+  ok(f(R, 'lvl').every(v => v === 6), 'nivel 6 a los 180 s en cada semilla (' + rng(f(R, 'lvl')) + ')');
+  ok(f(Q, 'firstHit').every(v => v >= 15 && v <= 35), 'jugador quieto: primer golpe entre 15 y 35 s (' + rng(f(Q, 'firstHit')) + ')');
+  const N = [], H = [];
+  for (const s of SEEDS) N.push(await ritmoRun(b, s, 'nov', '', 90));
+  for (const s of SEEDS) H.push(await ritmoRun(b, s, 'hab', '', 40));
+  ok(f(N, 'offer').every(v => v > 0 && v <= 28) && f(N, 'offer').reduce((a, v) => a + v, 0) / 8 <= 25, 'novato (direccion al azar cada 1,3 s): primera oferta <= 28 s por semilla y <= 25 s de media (' + rng(f(N, 'offer')) + ')');
+  ok(f(H, 'offer').every(v => v > 0 && v <= 20) && f(H, 'maxAlive').every(v => v >= 15), 'habil (recolector + poderes AUTO): primera oferta <= 20 s y vivos max >= 15 (' + rng(f(H, 'offer')) + ' / ' + rng(f(H, 'maxAlive')) + ')');
+  ok(R[0].pk1 === 60, 'radio de recogida del nivel 1 = 60 px por defecto (decision del dueño; ?pk1= lo cambia solo con dev=1) (' + R[0].pk1 + ')');
+  // perillas: ?open=0&pk1=60&xp2=0 devuelve el arranque anterior
+  const O = [];
+  for (const s of [1, 2, 3, 4]) O.push(await ritmoRun(b, s, 'rec', '&open=0&pk1=60&xp2=0', 30));
+  ok(O.every(x => x.xn[1] === 30) && O.every(x => x.kills30 <= 41), '?open=0&pk1=60&xp2=0: xpNeed(2) = 30 y bajas 0-30 s como antes (' + rng(f(O, 'kills30')) + ')');
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  ok(mean(f(O, 'offer')) >= 13 && mean(f(O, 'offer')) <= 16, 'perillas a la base: primera oferta media entre 13 y 16 s (' + mean(f(O, 'offer')).toFixed(1) + ')');
+  // tamaño de los rebaños por perfil de calidad (G.D.n): ALTA 8+10, MEDIA 7+9, BAJA 6+8
+  const pq = await mk(b, 'god=1&direct=1&nointro=1&speed=0&biome=bosque&seed=3');
+  const sz = await E(pq, () => {
+    const res = {};
+    for (const q of ['alta', 'media', 'baja']) {
+      G.D = G.diffProfile(q);
+      const n = k => Math.max(1, Math.round(G.B.open.packs[k][1] * G.D.n));
+      res[q] = [n(0), n(1)];
+    }
+    return res;
+  });
+  ok(JSON.stringify(sz) === '{"alta":[8,10],"media":[7,9],"baja":[6,8]}', 'tamaño de rebaños por calidad ALTA/MEDIA/BAJA = 8+10 / 7+9 / 6+8 (' + JSON.stringify(sz) + ')');
+  await done(pq, 'ritmo-tamanos');
+  // los rebaños salen de verdad con BAJA y MEDIA: Corderos que aparecen de golpe a los 5 s (conteo real)
+  for (const q of ['media', 'baja']) {
+    const pz = await mk(b, `god=1&direct=1&nointro=1&speed=0&biome=bosque&seed=5&dq=${q}`);
+    const r = await E(pz, () => {
+      let guard = 0, w0 = null, w1 = null, c = 0; const spawned = [];
+      const orig = G.Enemies.spawn; G.Enemies.spawn = function (t, x, y) { if (G.runT >= 4900 && G.runT < 5300 && t === 'worm') c++; return orig.apply(this, arguments); };
+      G.input.joy = { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 };
+      while (G.runT < 5400 && guard++ < 2000) { G.step(); if (G.state === 'cards') { try { G.Cards.pick(0); } catch (e) { /* nada */ } if (G.state === 'cards') G.state = 'play'; } }
+      return { c, prof: G.D.id };
+    });
+    const want = q === 'media' ? 7 : 6;
+    ok(r.prof === q && r.c >= want && r.c <= want + 3, `?dq=${q}: el rebano de los 5 s escala (${r.c} Corderos en la ventana, perfil ${r.prof}, rebano ${want})`);
+    await done(pz, 'ritmo-' + q);
+  }
+  // cacería: ningun rebano
+  const ph = await mk(b, 'god=1&direct=1&nointro=1&speed=0&hunt=pastor&seed=2');
+  const hr = await E(ph, () => { let g = 0; G.input.joy = { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 }; while (G.runT < 25000 && g++ < 3000) G.step(); return { mode: G.mode, openI: G.Waves.openI }; });
+  ok(hr.mode === 'hunt' && hr.openI === 0, 'modo cacería: los rebaños de apertura no se lanzan (modo ' + hr.mode + ', openI ' + hr.openI + ')');
+  await done(ph, 'ritmo-caceria');
+  console.log('ritmo: primera oferta ' + rng(f(R, 'offer')) + ' (media ' + mean(f(R, 'offer')).toFixed(1) + '), vivos max ' + rng(f(R, 'maxAlive')) + ', bajas 0-30 ' + rng(f(R, 'kills30')) + ', XP 180 s media ' + mean(f(R, 'xp')).toFixed(1) + ', quieto primer golpe ' + rng(f(Q, 'firstHit')) + ' (media ' + mean(f(Q, 'firstHit')).toFixed(1) + ')');
 }
 
 async function armor() {
@@ -746,7 +854,7 @@ async function diff() {
   const cp = await E(pg, () => {
     const W = G.Waves, B = G.B, r = {};
     ['alta', 'baja'].forEach(pf => {
-      G.D = G.diffProfile(pf); G.enemies.length = 0; W.budget = 0; W.t = 1499; G.runT = G.time = 120000; W.starT = 99999;
+      G.D = G.diffProfile(pf); G.enemies.length = 0; W.budget = 0; W.t = 1499; G.runT = G.time = 120000; W.starT = 99999; W.openI = 99;   // T-F1-03: sin rebaños de apertura (el salto de reloj los lanzaria y contarian como gasto)
       const before = G.enemies.length; G.step(); const spent = G.enemies.reduce((s, e) => s + B.enemy[e.type].cost, 0);
       r[pf] = { budget: W.budget + spent, n: G.enemies.length - before };
       // tope: 70 perros vivos; ALTA (tope 80 a los 5 min) aun deja entrar, BAJA (60) no
@@ -759,31 +867,33 @@ async function diff() {
   ok(cp.alta.cap > 0 && cp.baja.cap === 0, 'tope de enemigos en el min 5: con 70 vivos ALTA (80) aun genera (' + cp.alta.cap + ') y BAJA (60) no (' + cp.baja.cap + ')');
   await done(pg, 'diff-presupuesto');
   // 6. ALTA identica a antes: hash de la simulacion con semilla igual al medido en el commit anterior a la parte 2 (sin G.D en el hash)
-  const GOLD = [3569930420, 1065409925, 1194979460];
-  pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta`);
-  await E(pg, () => {
-    window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
-    window.__adv = (n) => {
-      const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
-      for (let i = 0, g = 0; i < n && g < n * 4; g++) {
-        if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
-        const t = __tick(), blk = Math.floor(t / 45);
-        const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
-        G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
-        const before = G.time; G.step(); if (G.time !== before) i++;
-      }
-      const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
-      mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
-      G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
-      G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
-      mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
-      return h;
-    };
-  });
-  const gh = [];
-  for (const cpt of [600, 1800, 3600]) { const t = await E(pg, () => __tick()); gh.push(await E(pg, n => __adv(n), cpt - t)); }
-  ok(gh.every((h, i) => h === GOLD[i]), 'ALTA con semilla 1234: mismo hash que antes de la parte 2 (' + gh.join(',') + ')');
-  await done(pg, 'diff-alta-igual');
+  // regenerado en T-F1-03: los rebaños de apertura (5 s y 19 s) consumen G.rng y suman 18 Corderos; con ?open=0&pk1=60&xp2=0 sale el valor anterior (3569930420,1065409925,1194979460)
+  for (const [GOLD, X, LAB] of [[[114209734, 4015489566, 1778485474], '', ''], [[3569930420, 1065409925, 1194979460], '&open=0&pk1=60&xp2=0', ' con ?open=0&pk1=60&xp2=0 (arranque anterior a T-F1-03)']]) {
+    pg = await mk(b, `${SEED_BASE}&seed=1234&q=alta${X}`);
+    await E(pg, () => {
+      window.__t0 = Math.round(G.time / G.STEP); window.__tick = () => Math.round(G.time / G.STEP) - __t0;
+      window.__adv = (n) => {
+        const C = G.Cards, dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [0, 0]];
+        for (let i = 0, g = 0; i < n && g < n * 4; g++) {
+          if (G.state === 'cards') { const O = C.off; if (O) { O.modal = null; if (O.mode === 'level') C.skip(); else C.pick(0); } if (G.state === 'cards') G.state = 'play'; }
+          const t = __tick(), blk = Math.floor(t / 45);
+          const d = t < 300 ? dirs[8] : dirs[(Math.imul(blk + 1, 2654435761) >>> 0) % 9], l = Math.hypot(d[0], d[1]) || 1;
+          G.input.joy = { active: d[0] !== 0 || d[1] !== 0, id: 1, ox: 100, oy: 400, x: d[0] / l, y: d[1] / l };
+          const before = G.time; G.step(); if (G.time !== before) i++;
+        }
+        const r = n => Math.round(n * 1000); let h = 2166136261 >>> 0; const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
+        mix(G.time); mix(G.runT); mix(G.kills); mix(r(G.player.x)); mix(r(G.player.y)); mix(r(G.player.hp)); mix(G.player.lvl || G.player.level); mix(G.player.xp); mix(G.player.ash);
+        G.enemies.forEach(e => { mix(e.type); mix(r(e.x)); mix(r(e.y)); mix(r(e.hp)); });
+        G.gems.forEach(g => { mix(g.kind || g.type); mix(r(g.x)); mix(r(g.y)); });
+        mix(G.projectiles.length); mix(G.zones ? G.zones.length : 0);
+        return h;
+      };
+    });
+    const gh = [];
+    for (const cpt of [600, 1800, 3600]) { const t = await E(pg, () => __tick()); gh.push(await E(pg, n => __adv(n), cpt - t)); }
+    ok(gh.every((h, i) => h === GOLD[i]), 'ALTA con semilla 1234: mismo hash que antes de la parte 2' + LAB + ' (' + gh.join(',') + ')');
+    await done(pg, 'diff-alta-igual' + X);
+  }
   await b.close();
 }
 
@@ -847,7 +957,7 @@ async function cine() {
   const sc0 = await E(pg, () => G.Cine.info().scene); await stepN(pg, 60); await press(pg, 'Space'); await press(pg, 'Space');
   ok(await E(pg, s => G.Cine.info().scene > s, sc0), 'tocar avanza de viñeta (sin saltar la cinematica)');
   await stepN(pg, 1800);
-  ok(await E(pg, () => G.state === 'aldea' && !G.Cine.active() && G.Save.data.cine.introSeen === true), 'al terminar vuelve a la aldea y marca introSeen');
+  ok(await E(pg, () => (G.state === 'play' || G.state === 'cards') && !G.Cine.active() && G.Save.data.cine.introSeen === true && G.Save.data.flags.fte.step === 'run1'), 'al terminar sale directo a la 1.ª expedición (T-F1-02; sin aviso por ser bot) y marca introSeen');
   ok(await E(pg, () => G.player && G.Save.data.cine.introSeen), 'guardado coherente');
   // repeticion: saltable y sin escribir en el guardado
   await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.creditsSeen = false; G.Cine.playIntro({ replay: true }); });
@@ -1115,7 +1225,7 @@ async function cine2(b) {
 
 
 // Pistas de teclado que no deben verse en pantallas táctiles (T-F0-06)
-const KBD_RE = /\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
+const KBD_RE = /^[BDR]\s{2}-\s{2}|\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
 const kbdHints = d => d.texts.map(t => t.s).filter(s => KBD_RE.test(s));
 const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2)); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); };
 
@@ -1156,7 +1266,22 @@ async function text() {
   pg = await mk(b, 'reset=1&direct=1&all=1&god=1&speed=0&noanchor=1');
   await E(pg, () => { G.Save.data.anchors = []; G.startGame(); }); await sleep(pg, 500); await kbdOnly(pg, 'oferta de cartas');
   await E(pg, () => { G.Cards.skip(); }); await sleep(pg, 300); await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); }); await kbdOnly(pg, 'partida (tutorial)');
-  await done(pg, 'texto-partida'); await b.close();
+  await done(pg, 'texto-partida');
+  // T-F1-02 / T-F1-04: tarjeta "Antes de salir", banda de aviso y pantallas de fin (6 variantes) a 844x390 y 740x360
+  for (const [w, h] of [[844, 390], [740, 360]]) {
+    const tag = `${w}x${h}`;
+    pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3', w, h);
+    await E(pg, () => { G.TrackUI.open(() => {}, { fte: true }); }); await sleep(pg, 300); await report(pg, `tarjeta Antes de salir ${tag}`);
+    await E(pg, () => { G.TrackUI.choose(false); G.Fte.launchFirst(); for (let i = 0; i < 40; i++) G.step(); }); await sleep(pg, 100);
+    const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /moverte|WASD/.test(t.s)) && TC.analyze(dh, { minSize: 11.5 }).filter(i => i.k === 'solape' || i.k === 'size').length === 0, `banda de aviso ${tag}: visible, 16 px y sin solapes`);
+    await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); }); await report(pg, `fin primera expedición ${tag}`); await done(pg, 'texto-fte-' + tag);
+    const variants = { 'muerte': 'G.player.hp = 0; G.player.dead = true; G.finish(false);', 'abandono': 'G.finish(false);', 'práctica': '' };
+    for (const [nm, code] of Object.entries(variants)) {
+      pg = await mkV(b, nm === 'práctica' ? 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0' : 'reset=1&direct=1&all=1&speed=0&seed=3', w, h);
+      await E(pg, c => { for (let i = 0; i < 20; i++) G.step(); G.runT = G.time = Math.max(G.time, 125000); new Function(c)(); if (G.state !== 'gameover') G.finish(false); }, code); await report(pg, `fin ${nm} ${tag}`); await done(pg, 'texto-fin-' + nm + tag);
+    }
+  }
+  await b.close();
 }
 
 
@@ -1672,8 +1797,234 @@ async function track() {
   await b.close();
 }
 
+// ---------------------------------------------------------------- Primera sesión (T-F1-02): src/fte.js, tarjeta "Antes de salir", avisos, aldea por pasos
+const mkV = async (b, url, w = 844, h = 390) => {
+  const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx; pg.ext = [];
+  pg.on('console', m => { if (m.type() === 'error' && !/ph\.test|net::ERR|Failed to load resource/.test(m.text())) pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
+  await ctx.route(u => new URL(u).origin !== new URL(base).origin, r => { pg.ext.push(r.request().url()); return r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: '{}' }); });
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&${url}`); await sleep(pg, 700);
+  return pg;
+};
+// colocar la partida en una expedición "a mano": pasos de simulación con joystick opcional
+const fStep = (pg, n, joy) => E(pg, ([n, joy]) => { for (let i = 0; i < n; i++) { if (joy) G.input.joy = { active: true, id: 1, ox: 100, oy: 400, x: joy[0], y: joy[1] }; else G.input.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }; G.step(); } G.input.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }; }, [n, joy || null]);
+const fteState = pg => E(pg, () => JSON.parse(JSON.stringify(G.Save.data.flags.fte)));
+// cuenta nueva sin intro: cierra la tarjeta de privacidad (si salió) y lanza la 1.ª expedición como lo hace la tarjeta
+const startFirst = pg => E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(true); G.Fte.launchFirst(); });
+
+async function fte() {
+  console.log('--- fte: primera sesión (intro completa, tarjeta Antes de salir, salida directa, avisos, aldea por pasos, cuentas existentes, ?fte=0)');
+  const b = await launch(), PH = 'https://ph.test', KEYP = 'track=on&trackhost=' + encodeURIComponent(PH) + '&trackkey=phc_test';
+  // 1-4, 11, 12. Flujo completo con un toque por escena de la intro; red vigilada
+  let pg = await mkV(b, KEYP + '&cine=1&reset=1');
+  ok((await E(pg, () => G.state)) === 'title', 'cuenta nueva con ?cine=1: arranca en el título');
+  await sleep(pg, 600); await tap(pg, 480, 300);
+  ok((await E(pg, () => G.state)) === 'cine', 'el toque del título lleva a la intro');
+  const snap0 = await TC.snap(pg, 1);
+  ok(!snap0.texts.some(t => /SALTAR/.test(t.s)) && (await E(pg, () => G.Cine.info().locked)), 'la intro se reproduce completa y bloqueada la 1.ª vez (sin SALTAR)');
+  const tI = Date.now(); let n = 0;
+  while ((await E(pg, () => G.state)) === 'cine' && Date.now() - tI < 70000) { await tap(pg, 480, 270); n++; await sleep(pg, 370); }
+  ok((await E(pg, () => G.state)) === 'privacy', 'al acabar la intro aparece la tarjeta de privacidad (no la aldea) tras ' + ((Date.now() - tI) / 1000).toFixed(1) + ' s y ' + n + ' toques');
+  await sleep(pg, 600);
+  ok(pg.ext.length === 0 && (await E(pg, () => localStorage.getItem('swarmhand.fusion.track'))) === null, 'tarjeta abierta sin contestar: 0 peticiones y nada de analítica en localStorage');
+  const card = await E(pg, () => ({ r: G.TrackUI.rects, t: G.TrackUI.TEXT.es })), snapC = await TC.snap(pg, 2);
+  ok(card.r.yes.w === card.r.no.w && card.r.yes.h === card.r.no.h && card.r.yes.y === card.r.no.y && snapC.texts.some(t => /ANTES DE SALIR|BEFORE YOU GO/.test(t.s)) && /Acepto \(tengo 18 años o más\)/.test(card.t.yes) && card.t.no === 'No, gracias', 'tarjeta "Antes de salir": dos botones del mismo tamaño y altura; textos de consentimiento intactos');
+  const iss = TC.analyze(snapC, { minSize: 11.5 }); ok(iss.length === 0, 'tarjeta: ' + snapC.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : ''));
+  const tT = Date.now(); await tap(pg, 290, 434);   // botón izquierdo: "Acepto"
+  const reached = await waitState(pg, 'play', 6000), msPlay = Date.now() - tT;
+  const info = await E(pg, () => ({ m: G.mode, bio: G.curBiome, len: G.RUN_LEN / 60000, pel: G.peligro, anch: G.Save.data.anchors.join(), f: G.Save.data.flags.fte }));
+  ok(reached && msPlay <= 6000 && info.m === 'run' && info.bio === 'bosque' && info.len === 9 && info.pel === 1 && info.anch === 'spark', `1 toque (aceptar) y ${msPlay} ms hasta el combate: Bosque, Normal 9, Peligro I, ancla Chispa`);
+  ok(info.f.priv === 'on' && info.f.step === 'run1' && info.f.introTry === 1, 'la elección queda guardada (priv on) y la salida es la expedición 1');
+  const lg = await E(pg, () => { G.Track.flush(true); return G.Track.state(); });
+  ok(lg.consent === true && lg.adapter === 'posthog', 'aceptar activa el consentimiento del aviso (adaptador de pruebas)');
+  await done(pg, 'fte-flujo-on');
+  // 4. SOLO en el dispositivo: 0 peticiones en toda la expedición
+  pg = await mkV(b, KEYP + '&cine=0&reset=1');
+  await E(pg, () => { G.Fte.start(); }); await sleep(pg, 600);
+  await tap(pg, 670, 434); ok(await waitState(pg, 'play', 3000), 'botón "No, gracias": también lanza la 1.ª expedición');
+  await sleep(pg, 4000); await E(pg, () => G.Track.flush(true)); await sleep(pg, 300);
+  const f1 = await fteState(pg);
+  ok(f1.priv === 'off' && pg.ext.length === 0 && (await E(pg, () => G.Track.state().consent)) === false, JSON.stringify([f1.priv, pg.ext, await E(pg, () => G.Track.state().consent)]) + 'rechazar: priv off, consent false y 0 peticiones de red en toda la expedición');
+  await done(pg, 'fte-flujo-off');
+  // 5, 6. Avisos en orden, una vez, cerrados por acción; recarga a mitad
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=11'); await startFirst(pg);
+  await fStep(pg, 30);
+  const hint = () => E(pg, () => G.Fte.current());
+  ok((await hint()) === 'move', 'aviso 1 "move" al empezar: ' + (await hint()));
+  let sn = await TC.snap(pg, 1); ok(sn.texts.some(t => /Arrastra el pulgar a la izquierda para moverte/.test(t.s) && t.size >= 15.9), 'texto táctil del aviso a 16 px y sin teclas');
+  await fStep(pg, 100, [1, 0]); ok((await hint()) !== 'move', 'se cierra al acumular 1,5 s de movimiento (por acción)');
+  await E(pg, () => { const p = G.player; G.Combat.dropGem(p.x + 30, p.y, 'xp', 1); }); await fStep(pg, 3);
+  ok((await hint()) === 'gems', 'aviso 2 "gems" cuando hay una gema en el suelo');
+  const bar0 = await E(pg, () => G.Fte.xpBig()); ok(bar0 === true, 'mientras dura el aviso, la barra de experiencia es más alta');
+  for (let i = 0; i < 3; i++) { await E(pg, () => { G.player.xp += 0.5; }); await fStep(pg, 2); }
+  ok((await hint()) !== 'gems' && !(await E(pg, () => G.Fte.xpBig())), 'recoger 3 gemas cierra "gems" y la barra vuelve a su altura');
+  await E(pg, () => { G.player.level = 2; G.pendingLevels = 1; }); await fStep(pg, 2); await sleep(pg, 200);
+  const pk = await E(pg, () => ({ st: G.state, h: G.Save.data.flags.fte.hints.pick, ok: !!G.Cards.off.fteHint }));
+  sn = await TC.snap(pg, 2);
+  ok(pk.st === 'cards' && pk.h === 1 && pk.ok && sn.texts.some(t => /Elige una carta\. Si pone FUSIÓN/.test(t.s)), 'aviso 3 "pick": subtítulo en la 1.ª oferta de nivel');
+  ok(TC.analyze(sn, { minSize: 11.5 }).filter(i => i.k === 'solape').length === 0, '1.ª oferta: el título "¡NIVEL 2!" ya no se pisa con los huecos de poderes');
+  await E(pg, () => { G.Fusion.grant('vapor', 1); G.Cards.closeOffer(); }); await fStep(pg, 3);
+  ok((await hint()) === 'power', 'aviso 4 "power" al volver al combate con el primer poder');
+  sn = await TC.snap(pg, 1); ok(sn.texts.some(t => /Tu poder está listo: tócalo \(abajo a la derecha\)/.test(t.s)), 'texto del aviso "power" (táctil)');
+  await E(pg, () => { const p = G.player; G.player.actives[0].uses = 1; }); await fStep(pg, 2);   // (el uso real depende de que haya objetivo en rango; aquí se fija el contador que lee el aviso)
+  ok((await hint()) !== 'power', 'usar el poder (uses > 0) cierra el aviso');
+  const log = await E(pg, async () => { await G.Track.flush(true); return G.Track.log.filter(e => e.e === 'hint_shown' || e.e === 'hint_done').map(e => e.e + ':' + e.p.id + (e.p.by ? ':' + e.p.by : '')); });
+  const order = log.filter(x => x.startsWith('hint_shown')).map(x => x.split(':')[1]);
+  ok(order.join() === 'move,gems,pick,power' && log.filter(x => x.startsWith('hint_done')).length >= 4, 'analítica: hint_shown en orden move,gems,pick,power y un hint_done por aviso (' + log.length + ' eventos)');
+  // recarga a mitad de la 1.ª expedición: no se repiten
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&speed=0`); await sleep(pg, 700);
+  await E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); G.Base.launch(); }); await fStep(pg, 600);
+  const hs = await E(pg, () => ({ cur: G.Fte.current(), h: JSON.stringify(G.Save.data.flags.fte.hints) }));
+  ok(hs.cur !== 'move' && /"move":1/.test(hs.h), 'recargar a mitad de la 1.ª expedición: el aviso "move" no se repite (' + hs.h + ')');
+  await done(pg, 'fte-avisos');
+  // 7, 8. Aldea por pasos y abandono antes de 60 s
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0'); await startFirst(pg); await fStep(pg, 120);
+  await E(pg, () => G.finish(false)); await sleep(pg, 100);
+  let fs1 = await fteState(pg); ok(fs1.runs === 0 && fs1.step === 'run1', 'abandonar antes de 60 s no adelanta NPC (runs ' + fs1.runs + ')');
+  const NPCS = ['lanudo', 'grum', 'vesper', 'ulalume', 'rufo', 'castana'];
+  const vis = (runs) => E(pg, ([runs, ids]) => { const f = G.Save.data.flags.fte; f.runs = runs; f.step = runs >= 4 ? 'done' : 'village'; G.Aldea.open(true); const out = []; ids.forEach(id => { G.Aldea.pos.x = 5; G.Aldea.pos.y = 300; G.Aldea.goto(id); if (G.Aldea.state().target === id) out.push(id); }); return out.join(); }, [runs, NPCS]);
+  const exp = { 1: 'lanudo', 2: 'lanudo,grum,vesper', 3: 'lanudo,grum,vesper,ulalume,rufo', 4: NPCS.join() };
+  for (const r of [1, 2, 3, 4]) { const got = await vis(r); ok(got.split(',').sort().join() === exp[r].split(',').sort().join(), `tras la salida ${r} se pueden tocar: ${got}`); }
+  await E(pg, () => { G.finish; }); 
+  // salida >= 60 s cuenta
+  await E(pg, () => { const f = G.Save.data.flags.fte; f.runs = 0; f.step = 'run1'; f.ann = 0; G.launchReq = null; G.startGame(); G.runT = G.time = 61000; G.finish(false); });
+  fs1 = await fteState(pg); ok(fs1.runs === 1 && fs1.step === 'village', 'una salida de 61 s cuenta para presentar NPC');
+  const toast = await E(pg, () => { G.Aldea.open(true); return G.Fte.data().ann; }); ok(toast === 1, 'la llegada se anuncia una vez (ann ' + toast + ')');
+  const ar = await E(pg, () => G.Fte.arrival()); ok(ar === null, 'y no se repite al volver a abrir la aldea');
+  await done(pg, 'fte-aldea');
+  // 9. Guardados v9..v12 con progreso: legacy, aldea completa, sin tarjeta ni avisos
+  for (const v of [9, 10, 11, 12]) {
+    pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0');
+    await E(pg, v => { const d = JSON.parse(JSON.stringify(G.Save.data)); d.v = v; d.runs = 3; d.brasas = 120; delete d.flags.fte; if (v < 12) { delete d.cine; } localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); }, v);
+    await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&speed=0`); await sleep(pg, 700);
+    const lg2 = await E(pg, () => ({ f: G.Save.data.flags.fte, eng: G.Fte.engaged(), start: G.Fte.shouldStart() }));
+    await E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); G.startGame(); }); await fStep(pg, 300);
+    const got = await vis(0).catch(() => '');
+    ok(lg2.f.legacy === 1 && lg2.f.step === 'done' && !lg2.eng && !lg2.start && (await E(pg, () => G.Fte.current())) === null, `guardado v${v} con progreso: legacy, sin tarjeta del flujo nuevo ni avisos`);
+    ok(got.split(',').length === 6, `guardado v${v}: aldea completa (${got})`);
+    await done(pg, 'fte-legacy-v' + v);
+  }
+  // cuenta con introSeen y runs 0: se trata como nueva
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0');
+  await E(pg, () => { const d = JSON.parse(JSON.stringify(G.Save.data)); d.cine.introSeen = true; delete d.flags.fte; localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); });
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&speed=0`); await sleep(pg, 700);
+  const nw = await E(pg, () => ({ f: G.Save.data.flags.fte, start: G.Fte.shouldStart() })); ok(!nw.f.legacy && nw.f.step === '' && nw.start, 'introSeen con 0 salidas: cuenta nueva (empieza en la tarjeta)'); await done(pg, 'fte-introseen');
+  // 10. ?fte=0
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&fte=0');
+  await E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); G.startGame(); }); await fStep(pg, 300);
+  const o = await E(pg, () => ({ en: G.Fte.enabled(), st: G.Fte.shouldStart(), cur: G.Fte.current() }));
+  sn = await TC.snap(pg, 1); ok(!o.en && !o.st && o.cur === null && sn.texts.some(t => /Las cartas son infusiones/.test(t.s)), '?fte=0 restaura el flujo antiguo (ayuda de siempre, sin avisos nuevos)');
+  await done(pg, 'fte-off');
+  // 12. Cerrar a mitad de la intro: el 2.º intento es saltable
+  pg = await mkV(b, 'cine=1&reset=1'); await sleep(pg, 600); await tap(pg, 480, 300); await sleep(pg, 1500);
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&cine=1`); await sleep(pg, 900); await tap(pg, 480, 300); await sleep(pg, 1200);
+  const sk = await E(pg, () => ({ st: G.state, locked: G.Cine.info() && G.Cine.info().locked, tried: G.Fte.introTried() }));
+  ok(sk.st === 'cine' && sk.locked === false && sk.tried, 'cerrar a mitad de la intro: la segunda vez es saltable (sin bloqueo)'); await done(pg, 'fte-intro2');
+  // 11. Tiempos con un recolector (simulación de pasos): 1.ª oferta <= 20 s y 1.ª fusión <= 25 s de combate
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=77'); await startFirst(pg);
+  const tm = await E(pg, () => {
+    const out = { offer: null, fuse: null }; let n = 0;
+    while (n++ < 60 * 90 && !(out.offer && out.fuse)) {
+      const p = G.player, gs = G.gems.filter(g => g.kind === 'xp');
+      let tx = 0, ty = 0, bd = 1e9; gs.forEach(g => { const d = Math.hypot(g.x - p.x, g.y - p.y); if (d < bd) { bd = d; tx = g.x - p.x; ty = g.y - p.y; } });
+      G.enemies.forEach(e => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d < 70) { tx -= (e.x - p.x) * 3; ty -= (e.y - p.y) * 3; } });
+      const l = Math.hypot(tx, ty) || 1; G.input.joy = { active: gs.length > 0 || Math.hypot(tx, ty) > 0, id: 1, ox: 100, oy: 400, x: tx / l, y: ty / l };
+      if (G.state === 'cards') { const O = G.Cards.off; if (O && O.mode === 'level') { if (out.offer == null) out.offer = (G.time - G.t0) / 1000; const i = O.cards.findIndex(id => G.Fusion.optionsFor(G.Cards.def(id).tag).length); if (i >= 0) { const fo = G.Fusion.optionsFor(G.Cards.def(O.cards[i]).tag)[0]; G.Fusion.fuse(fo.recipe, fo.slot, null, O.cards[i], () => G.Cards.closeOffer()); if (out.fuse == null && G.Fusion.fused) out.fuse = (G.time - G.t0) / 1000; } else G.Cards.pick(0); if (G.Cards.off) { G.Cards.off.modal = null; if (G.Cards.off.mode === 'level') G.Cards.skip(); } if (G.state === 'cards') G.state = 'play'; } }
+      G.step(); if (G.player.dead) { out.dead = (G.time - G.t0) / 1000; break; }
+    }
+    return out;
+  });
+  ok(tm.offer != null && tm.offer <= 20, `bot recolector: 1.ª oferta de carta a los ${tm.offer == null ? '?' : tm.offer.toFixed(1)} s de combate (<= 20 s)${tm.dead ? ' [murió a ' + tm.dead.toFixed(0) + ' s]' : ''}`);
+  ok(tm.fuse != null && tm.fuse <= 25, `bot recolector: 1.ª fusión a los ${tm.fuse == null ? '?' : tm.fuse.toFixed(1)} s de combate (<= 25 s)`);
+  await done(pg, 'fte-tiempos'); await b.close();
+}
+
+// ---------------------------------------------------------------- Pantalla de fin (T-F1-04): src/endinfo.js y src/base.js
+async function end() {
+  console.log('--- end: pantalla de fin (récord, objetivos, consejo, variantes, detalle, botón con retardo)');
+  const b = await launch();
+  const fin = (pg, how) => E(pg, how => { G.step(); G.Loot.run.dmgBy = how && how.dmg || G.Loot.run.dmgBy; if (how && how.t) { G.runT = G.time = how.t * 1000; } if (how && how.die) { G.player.hp = 0; G.player.dead = true; } G.finish(!!(how && how.won)); }, how || {});
+  const txt = async pg => (await TC.snap(pg, 2));
+  const has = (d, re) => d.texts.some(t => re.test(t.s));
+  // 1. récord nuevo
+  let pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
+  await fin(pg, { t: 125, die: true });
+  let r = await E(pg, () => ({ best: G.Save.data.stats.best.bosque, st: G.state, sm: G.Loot.summary.record }));
+  let d = await txt(pg); ok(r.best && r.best.t === 125 && r.sm.isNew && has(d, /¡Nuevo récord!/) && has(d, /HAS CAÍDO/), 'récord nuevo: stats.best.bosque.t = 125 y aparece "¡Nuevo récord!" (' + JSON.stringify(r.best) + ')');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'fin por muerte: sin solapes, desbordes, fuentes < 12 ni teclas en táctil');
+  // 10. DETALLE y VOLVER
+  await sleep(pg, 50); await E(pg, () => { for (let i = 0; i < 45; i++) G.step(); });
+  await E(pg, () => { G.input.mouse.x = 700; G.input.mouse.y = 150; G.input.pressed.Mouse0 = true; G.step(); });
+  d = await txt(pg); ok((await E(pg, () => G.Base.endView())) === 'detail' && has(d, /BOTÍN/) && has(d, /VOLVER/) && !has(d, /Kills|BUILD/), 'DETALLE: botín completo y botón VOLVER (sin "Kills" ni "BUILD")');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'DETALLE: sin problemas de texto');
+  await E(pg, () => { G.input.mouse.x = 780; G.input.mouse.y = 490; G.input.pressed.Mouse0 = true; G.step(); });
+  ok((await E(pg, () => G.Base.endView())) === 'main', 'VOLVER regresa a la pantalla principal');
+  await done(pg, 'end-record');
+  // 2. abandono: título y récord intacto
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
+  await E(pg, () => { G.Save.data.stats.best.bosque = { t: 200, bossPct: 100, lvl: 5, kills: 10 }; });
+  await fin(pg, { t: 90 });
+  d = await txt(pg); r = await E(pg, () => G.Save.data.stats.best.bosque);
+  ok(has(d, /EXPEDICIÓN ABANDONADA/) && has(d, /Conservas las partes/) && r.t === 200, 'abandono: "EXPEDICIÓN ABANDONADA" y el récord no cambia');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'abandono: sin problemas de texto'); await done(pg, 'end-abandono');
+  // 3. god: sin récord
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3&god=1');
+  await fin(pg, { t: 125, die: false }); d = await txt(pg);
+  ok((await E(pg, () => G.Save.data.stats.best.bosque)) === undefined && has(d, /Modo de pruebas: sin récord/), 'partida con god: no escribe récord y lo dice'); await done(pg, 'end-god');
+  // 4. respaldo (7) cuando nada más aplica
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
+  const bk = await E(pg, () => { G.step(); const S = G.Save.data; S.peligro.pastor = 5; S.bossKills.pastor = 1; S.stats.best.bosque = { t: 400, bossPct: 0, lvl: 9, kills: 99 }; G.Tree.nearest = () => null; G.Quests.active = () => null;
+    const sm = { won: true, quit: false, boss: { won: true, id: 'pastor', hpFrac: 0, time: 1000, first: false, unlocked: 0 }, parts: {}, total: 0, brasas: 0, newCards: [] }; G.EndInfo.fill(sm, { runSecs: 300, lvl: 9, hunt: false }); return sm.goals.map(g => g.id + ':' + g.text); });
+  ok(bk.length >= 1 && /^record:Supera tu récord de/.test(bk[bk.length - 1]), 'sin objetivos de progreso: aparece el respaldo "Supera tu récord de ..." (' + bk.join(' | ') + ')'); await done(pg, 'end-respaldo');
+  // 5. encargo a 14/20 como objetivo
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3&god=0');
+  await E(pg, () => { G.Quests.accept('bombs'); G.Save.data.quest.prog.bombs = 14; });
+  await fin(pg, { t: 60, die: true }); d = await txt(pg);
+  const gl = await E(pg, () => G.Loot.summary.goals.map(g => g.id + ':' + g.text + ':' + g.frac));
+  ok(gl.some(x => /^quest:Encargo: Zarzales mayores 14\/20:0\.7/.test(x)) && has(d, /Encargo: Zarzales mayores 14\/20/), 'encargo activo a 14/20: aparece como objetivo con barra (' + gl.join(' | ') + ')');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'fin con objetivos: sin problemas de texto'); await done(pg, 'end-encargo');
+  // 11. consejo por causa
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
+  await fin(pg, { t: 80, die: true, dmg: { fanner: 40, worm: 5 } }); d = await txt(pg);
+  ok(has(d, /Te tumbaron los Zarzales/), 'consejo: con daño de fanner sale la línea de los Zarzales'); await done(pg, 'end-consejo');
+  // 6. primera expedición
+  pg = await mk(b, 'reset=1&cine=0&speed=0&seed=3');
+  await startFirst(pg); await fStep(pg, 30); await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); });
+  d = await txt(pg); const bx = d.boxes.filter(x => x.k === 'button').map(x => x.label);
+  ok(has(d, /PRIMERA EXPEDICIÓN/) && bx.includes('OTRA EXPEDICIÓN') && bx.includes('VOLVER A RESCOLDO') && has(d, /Las Brasas sirven para forjar en Rescoldo/) && !has(d, /Esencia|PF|nodos/), 'primera expedición: variante con VOLVER A RESCOLDO y sin jerga (' + bx.join(',') + ')');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'primera expedición: sin problemas de texto'); await done(pg, 'end-primera');
+  // 7. práctica
+  pg = await mk(b, 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0');
+  await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); G.finish(false); }); d = await txt(pg);
+  ok(has(d, /PRÁCTICA/) && !has(d, /teclas/i) && has(d, /REINICIAR PRÁCTICA/), 'práctica: panel de práctica sin la frase de teclas en táctil');
+  { const pi = TC.analyze(d, { minSize: 11.5 }); ok(pi.length === 0, 'práctica: sin problemas de texto' + (pi.length ? ' -> ' + pi.slice(0, 3).map(i => i.msg).join(' | ') : '')); } await done(pg, 'end-practica');
+  // 8. victoria con bioma nuevo
+  pg = await mk(b, 'reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=1&cine=0&hand=spark:3,shard:2,dart:1&boss=pastor');
+  const wn = await E(pg, () => { for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 900 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.state = 'play'; } } return G.state; });
+  d = await txt(pg);
+  const g0 = await E(pg, () => (G.Loot.summary.goals || []).map(g => g.text)); ok(wn === 'gameover' && g0.length && /Cripta/.test(g0[0]) && has(d, /Cripta/) && has(d, /MANO GANADORA/), 'victoria con desbloqueo: el objetivo y el botón nombran la Cripta (' + g0[0] + ')');
+  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'victoria: sin problemas de texto'); await done(pg, 'end-victoria');
+  // 9. retardo de 600 ms
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
+  await fin(pg, { t: 80, die: true });
+  await E(pg, () => { G.input.mouse.x = 300; G.input.mouse.y = 490; G.input.pressed.Mouse0 = true; G.step(); });
+  const early = await E(pg, () => G.state);
+  await E(pg, () => { for (let i = 0; i < 45; i++) G.step(); G.input.mouse.x = 300; G.input.mouse.y = 490; G.input.pressed.Mouse0 = true; G.step(); });
+  const late = await E(pg, () => G.state);
+  ok(early === 'gameover' && (late === 'play' || late === 'cards'), `el botón principal no responde antes de 600 ms (${early}) y sí después (${late})`); await done(pg, 'end-retardo');
+  // botones de 68 px y OTRA EXPEDICIÓN con el objetivo
+  pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3'); await fin(pg, { t: 80, die: true }); d = await txt(pg);
+  const bb = d.boxes.filter(x => x.k === 'button');
+  ok(bb.length >= 2 && bb.every(x => x.y1 - x.y0 >= 68 - 0.5 * 0.722) && has(d, /^Objetivo: /), 'botones de >= 68 px lógicos y subtítulo "Objetivo: ..." (' + bb.map(x => x.label).join(',') + ')'); await done(pg, 'end-botones');
+  // 740x360
+  for (const [w, h] of [[740, 360]]) {
+    pg = await mkV(b, 'reset=1&direct=1&speed=0&seed=3', w, h); await fin(pg, { t: 125, die: true }); d = await txt(pg);
+    ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, `fin a ${w}x${h}: sin problemas de texto`); await done(pg, 'end-740');
+  }
+  await b.close();
+}
+
 (async () => {
-  const run = { save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

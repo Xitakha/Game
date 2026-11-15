@@ -24,6 +24,7 @@
   var NPC_ORDER = ['grum', 'vesper', 'rufo', 'ulalume', 'lanudo', 'castana'];
   var COL = { grum: '#c0602a', vesper: '#e8741c', rufo: '#6a7080', ulalume: '#8a5ac0', lanudo: '#b8a878', castana: '#d0708a', carapa: '#3a7a86' };
 
+  function NO() { return G.Fte ? NPC_ORDER.filter(G.Fte.npcVisible) : NPC_ORDER; }   // T-F1-02: solo los NPC ya presentados (cuentas fuera del flujo nuevo: todos)
   function syncOrder() { if (NPC_ORDER.indexOf('carapa') < 0 && G.Armor && G.Armor.smithOn()) NPC_ORDER.push('carapa'); }   // v8: Carapa llega al vencer al Pastor
   function layout() {
     var V = window.Assets && Assets.VILLAGE;
@@ -43,7 +44,7 @@
   A.levelText = function (n) { return LV_TXT[n] || ''; };
   var lvSeen = -1, dawnT = 0, lvAt = -1e9;
   function ints() {
-    var out = NPC_ORDER.map(function (id) { var p = npcPos(id); return { id: id, x: p.x, y: p.y, name: npcName(id), npc: true }; });
+    var out = NO().map(function (id) { var p = npcPos(id); return { id: id, x: p.x, y: p.y, name: npcName(id), npc: true }; });
     var sp = Lay.spots.portal; out.push({ id: 'portal', x: sp.x, y: sp.y, name: 'Portal', npc: false });
     if (statueOn()) out.push({ id: 'estatua', x: STATUE.x, y: STATUE.y - 22, name: 'Estatua del Hogar', npc: false });   // P7: estatua de la plaza (tras vencer a Cenizar)
     return out;
@@ -62,6 +63,7 @@
     var st = fromRun ? Lay.spots.portalReturn : (M.booted ? { x: M.x, y: M.y } : Lay.spots.marloStart);
     M.x = st.x; M.y = st.y; M.booted = true; M.moving = false;
     var S = G.Save.data, nAv = G.Tree.availableCount();
+    var arr = G.Fte && G.Fte.arrival(); if (arr) flash(arr);   // T-F1-02: la llegada del NPC nuevo es el primer aviso
     if (fromRun) {
       // luz: Día tras ganar, Ocaso tras perder, Noche con 3 derrotas seguidas o cada 5 expediciones (doc A.7)
       A.timeMode = (S.runs > 0 && S.runs % 5 === 0) || (S.lossStreak || 0) >= 3 ? 'noche' : G.won ? 'dia' : 'ocaso';
@@ -157,7 +159,7 @@
   ];
   function lanudoTips() {
     var S = G.Save.data, k = S.bossKills, Q = G.Quests, T = G.Tree, out = [], C = G.Cards;
-    if (!S.runs) out.push('Sal al Portal, chaval. Las cartas atacan solas: tú solo esquiva, y no corras en línea recta.');
+    if (!S.runs) out.push('Sal al Portal, chaval. Las cartas atacan solas: tú esquiva y recoge las gemas, y no corras en línea recta.');
     if (!k.pastor) out.push('El Pastor tiene tres partes: cuernos, cayado y vellón. Rómpelas y caen trofeos. Le duelen el Fuego y el Acero; el Veneno le resbala.');
     else if (!k.karceron) out.push('Con el Pastor vencido se abre la Cripta. Karceron es un coloso casi inmóvil: Hielo y Rayo lo parten; el Fuego y el Veneno apenas le hacen cosquillas.');
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
@@ -197,7 +199,8 @@
       }
     });
     var news = A_.unseen().length;
-    var lines = pre.length ? pre : news ? ['Tengo una memoria nueva para ti, chaval. Mira en mis logros.'] : [rot('chat_lanudo', LORE)];
+    var wl = G.Fte && G.Fte.lanudoWelcome();
+    var lines = wl ? [wl] : pre.length ? pre : news ? ['Tengo una memoria nueva para ti, chaval. Mira en mis logros.'] : [rot('chat_lanudo', LORE)];
     S.flags.lanudo = (S.flags.lanudo || 0) + 1;
     D.say(w, lines, [{ label: 'Consejo', fn: function () { D.say(w, [rot('tipn_lanudo', lanudoTips())]); } }, { label: 'Logros', fn: function () { openPanel('logros'); } }, bye]);
   }
@@ -237,6 +240,7 @@
   }
   function talk(it) {
     var S = G.Save.data, w = who(it), Q = G.Quests, L = G.Loot;
+    if (G.Fte && it.npc) G.Fte.met(it.id);   // T-F1-02: el '!' de bienvenida se apaga tras la primera charla
     if (it.id === 'portal') { panel = 'portal'; mode = 'panel'; G.Panels.open('portal'); G.sfx('whoosh', { vol: 0.5 }); return; }
     if (it.id === 'estatua') { talkStatue(it); return; }
     if (it.id === 'lanudo') { talkLanudo(it); return; }
@@ -348,7 +352,7 @@
   }
   function updateBarks() {
     if (D.active()) return;
-    NPC_ORDER.forEach(function (id) {
+    NO().forEach(function (id) {
       var p = npcPos(id), d = Math.hypot(p.x - M.x, p.y - M.y);
       if (d > 170) near[id] = false;
       else if (d < 110 && !near[id]) {
@@ -372,7 +376,7 @@
   var EMO_WIN = { carapa: 0, grum: 0, vesper: 3, rufo: 5, ulalume: 6, lanudo: 0, castana: 0 }, EMO_LOSS = { carapa: 4, grum: 4, vesper: 2, rufo: 5, ulalume: 4, lanudo: 7, castana: 2 };
   function drawEmotes(c, now) {
     if (!react || mode === 'panel' || D.active()) return;
-    NPC_ORDER.forEach(function (id) {
+    NO().forEach(function (id) {
       var fr = react.won ? EMO_WIN[id] : EMO_LOSS[id];
       if (id === 'grum' && react.won && G.Tree.availableCount() > 0) fr = 1;
       if (id === 'vesper' && G.Quests.isReady()) fr = 1;
@@ -422,12 +426,12 @@
     B.forEach(function (b) { c.fillStyle = b[2]; c.fillRect(b[1] - 50, 180, 100, 112); c.fillStyle = '#2a1d1a'; c.fillRect(b[1] - 12, 250, 24, 42); G.txt(c, b[0], b[1], 196, 12, '#fff', 'center'); });
     c.fillStyle = '#ff8a2a'; c.beginPath(); c.arc(480, 388, 12 + Math.sin(now / 90) * 2, 0, 6.283); c.fill();
     c.fillStyle = '#7a5a30'; c.fillRect(600, 384, 100, 28); G.txt(c, 'CARRO', 650, 398, 10, '#fff', 'center');
-    NPC_ORDER.forEach(function (id) { var p = npcPos(id); c.fillStyle = COL[id]; c.beginPath(); c.ellipse(p.x, p.y - 22, 16, 24, 0, 0, 6.283); c.fill(); c.strokeStyle = '#120c1a'; c.lineWidth = 3; c.stroke(); });
+    NO().forEach(function (id) { var p = npcPos(id); c.fillStyle = COL[id]; c.beginPath(); c.ellipse(p.x, p.y - 22, 16, 24, 0, 0, 6.283); c.fill(); c.strokeStyle = '#120c1a'; c.lineWidth = 3; c.stroke(); });
   }
 
   function npcOverrides(tg) {
     var o = {}, dlg = D.active();
-    NPC_ORDER.forEach(function (id) {
+    NO().forEach(function (id) {
       var p = npcPos(id), d = Math.hypot(p.x - M.x, p.y - M.y), ov = null;
       if (d < 120) { ov = { flip: M.x < p.x }; if (id === 'lanudo') ov.flip = M.x < p.x; }
       if (id === 'carapa' && !npcDrawn()) { /* el placeholder no usa overrides */ }
@@ -435,6 +439,7 @@
       else if (react && react.won && react.t < 5200 && react.t > NPC_ORDER.indexOf(id) * 220 && (id === 'grum' || id === 'castana' || id === 'lanudo' || id === 'ulalume')) { ov = ov || {}; ov.anim = 'happy'; }   // celebran tu victoria
       if (ov) o[id] = ov;
     });
+    NPC_ORDER.forEach(function (id) { if (G.Fte && !G.Fte.npcVisible(id)) o[id] = { hidden: true }; });
     if (NPC_ORDER.indexOf('carapa') < 0) o.carapa = { hidden: true };   // antes de que llegue la Armera no se dibuja
     return o;
   }
@@ -530,13 +535,14 @@
 
   function drawMarks(c, now, tg) {
     var Q = G.Quests, T = G.Tree;
-    NPC_ORDER.concat(['portal']).forEach(function (id) {
+    NO().concat(['portal']).forEach(function (id) {
       var kind = null;
       if (id === 'grum') { if (T.availableCount() > 0 || Object.keys(G.Loot.affordable()).length) kind = 'green'; }
       else if (id === 'vesper') { var mk = Q.mark(); kind = mk === 'ready' ? 'green' : mk === 'new' ? 'gold' : null; }
       else if (id === 'lanudo') { if (G.Ach.unseen().length) kind = 'gold'; }
       else if (id === 'castana') { if (G.Cook.anyAffordable()) kind = 'gold'; }
       else if (id === 'carapa') { if (G.Armor.readyCount() > 0) kind = 'green'; else if (G.Armor.newSets() > 0 || G.Armor.pedReadyCount() > 0) kind = 'gold'; }
+      if (!kind && G.Fte && G.Fte.isNew(id)) kind = 'gold';
       if (!kind || D.active() || mode === 'panel' || (tg && tg.id === id)) return;
       var p = npcPos(id), cv = anim(kind === 'green' ? 'ui_mark_green' : 'ui_mark_gold', 'shine', now), by = Math.sin(now / 300) * 3;
       if (cv) c.drawImage(cv, Math.round(p.x - cv.width / 2), Math.round(p.y - 112 + by));
@@ -558,11 +564,12 @@
   function drawTopHud(c) {
     var S = G.Save.data, T = G.Tree, Q = G.Quests;
     c.fillStyle = 'rgba(10,6,18,0.62)'; c.fillRect(6, 6, 330, 44);
+    var fg = G.Fte && G.Fte.engaged(), showPF = !fg || G.Fte.npcVisible('grum'), showQ = !fg || G.Fte.npcVisible('vesper');   // T-F1-02: solo los recursos de los NPC presentes
     U.part(c, 'brasa', 22, 20, 8); G.txt(c, 'Brasas ' + S.brasas, 36, 20, 13, '#ff9a3c', 'left');
-    T.pfIcon(c, 158, 20, 8); G.txt(c, 'PF ' + T.pfFree(), 172, 20, 13, T.pfFree() ? '#ffd24a' : '#9a8fb0', 'left');
-    G.txt(c, 'Salidas ' + S.runs, 238, 20, 11, '#9a8fb0', 'left');
+    if (showPF) { T.pfIcon(c, 158, 20, 8); G.txt(c, 'PF ' + T.pfFree(), 172, 20, 13, T.pfFree() ? '#ffd24a' : '#9a8fb0', 'left'); }
+    G.txt(c, 'Salidas ' + S.runs, showPF ? 238 : 158, 20, 12, '#9a8fb0', 'left');
     var q = Q.statusLine();
-    G.txt(c, q ? 'Encargo: ' + q : 'Sin encargo (habla con Vesper)', 14, 39, 10, q && Q.isReady() ? '#9dffb4' : '#d8cfe8', 'left');
+    if (showQ) G.txt(c, q ? 'Encargo: ' + q : 'Sin encargo (habla con Vesper)', 14, 39, 12, q && Q.isReady() ? '#9dffb4' : '#d8cfe8', 'left');
     var h = U.inR(R_MENU, inp.mouse);
     c.fillStyle = h ? '#4a3a66' : 'rgba(10,6,18,0.72)'; c.fillRect(R_MENU.x, R_MENU.y, R_MENU.w, R_MENU.h); c.strokeStyle = '#8a7aa6'; c.lineWidth = 3; c.strokeRect(R_MENU.x + 1.5, R_MENU.y + 1.5, R_MENU.w - 3, R_MENU.h - 3);
     c.fillStyle = '#fff'; for (var i = 0; i < 3; i++) c.fillRect(R_MENU.x + 17, R_MENU.y + 14 + i * 9, 24, 4);

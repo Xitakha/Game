@@ -246,6 +246,7 @@
       R.trophies.forEach(function (tr) { S.trophies[tr] = (S.trophies[tr] || 0) + 1; S.trophiesEver[tr] = (S.trophiesEver[tr] || 0) + 1; });   // v8: trophies = saldo gastable (Carapa); trophiesEver = acumulado (Ruta, logros)
       binfo = { id: bs.id, name: BD.name, won: !!bs.won, parts: bs.parts.slice(), brasas: bb, pf: bpf, time: bs.time || (be ? G.Boss.combatT : 0), hpFrac: bs.won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), trophies: R.trophies.slice(), first: !!bs.won && (!hunt || G.final) && kn === 0, final: !!G.final, relics: R.relics || 0, peligro: P, mode: G.mode, unlocked: unlocked, firstP: firstP };
     }
+    var fteFirst = false, runSecs = Math.max(0, (G.runT - G.t0) / 1000); try { if (G.Fte) fteFirst = G.Fte.onRunEnd(won, runSecs); } catch (eF) { /* primera sesión */ }   // T-F1-02
     S.brasas += brasas; S.runs++; if (won && !hunt) S.wins++;
     S.pity = R.rare > 0 ? 0 : Math.min(L.PITY_MAX, (S.pity || 0) + L.PITY_STEP);
     S.shop = { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 };   // cupos de Rufo y plato de Castaña: se reinician al volver de una salida
@@ -259,6 +260,8 @@
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
     L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, blocked: Math.round((G.Armor && G.Armor.run && G.Armor.run.blocked) || 0), rawDmg: Math.round((G.Armor && G.Armor.run && G.Armor.run.raw) || 0), won: won, kills: G.kills, diff: G.D && G.D.id, quest: q, pfGained: R.pf || 0, boss: binfo };
+    L.summary.first = fteFirst; L.summary.quit = !won && !(p && p.dead);   // T-F1-02 / T-F1-04
+    try { G.EndInfo.fill(L.summary, { runSecs: runSecs, lvl: p.level, hunt: hunt }); } catch (eE) { /* pantalla de fin: récord y objetivos opcionales */ }
   };
   // Fin de una PRÁCTICA: ni botín ni progreso; solo el resumen de la pelea y el contador de victorias de práctica
   L.endPractice = function (won) {
@@ -269,5 +272,5 @@
     L.summary = { practice: true, parts: {}, total: 0, brasas: 0, rare: 0, newCards: [], won: won, kills: G.kills, quest: null, pfGained: 0,
       boss: { id: id, name: (G.Boss.DEFS[id] || {}).name || id, won: won, parts: be ? be.partsBroken.slice() : [], brasas: 0, pf: 0, trophies: [], time: G.Boss.combatT, hpFrac: won ? 0 : (be ? Math.max(0, be.hp / be.maxHp) : 1), peligro: 1, mode: 'practice', tries: rec.tries, wins: rec.wins, phase: be ? be.phase : 1 } };
   };
-  L.beginRun = function () { L.resetRun(); if (G.Armor) G.Armor.beginRun(); L.startAff = L.affordable(); L.summary = null; };
+  L.beginRun = function () { L.resetRun(); try { if (G.Fte) G.Fte.beginRun(); } catch (eF) { /* primera sesión */ } if (G.Armor) G.Armor.beginRun(); L.startAff = L.affordable(); L.summary = null; };
 })();

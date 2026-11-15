@@ -28,8 +28,10 @@
   var BY = { x: 120, y: 392, w: 340, h: 84 }, BN = { x: 500, y: 392, w: 340, h: 84 }, LK = { x: 330, y: 340, w: 300, h: 44 };
   UI.rects = { yes: BY, no: BN, link: LK };
   UI.isOpen = function () { return !!cur; };
-  UI.open = function (cb) {
-    cur = { t: 0, prev: G.state === 'privacy' ? 'aldea' : G.state, cb: cb, lines: null };
+  // opts.fte (T-F1-02): tarjeta "Antes de salir" tras la intro. Mismo texto legal y mismos botones; solo se añade el rótulo y una nota igual para los dos botones
+  // (los dos lanzan la 1.ª expedición, así que la elección no se empuja hacia ninguno). Fondo oscuro, sin aldea.
+  UI.open = function (cb, opts) {
+    cur = { t: 0, prev: G.state === 'privacy' ? 'aldea' : G.state, cb: cb, lines: null, fte: !!(opts && opts.fte) };
     G.state = 'privacy';
   };
   UI.choose = function (yes) {
@@ -49,11 +51,12 @@
     if (U.inR(BY, m)) UI.choose(true); else if (U.inR(BN, m)) UI.choose(false); else if (U.inR(LK, m)) UI.openPolicy();
   };
   UI.draw = function (c) {
-    if (G.Aldea && cur && cur.prev === 'aldea') { try { G.Aldea.draw(c); } catch (e) { /* fondo opcional */ } }
+    if (G.Aldea && cur && cur.prev === 'aldea' && !cur.fte) { try { G.Aldea.draw(c); } catch (e) { /* fondo opcional */ } }
     else { c.fillStyle = '#0d0a14'; c.fillRect(0, 0, G.W, G.H); }
     c.fillStyle = 'rgba(6,3,12,0.78)'; c.fillRect(0, 0, G.W, G.H);
     var X = TEXT[UI.lang()], mf = G.minFont; G.minFont = G.MIN_UI;
     U.panel(c, 90, 24, 780, 492, { border: '#ffd27a' });
+    if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'BEFORE YOU GO' : 'ANTES DE SALIR', 480, 39, 14, '#b4a8c8', 'center');
     G.txt(c, X.title, 480, 64, 24, '#ffd27a', 'center');
     if (!cur.lines) { cur.lines = []; X.body.forEach(function (p, i) { U.wrap(c, p, 720, 14).forEach(function (l) { cur.lines.push(l); }); cur.lines.push(''); }); }
     for (var i = 0; i < cur.lines.length; i++) G.txt(c, cur.lines[i], 120, 104 + i * 19, 14, '#e8e0f0', 'left');
@@ -62,6 +65,7 @@
     c.fillStyle = hov ? '#cfeaff' : '#9dd8ff'; c.fillRect(480 - Math.round(X.link.length * 4.5), LK.y + 32, Math.round(X.link.length * 9), 2);
     U.button(c, BY, X.yes, { size: 17, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
     U.button(c, BN, X.no, { size: 17, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
+    if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'Either button starts your first expedition.' : 'Cualquiera de los dos botones empieza tu primera expedición.', 480, 498, 14, '#d8cfe8', 'center');
     G.minFont = mf;
   };
 })();

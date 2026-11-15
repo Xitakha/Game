@@ -169,6 +169,7 @@
   C.playIntro = function (opts) {
     opts = opts || {};
     var first = !opts.replay && !C.introSeen(), cfg = C.cfg(); C.prepIntro();
+    if (first && G.Fte && G.Fte.enabled()) { if (G.Fte.introTried()) first = false; else G.Fte.markIntroTry(); }   // T-F1-02: si se cerró a mitad, el segundo intento es saltable
     return C.play(INTRO, {
       mode: 'full', first: first, skippable: !first, calm: cfg.calm, returnState: opts.returnState || 'aldea',
       onEnd: function (reason) {
@@ -185,7 +186,7 @@
   C.openTitle = function (next) { T = { t: 0, next: next, going: false }; G.state = 'title'; };
   function afterTitle() {
     var next = T.next; T = null;
-    var go = function () { try { Assets.music.stop(); } catch (e) { /* audio */ } G.state = 'aldea'; if (G.Track) G.Track.prompt(next); else if (next) next(); };   // T-F1-01: el aviso de privacidad sale tras la intro, antes de la aldea
+    var go = function () { try { Assets.music.stop(); } catch (e) { /* audio */ } G.state = 'aldea'; if (G.Fte && G.Fte.start()) return; if (G.Track) G.Track.prompt(next); else if (next) next(); };   // T-F1-02: cuenta nueva = tarjeta "Antes de salir" y salida directa   // T-F1-01: el aviso de privacidad sale tras la intro, antes de la aldea
     if (C.off) { go(); return; }
     if (!C.introSeen() || C.force) { if (!C.playIntro({ replay: C.introSeen(), onEnd: go })) go(); }
     else go();
