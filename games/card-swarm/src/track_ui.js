@@ -56,7 +56,7 @@
     c.fillStyle = 'rgba(6,3,12,0.78)'; c.fillRect(0, 0, G.W, G.H);
     var X = TEXT[UI.lang()], mf = G.minFont; G.minFont = G.MIN_UI;
     U.panel(c, 90, 24, 780, 492, { border: '#ffd27a' });
-    if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'BEFORE YOU GO' : 'ANTES DE SALIR', 480, 42, 14, '#b4a8c8', 'center');
+    if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'BEFORE YOU GO' : 'ANTES DE SALIR', 480, 39, 14, '#b4a8c8', 'center');
     G.txt(c, X.title, 480, 64, 24, '#ffd27a', 'center');
     if (!cur.lines) { cur.lines = []; X.body.forEach(function (p, i) { U.wrap(c, p, 720, 14).forEach(function (l) { cur.lines.push(l); }); cur.lines.push(''); }); }
     for (var i = 0; i < cur.lines.length; i++) G.txt(c, cur.lines[i], 120, 104 + i * 19, 14, '#e8e0f0', 'left');

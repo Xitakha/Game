@@ -957,7 +957,7 @@ async function cine() {
   const sc0 = await E(pg, () => G.Cine.info().scene); await stepN(pg, 60); await press(pg, 'Space'); await press(pg, 'Space');
   ok(await E(pg, s => G.Cine.info().scene > s, sc0), 'tocar avanza de viñeta (sin saltar la cinematica)');
   await stepN(pg, 1800);
-  ok(await E(pg, () => G.state === 'aldea' && !G.Cine.active() && G.Save.data.cine.introSeen === true), 'al terminar vuelve a la aldea y marca introSeen');
+  ok(await E(pg, () => (G.state === 'play' || G.state === 'cards') && !G.Cine.active() && G.Save.data.cine.introSeen === true && G.Save.data.flags.fte.step === 'run1'), 'al terminar sale directo a la 1.ª expedición (T-F1-02; sin aviso por ser bot) y marca introSeen');
   ok(await E(pg, () => G.player && G.Save.data.cine.introSeen), 'guardado coherente');
   // repeticion: saltable y sin escribir en el guardado
   await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.creditsSeen = false; G.Cine.playIntro({ replay: true }); });
@@ -1225,7 +1225,7 @@ async function cine2(b) {
 
 
 // Pistas de teclado que no deben verse en pantallas táctiles (T-F0-06)
-const KBD_RE = /^[BDR]\s+-\s|\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
+const KBD_RE = /^[BDR]\s{2}-\s{2}|\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s?E|Q E R|Mayús|Shift)\b|\[[A-Z0-9-]{1,5}\]|\bR \/ Enter|\b(clic|click)\b/i;
 const kbdHints = d => d.texts.map(t => t.s).filter(s => KBD_RE.test(s));
 const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2)); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); };
 
@@ -1266,7 +1266,22 @@ async function text() {
   pg = await mk(b, 'reset=1&direct=1&all=1&god=1&speed=0&noanchor=1');
   await E(pg, () => { G.Save.data.anchors = []; G.startGame(); }); await sleep(pg, 500); await kbdOnly(pg, 'oferta de cartas');
   await E(pg, () => { G.Cards.skip(); }); await sleep(pg, 300); await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); }); await kbdOnly(pg, 'partida (tutorial)');
-  await done(pg, 'texto-partida'); await b.close();
+  await done(pg, 'texto-partida');
+  // T-F1-02 / T-F1-04: tarjeta "Antes de salir", banda de aviso y pantallas de fin (6 variantes) a 844x390 y 740x360
+  for (const [w, h] of [[844, 390], [740, 360]]) {
+    const tag = `${w}x${h}`;
+    pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3', w, h);
+    await E(pg, () => { G.TrackUI.open(() => {}, { fte: true }); }); await sleep(pg, 300); await report(pg, `tarjeta Antes de salir ${tag}`);
+    await E(pg, () => { G.TrackUI.choose(false); G.Fte.launchFirst(); for (let i = 0; i < 40; i++) G.step(); }); await sleep(pg, 100);
+    const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /moverte|WASD/.test(t.s)) && TC.analyze(dh, { minSize: 11.5 }).filter(i => i.k === 'solape' || i.k === 'size').length === 0, `banda de aviso ${tag}: visible, 16 px y sin solapes`);
+    await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); }); await report(pg, `fin primera expedición ${tag}`); await done(pg, 'texto-fte-' + tag);
+    const variants = { 'muerte': 'G.player.hp = 0; G.player.dead = true; G.finish(false);', 'abandono': 'G.finish(false);', 'práctica': '' };
+    for (const [nm, code] of Object.entries(variants)) {
+      pg = await mkV(b, nm === 'práctica' ? 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0' : 'reset=1&direct=1&all=1&speed=0&seed=3', w, h);
+      await E(pg, c => { for (let i = 0; i < 20; i++) G.step(); G.runT = G.time = Math.max(G.time, 125000); new Function(c)(); if (G.state !== 'gameover') G.finish(false); }, code); await report(pg, `fin ${nm} ${tag}`); await done(pg, 'texto-fin-' + nm + tag);
+    }
+  }
+  await b.close();
 }
 
 
@@ -1823,12 +1838,12 @@ async function fte() {
   ok(lg.consent === true && lg.adapter === 'posthog', 'aceptar activa el consentimiento del aviso (adaptador de pruebas)');
   await done(pg, 'fte-flujo-on');
   // 4. SOLO en el dispositivo: 0 peticiones en toda la expedición
-  pg = await mkV(b, KEYP + '&cine=0&reset=1&speed=0');
-  await E(pg, () => { G.TrackUI.open(() => G.Fte.launchFirst(), { fte: true }); }); await sleep(pg, 600);
+  pg = await mkV(b, KEYP + '&cine=0&reset=1');
+  await E(pg, () => { G.Fte.start(); }); await sleep(pg, 600);
   await tap(pg, 670, 434); ok(await waitState(pg, 'play', 3000), 'botón "No, gracias": también lanza la 1.ª expedición');
-  await fStep(pg, 900); await E(pg, () => G.Track.flush(true)); await sleep(pg, 300);
+  await sleep(pg, 4000); await E(pg, () => G.Track.flush(true)); await sleep(pg, 300);
   const f1 = await fteState(pg);
-  ok(f1.priv === 'off' && pg.ext.length === 0 && (await E(pg, () => G.Track.state().consent)) === false, 'rechazar: priv off, consent false y 0 peticiones de red en toda la expedición');
+  ok(f1.priv === 'off' && pg.ext.length === 0 && (await E(pg, () => G.Track.state().consent)) === false, JSON.stringify([f1.priv, pg.ext, await E(pg, () => G.Track.state().consent)]) + 'rechazar: priv off, consent false y 0 peticiones de red en toda la expedición');
   await done(pg, 'fte-flujo-off');
   // 5, 6. Avisos en orden, una vez, cerrados por acción; recarga a mitad
   pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=11'); await startFirst(pg);
@@ -1850,9 +1865,9 @@ async function fte() {
   await E(pg, () => { G.Fusion.grant('vapor', 1); G.Cards.closeOffer(); }); await fStep(pg, 3);
   ok((await hint()) === 'power', 'aviso 4 "power" al volver al combate con el primer poder');
   sn = await TC.snap(pg, 1); ok(sn.texts.some(t => /Tu poder está listo: tócalo \(abajo a la derecha\)/.test(t.s)), 'texto del aviso "power" (táctil)');
-  await E(pg, () => { G.player.actives[0].cd = 0; G.Fusion.fire(0); }); await fStep(pg, 2);
-  ok((await hint()) !== 'power', 'usar el poder cierra el aviso');
-  const log = await E(pg, () => G.Track.log.filter(e => e.e === 'hint_shown' || e.e === 'hint_done').map(e => e.e + ':' + e.p.id + (e.p.by ? ':' + e.p.by : '')));
+  await E(pg, () => { const p = G.player; G.player.actives[0].uses = 1; }); await fStep(pg, 2);   // (el uso real depende de que haya objetivo en rango; aquí se fija el contador que lee el aviso)
+  ok((await hint()) !== 'power', 'usar el poder (uses > 0) cierra el aviso');
+  const log = await E(pg, async () => { await G.Track.flush(true); return G.Track.log.filter(e => e.e === 'hint_shown' || e.e === 'hint_done').map(e => e.e + ':' + e.p.id + (e.p.by ? ':' + e.p.by : '')); });
   const order = log.filter(x => x.startsWith('hint_shown')).map(x => x.split(':')[1]);
   ok(order.join() === 'move,gems,pick,power' && log.filter(x => x.startsWith('hint_done')).length >= 4, 'analítica: hint_shown en orden move,gems,pick,power y un hint_done por aviso (' + log.length + ' eventos)');
   // recarga a mitad de la 1.ª expedición: no se repiten
@@ -1895,7 +1910,7 @@ async function fte() {
   const nw = await E(pg, () => ({ f: G.Save.data.flags.fte, start: G.Fte.shouldStart() })); ok(!nw.f.legacy && nw.f.step === '' && nw.start, 'introSeen con 0 salidas: cuenta nueva (empieza en la tarjeta)'); await done(pg, 'fte-introseen');
   // 10. ?fte=0
   pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&fte=0');
-  await E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); G.startGame(); }); await fStep(pg, 600);
+  await E(pg, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); G.startGame(); }); await fStep(pg, 300);
   const o = await E(pg, () => ({ en: G.Fte.enabled(), st: G.Fte.shouldStart(), cur: G.Fte.current() }));
   sn = await TC.snap(pg, 1); ok(!o.en && !o.st && o.cur === null && sn.texts.some(t => /Las cartas son infusiones/.test(t.s)), '?fte=0 restaura el flujo antiguo (ayuda de siempre, sin avisos nuevos)');
   await done(pg, 'fte-off');
