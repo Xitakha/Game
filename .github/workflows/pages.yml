@@ -72,7 +72,7 @@ jobs:
             sleep 1
           done
           rc=0
-          for m in dev diag flow boss iso; do
+          for m in dev diag flow boss iso track; do
             node tools/card-swarm-bot/tests.js $m http://localhost:8822 2>&1 | tee -a humo.log
             [ "${PIPESTATUS[0]}" = 0 ] || rc=1
           done

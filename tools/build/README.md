@@ -25,3 +25,6 @@ El desarrollo local NO cambia: `games/card-swarm/index.html` sigue cargando los 
 ## Límites conocidos
 - Los scripts clásicos pasan a ser uno solo: una excepción al cargar un archivo detiene los siguientes (antes solo ese archivo). La batería lo detecta (0 errores de consola).
 - Los nombres de archivo en trazas de error (`src/hud.js:42`) pasan a ser `swarm.<hash>.js:1:...`; usar `--sourcemap` para depurar en local.
+
+## Analítica (T-F1-01)
+`--track=none|posthog|portal` cambia el adaptador de `src/track.js`; con `posthog` hacen falta `--track-host=https://<host UE>` y `--track-key=phc_...` (clave pública). Sin la opción queda `none` (sin envío). `privacidad.html` y `privacy.html` se copian a la salida.
