@@ -2,6 +2,16 @@
 
 Fecha: 2026-11-14 · Autor: `monetization-analyst` · Se aplica a: `studio/docs/SPEC-T-F1-01.md` (decisiones del dueño del 2026-11-14).
 
+
+> **Decisiones del dueño (2026-11-14, implementación de T-F1-01). Mandan sobre este documento si difiere:**
+> 1. Umbral de 18 años: el botón dice "Acepto (tengo 18 años o más)".
+> 2. No se envía nada desde Europa (zona horaria europea del dispositivo) hasta tener representante o asesoría.
+> 3. El envío queda **apagado en producción**: capa completa implementada, adaptador por defecto `none` en todos los destinos. Se activa más adelante con un único ajuste (`T.CFG` en `src/track.js` o `node tools/build/build.js --track=posthog --track-host=<host UE> --track-key=phc_...`). No hay clave todavía.
+> 4. El aviso sale al abrir el juego por primera vez, DESPUÉS de la cinemática de inicio; dos botones del mismo peso visual; nada sale ni se escribe en localStorage antes de aceptar. Es un componente reutilizable (`G.Track.prompt(cb)` / `G.TrackUI.open(cb)`) para integrarlo después como tarjeta "Antes de salir" (SPEC-T-F1-02-04). Las cuentas existentes lo ven una vez al entrar.
+> 5. Opción en Ajustes > Privacidad para dar o retirar el permiso en cualquier momento, y enlace a la política.
+> 6. Política publicada como página estática del sitio (`privacidad.html` en español y `privacy.html` en inglés), enlazada desde el aviso y Ajustes y en el precache. Los datos del responsable están solo en esas páginas.
+> 7. Sin identificadores persistentes entre sesiones; la prueba del consentimiento es la versión del aviso (`pv`) en cada evento; los ids de las últimas sesiones se guardan solo en el dispositivo.
+
 ---
 
 ## 0. Antes de leer: límites de este documento

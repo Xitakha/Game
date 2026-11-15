@@ -54,6 +54,7 @@
     else if (cur === 'cine') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'cine2') { if (esc || cl) { cur = 'cine'; return false; } }
     else if (cur === 'errlog') { if (esc || cl) { cur = 'settings'; return false; } }
+    else if (cur === 'privacy') { if (esc || cl) { cur = 'settings'; return false; } }
     else if (cur === 'archive' && G.Aldea.fromMenu) { if (esc || cl) { G.Aldea.fromMenu = false; cur = 'menu'; return false; } }
     else if (esc || cl) return true;
     if (cur === 'vesper') return updVesper();
@@ -67,6 +68,7 @@
     if (cur === 'cine') return updCine();
     if (cur === 'cine2') return updCine2();
     if (cur === 'errlog') return updErr();
+    if (cur === 'privacy') return updPriv();
     return true;
   };
   P.draw = function (c) {
@@ -84,6 +86,7 @@
     else if (cur === 'cine') drawCine(c);
     else if (cur === 'cine2') drawCine2(c);
     else if (cur === 'errlog') drawErr(c);
+    else if (cur === 'privacy') drawPriv(c);
   };
 
   // ============================================================= VESPER
@@ -906,6 +909,38 @@
     if (st.errMsg) G.txt(c, st.errMsg, 480, 430, 13, '#9dffb4', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
+  // ---- Privacidad (T-F1-01): dar / retirar el permiso de analítica, ver qué se envía, ids de sesión, borrar datos locales y política. track.js / track_ui.js
+  var PV = { tog: { x: 150, y: 96, w: 660, h: 52 }, view: { x: 150, y: 156, w: 320, h: 48 }, pol: { x: 490, y: 156, w: 320, h: 48 }, wipe: { x: 150, y: 210, w: 320, h: 48 }, ids: { x: 490, y: 210, w: 320, h: 48 } };
+  function updPriv() {
+    var T = G.Track, ts = T.state();
+    if (onR(PV.tog) && ts.available) { T.consent(ts.consent !== true, 'ajustes'); st.privMsg = ts.consent === true ? 'Permiso retirado: no se enviará nada más y la cola se vació.' : 'Permiso dado. Gracias.'; G.sfx('card_select', { vol: 0.5 }); }
+    if (onR(PV.view)) { st.privView = !st.privView; G.sfx('flip', { vol: 0.3 }); }
+    if (onR(PV.pol)) G.TrackUI.openPolicy();
+    if (onR(PV.wipe)) { if (confirm === 'wipe') { T.wipe(); confirm = ''; st.privMsg = 'Datos de analítica borrados de este dispositivo.'; } else { confirm = 'wipe'; confirmT = 4000; st.privMsg = 'Pulsa otra vez para borrar los datos de analítica de este dispositivo.'; } }
+    if (onR(PV.ids) && ts.sessions.length) { var tx = ts.sessions.join('\n'); try { navigator.clipboard.writeText(tx).then(function () { st.privMsg = 'Ids copiados: pégalos en el correo de la política.'; }, function () { st.privMsg = 'No se pudo copiar.'; }); } catch (e) { st.privMsg = 'No se pudo copiar.'; } }
+    if (onR(CB.back)) cur = 'settings';
+    return false;
+  }
+  function drawPriv(c) {
+    var T = G.Track, ts = T.state(); bg(c, 'PRIVACIDAD');
+    var info = !ts.available ? 'No disponible en este dispositivo o sesión: no se envía nada.' : ts.consent === true ? (ts.adapter === 'none' ? 'Permiso dado, pero el envío no está activo en esta versión: no sale nada.' : 'Envío de estadísticas: ACTIVADO (sin datos que te identifiquen directamente).') : ts.consent === false ? 'Envío de estadísticas: DESACTIVADO. No sale nada de tu dispositivo.' : 'Aún no has elegido. Mientras tanto no sale nada.';
+    G.txt(c, info, 480, 76, 13, '#b4a8c8', 'center');
+    U.button(c, PV.tog, ts.consent === true ? 'Retirar mi permiso de estadísticas' : 'Dar permiso (tengo 18 años o más)', { size: 17, off: !ts.available, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
+    U.button(c, PV.view, st.privView ? 'Ocultar lo que se envía' : 'Ver qué se envía', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, PV.pol, 'Política de privacidad', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, PV.wipe, confirm === 'wipe' ? 'SEGURO? TOCA DE NUEVO' : 'Borrar datos de analítica', { size: 14, color: confirm === 'wipe' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
+    U.button(c, PV.ids, 'Copiar ids de mis sesiones', { size: 14, off: !ts.sessions.length, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    var i, y = 286;
+    if (st.privView) {
+      var ev = T.recent(9); G.txt(c, ev.length ? 'Últimos eventos en cola (solo en este dispositivo):' : 'No hay eventos en cola.', 150, y, 12, '#9a8fb0', 'left');
+      for (i = 0; i < ev.length; i++) G.txt(c, ev[i].e + '  ' + JSON.stringify(ev[i].p).slice(0, 78), 150, y + 18 + i * 16, 12, '#d4c8e8', 'left');
+    } else {
+      G.txt(c, ts.sessions.length ? 'Ids de tus últimas sesiones (solo guardados aquí; sirven para ejercer tus derechos):' : 'Sin ids de sesión guardados.', 150, y, 12, '#9a8fb0', 'left');
+      for (i = 0; i < ts.sessions.length; i++) G.txt(c, ts.sessions[i], 150 + (i % 2) * 330, y + 18 + Math.floor(i / 2) * 16, 12, '#d4c8e8', 'left');
+    }
+    if (st.privMsg) G.txt(c, st.privMsg, 480, 426, 13, '#9dffb4', 'center');
+    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+  }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
   function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
   var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
@@ -914,7 +949,7 @@
     mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
     exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
     soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, bak: { x: 770, y: 176, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+    priv: { x: 14, y: 64, w: 172, h: 48 }, man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, bak: { x: 770, y: 176, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
   };
   function updSettings() {
     var S = SV();
@@ -935,6 +970,7 @@
     if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(SB.cine)) { cur = 'cine'; }
     if (onR(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
+    if (onR(SB.priv)) { cur = 'privacy'; st.privMsg = ''; st.privView = false; }
     if (onR(SB.bak)) G.PWA.backups();   // T-F1-11: copias de seguridad y restaurar
     if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
     if (onR(SB.back)) { cur = 'menu'; }
@@ -960,6 +996,7 @@
     U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
     U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
+    U.button(c, SB.priv, 'Privacidad', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Track && G.Track.state().consent === true ? 'permiso: SÍ' : 'permiso: NO' });
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
     U.button(c, SB.err, 'Informe de errores', { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
     var Sv = G.Save; U.button(c, SB.bak, 'Copias', { size: 13, color: Sv.recovered ? '#7a4a2a' : '#4a3a66', hot: '#6a5a86', border: Sv.recovered ? '#ffd27a' : '#8a7aa6', sub: Sv.recovered ? 'se recuperó una copia' : 'de seguridad' });

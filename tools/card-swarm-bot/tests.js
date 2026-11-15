@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual] [base=http://localhost:8811]
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -1480,8 +1480,200 @@ async function save2() {
   await done(pg, 'save2-import'); await b.close();
 }
 
+// ---------------------------------------------------------------- Analítica con consentimiento (T-F1-01: src/track.js, track_ui.js)
+async function track() {
+  console.log('--- track: consentimiento, nada sale ni se guarda antes de aceptar, rechazo y retirada, zona europea, adaptador none, cola, esquema, sin datos personales');
+  const b = await launch(), PH = 'https://ph.test', LSK = 'swarmhand.fusion.track';
+  const KEYP = 'track=on&trackhost=' + encodeURIComponent(PH) + '&trackkey=phc_test';
+  // contexto nuevo con interceptor de red: apunta toda petición a otro origen (y responde con los códigos de `codes`, luego 200)
+  async function mkT(url, codes = []) {
+    const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx; pg.ext = []; pg.bodies = []; pg.codes = codes;
+    pg.on('console', m => { if (m.type() === 'error' && !/ph\.test|net::ERR|Failed to load resource/.test(m.text())) pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
+    await ctx.route(u => new URL(u).origin !== new URL(base).origin, r => {
+      const q = r.request(), cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST,OPTIONS' };
+      if (q.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
+      pg.ext.push(q.url()); try { pg.bodies.push(JSON.parse(q.postData() || 'null')); } catch (e) { pg.bodies.push(null); }
+      return r.fulfill({ status: pg.codes.length ? pg.codes.shift() : 200, headers: cors, body: '{}' });
+    });
+    await pg.goto(`${base}/index.html?dev=1&nosw=1&${url}`); await sleep(pg, 600);
+    return pg;
+  }
+  const ST = pg => E(pg, () => G.Track.state()), LS = pg => E(pg, k => localStorage.getItem(k), LSK);
+  const evs = pg => E(pg, () => G.Track.recent(500));
+  const names = a => a.map(x => x.e);
+
+  // 1. Antes de aceptar: ninguna petición, nada en localStorage, el aviso está pendiente; la cola va solo en memoria
+  let pg = await mkT(KEYP + '&cine=0');
+  ok(await E(pg, () => G.state) === 'privacy' && await E(pg, () => G.TrackUI.isOpen()), 'sin título (?cine=0): el aviso sale antes de la aldea para una cuenta nueva');
+  let s = await ST(pg);
+  ok(s.consent === null && s.adapter === 'posthog' && s.available && (await LS(pg)) === null, 'antes de elegir: consent null, nada de analítica en localStorage');
+  ok(names(await evs(pg)).join() === 'first_open,session_start', 'la cola previa (solo en memoria) lleva first_open y session_start en ese orden');
+  await E(pg, () => G.Track.flush(true)); await sleep(pg, 200);
+  ok(pg.ext.length === 0, 'antes de aceptar: 0 peticiones a otro origen (incluido flush forzado)');
+  const r = await E(pg, () => { const a = G.TrackUI.rects; return { y: a.yes, n: a.no }; });
+  ok(r.y.w === r.n.w && r.y.h === r.n.h && r.y.y === r.n.y, 'los dos botones del aviso tienen el mismo tamaño y la misma altura');
+  ok(/18 años/.test(await E(pg, () => G.TrackUI.TEXT.es.yes)) && /18/.test(await E(pg, () => G.TrackUI.TEXT.en.yes)) && /IP/.test(await E(pg, () => G.TrackUI.TEXT.es.body[0])), 'aviso: botón "Acepto (tengo 18 años o más)" y mención de la IP');
+  // 2. Aceptar con un toque en el botón; first_open/session_start salen con cohorte; fallo 500 y luego 200 = reintento y cola vacía
+  pg.codes.push(500);
+  await sleep(pg, 500); await tap(pg, 290, 434); await sleep(pg, 300);
+  s = await ST(pg);
+  ok(s.consent === true && s.cohort && s.day_n === 0 && await E(pg, () => G.state) === 'aldea', 'toque en "Acepto": consent true, cohorte de hoy, y se pasa a la aldea');
+  const stored = JSON.parse(await LS(pg));
+  ok(stored.consent === true && stored.pv === '2026-11-14a' && stored.sessions.length === 1 && stored.q.length >= 3, 'se guarda {consent, pv, cohorte, sesiones, cola} solo tras aceptar');
+  const ev0 = await evs(pg);
+  ok(names(ev0).join() === 'first_open,session_start,analytics_on' && ev0.every(e => e.p.pv === '2026-11-14a' && e.p.cohort && e.p.day_n === 0), 'first_open, session_start, analytics_on con pv y cohorte (day_n 0)');
+  const f1 = await E(pg, () => G.Track.flush(true)); s = await ST(pg);
+  ok(f1 === false && s.queued === 3 && pg.ext.length === 1, 'servidor 500: la cola se conserva (3) y se reintentará');
+  const f2 = await E(pg, () => G.Track.flush(true)); s = await ST(pg);
+  const body = pg.bodies[1];
+  ok(f2 === true && s.queued === 0 && pg.ext.length === 2 && pg.ext.every(u => u === PH + '/batch/'), 'reintento con 200: lote enviado a /batch/ y cola vacía');
+  ok(body && body.api_key === 'phc_test' && body.batch.length === 3 && body.batch.every(e => e.distinct_id === s.sid && e.properties.$process_person_profile === false && e.properties.$geoip_disable === true), 'lote PostHog: clave pública, distinct_id = id de sesión, sin perfil de persona, GeoIP apagado');
+  // 3. Sin datos personales y esquema válido en lo enviado
+  const flat = JSON.stringify(body);
+  ok(!/@/.test(flat) && !/https?:\/\//.test(flat.replace(/\$lib/g, '')) && !/Mozilla|Chrome|Linux/.test(flat) && !/"(name|email|ip|ua|userAgent|screen|iid|nombre|correo)"/i.test(flat), 'payload sin correo, URL, user agent ni claves de datos personales');
+  ok(await E(pg, () => G.Track.recent(500).every(e => G.Track.validate(e).length === 0)), 'esquema: todo evento de la cola valida contra G.Track.SCHEMA / COMMON');
+  // 4. Recargar: otra sesión, sess_n sube, sin first_open; los ids de sesión se guardan en local (máx. 10)
+  await pg.reload(); await sleep(pg, 600);
+  const ev1 = await evs(pg), s1 = await ST(pg);
+  ok(names(ev1).join() === 'session_start' && ev1[0].p.sess_n === '2' && s1.consent === true && s1.sessions.length === 2 && await E(pg, () => G.state) === 'aldea', 'recarga: session_start (sess_n 2) sin first_open ni aviso; 2 ids de sesión en local');
+  // 5. Retirada en Ajustes por la pantalla: vacía la cola, no vuelve a preguntar, y nada sale
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
+  await tap(pg, 100, 88); await sleep(pg, 300);
+  ok(await E(pg, () => G.Panels.current()) === 'privacy', 'Ajustes > Privacidad abre la pantalla');
+  await tap(pg, 480, 122); await sleep(pg, 300);
+  s = await ST(pg);
+  const st2 = JSON.parse(await LS(pg));
+  ok(s.consent === false && s.queued === 0 && st2.consent === false && !st2.q && !st2.cohort && !st2.sessions, 'retirar el permiso: cola vacía y solo se guarda la elección');
+  const n0 = pg.ext.length; await E(pg, () => { G.Track('fusion', { id: 'x', replaced: '', run_s: 1, first: false }); return G.Track.flush(true); }); await sleep(pg, 200);
+  ok(pg.ext.length === n0 && (await ST(pg)).queued === 0, 'tras retirar: los eventos nuevos no se encolan ni salen');
+  await pg.reload(); await sleep(pg, 600);
+  ok((await ST(pg)).consent === false && await E(pg, () => G.state) === 'aldea' && names(await evs(pg)).length === 0, 'rechazo persistente: al recargar no se vuelve a preguntar y no se encola nada');
+  await tap(pg, 480, 122).catch(() => {});
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400); await tap(pg, 100, 88); await sleep(pg, 300); await tap(pg, 480, 122); await sleep(pg, 300);
+  s = await ST(pg); const st3 = JSON.parse(await LS(pg));
+  ok(s.consent === true && st3.late === true && !names(await evs(pg)).includes('first_open') && names(await evs(pg)).includes('analytics_on'), 'dar el permiso desde Ajustes: consent true, marcado late (fuera de la retención), analytics_on con where=ajustes');
+  ok(await E(pg, () => G.Track.recent(5).find(e => e.e === 'analytics_on').p.where) === 'ajustes', 'analytics_on lleva where=ajustes');
+  // 6. wipe
+  await E(pg, () => G.Track.wipe()); ok((await LS(pg)) === null && (await ST(pg)).consent === null, 'wipe(): borra la clave de localStorage y vuelve a "sin elegir"');
+  await pg.reload(); await sleep(pg, 600);
+  ok(names(await evs(pg))[0] === 'first_open', 'tras wipe la siguiente carga vuelve a dar first_open');
+  ok(pg.errs.length === 0, 'track (consentimiento): 0 errores de consola' + (pg.errs.length ? ' -> ' + pg.errs[0] : '')); await pg.close(); await pg.ctx.close();
+
+  // 7. Rechazo con el botón "No, gracias": cola borrada, nada sale, no se vuelve a preguntar
+  pg = await mkT(KEYP + '&cine=0'); await sleep(pg, 500); await tap(pg, 670, 434); await sleep(pg, 300);
+  s = await ST(pg); const sn = JSON.parse(await LS(pg));
+  ok(s.consent === false && s.queued === 0 && sn.consent === false && !sn.q && await E(pg, () => G.state) === 'aldea', '"No, gracias": cola borrada y solo se guarda la elección');
+  await E(pg, () => G.Track.flush(true)); await pg.reload(); await sleep(pg, 600);
+  ok(pg.ext.length === 0 && (await ST(pg)).consent === false && await E(pg, () => G.state) === 'aldea', 'rechazo persistente y 0 peticiones');
+  await pg.close(); await pg.ctx.close();
+  // Esc también es "No, gracias"
+  pg = await mkT(KEYP + '&cine=0'); await sleep(pg, 600); await pg.keyboard.press('Escape'); await sleep(pg, 300);
+  ok((await ST(pg)).consent === false, 'Esc en el aviso equivale a "No, gracias"'); await pg.close(); await pg.ctx.close();
+
+  // 8. Zona horaria europea: ni aviso ni envío ni almacenamiento
+  pg = await mkT(KEYP + '&cine=0&tracktz=Europe/Madrid');
+  s = await ST(pg);
+  ok(!s.available && s.reason === 'europa' && s.adapter === 'none' && await E(pg, () => G.state) === 'aldea' && !(await E(pg, () => G.Track.noticeDue())), 'zona horaria europea: sin aviso y adaptador none');
+  const cb = await E(pg, () => { let called = 0; G.Track.prompt(() => called++); return { called, ok: G.Track.consent(true, 'ajustes') }; });
+  await E(pg, () => G.Track.flush(true)); await sleep(pg, 200);
+  ok(cb.called === 1 && cb.ok === false && (await LS(pg)) === null && pg.ext.length === 0, 'zona europea: consent() se ignora, nada en localStorage y 0 peticiones');
+  ok(await E(pg, () => ['Europe/Paris', 'Atlantic/Canary', 'Atlantic/Reykjavik'].every(z => G.Track.isEurope(z)) && !G.Track.isEurope('America/Bogota') && !G.Track.isEurope('Atlantic/Bermuda')), 'lista de zonas europeas (Europe/*, Canarias, Madeira, Azores, Feroe, Reikiavik, Svalbard)');
+  await pg.close(); await pg.ctx.close();
+
+  // 9. Producción por defecto: adaptador none, bots y ?dev=1 apagados, 0 peticiones; nada guardado
+  for (const [url, why] of [['track=0&' + KEYP.replace('track=on&', ''), '?track=0']]) {
+    pg = await mkT(url + '&cine=0'); s = await ST(pg);
+    ok(s.adapter === 'none' && !s.available, `${why}: adaptador none y sin aviso (${s.reason})`);
+    await E(pg, () => { G.Track.consent(true); G.Track('run_start', {}); return G.Track.flush(true); }); await sleep(pg, 200);
+    ok(pg.ext.length === 0 && (await LS(pg)) === null && s.queued === 0, `${why}: 0 peticiones y nada en localStorage`);
+    await pg.close(); await pg.ctx.close();
+  }
+  pg = await mkT('cine=0'); s = await ST(pg);   // ?dev=1 sin track=: apagado
+  ok(s.adapter === 'none' && !s.available, '?dev=1 / bot sin track=log|on: apagada (' + s.reason + ')'); await pg.close(); await pg.ctx.close();
+  {   // sin ?dev=1 y sin forzar, aunque el navegador sea un bot: adaptador none
+    const ctx = await b.newContext({ viewport: { width: 844, height: 390 } }), p2 = await ctx.newPage(); const ext = [];
+    await ctx.route(u => new URL(u).origin !== new URL(base).origin, r => { ext.push(r.request().url()); r.abort(); });
+    await p2.goto(`${base}/index.html?nosw=1&track=on&trackhost=${encodeURIComponent(PH)}&trackkey=phc_test&cine=0`); await sleep(p2, 600);
+    const s2 = await E(p2, () => G.Track.state());
+    ok(s2.adapter === 'none' && s2.reason === 'bot' && ext.length === 0 && (await E(p2, k => localStorage.getItem(k), LSK)) === null && await E(p2, () => G.state) === 'aldea', 'URL de producción en un bot: ?track=on sin ?dev=1 no activa nada (adaptador none, 0 peticiones)');
+    await p2.close(); await ctx.close();
+  }
+  pg = await mkT('track=on&cine=0'); s = await ST(pg);   // sin host ni clave: none
+  ok(s.adapter === 'none', 'adaptador posthog sin host ni clave pública phc_: se degrada a none'); await pg.close(); await pg.ctx.close();
+  const cfgSrc = fs.readFileSync(path.join(ROOT, 'games/card-swarm/src/track.js'), 'utf8');
+  ok(/T\.CFG = \{ adapter: 'none', host: '', key: '', sample: 1 \};/.test(cfgSrc) && !/phc_[A-Za-z0-9]{8}/.test(cfgSrc) && !/phx_[A-Za-z0-9]{8}/.test(cfgSrc), 'código fuente: adaptador por defecto none, sin clave (ni phx_)');
+
+  // 10. Cola con tope (300), conserva first_open y run_end; límite por sesión
+  pg = await mkT('track=log&cine=0'); await E(pg, () => { G.Track.CFG.sessionCap = 1e9; G.Track.consent(true, 'aviso'); });
+  const q = await E(pg, () => { for (let i = 0; i < 400; i++) G.Track(i === 3 ? 'run_end' : 'fusion', i === 3 ? { biome: 'bosque', peril: 1, mode: 'normal', result: 'death', cause: 'worm', dur_s: 1, level: 1, kills: '0', boss_reached: false, first_card_s: 1, fusions: 0, powers: '', run_n: '1' } : { id: 'x' + i, replaced: '', run_s: i, first: false }); const r = G.Track.recent(1000); return { n: r.length, fo: r.some(e => e.e === 'first_open'), re: r.some(e => e.e === 'run_end'), stored: JSON.parse(localStorage.getItem('swarmhand.fusion.track')) }; });
+  await sleep(pg, 100);
+  ok(q.n === 300 && q.fo && q.re, `cola: tope de 300 eventos, se conservan first_open y run_end (n=${q.n})`);
+  const q2 = await E(pg, () => { G.Track.CFG.sessionCap = 200; let k = 0; const before = G.Track.recent(1000).length; for (let i = 0; i < 50; i++) G.Track('fusion', { id: 'y', replaced: '', run_s: 1, first: false }); return { added: G.Track.recent(1000).length - before }; });
+  ok(q2.added === 0, 'límite de seguridad por sesión (200): pasado el tope solo entran run_end, boss_end y session_end');
+  await pg.close(); await pg.ctx.close();
+
+  // 11. Una expedición completa con muerte (adaptador log, sin red): run_start -> run_end(death, cause), jefe, errores saneados, ningún envío en combate
+  pg = await mkT('track=log&direct=1&seed=7&cine=0'); await E(pg, () => G.TrackUI.choose(true));   // el callback del aviso lanza la partida directa
+  await E(pg, () => { for (let i = 0; i < 3000 && G.state !== 'play'; i++) { if (G.state === 'cards') { const O = G.Cards.off; if (O) { O.modal = null; if (O.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); if (G.state === 'cards') G.state = 'play'; } } G.step(); } });
+  ok(await E(pg, () => G.state) === 'play', 'partida en marcha (?direct=1)');
+  const gate = await E(pg, async () => { G.Track.CFG.flushMs = 1; const r1 = await G.Track.flush(false); return { r1, q: G.Track.state().queued }; });
+  ok(gate.r1 === false && gate.q > 0 && (await E(pg, () => G.Track.log.length)) === 0, 'con G.state en expedición, flush() sin forzar no envía nada');
+  await E(pg, () => { for (let i = 0; i < 300; i++) G.step(); const p = G.player; G.lastHurtSrc = 'worm'; p.hp = 0; p.dead = true; for (let i = 0; i < 400 && G.state !== 'gameover'; i++) G.step(); });
+  ok(await E(pg, () => G.state) === 'gameover', 'la partida termina en gameover');
+  await E(pg, () => G.Track.flush(true)); await sleep(pg, 100);
+  const lg = await E(pg, () => G.Track.log), nm = lg.map(x => x.e);
+  ok(nm.indexOf('run_start') > 0 && nm.indexOf('run_end') > nm.indexOf('run_start'), 'run_start antes de run_end (' + nm.join(',') + ')');
+  const re = lg.find(x => x.e === 'run_end'), rs = lg.find(x => x.e === 'run_start');
+  ok(re.p.result === 'death' && re.p.cause === 'worm' && re.p.dur_s >= 5 && re.p.level >= 1 && re.p.run_n === '1' && rs.p.biome === 'bosque' && rs.p.mode === 'normal' && rs.p.peril === 1, 'run_end result=death con cause no vacía; run_start con bioma, modo y Peligro');
+  ok((await E(pg, () => G.Track.log.every(e => G.Track.validate(e).length === 0))) && lg.every(e => e.p.god === false && e.p.sv === 1 && e.p.build && e.p.q), 'esquema válido: sv, build, god, q presentes en todos los eventos enviados');
+  // errores saneados y con tope de 3 por sesión
+  await E(pg, () => { for (let i = 0; i < 10; i++) Diag.log('fallo en https://x.y/z/a.js?token=abc123 C:\\Users\\yo\\a.js correo a@b.com num 123456789 ' + (i % 5), { src: 'http://h/src/hud.js', line: 3 }); G.Track.flush(true); }); await sleep(pg, 100);
+  const er = await E(pg, () => G.Track.log.filter(e => e.e === 'error'));
+  ok(er.length === 3 && er.every(e => !/https?:|@|Users|123456789|token/.test(e.p.msg) && e.p.msg.length <= 120 && e.p.src === 'hud.js'), 'error: como mucho 3 por sesión, sin URL, ruta, correo ni números largos en msg (' + er.length + ')');
+  // cerrar a mitad de expedición y recargar: run_end con result=abandon
+  await E(pg, () => { G.state = 'aldea'; G.Aldea.open(false); });
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&direct=1&seed=7&cine=0`); await sleep(pg, 700);
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0`); await sleep(pg, 700);
+  const ab = (await evs(pg)).filter(e => e.e === 'run_end');
+  ok(ab.length >= 1 && ab.some(e => e.p.result === 'abandon' && e.p.cause === 'quit'), 'cerrar en mitad de expedición y recargar: run_end con result=abandon');
+  ok(pg.errs.length === 0, 'track (expedición): 0 errores de consola' + (pg.errs.length ? ' -> ' + pg.errs[0] : '')); await pg.close(); await pg.ctx.close();
+
+  // 12. Jefe: boss_start antes de boss_end, mismo boss y Peligro
+  pg = await mkT('track=log&boss=pastor&peligro=2&nointro=1&seed=3&cine=0'); await E(pg, () => G.TrackUI.choose(true));
+  await E(pg, () => { for (let i = 0; i < 3000 && !(G.Boss.active || G.Boss.e); i++) { if (G.state === 'cards') { const O = G.Cards.off; if (O) { O.modal = null; if (O.mode === 'level') G.Cards.skip(); else G.Cards.pick(0); if (G.state === 'cards') G.state = 'play'; } } G.step(); } for (let i = 0; i < 200; i++) G.step(); G.finish(false); G.Track.flush(true); }); await sleep(pg, 100);
+  const bl = await E(pg, () => G.Track.log.map(e => ({ e: e.e, boss: e.p.boss, peril: e.p.peril, result: e.p.result })));
+  const bi = bl.findIndex(x => x.e === 'boss_start'), be = bl.findIndex(x => x.e === 'boss_end');
+  ok(bi >= 0 && be > bi && bl[bi].boss === 'pastor' && bl[be].boss === 'pastor' && bl[bi].peril === 2 && bl[be].peril === 2 && bl[be].result === 'quit', 'boss_start antes de boss_end, mismo jefe y Peligro (' + JSON.stringify(bl.slice(bi, be + 1)) + ')');
+  await pg.close(); await pg.ctx.close();
+
+  // 13. Retención: day_return una sola vez por día, no cuenta el mismo día
+  pg = await mkT('track=log&cine=0&trackdate=2026-11-14'); await E(pg, () => G.Track.consent(true, 'aviso'));
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&trackdate=2026-11-14`); await sleep(pg, 600);
+  ok(!names(await evs(pg)).includes('day_return'), 'mismo día: sin day_return');
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&trackdate=2026-11-15`); await sleep(pg, 600);
+  let dr = (await evs(pg)).filter(e => e.e === 'day_return');
+  ok(dr.length === 1 && dr[0].p.day_n === 1 && dr[0].p.cohort === '2026-11-14', 'reloj +1 día: day_return con day_n = 1');
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&trackdate=2026-11-15`); await sleep(pg, 600);
+  dr = (await evs(pg)).filter(e => e.e === 'day_return');
+  ok(dr.length === 1, 'segunda sesión del mismo día: day_return no se repite');
+  await pg.close(); await pg.ctx.close();
+
+  // 14. Coste en el bucle y archivos estáticos (política en español e inglés, enlazada y en el precache)
+  pg = await mkT('track=log&cine=0'); await E(pg, () => G.Track.consent(true, 'aviso'));
+  const perf = await E(pg, () => { G.Track.CFG.sessionCap = 1e9; const t0 = performance.now(); for (let i = 0; i < 20000; i++) G.Track('fusion', { id: 'x', replaced: '', run_s: 1, first: false }); return (performance.now() - t0) / 20000; });
+  ok(perf < 0.05, `G.Track() es O(1): ${(perf * 1000).toFixed(1)} us por llamada`); await pg.close(); await pg.ctx.close();
+  const G_DIR = path.join(ROOT, 'games/card-swarm'), swt = fs.readFileSync(path.join(G_DIR, 'sw.js'), 'utf8');
+  const es = fs.readFileSync(path.join(G_DIR, 'privacidad.html'), 'utf8'), en = fs.readFileSync(path.join(G_DIR, 'privacy.html'), 'utf8');
+  ok(/Bogot/.test(es) && /Colombia/.test(es) && /mailto:/.test(es) && /18 años/.test(es) && /Superintendencia/.test(es) && !/<script/i.test(es), 'privacidad.html: responsable, Colombia, contacto, menores de 18 y SIC; sin scripts');
+  ok(/Bogot/.test(en) && /mailto:/.test(en) && /under 18/.test(en) && !/<script/i.test(en) && /privacidad\.html/.test(en), 'privacy.html (inglés) equivalente y enlazada con la española');
+  ok(/privacidad\.html/.test(swt) && /privacy\.html/.test(swt) && /src\/track\.js/.test(swt) && /src\/track_ui\.js/.test(swt), 'precache: track.js, track_ui.js y las dos páginas de la política');
+  const src = ['index.html', 'sw.js', ...fs.readdirSync(path.join(G_DIR, 'src')).map(f => 'src/' + f)].map(f => fs.readFileSync(path.join(G_DIR, f), 'utf8')).join('\n');
+  ok(!/@gmail\.com/.test(src), 'el correo de contacto solo está en las páginas de la política (no en el código del juego)');
+  await b.close();
+}
+
 (async () => {
-  const run = { save2, dev, diag, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
