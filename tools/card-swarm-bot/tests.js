@@ -365,7 +365,102 @@ async function balance() {
   pg = await mk(b, 'reset=1&god=1&direct=1&all=1&bcd=300&pmul=1&bossmul=1&lvheal=0&vstep=0&nosw=1');
   const Q = await E(pg, () => { const p = G.Fusion.P; return [p.basicCd, p.pmul, p.bossMul, p.lvHeal, p.vstep]; });
   ok(JSON.stringify(Q) === '[300,1,1,0,0]', 'perillas ?bcd ?pmul ?bossmul ?lvheal ?vstep se leen de la URL: ' + Q);
-  await done(pg, 'balance-url'); await b.close();
+  await done(pg, 'balance-url');
+  await ritmo(b);
+  await b.close();
+}
+
+// T-F1-03: ritmo de los primeros 30 s. Bot de guion por pasos (G.step), cuenta nueva, Bosque, ALTA, vida repuesta cada tick, nunca usa poderes.
+// mov: 'rec' (recolector: se aparta de enemigos a < 70 px, si no va a la gema de XP mas cercana) o 'quieto'. Devuelve metricas por semilla.
+async function ritmoRun(b, seed, mov, extra, secs) {
+  const pg = await mk(b, `god=0&dbg=1&direct=1&nointro=1&speed=0&biome=bosque&dq=${(extra && /dq=/.test(extra)) ? '' : 'alta'}&seed=${seed}${extra || ''}`);
+  const r = await E(pg, ({ mov, secs }) => {
+    const out = { offer: -1, maxAlive: 0, kills30: 0, firstHit: -1, lvl: 0, xp: 0, xp2: G.B.xpNeed(2), xn: [G.B.xpNeed(1), G.B.xpNeed(2), G.B.xpNeed(3)], prof: G.D.id };
+    let guard = 0;
+    while (G.runT < secs * 1000 && guard++ < 40000) {
+      G.player.hp = G.player.maxHp;
+      if (G.state === 'cards') {
+        if (out.offer < 0 && G.runT > 0) out.offer = G.runT / 1000;
+        const C = G.Cards, O = C.off;
+        if (O) {
+          O.modal = null; let i = O.cards.findIndex(id => id && G.Fusion.optionsFor(C.def(id).tag).length > 0); if (i < 0) i = 0;
+          try { C.pick(i); if (C.off && C.off.modal) { const bs = C.off.modal.buttons; (bs[0]).fn(); } } catch (e) { try { C.skip(); } catch (e2) { /* nada */ } }
+        }
+        if (G.state === 'cards') G.state = 'play';
+      }
+      let dx = 0, dy = 0;
+      if (mov === 'rec') {
+        const p = G.player; let near = null, nd = 1e9;
+        for (const e of G.enemies) { const d = Math.hypot(e.x - p.x, e.y - p.y) - (e.r || 0); if (d < nd) { nd = d; near = e; } }
+        if (near && nd < 70) { dx = p.x - near.x; dy = p.y - near.y; }
+        else { let bg = null, bd = 1e9; for (const g of G.gems) { if (g.kind && g.kind !== 'xp' && g.type !== 'xp') continue; const d = Math.hypot(g.x - p.x, g.y - p.y); if (d < bd) { bd = d; bg = g; } } if (bg && bd > 4) { dx = bg.x - p.x; dy = bg.y - p.y; } }
+      }
+      const l = Math.hypot(dx, dy);
+      G.input.joy = l > 0 ? { active: true, id: 1, ox: 100, oy: 400, x: dx / l, y: dy / l } : { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 };
+      G.step();
+      const t = G.runT / 1000;
+      if (t >= 10 && t <= 30) out.maxAlive = Math.max(out.maxAlive, G.enemies.length);
+      if (t < 30) out.kills30 = G.kills;
+      if (out.firstHit < 0) { let d = 0; for (const k in G.dbg.dmg) d += G.dbg.dmg[k]; if (d > 0) out.firstHit = t; }
+    }
+    out.lvl = G.player.level; out.xp = G.player.xp; out.kills = G.kills;
+    return out;
+  }, { mov, secs });
+  await done(pg, `ritmo ${mov} semilla ${seed}`);
+  return r;
+}
+async function ritmo(b) {
+  console.log('--- ritmo (T-F1-03): rebaños de apertura, XP del nivel 2 y radio de recogida del nivel 1');
+  const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8], R = [], Q = [];
+  for (const s of SEEDS) R.push(await ritmoRun(b, s, 'rec', '', 180));
+  for (const s of SEEDS) Q.push(await ritmoRun(b, s, 'quieto', '', 40));
+  const f = (a, k) => a.map(x => x[k]);
+  const rng = a => Math.min(...a).toFixed(1) + '..' + Math.max(...a).toFixed(1);
+  ok(JSON.stringify(R[0].xn) === '[6,39,34]', 'xpNeed(1,2,3) = 6, 39, 34 (' + R[0].xn + ')');
+  ok(f(R, 'offer').every(v => v > 0 && v <= 14), 'primera oferta de carta <= 14 s en cada semilla (' + rng(f(R, 'offer')) + ')');
+  ok(f(R, 'maxAlive').every(v => v >= 15), 'maximo de vivos entre 10 y 30 s >= 15 en cada semilla (' + rng(f(R, 'maxAlive')) + ')');
+  ok(f(R, 'kills30').every(v => v >= 42), 'bajas en 0-30 s >= 42 en cada semilla (' + rng(f(R, 'kills30')) + ')');
+  ok(f(R, 'lvl').every(v => v === 6), 'nivel 6 a los 180 s en cada semilla (' + rng(f(R, 'lvl')) + ')');
+  ok(f(Q, 'firstHit').every(v => v >= 15 && v <= 35), 'jugador quieto: primer golpe entre 15 y 35 s (' + rng(f(Q, 'firstHit')) + ')');
+  // perillas: ?open=0&pk1=60&xp2=0 devuelve el arranque anterior
+  const O = [];
+  for (const s of [1, 2, 3, 4]) O.push(await ritmoRun(b, s, 'rec', '&open=0&pk1=60&xp2=0', 30));
+  ok(O.every(x => x.xn[1] === 30) && O.every(x => x.kills30 <= 41), '?open=0&pk1=60&xp2=0: xpNeed(2) = 30 y bajas 0-30 s como antes (' + rng(f(O, 'kills30')) + ')');
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  ok(mean(f(O, 'offer')) >= 13 && mean(f(O, 'offer')) <= 16, 'perillas a la base: primera oferta media entre 13 y 16 s (' + mean(f(O, 'offer')).toFixed(1) + ')');
+  // tamaño de los rebaños por perfil de calidad (G.D.n): ALTA 8+10, MEDIA 7+9, BAJA 6+8
+  const pq = await mk(b, 'god=1&direct=1&nointro=1&speed=0&biome=bosque&seed=3');
+  const sz = await E(pq, () => {
+    const res = {};
+    for (const q of ['alta', 'media', 'baja']) {
+      G.D = G.diffProfile(q);
+      const n = k => Math.max(1, Math.round(G.B.open.packs[k][1] * G.D.n));
+      res[q] = [n(0), n(1)];
+    }
+    return res;
+  });
+  ok(JSON.stringify(sz) === '{"alta":[8,10],"media":[7,9],"baja":[6,8]}', 'tamaño de rebaños por calidad ALTA/MEDIA/BAJA = 8+10 / 7+9 / 6+8 (' + JSON.stringify(sz) + ')');
+  await done(pq, 'ritmo-tamanos');
+  // los rebaños salen de verdad con BAJA y MEDIA: Corderos que aparecen de golpe a los 5 s (conteo real)
+  for (const q of ['media', 'baja']) {
+    const pz = await mk(b, `god=1&direct=1&nointro=1&speed=0&biome=bosque&seed=5&dq=${q}`);
+    const r = await E(pz, () => {
+      let guard = 0, w0 = null, w1 = null, c = 0; const spawned = [];
+      const orig = G.Enemies.spawn; G.Enemies.spawn = function (t, x, y) { if (G.runT >= 4900 && G.runT < 5300 && t === 'worm') c++; return orig.apply(this, arguments); };
+      G.input.joy = { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 };
+      while (G.runT < 5400 && guard++ < 2000) { G.step(); if (G.state === 'cards') { try { G.Cards.pick(0); } catch (e) { /* nada */ } if (G.state === 'cards') G.state = 'play'; } }
+      return { c, prof: G.D.id };
+    });
+    const want = q === 'media' ? 7 : 6;
+    ok(r.prof === q && r.c >= want && r.c <= want + 3, `?dq=${q}: el rebano de los 5 s escala (${r.c} Corderos en la ventana, perfil ${r.prof}, rebano ${want})`);
+    await done(pz, 'ritmo-' + q);
+  }
+  // cacería: ningun rebano
+  const ph = await mk(b, 'god=1&direct=1&nointro=1&speed=0&hunt=pastor&seed=2');
+  const hr = await E(ph, () => { let g = 0; G.input.joy = { active: false, id: 1, ox: 100, oy: 400, x: 0, y: 0 }; while (G.runT < 25000 && g++ < 3000) G.step(); return { mode: G.mode, openI: G.Waves.openI }; });
+  ok(hr.mode === 'hunt' && hr.openI === 0, 'modo cacería: los rebaños de apertura no se lanzan (modo ' + hr.mode + ', openI ' + hr.openI + ')');
+  await done(ph, 'ritmo-caceria');
+  console.log('ritmo: primera oferta ' + rng(f(R, 'offer')) + ' (media ' + mean(f(R, 'offer')).toFixed(1) + '), vivos max ' + rng(f(R, 'maxAlive')) + ', bajas 0-30 ' + rng(f(R, 'kills30')) + ', XP 180 s media ' + mean(f(R, 'xp')).toFixed(1) + ', quieto primer golpe ' + rng(f(Q, 'firstHit')) + ' (media ' + mean(f(Q, 'firstHit')).toFixed(1) + ')');
 }
 
 async function armor() {
