@@ -1,6 +1,6 @@
 # SPEC T-F1-03: ritmo de los primeros 90 segundos de la expedición
 
-Estado: **borrador en curso**. Autor: diseño de balance. Fecha: 2026-11-14.
+Estado: **completo, pendiente de decisión del dueño**. Autor: diseño de balance. Fecha: 2026-11-14.
 No toca código del juego: es una especificación para el programador.
 
 Leyenda: [M] medido por mí en esta tarea, [H] heredado de otro documento y aún sin verificar aquí, [C] leído en el código, [I] inferido.
@@ -12,7 +12,7 @@ Leyenda: [M] medido por mí en esta tarea, [H] heredado de otro documento y aún
 | 1. Medición del estado actual | Hecho: Bosque n=24 con 4 perfiles; otros 5 biomas n=12 con 2 perfiles; expedición entera n=16 |
 | 2. Diagnóstico con archivo:línea | Hecho |
 | 3. Objetivos de ritmo | Hecho |
-| 4. Cambios antes -> después y validación | Hecho: Bosque 180 s (n=24, 4 perfiles), expedición entera (n=16, 2 perfiles) y otros 5 biomas (n=12, 2 perfiles). EN CURSO: lote de confirmación de la economía del recolector (semillas 17..32) |
+| 4. Cambios antes -> después y validación | Hecho: Bosque 180 s (n=24, 4 perfiles), expedición entera (n=32, 2 perfiles) y otros 5 biomas (n=12, 2 perfiles) |
 | 5. Lista para el programador, pruebas, riesgos, preguntas | Hecho |
 
 ## 1. Medición del estado actual
@@ -102,7 +102,7 @@ Línea base de economía para comprobar que la propuesta no la mueve:
 | 300 s | 9,4 ± 0,1 | 468,2 ± 5,7 | 615,9 ± 3,4 |
 | 450 s (llega el jefe) | 13,19 ± 0,10 | 1010 ± 12 | 1058 ± 5 |
 
-Ceniza al llegar al jefe: 1413 ± 16. Daño bruto recibido en toda la expedición: 499 ± 32. A los 180 s el recolector tiene 206 de XP y el nivel 7 pide 216: está a 10 de XP de subir, así que cualquier XP extra en el arranque se nota en el nivel del minuto 3.
+Ceniza al llegar al jefe: 1413 ± 16. Daño bruto recibido en toda la expedición: 499 ± 32. (Este primer lote de 16 semillas se amplió después a 32; las cifras de n=32, que son las que se usan para comparar, están en 4.4: nivel 13,25 ± 0,08, XP 1024 ± 7, Ceniza 1452 ± 13.) A los 180 s el recolector tiene 206 de XP y el nivel 7 pide 216: está a 10 de XP de subir, así que cualquier XP extra en el arranque se nota en el nivel del minuto 3.
 
 ### 1.4 Perfil hábil (recolector + poderes en AUTO), Bosque, n=24 [M]
 
@@ -164,7 +164,7 @@ Medidos siempre en segundos de expedición, Bosque, ALTA, 9 min, cuenta nueva, s
 | O5 | Tiempo sin nada que hacer en 0-30 s (hábil) | 78 ± 1 % | <= 55 % | Es la medida directa de "plano" |
 | O6 | No adelantar poder | Nivel 3 / 4 / 5 del hábil a 49,0 / 83,4 / 116,3 s; nivel 6,04 y 208 de XP a los 180 s | Cada uno dentro de ± 3 s; nivel a 180 s igual; XP a 180 s menos la XP añadida a la curva dentro de ± 3 | El plan fija "nivel del minuto 3 dentro de ± 1"; se propone un criterio más estricto porque ± 1 nivel son 58 de XP y escondería un regalo |
 | O7 | No cambiar la expedición a partir del minuto 2 | Bajas 120-180 s: 120,7 ± 1,1 (hábil) | Dentro del error | Todo el cambio ocurre antes del segundo 30 |
-| O8 | Economía al llegar al jefe (recolector) | Nivel 13,19 ± 0,10; XP 1010 ± 12; Ceniza 1413 ± 16; 1058 ± 5 bajas | Nivel y XP (descontada la XP añadida) dentro del error; Ceniza dentro de + 2 % | Los objetivos de victoria del dueño (50/40/30/20/10 % por Peligro) se calibran en T-F2; esta tarea no debe moverlos |
+| O8 | Economía al llegar al jefe (recolector, n=32) | Nivel 13,25 ± 0,08; XP 1024 ± 7; Ceniza 1452 ± 13; 1057 ± 4 bajas | Nivel y XP (descontada la XP añadida) dentro del error; Ceniza dentro de + 2 % | Los objetivos de victoria del dueño (50/40/30/20/10 % por Peligro) se calibran en T-F2; esta tarea no debe moverlos |
 
 Lo que **no** se propone como objetivo: "al menos 12 enemigos vivos en el segundo 30" (criterio del plan). Un instante concreto depende de la semilla; se sustituye por O4 (máximo en una ventana), que mide lo mismo y es estable.
 
@@ -232,23 +232,24 @@ Sentido del cambio en dificultad, dicho claro: **la propuesta no baja la dificul
 
 ### 4.4 Economía al llegar al jefe y otros biomas [M]
 
-Bosque, expedición entera hasta que aparece el jefe (450 s), n=16, semillas 1..16. "Dif." es después menos antes; "EE dif." es el error estándar de esa diferencia.
+Bosque, expedición entera hasta que aparece el jefe (450 s), **n=32 por celda** (semillas 1..32, en dos lotes de 16). "Dif." es después menos antes; "EE dif." es el error estándar de esa diferencia; z = Dif. / EE dif.
 
-| Perfil | Métrica | Antes | Después | Dif. | EE dif. | Lectura |
-|---|---|---|---|---|---|---|
-| hábil | Bajas | 1065 ± 5 | 1089 ± 3 | +24 | 6 | los 18 Corderos nuevos (+ ruido) |
-| hábil | Nivel | 13,38 ± 0,13 | 13,50 ± 0,13 | +0,12 | 0,18 | dentro del ruido |
-| hábil | XP acumulada | 1043 ± 7 | 1057 ± 10 | +14 (+5 descontando los 9 añadidos a la curva) | 12 | dentro del ruido |
-| hábil | Ceniza | 1473 ± 17 | 1485 ± 13 | +12 (+0,8 %) | 21 | dentro del ruido; lo esperado por 18 Corderos es +18 |
-| hábil | Daño bruto recibido | 325 ± 24 | 370 ± 32 | +45 | 40 | dentro del ruido |
-| hábil | Nivel 6 / 8 / 10 / 12 (s) | 151,4 / 220,6 / 296,4 / 371,0 | 151,1 / 222,3 / 297,4 / 372,0 | <= 1,7 s | 1,5-2,7 | dentro del ruido |
-| recolector (sin poderes) | Bajas | 1058 ± 5 | 1076 ± 4 | +18 | 6 | los 18 Corderos nuevos |
-| recolector | Nivel | 13,19 ± 0,10 | 13,31 ± 0,12 | +0,12 | 0,16 | dentro del ruido |
-| recolector | XP acumulada | 1010 ± 12 | 1048 ± 10 | +38 (+29 descontando 9) | 16 | 1,8 errores: dudoso, ver nota |
-| recolector | Ceniza | 1413 ± 16 | 1477 ± 18 | +64 (+4,5 %) | 24 | 2,7 errores: **más de lo esperado (+18)**, ver nota |
-| recolector | Daño bruto recibido | 499 ± 32 | 460 ± 27 | -39 | 42 | dentro del ruido |
+| Perfil | Métrica | Antes | Después | Dif. | EE dif. | z | Lectura |
+|---|---|---|---|---|---|---|---|
+| hábil | Bajas | 1067 ± 4 | 1086 ± 3 | +20 | 5 | 3,9 | los 18 Corderos nuevos |
+| hábil | Nivel | 13,34 ± 0,09 | 13,47 ± 0,09 | +0,13 | 0,12 | 1,0 | dentro del ruido |
+| hábil | XP acumulada | 1041 ± 5 | 1060 ± 7 | +19 (+10 descontando los 9 añadidos a la curva) | 9 | 2,2 (1,1 descontando) | el avance neto cabe en el ruido |
+| hábil | Ceniza | 1471 ± 11 | 1500 ± 10 | +29 (+2,0 %) | 15 | 1,9 | lo esperado por 18 Corderos es +18 (+1,2 %) |
+| hábil | Daño bruto recibido | 334 ± 14 | 385 ± 21 | +51 (+15 %) | 25 | 2,0 | dudoso; ver nota |
+| recolector (sin poderes) | Bajas | 1057 ± 4 | 1077 ± 3 | +20 | 5 | 4,2 | los 18 Corderos nuevos |
+| recolector | Nivel | 13,25 ± 0,08 | 13,28 ± 0,08 | +0,03 | 0,11 | 0,3 | dentro del ruido |
+| recolector | XP acumulada | 1024 ± 7 | 1044 ± 6 | +20 (+11 descontando 9) | 10 | 2,1 (1,2 descontando) | el avance neto cabe en el ruido |
+| recolector | Ceniza | 1452 ± 13 | 1480 ± 10 | +28 (+1,9 %) | 16 | 1,7 | como el hábil |
+| recolector | Daño bruto recibido | 448 ± 22 | 466 ± 16 | +19 | 28 | 0,7 | dentro del ruido |
 
-Nota sobre el recolector: las bajas suben justo lo previsto (+18), pero la XP y la Ceniza recogidas suben más. Con las mismas bajas, eso solo puede venir de recoger una fracción mayor de gemas, es decir, de la mano de cartas que le tocó (desde el segundo 5 la secuencia de azar ya es otra y las ofertas cambian). Con n=16 no se puede separar eso de un efecto real. Hay un lote de confirmación en marcha (semillas 17..32); hasta tenerlo, O8 queda **cumplido para el hábil y sin confirmar para el recolector**.
+Lectura [M]: el nivel al llegar al jefe no cambia (O8 cumplido: +0,03 y +0,13 niveles con error 0,11-0,12). La Ceniza sube un 2 % (justo en el límite fijado; lo esperado por construcción es +1,2 %). La XP total sube 19-20, de los que 9 son los que la curva pide de más: el avance neto es +10 ± 9, sin efecto en el nivel.
+
+Nota sobre el ruido: el primer lote (semillas 1..16) daba para el recolector +64 de Ceniza (z 2,7) y +29 de XP neta (z 1,8); el segundo lote (17..32) dio -7 de Ceniza y -7 de XP neta. Con n=16 el ruido entre lotes iguales es de ese tamaño (±25 de Ceniza, ±16 de XP), así que ninguna cifra de expedición entera de este documento debe leerse con más precisión que esa. El +15 % de daño del hábil (z 2,0) está en el mismo caso: no aparece en los primeros 180 s (25,4 ± 2,6 antes, 24,8 ± 3,1 después) ni en el recolector, y no hay mecanismo que lo explique; va en el sentido de más reto, no de menos. Queda como punto a vigilar en la matriz de T-F2.
 
 Otros biomas con la propuesta, 180 s, n=12, semillas 1..12 (antes -> después):
 
@@ -320,7 +321,7 @@ Además, repetir `diff_bot.js` (ALTA / MEDIA / BAJA) tras el cambio para comprob
 
 1. **El que no usa su primer poder recibe más daño** (42 ± 7 en 90 s frente a 5; medido con un bot que nunca pulsa el poder). No es letal con 100 de vida y la cura del 20 % al subir de nivel, pero depende de que el aviso `power` de T-F1-02 funcione. Si el playtest del dueño lo ve duro, la perilla es el tamaño del segundo rebaño (10 -> 8) con `xp.early` 9 -> 8.
 2. **Quedarse quieto mata antes** (265 de daño en 90 s frente a 131). Es intencionado (O3); coincide con el aviso `move` de T-F1-02.
-3. **Ceniza**: + 24 a los 180 s (medido); al llegar al jefe, +0,8 % con el hábil (dentro del ruido) y +4,5 % con el recolector (sin confirmar, ver 4.4). Si no se quiere ni eso, los Corderos de rebaño pueden no soltar Ceniza (un indicador en `E.spawn`), a costa de una regla más.
+3. **Ceniza**: +2 % al llegar al jefe (medido, n=32; +1,2 % esperado por construcción). Si no se quiere ni eso, los Corderos de rebaño pueden no soltar Ceniza (un indicador en `E.spawn`), a costa de una regla más.
 4. **Aviso `gems` de T-F1-02**: con 150 px en el nivel 1 las gemas cercanas vuelan solas; la condición de cierre "recoge 3 gemas" se cumplirá casi siempre sin que el jugador haga nada. El aviso sigue siendo cierto, pero conviene que `ux-designer` decida si lo mantiene en el nivel 1 o lo mueve al nivel 2, cuando el radio vuelve a 60 px.
 5. **Los bots no son jugadores**: el movimiento del recolector es simple (no esquiva en grupo). Las cifras ordenan opciones; el juicio de "se siente bien" es del playtest del dueño. Con la inmortalidad activa por defecto (`src/main.js:20`) el dueño no notará el daño: hay que probar con `?god=0`.
 6. **Biomas 2-6 con equipo**: validado solo con cuenta nueva. Con árbol y armadura el jugador mata más rápido y los rebaños pesan menos; no puede ser más difícil que lo medido.
