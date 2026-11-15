@@ -397,7 +397,7 @@
   }
 
   function updateGems(dt) {
-    var p = G.player, s = dt / 1000, R = B.player.pickup * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1) * (G.Armor ? G.Armor.magnetMul() : 1);
+    var p = G.player, s = dt / 1000, R = (p.level === 1 ? B.player.pickup1 : B.player.pickup) * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1) * (G.Armor ? G.Armor.magnetMul() : 1);
     for (var i = G.gems.length - 1; i >= 0; i--) {
       var g = G.gems[i]; g.t += dt;
       var dx = p.x - g.x, dy = p.y - g.y, d = Math.hypot(dx, dy);
