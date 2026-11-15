@@ -427,6 +427,10 @@ async function ritmo(b) {
   ok(f(R, 'kills30').every(v => v >= 42), 'bajas en 0-30 s >= 42 en cada semilla (' + rng(f(R, 'kills30')) + ')');
   ok(f(R, 'lvl').every(v => v === 6), 'nivel 6 a los 180 s en cada semilla (' + rng(f(R, 'lvl')) + ')');
   ok(f(Q, 'firstHit').every(v => v >= 15 && v <= 35), 'jugador quieto: primer golpe entre 15 y 35 s (' + rng(f(Q, 'firstHit')) + ')');
+  const N = [], H = [];
+  for (const s of SEEDS) N.push(await ritmoRun(b, s, 'nov', '', 90));
+  for (const s of SEEDS) H.push(await ritmoRun(b, s, 'hab', '', 40));
+  console.log('ritmo MED: novato primera oferta ' + rng(f(N, 'offer')) + ' (media ' + (f(N, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + '), habil ' + rng(f(H, 'offer')) + ' (media ' + (f(H, 'offer').reduce((a, v) => a + v, 0) / 8).toFixed(1) + '), habil vivos max ' + rng(f(H, 'maxAlive')) + ' bajas30 ' + rng(f(H, 'kills30')));
   // perillas: ?open=0&pk1=60&xp2=0 devuelve el arranque anterior
   const O = [];
   for (const s of [1, 2, 3, 4]) O.push(await ritmoRun(b, s, 'rec', '&open=0&pk1=60&xp2=0', 30));
