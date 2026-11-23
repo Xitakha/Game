@@ -649,7 +649,7 @@
     if (e.mode === 'intro' || e.mode === 'gate') return;
     var bw = 640, bx = (G.W - bw) / 2, by = 52, left = Z.furyLeft(e);
     var tx = S.fury > 1 ? 'FURIA x' + S.fury.toFixed(2).replace('.', ',') : 'Furia en ' + G.fmtTime(left);
-    G.txt(c, tx, bx + bw, by - 29, 10, S.fury > 1 ? '#ff5a4a' : left < 30000 ? '#ffb070' : '#7a7086', 'right');
+    G.txt(c, tx, bx + bw, by - 32, 15, S.fury > 1 ? '#ff5a4a' : left < 30000 ? '#ffb070' : '#7a7086', 'right');
     if (Z.hudChain) Z.hudChain(c, e, bx, by, bw);
   };
 

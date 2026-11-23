@@ -185,8 +185,10 @@
 
   // FUSION: ventana de elección (botones numerados). buttons: [{ label, fn, col }]; Esc / 'VOLVER' la cierra sin consumir nada
   C.modal = function (title, sub, buttons) { C.off.modal = { title: title, sub: sub, buttons: buttons, t: 0 }; G.Snd.play('flip'); };
-  function modalRect(n) { var h = 92 + n * 58; return { x: 170, y: Math.max(20, 270 - h / 2), w: 620, h: h }; }
-  function modalBtn(i, n) { var b = modalRect(n); return { x: b.x + 24, y: b.y + 78 + i * 58, w: b.w - 48, h: 48 }; }
+  // Ventana (FUSIÓN / fusionar la mano / reemplazo): subtítulo en hasta 3 líneas de 17 y botones de 66 de alto
+  function modalSub(n) { var M = C.off && C.off.modal; if (!M) return []; if (!M.lines) M.lines = wrap(G.ctx, M.sub || '', 680, 17).slice(0, 3); return M.lines; }
+  function modalRect(n) { var nl = modalSub().length, h = 58 + nl * 22 + n * 72 + 6; return { x: 110, y: Math.max(4, Math.round(270 - h / 2)), w: 740, h: h }; }
+  function modalBtn(i, n) { var b = modalRect(n), nl = modalSub().length; return { x: b.x + 24, y: b.y + 56 + nl * 22 + i * 72, w: b.w - 48, h: 66 }; }
   function modalUpdate(O) {
     var M = O.modal, inp = G.input, n = M.buttons.length;
     M.t += 16;
@@ -256,18 +258,21 @@
   };
 
   // ------------------------------------------------------------- Geometría
-  var OFF = { w: 220, h: 252, gap: 22, y: 52 };
+  // T-F1-08 fase 3: pantalla de oferta rehecha para letra mínima 17 lógicos (11 px reales a 740x360) y botones de 66 de alto (44 px reales).
+  // Arriba el título (centrado, nada lo pisa); 3 ofertas de 260x276; abajo a la izquierda la mano (5 x 90x100) y DESCARTAR; a la derecha FUSIONAR (si hay receta),
+  // REROLL / OMITIR y los 4 huecos de PODERES (antes arriba a la izquierda, donde pisaban el título).
+  var OFF = { w: 260, h: 276, gap: 20, y: 46 };
   C.offerRect = function (i) { var x0 = (G.W - (3 * OFF.w + 2 * OFF.gap)) / 2; return { x: x0 + i * (OFF.w + OFF.gap), y: OFF.y, w: OFF.w, h: OFF.h }; };
   C.slotRect = function (i, big) {
     if (big === 'end') return { x: 20 + i * 94, y: 112, w: 86, h: 114 };
-    if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
+    if (big) return { x: 16 + i * 96, y: 350, w: 90, h: 100 };
     if (G.hudWide()) { var A = G.anchor(); return { x: A.L + i * 84, y: A.B - 104, w: 78, h: 104 }; }   // T-F1-08: mano anclada a la esquina inferior izquierda segura
     return { x: 8 + i * 77, y: 430, w: 72, h: 96 };   // FUSION: la mano va a la IZQUIERDA (los 4 botones de poderes ocupan la zona del pulgar derecho)
   };
-  C.skipRect = { x: 580, y: 440, w: 250, h: 48 };
-  C.rerollRect = { x: 580, y: 352, w: 250, h: 48 };
-  C.fuseRect = { x: 580, y: 305, w: 250, h: 40 };   // FUSION: fusionar dos cartas de la mano (si hay receta)
-  C.discardRect = { x: 110, y: 460, w: 430, h: 48 };   // táctil: activa el modo descartar y se toca la carta de la mano
+  C.fuseRect = { x: 520, y: 326, w: 424, h: 66 };   // FUSION: fusionar dos cartas de la mano (si hay receta)
+  C.rerollRect = { x: 520, y: 398, w: 208, h: 66 };
+  C.skipRect = { x: 736, y: 398, w: 208, h: 66 };
+  C.discardRect = { x: 16, y: 456, w: 474, h: 62 };   // táctil: activa el modo descartar y se toca la carta de la mano
   function U_btn(c, r, label, col, border, size) { c.fillStyle = col; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = border; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3); G.txt(c, label, r.x + r.w / 2, r.y + r.h / 2, size, '#fff', 'center'); }
   function inR(r, m) { return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }
 
@@ -411,7 +416,7 @@
     var rk = G.Save.rank(slot.id);
     if (rk > 1) G.txt(c, U_roman(rk), x + 9 * f, y + 24 * f, Math.round(10 * f), '#ffd24a', 'center');
     // nombre
-    G.txt(c, d.short, x + w / 2, y + h - 11 * f, o.ns || Math.max(12, Math.round(10 * f)), '#fff', 'center');   // o.ns: tamaño del nombre (HUD ancho: 14)
+    if (!o.noName) G.txt(c, d.short, x + w / 2, y + h - 11 * f, o.ns || Math.max(12, Math.round(10 * f)), '#fff', 'center');   // o.ns: tamaño del nombre (HUD ancho: 14)
     // cooldown (barrido)
     if (!o.nocd && d.type === 'attack' && slot.cdMax && !ORB[d.id] && d.kind !== 'aura' && slot.cd > 0) {
       var fr = G.clamp(slot.cd / slot.cdMax, 0, 1);
@@ -473,10 +478,7 @@
     c.save();
     c.fillStyle = 'rgba(8,4,14,0.82)'; c.fillRect(0, 0, G.W, G.H);
     var title = O.mode === 'start' ? 'ELIGE TU PRIMERA INFUSIÓN' : G.prep ? 'PREPARACIÓN ' + (G.prep.total - G.pendingLevels + 1) + '/' + G.prep.total + '  -  ELIGE UNA CARTA' : '¡NIVEL ' + p.level + '!  ELIGE UNA CARTA';
-    // el título no pisa los huecos de poderes (arriba a la izquierda): se desplaza a la derecha lo justo
-    c.font = 'bold 26px "Courier New", monospace'; var tw2 = c.measureText(title).width, na = (p.actives || []).filter(Boolean).length, tx0 = G.W / 2;
-    if (na) tx0 = Math.max(tx0, 8 + na * 84 + 12 + tw2 / 2);
-    G.txt(c, title, Math.min(tx0, G.W - 8 - tw2 / 2), 28, 26, '#ffd27a', 'center');
+    G.txt(c, title, G.W / 2, 24, 26, '#ffd27a', 'center');   // T-F1-08 fase 3: los huecos de PODERES ya no están arriba: el título va siempre centrado
     var hoverIdx = -1;
     for (i = 0; i < O.cards.length; i++) if (inR(C.offerRect(i), m) && !O.replacing) hoverIdx = i;
     // tags de la mano que se iluminarían con la carta señalada
@@ -496,29 +498,30 @@
       c.globalAlpha = 0.25; c.fillStyle = tc; c.fillRect(0, 0, r.w, 32); c.globalAlpha = 1;
       if (nc.length) { c.shadowColor = '#ffe9a0'; c.shadowBlur = 16 + 6 * Math.sin(G.time / 120); }
       c.strokeStyle = tc; c.lineWidth = hov ? 5 : 3; c.strokeRect(1.5, 1.5, r.w - 3, r.h - 3); c.shadowBlur = 0;
-      G.txt(c, G.TAGS[d.tag].name + '  -  ' + (d.type === 'attack' ? 'INFUSIÓN' : 'PASIVA'), r.w / 2 + 10, 16, 12, tc, 'center');
-      c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.arc(r.w / 2, 78, 36, 0, 6.283); c.fill();
-      glyph(c, d.icon, r.w / 2, 78, 26, tc);
-      G.txt(c, d.name, r.w / 2, 128, 17, '#fff', 'center');
-      var lines = wrap(c, d.desc, r.w - 22, 12);
-      for (k = 0; k < lines.length && k < 4; k++) G.txt(c, lines[k], r.w / 2, 152 + k * 15, 12, '#d8cfe8', 'center');
-      if (!G.Sys.isTouch()) G.txt(c, '[' + (i + 1) + ']', 17, 16, 14, '#ffd27a', 'center');
-      var by = r.h - 50;
+      G.txt(c, G.TAGS[d.tag].name + '  -  ' + (d.type === 'attack' ? 'INFUSIÓN' : 'PASIVA'), r.w / 2 + 10, 16, 17, tc, 'center');
+      c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.arc(r.w / 2, 62, 28, 0, 6.283); c.fill();
+      glyph(c, d.icon, r.w / 2, 62, 21, tc);
+      G.txt(c, d.name, r.w / 2, 106, 20, '#fff', 'center');
+      var extra = owned || C.count() >= SLOTS, lines = wrap(c, d.desc, r.w - 16, 17), nl = Math.min(lines.length, extra && nc.length ? 4 : 5);
+      for (k = 0; k < nl; k++) G.txt(c, k === nl - 1 && lines.length > nl ? lines[k].replace(/.{0,2}$/, '..') : lines[k], r.w / 2, 131 + k * 22, 17, '#d8cfe8', 'center');
+      if (!G.Sys.isTouch()) G.txt(c, '[' + (i + 1) + ']', 18, 16, 17, '#ffd27a', 'center');
+      var by = nc.length ? r.h - 50 : r.h - 20;
       if (owned) {
-        c.fillStyle = 'rgba(255,210,74,0.2)'; c.fillRect(22, by - 11, r.w - 44, 22);
-        G.txt(c, 'REFUERZO  Nv' + owned.lvl + ' > Nv' + (owned.lvl + 1), r.w / 2, by, 13, '#ffd24a', 'center');
+        c.fillStyle = 'rgba(255,210,74,0.2)'; c.fillRect(14, by - 12, r.w - 28, 24);
+        G.txt(c, 'REFUERZO  Nv' + owned.lvl + ' > Nv' + (owned.lvl + 1), r.w / 2, by, 17, '#ffd24a', 'center');
       } else if (C.count() >= SLOTS) {
-        G.txt(c, 'reemplaza un slot', r.w / 2, by, 12, '#9a8fb0', 'center');
+        G.txt(c, 'reemplaza un slot', r.w / 2, by, 17, '#9a8fb0', 'center');
       }
       if (nc.length) {
-        c.fillStyle = 'rgba(255,233,160,' + (0.18 + 0.1 * Math.sin(G.time / 150)) + ')'; c.fillRect(6, r.h - 31, r.w - 12, 22);
-        G.txt(c, 'FUSIÓN: ' + nc[0].name, r.w / 2, r.h - 20, 13, '#ffe9a0', 'center');
+        c.fillStyle = 'rgba(255,233,160,' + (0.18 + 0.1 * Math.sin(G.time / 150)) + ')'; c.fillRect(6, r.h - 33, r.w - 12, 26);
+        G.txt(c, 'FUSIÓN: ' + nc[0].name, r.w / 2, r.h - 20, 17, '#ffe9a0', 'center');
       }
       c.restore();
     }
-    // mano debajo
+    // mano debajo (izquierda) y Ceniza (derecha) en la misma fila de rótulos
     var h = hand();
-    G.txt(c, 'TU MANO', 110, 337, 13, '#9a8fb0', 'left');
+    G.txt(c, 'TU MANO', 16, 336, 17, '#9a8fb0', 'left');
+    G.txt(c, 'Ceniza: ' + p.ash, 944, 336, 17, '#ff9a3c', 'right');
     for (i = 0; i < SLOTS; i++) {
       var sr = C.slotRect(i, true);
       if (h[i]) {
@@ -527,36 +530,39 @@
       } else C.drawEmptySlot(c, sr.x, sr.y, sr.w, sr.h, String(i + 1));
     }
     C.drawComboLines(c, true);
-    // reroll
+    var tch = G.Sys.isTouch(), U = G.UI;
+    // reroll y omitir (dos líneas: acción / Ceniza)
     var rr = C.rerollRect, cost = C.rerollCost(), can = p.ash >= cost, rh = inR(rr, m);
-    var tch = G.Sys.isTouch();
     c.fillStyle = can ? (rh ? '#d97a2a' : '#a85a1a') : '#3a2f3d'; c.fillRect(rr.x, rr.y, rr.w, rr.h);
-    c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x, rr.y, rr.w, rr.h);
-    G.txt(c, (tch ? 'REROLL' : 'REROLL (R)') + '  -  ' + cost + ' Ceniza', rr.x + rr.w / 2, rr.y + rr.h / 2, 16, can ? '#fff' : '#9a8fa0', 'center');
-    G.txt(c, 'Ceniza: ' + p.ash, rr.x + rr.w / 2, rr.y + rr.h + 18, 16, '#ff9a3c', 'center');
+    c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x + 1.5, rr.y + 1.5, rr.w - 3, rr.h - 3);
+    G.txt(c, tch ? 'REROLL' : 'REROLL (R)', rr.x + rr.w / 2, rr.y + 21, 18, can ? '#fff' : '#9a8fa0', 'center');
+    G.txt(c, cost + ' Ceniza', rr.x + rr.w / 2, rr.y + 45, 17, can ? '#ffe9a0' : '#9a8fa0', 'center');
     var dr = C.discardRect, dOn = !!O.discardMode;
-    U_btn(c, dr, dOn ? 'TOCA LA CARTA QUE QUIERES DESCARTAR' : (tch ? 'DESCARTAR UNA CARTA DE LA MANO  (+10 Ceniza)' : 'DESCARTAR (Shift+1..5 / clic dcho.)  +10 Ceniza'), dOn ? '#a02030' : '#3a2f48', dOn ? '#ff8a8a' : '#8a6a8a', 13);
+    c.fillStyle = dOn ? '#a02030' : '#3a2f48'; c.fillRect(dr.x, dr.y, dr.w, dr.h); c.strokeStyle = dOn ? '#ff8a8a' : '#8a6a8a'; c.lineWidth = 3; c.strokeRect(dr.x + 1.5, dr.y + 1.5, dr.w - 3, dr.h - 3);
+    if (dOn) G.txt(c, 'TOCA LA CARTA QUE QUIERES DESCARTAR', dr.x + dr.w / 2, dr.y + dr.h / 2, 17, '#fff', 'center');
+    else { G.txt(c, tch ? 'DESCARTAR UNA CARTA DE LA MANO' : 'DESCARTAR (Shift+1..5 / clic dcho.)', dr.x + dr.w / 2, dr.y + 20, 17, '#fff', 'center'); G.txt(c, '+10 Ceniza', dr.x + dr.w / 2, dr.y + 42, 17, '#ffe9a0', 'center'); }
     if (O.mode === 'level') {
       var sk = C.skipRect, sh = inR(sk, m);
       c.fillStyle = sh ? '#4a6a4a' : '#324a38'; c.fillRect(sk.x, sk.y, sk.w, sk.h);
-      c.strokeStyle = '#9be59b'; c.lineWidth = 3; c.strokeRect(sk.x, sk.y, sk.w, sk.h);
-      G.txt(c, (tch ? 'OMITIR' : 'OMITIR (4 / Espacio)') + '  +' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + sk.h / 2, 14, '#fff', 'center');
+      c.strokeStyle = '#9be59b'; c.lineWidth = 3; c.strokeRect(sk.x + 1.5, sk.y + 1.5, sk.w - 3, sk.h - 3);
+      G.txt(c, tch ? 'OMITIR' : 'OMITIR (4/Esp.)', sk.x + sk.w / 2, sk.y + 21, 18, '#fff', 'center');
+      G.txt(c, '+' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + 45, 17, '#ffe9a0', 'center');
     }
-    // FUSION: botón de fusionar la mano, chips de poderes y ventana de elección
+    // FUSION: botón de fusionar la mano, huecos de poderes y ventana de elección
     var fp = G.Fusion.handPairs();
-    if (fp.length) { var fr = C.fuseRect; U_btn(c, fr, 'FUSIONAR CARTAS DE LA MANO (' + fp.length + ')', inR(fr, m) ? '#b8861a' : '#8a6a1a', '#ffe9a0', 13); }
+    if (fp.length) { var fr = C.fuseRect; U_btn(c, fr, 'FUSIONAR CARTAS DE LA MANO (' + fp.length + ')', inR(fr, m) ? '#b8861a' : '#8a6a1a', '#ffe9a0', 17); }
     G.Fusion.drawChips(c);
     // ayuda
-    if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 524, 14, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
-    else if (G.Fte && G.Fte.pickHint(O)) G.txt(c, G.Fte.pickHint(O), G.W / 2, 524, 14, '#ffe9a0', 'center');   // T-F1-02: aviso 'pick' de la 1.ª oferta
-    else G.txt(c, tch ? 'Toca una carta para elegirla' : '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 524, 13, '#d8cfe8', 'center');
+    if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 530, 17, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
+    else if (G.Fte && G.Fte.pickHint(O)) G.txt(c, G.Fte.pickHint(O), G.W / 2, 530, 17, '#ffe9a0', 'center');   // T-F1-02: aviso 'pick' de la 1.ª oferta
+    else G.txt(c, tch ? 'Toca una carta para elegirla' : '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 530, 17, '#d8cfe8', 'center');
     if (O.modal) {
-      var M = O.modal, n = M.buttons.length, br = modalRect(n);
+      var M = O.modal, n = M.buttons.length, br = modalRect(n), sl = modalSub();
       c.fillStyle = 'rgba(4,2,8,0.78)'; c.fillRect(0, 0, G.W, G.H);
       c.fillStyle = '#1a1226'; c.fillRect(br.x, br.y, br.w, br.h); c.strokeStyle = '#ffd24a'; c.lineWidth = 4; c.strokeRect(br.x + 2, br.y + 2, br.w - 4, br.h - 4);
-      G.txt(c, M.title, br.x + br.w / 2, br.y + 24, 22, '#ffd24a', 'center');
-      var sl = wrap(c, M.sub || '', br.w - 50, 12); G.txt(c, sl[0] || '', br.x + br.w / 2, br.y + 48, 12, '#d8cfe8', 'center'); if (sl[1]) G.txt(c, sl[1], br.x + br.w / 2, br.y + 62, 12, '#d8cfe8', 'center');
-      for (i = 0; i < n; i++) { var mb = modalBtn(i, n); U_btn(c, mb, (tch ? '' : '[' + (i + 1) + ']  ') + M.buttons[i].label, inR(mb, m) ? '#5a4a76' : (M.buttons[i].col || '#3a2f48'), '#ffe9a0', 13); }
+      G.txt(c, M.title, br.x + br.w / 2, br.y + 26, 22, '#ffd24a', 'center');
+      for (k = 0; k < sl.length; k++) G.txt(c, sl[k], br.x + br.w / 2, br.y + 56 + k * 22, 17, '#d8cfe8', 'center');
+      for (i = 0; i < n; i++) { var mb = modalBtn(i, n); U_btn(c, mb, (tch ? '' : '[' + (i + 1) + ']  ') + M.buttons[i].label, inR(mb, m) ? '#5a4a76' : (M.buttons[i].col || '#3a2f48'), '#ffe9a0', 17); }
     }
     c.restore();
   };

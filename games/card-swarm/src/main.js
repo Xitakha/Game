@@ -186,9 +186,9 @@
     c.lineWidth = Math.max(2, size / 5); c.strokeStyle = stroke || '#0a0610'; c.lineJoin = 'round';
     c.strokeText(s, x, y); c.fillStyle = color || '#fff'; c.fillText(s, x, y);
   }
-  // Legibilidad (v: textos): en menús / aldea / fin de expedición / pausa (G.minFont > 0) ningún texto baja de G.minFont px lógicos (12 = ~9 px reales en un móvil de 844x390)
+  // Legibilidad (v: textos): en menús / aldea / fin de expedición / pausa (G.minFont > 0) ningún texto baja de G.minFont px lógicos (T-F1-08 fase 3: 17 = 11 px reales a 740x360; antes 12)
   // y los grises demasiado oscuros se aclaran hasta contraste >= 4,5:1 sobre el fondo oscuro de los paneles. En combate G.minFont = 0 (etiquetas del jefe y de enemigos intactas).
-  G.minFont = 0; G.MIN_UI = 12;
+  G.minFont = 0; G.MIN_UI = 17; G.MIN_DENSE = 15; G.MIN_OLD = 12;   // MIN_DENSE / MIN_OLD: paneles densos aún sin rehacer para 17 (T-F1-08 fase 3; ver G.Panels.minFor)
   G.fs = function (size) { return size < G.minFont ? G.minFont : size; };
   var LIFT = {};
   function lumOf(r, g, b) { function f(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); } return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); }
@@ -352,6 +352,8 @@
   // L/R/T/B = rectángulo seguro del HUD (zonas seguras G.safe + margen G.M = 12 lógicos), CX = centro del lienzo.
   G.hudWide = function () { return !!(G.Sys && G.Sys.wide); };
   G.anchor = function () { var s = G.safe || { l: 0, r: 0, t: 0, b: 0 }, M = G.M || 12; return { L: s.l + M, R: G.W - s.r - M, T: s.t + M, B: G.H - s.b - M, CX: G.W / 2 }; };
+  // Igual que G.anchor pero en coordenadas de la columna de 960 (dentro de G.column): los bordes seguros del LIENZO vistos desde el menú / la aldea centrados
+  G.colAnchor = function () { var s = G.safe || { l: 0, r: 0, t: 0, b: 0 }, M = G.M || 12, W = G.colW || G.W, ox = G.colOX || 0; return { L: s.l + M - ox, R: W - s.r - M - ox, T: s.t + M, B: G.H - s.b - M, CX: W / 2 - ox }; };
   G.inPlay = function (x, y, m) { var c = G.simCam; m = m || 0; return x > c.x - m && x < c.x + G.SW + m && y > c.y - m && y < c.y + G.VH + m; };
   G.state = 'aldea';   // aldea | play | paused | cards | gameover
   G.time = 0; G.kills = 0; G.won = false;
@@ -587,7 +589,7 @@
     G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' ) ? G.MIN_UI : 0;
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
-    if (G.state === 'aldea') { G.column(ctx, function () { G.Aldea.draw(ctx); }); sideFill(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }   // T-F1-08: aldea de 960 centrada; franjas = borde del mapa estirado + velo
+    if (G.state === 'aldea') { var sides = G.Aldea.drawSides(ctx); G.column(ctx, function () { G.Aldea.draw(ctx); }); if (!sides) sideFill(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }   // T-F1-08: aldea a todo el ancho (decorado lateral); en los paneles, franjas = borde estirado + velo
     if (G.state === 'privacy') { G.column(ctx, function () { G.TrackUI.draw(ctx); }); sideFill(ctx); return; }
     if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }   // el título pinta su fondo a G.W y centra logotipo y textos (cine_intro.js)
     if (G.state === 'cine') { if (G.OX) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, G.W, G.H); } G.column(ctx, function () { G.Cine.draw(ctx); }); return; }   // cinemáticas a 960 con franjas negras (pillarbox)

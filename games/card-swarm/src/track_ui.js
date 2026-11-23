@@ -25,7 +25,7 @@
   UI.policyUrl = function () { return TEXT[UI.lang()].url; };
   UI.openPolicy = function () { try { window.open(UI.policyUrl(), '_blank', 'noopener'); } catch (e) { /* bloqueado */ } };
   // Mismo rectángulo, color y borde para los dos botones (consentimiento explícito, sin patrón oscuro)
-  var BY = { x: 120, y: 392, w: 340, h: 84 }, BN = { x: 500, y: 392, w: 340, h: 84 }, LK = { x: 330, y: 340, w: 300, h: 44 };
+  var BY = { x: 120, y: 360, w: 340, h: 84 }, BN = { x: 500, y: 360, w: 340, h: 84 }, LK = { x: 330, y: 296, w: 300, h: 56 };   // T-F1-08 fase 3: texto a 17 (interlineado 22)
   UI.rects = { yes: BY, no: BN, link: LK };
   UI.isOpen = function () { return !!cur; };
   // opts.fte (T-F1-02): tarjeta "Antes de salir" tras la intro. Mismo texto legal y mismos botones; solo se añade el rótulo y una nota igual para los dos botones
@@ -58,11 +58,11 @@
     U.panel(c, 90, 24, 780, 492, { border: '#ffd27a' });
     if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'BEFORE YOU GO' : 'ANTES DE SALIR', 480, 39, 14, '#b4a8c8', 'center');
     G.txt(c, X.title, 480, 64, 24, '#ffd27a', 'center');
-    if (!cur.lines) { cur.lines = []; X.body.forEach(function (p, i) { U.wrap(c, p, 720, 14).forEach(function (l) { cur.lines.push(l); }); cur.lines.push(''); }); }
-    for (var i = 0; i < cur.lines.length; i++) G.txt(c, cur.lines[i], 120, 104 + i * 19, 14, '#e8e0f0', 'left');
+    if (!cur.lines) { cur.lines = []; X.body.forEach(function (p, i) { U.wrap(c, p, 740, 14).forEach(function (l) { cur.lines.push(l); }); cur.lines.push(''); }); }
+    for (var i = 0, ly = 96; i < cur.lines.length; i++) { if (cur.lines[i]) { G.txt(c, cur.lines[i], 110, ly, 14, '#e8e0f0', 'left'); ly += 22; } else ly += 8; }
     var hov = U.inR(LK, G.input.mouse);
-    G.txt(c, X.link, 480, LK.y + 22, 15, hov ? '#cfeaff' : '#9dd8ff', 'center');
-    c.fillStyle = hov ? '#cfeaff' : '#9dd8ff'; c.fillRect(480 - Math.round(X.link.length * 4.5), LK.y + 32, Math.round(X.link.length * 9), 2);
+    G.txt(c, X.link, 480, LK.y + 24, 15, hov ? '#cfeaff' : '#9dd8ff', 'center');
+    c.fillStyle = hov ? '#cfeaff' : '#9dd8ff'; c.fillRect(480 - Math.round(X.link.length * 5.1), LK.y + 36, Math.round(X.link.length * 10.2), 2);
     U.button(c, BY, X.yes, { size: 17, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
     U.button(c, BN, X.no, { size: 17, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
     if (cur.fte) G.txt(c, UI.lang() === 'en' ? 'Either button starts your first expedition.' : 'Cualquiera de los dos botones empieza tu primera expedición.', 480, 498, 14, '#d8cfe8', 'center');

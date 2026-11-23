@@ -14,7 +14,7 @@
   var G = window.G, M = G.Manual = {}, U = G.UI, inp = G.input, TAU = 6.283185;
   var st = { open: false, from: null, tab: 0, filter: 'all', q: '', page: 0, sel: 0, demoT: 0, last: 0, paused: false, msg: '', modal: null };
   var T = { vw: 440, vh: 248, loop: 5 };
-  var VIEW = { x: 292, y: 58, w: 440, h: 248 }, SIDE = { x: 744, y: 58, w: 202, h: 248 }, R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
+  var VIEW = { x: 292, y: 58, w: 440, h: 248 }, SIDE = { x: 744, y: 58, w: 202, h: 248 }, R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
   var PER = 5, TAGS = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'];
   function tabR(i) { return { x: 14 + i * 136, y: 58, w: 130, h: 44 }; }
   var R_FIL = { x: 14, y: 108, w: 266, h: 44 }, R_SRCH = { x: 14, y: 158, w: 266, h: 44 };
@@ -368,6 +368,7 @@
   function para(c, y, label, text, col, size, max, x, w) {
     x = x || 292; w = w || 654; size = size || 13;
     var ls = wrapLines(c, (label ? label + ' ' : '') + text, w, size, max), lh = Math.round(size * 1.45);
+    if (ls.length && y + (ls.length - 1) * lh > 528) { var nk = Math.max(1, Math.floor((528 - y) / lh) + 1); if (nk < ls.length) { ls = ls.slice(0, nk); ls[nk - 1] = ls[nk - 1].replace(/\s*\S{0,3}$/, '') + '...'; } }   // T-F1-08: con letra 15 no se sale por abajo
     ls.forEach(function (ln, i) { G.txt(c, ln, x, y + i * lh, size, col, 'left'); });
     return y + ls.length * lh;
   }
@@ -381,7 +382,7 @@
     G.txt(c, e.k === 'fx' ? 'Aún no has creado esta fusión' : 'Aún no has desbloqueado esta carta', VIEW.x + VIEW.w / 2, VIEW.y + 198, 13, '#c8c0d8', 'center');
   }
   M.draw = function (c) {
-    G.minFont = G.MIN_UI;
+    G.minFont = G.MIN_DENSE || G.MIN_UI;   // T-F1-08 fase 3: 15 (10 px reales a 740x360) hasta rehacer el Manual para 17
     var l = visible(), now = performance.now(), dt = st.last ? Math.min(50, now - st.last) : 0; st.last = now;
     if (st.sel >= l.length) st.sel = Math.max(0, l.length - 1);
     var e = l[st.sel], known = e && M.isKnown(e), m = inp.mouse, i, cn = counts();
@@ -402,7 +403,9 @@
       c.strokeStyle = on ? '#ffe9a0' : kn ? tagCol(en.tag) : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       if (kn) { chip(c, en.tag, r.x + 18, r.y + r.h / 2); if (en.tag2) chip(c, en.tag2, r.x + 34, r.y + r.h / 2); }
       else G.ManualArt.icon(c, 'lock', r.x + 22, r.y + r.h / 2, 9);
-      G.txt(c, kn ? en.name : '???', r.x + (en.tag2 ? 50 : 36), r.y + r.h / 2, 14, kn ? '#fff' : '#a89cc0', 'left');
+      var nm = kn ? en.name : '???', nx = r.x + (en.tag2 ? 50 : 36), nmax = r.x + r.w - (isNew(en) ? 54 : 6) - nx; c.font = 'bold ' + G.fs(14) + 'px "Courier New", monospace';
+      while (nm.length > 4 && c.measureText(nm).width > nmax) nm = nm.slice(0, -2) + '.';   // T-F1-08: el nombre no pisa la marca NUEVO
+      G.txt(c, nm, nx, r.y + r.h / 2, 14, kn ? '#fff' : '#a89cc0', 'left');
       if (isNew(en)) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 48, r.y + 12, 44, 18); G.txt(c, 'NUEVO', r.x + r.w - 26, r.y + 21, 12, '#2a1a00', 'center'); }
     }
     if (!l.length) para(c, 232, '', 'Nada coincide con el filtro o la búsqueda (solo se busca en lo descubierto).', '#c8c0d8', 13, 5, 18, 256);

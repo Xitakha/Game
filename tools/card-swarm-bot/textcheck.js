@@ -1,5 +1,5 @@
 // Auditoría de texto de Swarm Hand: graba cada G.txt / U.panel / U.button de UN fotograma y detecta solapes, desbordes, fuentes pequeñas y bajo contraste.
-// Uso desde tests.js (modo 'text') y desde la herramienta de capturas. Todo en coordenadas LÓGICAS de lienzo (G.W x 540; G.W = 960 salvo la pantalla ancha de T-F1-08, ?wide=1).
+// Uso desde tests.js (modo 'text') y desde la herramienta de capturas. Todo en coordenadas LÓGICAS de lienzo (G.W x 540; G.W de 960 a 1200 con la pantalla ancha de T-F1-08, por defecto; 960 con ?wide=0). d.k = escala real (px CSS por px lógico).
 const REC = () => {
   if (window.__TC) return;
   const T = window.__TC = { on: false, list: [], boxes: [] };
@@ -28,6 +28,8 @@ async function snap(pg, frames = 2) {
     for (let i = 0; i < n; i++) await new Promise(r => requestAnimationFrame(r));
     T.on = false;
     if (G.state === 'paused') { const k = T.list.findIndex(t => t.s === 'PAUSA'); if (k > 0) T.list = T.list.slice(k); T.boxes = T.boxes.filter(b => b.k === 'button'); }   // el HUD de debajo queda tapado por el velo
+    const md = G.state === 'cards' && G.Cards.off && G.Cards.off.modal;   // ventana de la oferta (FUSIÓN, reemplazo...): lo de debajo queda tapado por su velo
+    if (md) { const k = T.list.map(t => t.s).lastIndexOf(md.title); if (k > 0) T.list = T.list.slice(k); }
     const seen = new Set(), out = [];
     for (const t of T.list) { const k = t.s + '|' + Math.round(t.x0) + '|' + Math.round(t.py); if (!seen.has(k)) { seen.add(k); out.push(t); } }
     return { texts: out, boxes: T.boxes, W: G.W || 960, OX: G.OX || 0, safe: G.safe || null, k: (G.Sys && G.Sys.layout && G.Sys.layout.k) || null };
@@ -37,11 +39,14 @@ async function snap(pg, frames = 2) {
 const lum = (hex) => { let h = String(hex).replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); if (!/^[0-9a-f]{6}$/i.test(h)) { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(hex); if (!m) return 1; h = [m[1], m[2], m[3]].map(v => (+v).toString(16).padStart(2, '0')).join(''); }
   const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(parseInt(h.slice(0, 2), 16)) + 0.7152 * f(parseInt(h.slice(2, 4), 16)) + 0.0722 * f(parseInt(h.slice(4, 6), 16)); };
 const contrast = (fg, bg = '#1a1226') => { const a = lum(fg), b = lum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
-// opciones: minSize (px lógicos), W/H pantalla
+// opciones: minSize (px lógicos), minReal (px reales: tamaño lógico x d.k, la escala del lienzo en el teléfono; T-F1-08: 11 en menús y 9,5 en el HUD a 740x360), W/H pantalla
+// Mínimos del juego (SPEC T-F1-08, 3.4): menús 17 lógicos (G.MIN_UI), HUD de combate 15, etiquetas del mundo 12. MIN_MENU = umbral lógico de las pruebas de menús.
+const MIN_MENU = 16.5, MIN_HUD = 14.5;
 function analyze(d, o = {}) {
-  const minSize = o.minSize || 11, W = o.W || d.W || 960, H = o.H || 540, issues = [], T = d.texts;
+  const minSize = o.minSize || 11, W = o.W || d.W || 960, H = o.H || 540, issues = [], T = d.texts, k = o.minReal ? (o.k || d.k || 1) : 0;
   for (const t of T) {
     if (t.size < minSize - 0.01 && !/^\s*$/.test(t.s)) issues.push({ k: 'size', msg: `fuente ${t.size.toFixed(1)} < ${minSize}: "${t.s.slice(0, 40)}"` });
+    else if (k && t.size * k < o.minReal - 0.01 && !/^\s*$/.test(t.s)) issues.push({ k: 'size', msg: `fuente ${(t.size * k).toFixed(1)} px reales < ${o.minReal}: "${t.s.slice(0, 40)}"` });
     if (t.x1 < 0 || t.x0 > W || t.y1 < 0 || t.y0 > H) continue;   // fuera por completo (texto flotante del mundo): invisible
     if (t.x0 < -1 || t.x1 > W + 1 || t.y0 < -1 || t.y1 > H + 1) issues.push({ k: 'fuera', msg: `fuera de pantalla (${Math.round(t.x0)}..${Math.round(t.x1)}, y ${Math.round(t.py)}): "${t.s.slice(0, 40)}"` });
     if (lum(t.color) >= 0.03 && contrast(t.color) < 4.5 && t.s.trim()) issues.push({ k: 'contraste', msg: `contraste ${contrast(t.color).toFixed(1)} (${t.color}): "${t.s.slice(0, 40)}"` });
@@ -59,4 +64,4 @@ function analyze(d, o = {}) {
   }
   return issues;
 }
-module.exports = { snap, analyze, contrast };
+module.exports = { snap, analyze, contrast, MIN_MENU, MIN_HUD };

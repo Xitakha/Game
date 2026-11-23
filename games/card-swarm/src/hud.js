@@ -51,7 +51,7 @@
     var p = G.player, h = p.hand, i;
     for (i = 0; i < h.length; i++) {
       var r = G.Cards.slotRect(i, false);
-      if (h[i]) G.Cards.drawCard(c, h[i], r.x, r.y, r.w, r.h, G.hudWide() ? { ns: 14 } : {});
+      if (h[i]) G.Cards.drawCard(c, h[i], r.x, r.y, r.w, r.h, G.hudWide() ? { ns: 15 } : {});
       else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
     }
     G.Cards.drawComboLines(c, false);
@@ -71,13 +71,13 @@
     }
     c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r + 7, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke();
     c.restore();
-    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, wide ? 14 : 11, '#7fffe0', 'center');
+    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, wide ? 15 : 11, '#7fffe0', 'center');
   };
 
   function drawCombosList(c) {
     var y = 64 + (G.Tundra.on ? 16 : 0), any = false, t = G.time / 1000;   // Tundra: el medidor de Frío y su etiqueta ocupan hasta y 68
     var wide = G.hudWide(), L = 16, dy = 18, s1 = 12, s2 = 13;
-    if (wide) { var A = G.anchor(); L = A.L; y = A.T + 44 + (G.Tundra.on ? 34 : 0) + (G.mode === 'practice' ? 0 : 0); dy = 22; s1 = 14; s2 = 14; }   // T-F1-08: bajo la barra de vida, filas de 22, letra 14
+    if (wide) { var A = G.anchor(); L = A.L; y = A.T + 44 + (G.Tundra.on ? 34 : 0) + (G.mode === 'practice' ? 0 : 0); dy = 22; s1 = 15; s2 = 15; }   // T-F1-08: bajo la barra de vida, filas de 22, letra 15 (>= 10 px reales a 740x360)
     G.Cards.combos.forEach(function (cb) {
       if (!G.Cards.active[cb.k]) return;
       if (!any) { G.txt(c, 'COMBOS', L, y, s1, '#9a8fb0', 'left'); y += dy; any = true; }
@@ -108,9 +108,9 @@
     G.Tundra.drawHud(c);
     if (G.mode !== 'run') {
       G.txt(c, G.mode === 'practice' ? 'PRÁCTICA  -  intento ' + (G.practiceTries || 1) : (G.final ? 'ASALTO AL CRÁTER  -  Peligro ' : 'CACERÍA  -  Peligro ') + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)], CX, T + 12, 18, G.mode === 'practice' ? '#9dffb4' : '#6ac8ff', 'center');
-      if (G.mode === 'practice' && !G.Boss.active) G.txt(c, G.Sys.isTouch() ? 'sin recompensas  -  pausa y REINICIAR' : 'sin recompensas  -  P y luego R: reiniciar', CX, T + 36, 14, '#9a8fb0', 'center');
+      if (G.mode === 'practice' && !G.Boss.active) G.txt(c, G.Sys.isTouch() ? 'sin recompensas  -  pausa y REINICIAR' : 'sin recompensas  -  P y luego R: reiniciar', CX, T + 36, 15, '#9a8fb0', 'center');
     } else {
-      if (bossBarHalf()) G.txt(c, G.fmtTime(G.runT), CX, T + 4, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // con la barra del jefe (nombre a y 41) el reloj se encoge para no pisarla
+      if (bossBarHalf()) G.txt(c, G.fmtTime(G.runT), CX, T + 2, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // con la barra del jefe (nombre a y 41) el reloj se encoge para no pisarla
       else G.txt(c, G.fmtTime(G.runT), CX, T + 12, 26, '#ffd27a', 'center');
       if (G.Tundra.noBoss()) G.txt(c, 'Tundra: prueba sin jefe  -  fin a ' + G.fmtTime(G.RUN_LEN), CX, T + 38, 15, '#9fd8ff', 'center');
       else if (G.Panal.noBoss()) G.txt(c, 'Panal: prueba sin jefa  -  fin a ' + G.fmtTime(G.RUN_LEN), CX, T + 38, 15, '#f3a31f', 'center');
@@ -129,8 +129,8 @@
     var qt = G.Quests.hudText();
     if (qt) {
       var qy = cx === R ? ny + 4 : Math.max(T + 80, ny - 22 + 4), tgt = G.Quests.target();   // bajo la columna (o bajo los botones, a la derecha)
-      G.txt(c, 'Encargo', R, qy, 13, '#9a8fb0', 'right');
-      G.txt(c, qt, R, qy + 20, 15, tgt ? '#ffe9a0' : '#9dffb4', 'right');
+      G.txt(c, 'Encargo', R, qy, 15, '#9a8fb0', 'right');
+      G.txt(c, qt, R, qy + 21, 15, tgt ? '#ffe9a0' : '#9dffb4', 'right');
     }
     drawCombosList(c);
   }
@@ -210,18 +210,19 @@
   };
 
   // Menú de pausa (táctil y ratón): CONTINUAR, CALIDAD, SONIDO, REINICIAR (práctica) y ABANDONAR con confirmación explícita (se pulsa dos veces)
+  // T-F1-08 fase 3: botones de 66 de alto (44 px reales a 740x360) y letra mínima 17; GRÁFICOS / SONIDO / MANUAL en una fila de tres con el valor debajo.
   var PB = {
-    go:   { x: 300, y: 128, w: 360, h: 56 },
-    qual: { x: 300, y: 194, w: 176, h: 50 },
-    snd:  { x: 484, y: 194, w: 176, h: 50 },
-    redo: { x: 300, y: 254, w: 360, h: 50 },
-    quit: { x: 300, y: 314, w: 360, h: 56 },
-    man:  { x: 672, y: 194, w: 190, h: 50 }
+    go:   { x: 300, y: 106, w: 360, h: 66 },
+    qual: { x: 120, y: 180, w: 236, h: 66 },
+    snd:  { x: 362, y: 180, w: 236, h: 66 },
+    man:  { x: 604, y: 180, w: 236, h: 66 },
+    redo: { x: 300, y: 254, w: 360, h: 66 },
+    quit: { x: 300, y: 328, w: 360, h: 66 }
   };
   var quitAsk = 0;
   H.eqOpen = false;   // v8.1: botón EQUIPO de la pausa (panel de Carapa en solo lectura)
-  function eqRect() { return G.mode === 'practice' ? { x: 300, y: 254, w: 176, h: 50 } : { x: 300, y: 254, w: 360, h: 50 }; }
-  function redoRect() { return G.mode === 'practice' ? { x: 484, y: 254, w: 176, h: 50 } : PB.redo; }
+  function eqRect() { return G.mode === 'practice' ? { x: 120, y: 254, w: 356, h: 66 } : { x: 300, y: 254, w: 360, h: 66 }; }
+  function redoRect() { return G.mode === 'practice' ? { x: 484, y: 254, w: 356, h: 66 } : PB.redo; }
   H.pauseOpen = function () { quitAsk = 0; H.eqOpen = false; };
   H.pauseClick = function (m) {
     var U = G.UI, now = performance.now();
@@ -239,24 +240,24 @@
   function drawPause(c) {
     var U = G.UI, now = performance.now();
     c.fillStyle = 'rgba(8,4,14,0.9)'; c.fillRect(0, 0, G.W, G.H);
-    G.txt(c, 'PAUSA', G.W / 2, 82, 44, '#ffd27a', 'center');
-    if (G.hudWide() && G.mode === 'run') G.txt(c, durLine(), G.W / 2, 116, 15, '#b8aec8', 'center');   // T-F1-08: la línea de duración y botín sale del combate y se ve aquí
-    U.button(c, PB.go, 'CONTINUAR', { size: 24, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
-    U.button(c, PB.qual, 'GRÁFICOS: ' + G.Sys.qualityLabel(), { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, PB.snd, G.Sys.muted ? 'SONIDO: NO' : 'SONIDO: SÍ', { size: 14, color: G.Sys.muted ? '#7a3a3a' : '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    G.txt(c, 'PAUSA', G.W / 2, 46, 44, '#ffd27a', 'center');
+    if (G.hudWide() && G.mode === 'run') G.txt(c, durLine(), G.W / 2, 86, 17, '#b8aec8', 'center');   // T-F1-08: la línea de duración y botín sale del combate y se ve aquí
+    U.button(c, PB.go, 'CONTINUAR', { size: 26, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    U.button(c, PB.qual, 'GRÁFICOS', { size: 18, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Sys.qualityLabel() });
+    U.button(c, PB.snd, 'SONIDO', { size: 18, color: G.Sys.muted ? '#7a3a3a' : '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Sys.muted ? 'NO' : 'SÍ' });
     U.button(c, PB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas y fusiones' });
     if (G.Armor && G.Armor.smithOn()) U.button(c, eqRect(), 'EQUIPO', { size: 18, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: G.Armor.OFF ? 'apagado' : 'DEF ' + Math.round(G.Armor.get().def) });
     if (G.mode === 'practice') U.button(c, redoRect(), G.Sys.isTouch() ? 'REINICIAR' : 'REINICIAR PRÁCTICA', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     var ask = quitAsk > now;
     U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a' });
-    if (G.Armor && !G.Armor.OFF && G.Armor.get().any) { var am = G.Armor.get(); G.txt(c, 'DEF ' + Math.round(am.def) + '  =  ' + Math.round(am.rd * 1000) / 10 + ' % de reducción   HP +' + am.hp + '   Aplomo ' + Math.round(am.apl * 100) + ' %', G.W / 2, 372, 12, '#6ac8d8', 'center'); }
-    G.txt(c, 'Conservas las partes recogidas', G.W / 2, 388, 12, '#ffb347', 'center');
+    if (G.Armor && !G.Armor.OFF && G.Armor.get().any) { var am = G.Armor.get(); G.txt(c, 'DEF ' + Math.round(am.def) + '  =  ' + Math.round(am.rd * 1000) / 10 + ' % de reducción   HP +' + am.hp + '   Aplomo ' + Math.round(am.apl * 100) + ' %', G.W / 2, 410, 17, '#6ac8d8', 'center'); }
+    G.txt(c, 'Conservas las partes recogidas', G.W / 2, 434, 17, '#ffb347', 'center');
     if (G.Sys.isTouch()) {
-      G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 424, 14, '#d8cfe8', 'center');
-      G.txt(c, 'Mueve el pulgar en la mitad izquierda para andar', G.W / 2, 446, 13, '#9a8fb0', 'center');
+      G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 468, 17, '#d8cfe8', 'center');
+      G.txt(c, 'Mueve el pulgar en la mitad izquierda para andar', G.W / 2, 492, 17, '#9a8fb0', 'center');
     } else {
-      G.txt(c, 'P o Esc: continuar   WASD: mover   Q E R Espacio (o 1-4): poderes   F: auto', G.W / 2, 424, 14, '#d8cfe8', 'center');
-      G.txt(c, 'B: abandonar' + (G.mode === 'practice' ? '     R: reiniciar práctica' : ''), G.W / 2, 446, 13, '#9a8fb0', 'center');
+      G.txt(c, 'P o Esc: continuar   WASD: mover   Q E R Espacio (o 1-4): poderes   F: auto', G.W / 2, 468, 17, '#d8cfe8', 'center');
+      G.txt(c, 'B: abandonar' + (G.mode === 'practice' ? '     R: reiniciar práctica' : ''), G.W / 2, 492, 17, '#9a8fb0', 'center');
     }
   }
 })();

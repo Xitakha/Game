@@ -513,7 +513,7 @@
     if (typeof Assets.drawColdBar === 'function') {   // arte P3: copo + barra 140x10 + "NN%" con marcas en 40 y 70
       Assets.drawColdBar(c, x, y, k.v, performance.now(), { w: 140, h: 10, frozen: k.frozenT > 0 });
       var lab0 = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : k.hearth ? 'CALOR' : '';
-      if (lab0) G.txt(c, lab0, x + 26, y + 22, 12, st === 'escarcha' ? '#bfeaff' : k.hearth ? '#ffb347' : '#9fd8ff', 'left');   // bajo la barra (la lista de combos baja 16 px en la Tundra)
+      if (lab0) G.txt(c, lab0, x + 26, y + 22, G.hudWide() ? 15 : 12, st === 'escarcha' ? '#bfeaff' : k.hearth ? '#ffb347' : '#9fd8ff', 'left');   // bajo la barra (la lista de combos baja 16 px en la Tundra)
       return;
     }
     var w = 140, h = 10, f = G.clamp(k.v / 100, 0, 1);
@@ -521,8 +521,8 @@
     c.fillStyle = '#12243f'; c.fillRect(x + 22, y, w, h);
     c.fillStyle = st === 'escarcha' ? '#e8f6ff' : st === 'helado' ? '#d8f0ff' : '#9fd8ff'; c.fillRect(x + 22, y, w * f, h);
     c.fillStyle = 'rgba(10,6,18,0.9)'; c.fillRect(x + 22 + w * CD.warn / 100 - 1, y - 2, 2, h + 4); c.fillRect(x + 22 + w * CD.helado / 100 - 1, y - 2, 2, h + 4);
-    G.txt(c, Math.round(k.v) + '%', x + 22 + w + 8, y + 6, 12, '#d8f0ff', 'left');
+    G.txt(c, Math.round(k.v) + '%', x + 22 + w + 8, y + 6, G.hudWide() ? 15 : 12, '#d8f0ff', 'left');
     var lab = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : k.hearth ? 'CALOR' : '';
-    if (lab) G.txt(c, lab, x + 22, y + 22, 12, '#9fd8ff', 'left');
+    if (lab) G.txt(c, lab, x + 22, y + 22, G.hudWide() ? 15 : 12, '#9fd8ff', 'left');
   };
 })();

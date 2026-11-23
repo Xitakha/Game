@@ -943,31 +943,32 @@
   };
   // Barra grande de guardián (DESIGN 4.1: banner de 2 s y la barra grande, sin intro larga): 520 x 16, muesca del enrage al 50 % y medidor de la parte rompible
   function drawGuardBar(c, m) {
-    var bw = 520, bh = 16, bx = (W() - bw) / 2, by = 64, fr = G.clamp(m.hp / m.maxHp, 0, 1), nm = m.vname || B.enemy[m.type].name, t = G.time;
-    G.txt(c, nm, bx, by - 10, 15, m.enraged ? '#ff8a5a' : '#ffd27a', 'left');
-    G.txt(c, m.enraged ? 'ENFURECIDO' : 'GUARDIÁN', bx + bw, by - 10, 12, m.enraged ? '#ff6a3a' : '#c8b8e8', 'right');
+    var bw = 520, bh = 18, bx = (W() - bw) / 2, by = 64, fr = G.clamp(m.hp / m.maxHp, 0, 1), nm = m.vname || B.enemy[m.type].name, t = G.time;
+    G.txt(c, nm, bx, by - 12, 16, m.enraged ? '#ff8a5a' : '#ffd27a', 'left');
+    G.txt(c, m.enraged ? 'ENFURECIDO' : 'GUARDIÁN', bx + bw, by - 12, 15, m.enraged ? '#ff6a3a' : '#c8b8e8', 'right');
     c.fillStyle = '#07040c'; c.fillRect(bx - 3, by - 3, bw + 6, bh + 6); c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
     var ex = m.expT > 0;
     c.fillStyle = ex ? (Math.floor(t / 120) % 2 ? '#ffd24a' : '#ffb82a') : m.enraged ? '#ff5a30' : '#d8741a'; c.fillRect(bx, by, bw * fr, bh);
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr, 4);
     c.fillStyle = m.enraged ? 'rgba(80,70,90,0.9)' : '#ffffff'; c.fillRect(Math.round(bx + bw * 0.5) - 1, by - 3, 3, bh + 6);
     c.strokeStyle = ex ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
-    G.txt(c, Math.ceil(m.hp) + ' / ' + Math.round(m.maxHp), bx + bw / 2, by + bh / 2, 10, '#ffffff', 'center');
+    G.txt(c, Math.ceil(m.hp) + ' / ' + Math.round(m.maxHp), bx + bw / 2, by + bh / 2, 15, '#ffffff', 'center');
     var pm = m.shieldMax ? (m.shieldBroken ? 0 : m.shieldHp / m.shieldMax) : m.sacMax ? (m.sacBroken ? 0 : m.sacHp / m.sacMax) : -1;
     if (pm >= 0) {
       c.fillStyle = '#1a0a12'; c.fillRect(bx, by + bh + 5, 120, 8); c.fillStyle = (m.shieldFlash > 0 || m.sacFlash > 0) ? '#fff' : m.shieldMax ? '#8fb4e8' : '#c8e85a'; c.fillRect(bx + 1, by + bh + 6, 118 * pm, 6);
-      G.txt(c, pm > 0 ? m.partName : m.partName + ' ROTO', bx + 128, by + bh + 9, 10, pm > 0 ? '#d8cfe8' : '#ffd27a', 'left');
+      G.txt(c, pm > 0 ? m.partName : m.partName + ' ROTO', bx + 128, by + bh + 12, 15, pm > 0 ? '#d8cfe8' : '#ffd27a', 'left');
     }
-    if (ex) G.txt(c, 'x' + m.expMul + ' EXPUESTO', bx + bw, by + bh + 9, 11, '#ffd24a', 'right');
+    if (ex) G.txt(c, 'x' + m.expMul + ' EXPUESTO', bx + bw, by + bh + 12, 15, '#ffd24a', 'right');
   }
   function drawBar(c, e) {
     var bw = 640, bh = 22, bx = (W() - bw) / 2, by = 52, D = e.def, fr = G.clamp(e.hp / e.maxHp, 0, 1), ex = S.expo(e), t = G.time;
     var fill = S.barFill == null ? 1 : S.barFill; if (e.mode === 'intro' && !(S.intro && S.intro.roared)) return;
     var ph = D.phases[e.phase - 1];
     // nombre y fase
-    G.txt(c, D.name.toUpperCase(), bx, by - 11, 18, e.phase === nPh(e) ? (D.nameCol || '#ff9a3c') : '#ffd27a', 'left');
-    S.drawChips(c, bx + c.measureText(D.name.toUpperCase()).width + 10, by - 11);
-    G.txt(c, 'Fase ' + S.ROMAN[e.phase] + ' - ' + (e.mode === 'despair' ? D.despair : ph.n), bx + bw, by - 11, 14, e.mode === 'despair' ? '#d090ff' : '#c8b8e8', 'right');
+    // T-F1-08 fase 3: textos >= 15 lógicos (10 px reales a 740x360). Las fichas de Peligro / modo van DENTRO de la barra, a la izquierda (antes junto al nombre,
+    // medidas con la fuente que quedara en el contexto: pisaban nombres largos); el número de vida queda centrado y no las toca.
+    G.txt(c, D.name.toUpperCase(), bx, by - 12, 18, e.phase === nPh(e) ? (D.nameCol || '#ff9a3c') : '#ffd27a', 'left');
+    G.txt(c, 'Fase ' + S.ROMAN[e.phase] + ' - ' + (e.mode === 'despair' ? D.despair : ph.n), bx + bw, by - 12, 15, e.mode === 'despair' ? '#d090ff' : '#c8b8e8', 'right');
     // marco + fondo
     c.fillStyle = '#07040c'; c.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
     c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
@@ -988,17 +989,18 @@
       c.fillStyle = passed ? 'rgba(80,70,90,0.9)' : tc[i]; c.fillRect(Math.round(bx + bw * th[i]) - 1, by - 3, 3, bh + 6);
     }
     c.strokeStyle = ex.mul > 1 ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
-    if (e.immune && e.mode === 'gate') G.txt(c, 'INMUNE ' + Math.max(0, e.gateT / 1000).toFixed(1) + 's', bx + bw / 2, by + bh / 2, 14, '#bfeaff', 'center');
-    if (e.mode !== 'gate') G.txt(c, Math.ceil(e.hp) + ' / ' + Math.round(e.maxHp), bx + bw / 2, by + bh / 2, 11, '#ffffff', 'center');
+    S.drawChips(c, bx + 3, by + bh / 2);
+    if (e.immune && e.mode === 'gate') G.txt(c, 'INMUNE ' + Math.max(0, e.gateT / 1000).toFixed(1) + 's', bx + bw / 2 + 60, by + bh / 2, 15, '#bfeaff', 'center');
+    if (e.mode !== 'gate') G.txt(c, Math.ceil(e.hp) + ' / ' + Math.round(e.maxHp), bx + bw / 2 + 60, by + bh / 2, 15, '#ffffff', 'center');
     // ventana de daño: arco fino que se acorta
     if (ex.mul > 1 && ex.max > 0) {
       var wf = G.clamp(ex.t / ex.max, 0, 1);
       c.fillStyle = 'rgba(255,210,58,0.9)'; c.fillRect(bx + bw / 2 - bw * 0.3 * wf, by + bh + 3, bw * 0.6 * wf, 3);
-      G.txt(c, 'x' + ex.mul.toFixed(2).replace(/0$/, '') + ' ' + (ex.kind === 'stun' ? 'ATURDIDO' : ex.kind === 'derribo' ? 'DERRIBO' : ex.kind === 'despair' ? 'EXPUESTO' : 'VENTANA'), bx + bw / 2, by + bh + 14, 11, '#ffd24a', 'center');
+      G.txt(c, 'x' + ex.mul.toFixed(2).replace(/0$/, '') + ' ' + (ex.kind === 'stun' ? 'ATURDIDO' : ex.kind === 'derribo' ? 'DERRIBO' : ex.kind === 'despair' ? 'EXPUESTO' : 'VENTANA'), bx + bw / 2, by + bh + 44, 15, '#ffd24a', 'center');
     }
     // nombre del ataque en telegrafía (regla 1 del diseño: cada ataque tiene nombre); Letea puede tener varios a la vez
     var an = e.def.h && e.def.h.attackNames ? e.def.h.attackNames(e) : (e.atk && e.atk.step === 'tele' ? [e.atk.def.name] : []);
-    if (an.length && e.mode !== 'gate') G.txt(c, an.join('  +  ').toUpperCase(), bx + bw / 2, by + bh + (ex.mul > 1 ? 32 : 18), 12, '#ffb0a0', 'center');
+    if (an.length && e.mode !== 'gate') G.txt(c, an.join('  +  ').toUpperCase(), bx + bw / 2, by + bh + (ex.mul > 1 ? 64 : 44), 15, '#ffb0a0', 'center');   // bajo la fila de partes y debilidades
     // marcas de partes (bajo la barra, a la izquierda)
     var px = bx + 4, py = by + bh + 10, names = Object.keys(D.parts);
     for (var j = 0; j < names.length; j++) {
@@ -1013,17 +1015,17 @@
     var items = [], k2;
     D.weak.forEach(function (w) { items.push({ tag: w.tag, weak: true, on: w.phases.indexOf(e.phase) >= 0, mul: w.mul }); });
     D.resist.forEach(function (r) { items.push({ tag: r.tag, weak: false, on: true, mul: r.mul, imm: !!r.immune }); });
-    var rx = bx + bw - items.length * 52;
+    // T-F1-08 fase 3: una fila con letra 15: [ETQ] icono x1.25 (inmune: [ETQ] icono INM); ancho por elemento según su texto
+    var wd = items.map(function (it) { return 36 + 16 + 9 * (it.imm ? 3 : ('x' + it.mul).length) + 10; }), tot = wd.reduce(function (a, b) { return a + b; }, 0), xx = bx + bw - tot + 10;
     for (k2 = 0; k2 < items.length; k2++) {
-      var it = items[k2], xx = rx + k2 * 52;
+      var it = items[k2];
       c.save(); c.globalAlpha = it.on ? 1 : 0.35;
-      c.fillStyle = it.weak ? WEAKCOL[it.tag] : '#6a6a78'; c.fillRect(xx, py, 22, 16);
-      c.strokeStyle = '#0c0814'; c.lineWidth = 1.5; c.strokeRect(xx + 0.5, py + 0.5, 21, 15);
-      G.txt(c, WEAKTXT[it.tag], xx + 11, py + 8, 9, it.weak ? '#1a0a00' : '#e8e8f0', 'center', 'rgba(0,0,0,0)');
-      var ic = Assets.sprite(it.imm && G.hasSpr('icon_immune') ? 'icon_immune' : it.weak ? 'icon_weak' : 'icon_resist', 0); c.drawImage(ic, xx + 24, py + 2, 12, 12);
-      if (it.imm) { G.txt(c, 'INM', xx + 38, py + 8, 8, '#d8d8e8', 'left'); G.txt(c, 'dir. x' + it.mul, xx + 2, py + 22, 9, '#9a9aa8', 'left'); }
-      else G.txt(c, 'x' + it.mul, xx + 38, py + 22, 9, it.weak ? '#9dffb4' : '#9a9aa8', 'left');
-      c.restore();
+      c.fillStyle = it.weak ? WEAKCOL[it.tag] : '#6a6a78'; c.fillRect(xx, py - 2, 34, 20);
+      c.strokeStyle = '#0c0814'; c.lineWidth = 1.5; c.strokeRect(xx + 0.5, py - 1.5, 33, 19);
+      G.txt(c, WEAKTXT[it.tag], xx + 17, py + 8, 15, it.weak ? '#1a0a00' : '#e8e8f0', 'center', 'rgba(0,0,0,0)');
+      var ic = Assets.sprite(it.imm && G.hasSpr('icon_immune') ? 'icon_immune' : it.weak ? 'icon_weak' : 'icon_resist', 0); c.drawImage(ic, xx + 36, py + 2, 12, 12);
+      G.txt(c, it.imm ? 'INM' : 'x' + it.mul, xx + 51, py + 8, 15, it.imm ? '#d8d8e8' : it.weak ? '#9dffb4' : '#c0c0cc', 'left');
+      c.restore(); xx += wd[k2];
     }
   }
   // Indicador de Peligro (y de modo cacería / práctica) junto al nombre del jefe
@@ -1039,9 +1041,9 @@
   };
   S.drawChips = function (c, x, y) {
     S.chipsText().forEach(function (ch) {
-      c.save(); c.font = 'bold 11px "Courier New", monospace'; var w = c.measureText(ch[0]).width + 12;
-      c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(x, y - 8, w, 17); c.strokeStyle = ch[1]; c.lineWidth = 2; c.strokeRect(x + 1, y - 7, w - 2, 15); c.restore();
-      G.txt(c, ch[0], x + w / 2, y + 1, 11, ch[1], 'center'); x += w + 6;
+      c.save(); c.font = 'bold 15px "Courier New", monospace'; var w = c.measureText(ch[0]).width + 10;   // T-F1-08 fase 3: 15 lógicos (antes 11)
+      c.fillStyle = 'rgba(10,6,18,0.9)'; c.fillRect(x, y - 10, w, 20); c.strokeStyle = ch[1]; c.lineWidth = 2; c.strokeRect(x + 1, y - 9, w - 2, 18); c.restore();
+      G.txt(c, ch[0], x + w / 2, y + 1, 15, ch[1], 'center'); x += w + 4;
     });
   };
   function W() { return G.W; }

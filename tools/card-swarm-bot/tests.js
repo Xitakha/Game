@@ -1,7 +1,7 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
 //   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|wide] [base=http://localhost:8811]
-//   WIDE=1 node tools/card-swarm-bot/tests.js <grupo> ...   corre el grupo con la pantalla ancha (?wide=1, SPEC T-F1-08)
+//   WIDE=0 node tools/card-swarm-bot/tests.js <grupo> ...   corre el grupo con el lienzo clásico de 960 (?wide=0; la pantalla ancha es el valor por defecto desde la fase 4 de la SPEC T-F1-08)
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -12,7 +12,7 @@ const mode = process.argv[2] || 'all', base = process.argv[3] || 'http://localho
 const ROOT = path.join(__dirname, '..', '..');
 let fails = 0, total = 0;
 const ok = (c, msg) => { total++; if (!c) fails++; console.log((c ? 'OK     ' : 'FALLO  ') + msg); };
-const WX = process.env.WIDE ? '&wide=' + process.env.WIDE : '';   // T-F1-08: WIDE=1 corre los grupos existentes con la pantalla ancha (?wide=1)
+const WX = process.env.WIDE ? '&wide=' + process.env.WIDE : '';   // T-F1-08: WIDE=0 / WIDE=1 fuerzan el ancho (sin la variable, el valor por defecto del juego: ancho)
 const launch = () => pwLaunch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
 async function mk(b, url) {
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
@@ -1241,7 +1241,7 @@ async function text() {
   const lamb = ['aldea.js', 'panels.js', 'cine_intro.js', 'cine.js', 'dialog.js', 'quests.js', 'ending.js', 'assets_cine3.js'].filter(f => /corderit|cordero\b/i.test(fs.readFileSync(path.join(ROOT, 'games/card-swarm/src', f), 'utf8')));
   ok(lamb.length === 0, 'textos: Marlo no es cordero ni corderito' + (lamb.length ? ' (quedan en ' + lamb.join(',') + ')' : ''));
   const b = await launch();
-  const report = async (pg, name) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: 11.5 }).filter(i => i.k !== 'contraste' || true); const kb = kbdHints(d); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
+  const report = async (pg, name, min) => { const d = await TC.snap(pg, 2); const iss = TC.analyze(d, { minSize: min || TC.MIN_MENU }).filter(i => i.k !== 'contraste' || true); const kb = kbdHints(d); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); ok(d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
   for (const id of ['pastor', 'karceron', 'letea', 'yarlak', 'melaria', 'cenizar']) {
     const pg = await mk(b, `reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&cine=0&hand=spark:3,shard:2,dart:1&boss=${id}`);
     const st = await E(pg, () => { G.Save.data.bossKills.cenizar = 1; for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 600 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } } return G.state; });
@@ -1261,8 +1261,10 @@ async function text() {
   pg = await mk(b, 'reset=1&direct=1&all=1&speed=0');
   await E(pg, () => { G.step(); G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa'); await done(pg, 'texto-pausa');
   pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
-  for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor']) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel(n); }, pn); await sleep(pg, 150); await report(pg, 'panel ' + pn); }
-  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('portal'); G.Panels.portalTab(1); }); await sleep(pg, 150); await report(pg, 'panel portal (cartas)');
+  // T-F1-08 fase 3: cada panel con su letra mínima (17 los rehechos; 15 / 12 los densos aún pendientes, G.Panels.minFor) y las páginas nuevas (Portal, Archivo, Forja, Ajustes)
+  const PAGES = { portal: [null, 'G.Panels.portalTab(2)', 'G.Panels.portalTab(1)'], archive: [null, 'G.Panels.archTab(1)'], forge: [null, "G.Tree.view('det')", "G.Tree.setTab('trunk')"], settings: [null, 'G.Panels.setTab(1)'] };
+  for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor', 'cine', 'errlog', 'privacy']) for (const pgx of PAGES[pn] || [null]) {
+    const mn = await E(pg, ([n, x]) => { G.Aldea.open(false); G.Aldea.openPanel(n); if (n === 'cine' || n === 'errlog' || n === 'privacy') G.Panels.open(n); if (x) new Function(x)(); return G.Panels.minFor(n); }, [pn, pgx]); await sleep(pg, 150); await report(pg, 'panel ' + pn + (pgx ? ' ' + pgx.replace(/^G\.\w+\./, '') : '') + ' (mín. ' + mn + ')', mn - 0.5); }
   // T-F0-06: más pantallas con pistas posibles (aldea con NPC cerca, oferta de cartas, tutorial de la partida, Herrería en cada pestaña)
   await E(pg, () => { G.Aldea.open(false); }); await sleep(pg, 200); await kbdOnly(pg, 'aldea');
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('armor'); }); await sleep(pg, 150);
@@ -1278,7 +1280,7 @@ async function text() {
     pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3', w, h);
     await E(pg, () => { G.TrackUI.open(() => {}, { fte: true }); }); await sleep(pg, 300); await report(pg, `tarjeta Antes de salir ${tag}`);
     await E(pg, () => { G.TrackUI.choose(false); G.Fte.launchFirst(); for (let i = 0; i < 40; i++) G.step(); }); await sleep(pg, 100);
-    const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /moverte|WASD/.test(t.s)) && TC.analyze(dh, { minSize: 11.5 }).filter(i => i.k === 'solape' || i.k === 'size').length === 0, `banda de aviso ${tag}: visible, 16 px y sin solapes`);
+    const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /moverte|WASD/.test(t.s)) && TC.analyze(dh, { minSize: WX === '&wide=0' ? 11.5 : TC.MIN_HUD }).filter(i => i.k === 'solape' || i.k === 'size').length === 0, `banda de aviso ${tag}: visible, 16 px y sin solapes`);
     await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); }); await report(pg, `fin primera expedición ${tag}`); await done(pg, 'texto-fte-' + tag);
     const variants = { 'muerte': 'G.player.hp = 0; G.player.dead = true; G.finish(false);', 'abandono': 'G.finish(false);', 'práctica': '' };
     for (const [nm, code] of Object.entries(variants)) {
@@ -1350,7 +1352,7 @@ async function manual() {
   // 5. texto sin solapes en 8 entradas (844x390 lógico 960x540)
   for (const [tab, i] of [[0, 0], [0, 3], [0, 9], [0, 27], [1, 0], [1, 4], [1, 12], [1, 14]]) {
     await E(pg, ([tab, i]) => { G.Manual.setFilter('all'); G.Manual.setQuery(''); G.Manual.setTab(tab); G.Manual.select(i); }, [tab, i]); await sleep(pg, 250);
-    const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 11.5 });
+    const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 14.5 });   // T-F1-08: el Manual sigue a 15 (pendiente de rehacer para 17)
     ok(d.texts.length > 8 && iss.length === 0, `texto del Manual (${tab ? 'fusión' : 'carta'} ${i}): ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
   }
   await done(pg, 'manual-demos');
@@ -1405,9 +1407,9 @@ async function diag() {
   ok(clip === null || /informe de errores/.test(clip), 'el portapapeles recibe el informe' + (clip === null ? ' (lectura no permitida en este navegador)' : ''));
   // 4. pantalla en Ajustes (táctil, sin pistas de teclado ni solapes) y vaciar
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
-  await tap(pg, 855, 144); await sleep(pg, 300);
+  { await E(pg, () => G.Panels.setTab(1)); const r = await E(pg, () => G.Panels.setRects().sb.err); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); await sleep(pg, 300); }   // T-F1-08: Informe de errores está en la 2.ª página de Ajustes
   ok(await E(pg, () => G.Panels.current()) === 'errlog', 'Ajustes: el botón Informe de errores abre la pantalla');
-  const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 11.5 }); ok(iss.length === 0 && kbdHints(d).length === 0, 'pantalla del informe: ' + d.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
+  const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: TC.MIN_MENU }); ok(iss.length === 0 && kbdHints(d).length === 0, 'pantalla del informe: ' + d.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
   await tap(pg, 650, 394); await sleep(pg, 300);
   ok(await E(pg, () => Diag.count()) === 0, 'VACIAR borra el registro');
   // 5. un fallo dentro del bucle se registra y el juego sigue
@@ -1596,8 +1598,8 @@ async function save2() {
     return { ok: r1.ok, same: t1 === t2, sameData: j1 === j2, imp: !!localStorage.getItem(S.KEYS.imp) };
   });
   ok(r.ok && r.same && r.sameData && r.imp, 'exportar -> importar -> exportar: texto y datos idénticos; el anterior queda en .antes-de-importar');
-  await E(pg, () => { G.Save.data.brasas = 1300; G.Save.save(); G.Save.data.brasas = 1400; G.Save.save(); G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
-  await tap(pg, 855, 200); await sleep(pg, 300);
+  await E(pg, () => { G.Save.data.brasas = 1300; G.Save.save(); G.Save.data.brasas = 1400; G.Save.save(); G.Aldea.open(false); G.Aldea.openPanel('settings'); G.Panels.setTab(1); }); await sleep(pg, 400);
+  { const r = await E(pg, () => G.Panels.setRects().sb.bak); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); await sleep(pg, 300); }   // T-F1-08: Copias en la 2.ª página de Ajustes
   const modal = await E(pg, () => { const bs = [...document.querySelectorAll('button')].map(x => x.textContent); return { t: document.body.innerText.includes('Copias de seguridad'), bs }; });
   ok(modal.t && modal.bs.some(x => /RESTAURAR: COPIA RECIENTE/.test(x)), 'Ajustes > Copias: lista las copias con botón RESTAURAR (' + modal.bs.filter(x => /RESTAURAR/.test(x)).length + ')');
   const recB = await E(pg, () => { G.Save.data.brasas = 1500; G.Save.save(); const r0 = JSON.parse(localStorage.getItem(G.Save.KEYS.rec)).brasas; [...document.querySelectorAll('button')].find(x => /RESTAURAR: COPIA RECIENTE/.test(x.textContent)).click(); return r0; }); await sleep(pg, 300);
@@ -1668,7 +1670,7 @@ async function track() {
   ok(names(ev1).join() === 'session_start' && ev1[0].p.sess_n === '2' && s1.consent === true && s1.sessions.length === 2 && await E(pg, () => G.state) === 'aldea', 'recarga: session_start (sess_n 2) sin first_open ni aviso; 2 ids de sesión en local');
   // 5. Retirada en Ajustes por la pantalla: vacía la cola, no vuelve a preguntar, y nada sale
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400);
-  await tap(pg, 100, 88); await sleep(pg, 300);
+  await E(pg, () => G.Panels.setTab(1)); { const r = await E(pg, () => G.Panels.setRects().sb.priv); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); }   /* T-F1-08: Privacidad en la 2.ª página de Ajustes */ await sleep(pg, 300);
   ok(await E(pg, () => G.Panels.current()) === 'privacy', 'Ajustes > Privacidad abre la pantalla');
   await tap(pg, 480, 122); await sleep(pg, 300);
   s = await ST(pg);
@@ -1679,7 +1681,7 @@ async function track() {
   await pg.reload(); await sleep(pg, 600);
   ok((await ST(pg)).consent === false && await E(pg, () => G.state) === 'aldea' && names(await evs(pg)).length === 0, 'rechazo persistente: al recargar no se vuelve a preguntar y no se encola nada');
   await tap(pg, 480, 122).catch(() => {});
-  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400); await tap(pg, 100, 88); await sleep(pg, 300); await tap(pg, 480, 122); await sleep(pg, 300);
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('settings'); }); await sleep(pg, 400); await E(pg, () => G.Panels.setTab(1)); { const r = await E(pg, () => G.Panels.setRects().sb.priv); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); }   /* T-F1-08: Privacidad en la 2.ª página de Ajustes */ await sleep(pg, 300); await tap(pg, 480, 122); await sleep(pg, 300);
   s = await ST(pg); const st3 = JSON.parse(await LS(pg));
   ok(s.consent === true && st3.late === true && !names(await evs(pg)).includes('first_open') && names(await evs(pg)).includes('analytics_on'), 'dar el permiso desde Ajustes: consent true, marcado late (fuera de la retención), analytics_on con where=ajustes');
   ok(await E(pg, () => G.Track.recent(5).find(e => e.e === 'analytics_on').p.where) === 'ajustes', 'analytics_on lleva where=ajustes');
@@ -1833,7 +1835,7 @@ async function fte() {
   ok(pg.ext.length === 0 && (await E(pg, () => localStorage.getItem('swarmhand.fusion.track'))) === null, 'tarjeta abierta sin contestar: 0 peticiones y nada de analítica en localStorage');
   const card = await E(pg, () => ({ r: G.TrackUI.rects, t: G.TrackUI.TEXT.es })), snapC = await TC.snap(pg, 2);
   ok(card.r.yes.w === card.r.no.w && card.r.yes.h === card.r.no.h && card.r.yes.y === card.r.no.y && snapC.texts.some(t => /ANTES DE SALIR|BEFORE YOU GO/.test(t.s)) && /Acepto \(tengo 18 años o más\)/.test(card.t.yes) && card.t.no === 'No, gracias', 'tarjeta "Antes de salir": dos botones del mismo tamaño y altura; textos de consentimiento intactos');
-  const iss = TC.analyze(snapC, { minSize: 11.5 }); ok(iss.length === 0, 'tarjeta: ' + snapC.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : ''));
+  const iss = TC.analyze(snapC, { minSize: TC.MIN_MENU }); ok(iss.length === 0, 'tarjeta: ' + snapC.texts.length + ' textos, ' + iss.length + ' problemas' + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : ''));
   const tT = Date.now(); await tap(pg, 290, 434);   // botón izquierdo: "Acepto"
   const reached = await waitState(pg, 'play', 6000), msPlay = Date.now() - tT;
   const info = await E(pg, () => ({ m: G.mode, bio: G.curBiome, len: G.RUN_LEN / 60000, pel: G.peligro, anch: G.Save.data.anchors.join(), f: G.Save.data.flags.fte }));
@@ -1866,7 +1868,7 @@ async function fte() {
   const pk = await E(pg, () => ({ st: G.state, h: G.Save.data.flags.fte.hints.pick, ok: !!G.Cards.off.fteHint }));
   sn = await TC.snap(pg, 2);
   ok(pk.st === 'cards' && pk.h === 1 && pk.ok && sn.texts.some(t => /Elige una carta\. Si pone FUSIÓN/.test(t.s)), 'aviso 3 "pick": subtítulo en la 1.ª oferta de nivel');
-  ok(TC.analyze(sn, { minSize: 11.5 }).filter(i => i.k === 'solape').length === 0, '1.ª oferta: el título "¡NIVEL 2!" ya no se pisa con los huecos de poderes');
+  ok(TC.analyze(sn, { minSize: TC.MIN_MENU }).filter(i => i.k === 'solape').length === 0, '1.ª oferta: el título "¡NIVEL 2!" ya no se pisa con los huecos de poderes');
   await E(pg, () => { G.Fusion.grant('vapor', 1); G.Cards.closeOffer(); }); await fStep(pg, 3);
   ok((await hint()) === 'power', 'aviso 4 "power" al volver al combate con el primer poder');
   sn = await TC.snap(pg, 1); ok(sn.texts.some(t => /Tu poder está listo: tócalo \(abajo a la derecha\)/.test(t.s)), 'texto del aviso "power" (táctil)');
@@ -1955,12 +1957,12 @@ async function end() {
   await fin(pg, { t: 125, die: true });
   let r = await E(pg, () => ({ best: G.Save.data.stats.best.bosque, st: G.state, sm: G.Loot.summary.record }));
   let d = await txt(pg); ok(r.best && r.best.t === 125 && r.sm.isNew && has(d, /¡Nuevo récord!/) && has(d, /HAS CAÍDO/), 'récord nuevo: stats.best.bosque.t = 125 y aparece "¡Nuevo récord!" (' + JSON.stringify(r.best) + ')');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'fin por muerte: sin solapes, desbordes, fuentes < 12 ni teclas en táctil');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(d).length, 'fin por muerte: sin solapes, desbordes, fuentes < 12 ni teclas en táctil');
   // 10. DETALLE y VOLVER
   await sleep(pg, 50); await E(pg, () => { for (let i = 0; i < 45; i++) G.step(); });
   await E(pg, () => { G.input.mouse.x = 700; G.input.mouse.y = 150; G.input.pressed.Mouse0 = true; G.step(); });
   d = await txt(pg); ok((await E(pg, () => G.Base.endView())) === 'detail' && has(d, /BOTÍN/) && has(d, /VOLVER/) && !has(d, /Kills|BUILD/), 'DETALLE: botín completo y botón VOLVER (sin "Kills" ni "BUILD")');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'DETALLE: sin problemas de texto');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(d).length, 'DETALLE: sin problemas de texto');
   await E(pg, () => { G.input.mouse.x = 780; G.input.mouse.y = 490; G.input.pressed.Mouse0 = true; G.step(); });
   ok((await E(pg, () => G.Base.endView())) === 'main', 'VOLVER regresa a la pantalla principal');
   await done(pg, 'end-record');
@@ -1970,7 +1972,7 @@ async function end() {
   await fin(pg, { t: 90 });
   d = await txt(pg); r = await E(pg, () => G.Save.data.stats.best.bosque);
   ok(has(d, /EXPEDICIÓN ABANDONADA/) && has(d, /Conservas las partes/) && r.t === 200, 'abandono: "EXPEDICIÓN ABANDONADA" y el récord no cambia');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'abandono: sin problemas de texto'); await done(pg, 'end-abandono');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0, 'abandono: sin problemas de texto'); await done(pg, 'end-abandono');
   // 3. god: sin récord
   pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3&god=1');
   await fin(pg, { t: 125, die: false }); d = await txt(pg);
@@ -1986,7 +1988,7 @@ async function end() {
   await fin(pg, { t: 60, die: true }); d = await txt(pg);
   const gl = await E(pg, () => G.Loot.summary.goals.map(g => g.id + ':' + g.text + ':' + g.frac));
   ok(gl.some(x => /^quest:Encargo: Zarzales mayores 14\/20:0\.7/.test(x)) && has(d, /Encargo: Zarzales mayores 14\/20/), 'encargo activo a 14/20: aparece como objetivo con barra (' + gl.join(' | ') + ')');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'fin con objetivos: sin problemas de texto'); await done(pg, 'end-encargo');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0, 'fin con objetivos: sin problemas de texto'); await done(pg, 'end-encargo');
   // 11. consejo por causa
   pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
   await fin(pg, { t: 80, die: true, dmg: { fanner: 40, worm: 5 } }); d = await txt(pg);
@@ -1996,18 +1998,18 @@ async function end() {
   await startFirst(pg); await fStep(pg, 30); await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); });
   d = await txt(pg); const bx = d.boxes.filter(x => x.k === 'button').map(x => x.label);
   ok(has(d, /PRIMERA EXPEDICIÓN/) && bx.includes('OTRA EXPEDICIÓN') && bx.includes('VOLVER A RESCOLDO') && has(d, /Las Brasas sirven para forjar en Rescoldo/) && !has(d, /Esencia|PF|nodos/), 'primera expedición: variante con VOLVER A RESCOLDO y sin jerga (' + bx.join(',') + ')');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, 'primera expedición: sin problemas de texto'); await done(pg, 'end-primera');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(d).length, 'primera expedición: sin problemas de texto'); await done(pg, 'end-primera');
   // 7. práctica
   pg = await mk(b, 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0');
   await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); G.finish(false); }); d = await txt(pg);
   ok(has(d, /PRÁCTICA/) && !has(d, /teclas/i) && has(d, /REINICIAR PRÁCTICA/), 'práctica: panel de práctica sin la frase de teclas en táctil');
-  { const pi = TC.analyze(d, { minSize: 11.5 }); ok(pi.length === 0, 'práctica: sin problemas de texto' + (pi.length ? ' -> ' + pi.slice(0, 3).map(i => i.msg).join(' | ') : '')); } await done(pg, 'end-practica');
+  { const pi = TC.analyze(d, { minSize: TC.MIN_MENU }); ok(pi.length === 0, 'práctica: sin problemas de texto' + (pi.length ? ' -> ' + pi.slice(0, 3).map(i => i.msg).join(' | ') : '')); } await done(pg, 'end-practica');
   // 8. victoria con bioma nuevo
   pg = await mk(b, 'reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=1&cine=0&hand=spark:3,shard:2,dart:1&boss=pastor');
   const wn = await E(pg, () => { for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 900 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.state = 'play'; } } return G.state; });
   d = await txt(pg);
   const g0 = await E(pg, () => (G.Loot.summary.goals || []).map(g => g.text)); ok(wn === 'gameover' && g0.length && /Cripta/.test(g0[0]) && has(d, /Cripta/) && has(d, /MANO GANADORA/), 'victoria con desbloqueo: el objetivo y el botón nombran la Cripta (' + g0[0] + ')');
-  ok(TC.analyze(d, { minSize: 11.5 }).length === 0, 'victoria: sin problemas de texto'); await done(pg, 'end-victoria');
+  ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0, 'victoria: sin problemas de texto'); await done(pg, 'end-victoria');
   // 9. retardo de 600 ms
   pg = await mk(b, 'reset=1&direct=1&speed=0&seed=3');
   await fin(pg, { t: 80, die: true });
@@ -2023,7 +2025,7 @@ async function end() {
   // 740x360
   for (const [w, h] of [[740, 360]]) {
     pg = await mkV(b, 'reset=1&direct=1&speed=0&seed=3', w, h); await fin(pg, { t: 125, die: true }); d = await txt(pg);
-    ok(TC.analyze(d, { minSize: 11.5 }).length === 0 && !kbdHints(d).length, `fin a ${w}x${h}: sin problemas de texto`); await done(pg, 'end-740');
+    ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(d).length, `fin a ${w}x${h}: sin problemas de texto`); await done(pg, 'end-740');
   }
   await b.close();
 }
@@ -2092,7 +2094,7 @@ async function wide() {
       await done(pg, `wide-ancho ${w}x${h} wide=${wd}`);
     }
   }
-  { const pg = await mkW(b, 'reset=1&cine=0', 844, 390); const r = await E(pg, () => ({ W: G.W, d: G.Sys.WIDE_DEFAULT })); ok(r.W === (r.d ? 1168 : 960), `sin perilla: valor por defecto WIDE_DEFAULT=${r.d} (fases 0-3: 0 => 960; G.W ${r.W})`); await done(pg, 'wide-defecto'); }
+  { const pg = await mkW(b, 'reset=1&cine=0', 844, 390); const r = await E(pg, () => ({ W: G.W, d: G.Sys.WIDE_DEFAULT })); ok(r.d === 1 && r.W === 1168, `sin perilla: valor por defecto WIDE_DEFAULT=${r.d} (fase 4: 1 => 1168; G.W ${r.W})`); await done(pg, 'wide-defecto'); }
   // 2. simulación idéntica: misma semilla y movimiento con ?wide=1 / ?wide=0 a 844x390, ?wide=1 a 915x412 (1200) y PC 1280x720
   const PRE_V = () => { G.Tree.fx.eraGlacial = true; G.Fusion.auto = true; };   // rayo (weapons.js strike) + era glacial + Descarga en AUTO: reglas de "enemigo visible"
   const SCW = [['bosque', `${SEED_BASE}&seed=1234&q=alta`, [600, 1800, 3600], null],

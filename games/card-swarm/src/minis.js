@@ -392,42 +392,42 @@
     return out;
   };
   M.drawBar = function (c, m) {
-    var bw = 520, bh = 16, bx = (G.W - bw) / 2, by = 64, fr = G.clamp(m.hp / m.maxHp, 0, 1), De = m.D, t = G.time, P = m.part;
+    var bw = 520, bh = 18, bx = (G.W - bw) / 2, by = 64, fr = G.clamp(m.hp / m.maxHp, 0, 1), De = m.D, t = G.time, P = m.part;
     var nm = De.name;
-    G.txt(c, nm, bx, by - 10, 15, m.enraged ? '#ff8a5a' : '#ffd27a', 'left');
-    var wk = M.weakness(m), cx = bx + c.measureText(nm).width + 14;
-    wk.weak.slice(0, 2).concat([]).forEach(function (tg) { cx = chip(c, cx, by - 10, TAGTXT[tg], TAGCOL[tg], true); });
-    wk.resist.slice(0, 1).forEach(function (tg) { cx = chip(c, cx, by - 10, TAGTXT[tg], '#9a9aa8', false); });
-    G.txt(c, (m.enraged ? 'ENFURECIDO - ' : 'GUARDIÁN - ') + De.role, bx + bw, by - 10, 12, m.enraged ? '#ff6a3a' : '#c8b8e8', 'right');
+    G.txt(c, nm, bx, by - 12, 16, m.enraged ? '#ff8a5a' : '#ffd27a', 'left');
+    G.txt(c, (m.enraged ? 'ENFURECIDO - ' : 'GUARDIÁN - ') + De.role, bx + bw, by - 12, 15, m.enraged ? '#ff6a3a' : '#c8b8e8', 'right');
     c.fillStyle = '#07040c'; c.fillRect(bx - 3, by - 3, bw + 6, bh + 6); c.fillStyle = '#2a1020'; c.fillRect(bx, by, bw, bh);
     var ex = m.expT > 0;
     c.fillStyle = ex ? (Math.floor(t / 120) % 2 ? '#ffd24a' : '#ffb82a') : m.enraged ? '#ff5a30' : '#d8741a'; c.fillRect(bx, by, bw * fr, bh);
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(bx, by, bw * fr, 4);
     c.fillStyle = m.enraged ? 'rgba(80,70,90,0.9)' : '#ffffff'; c.fillRect(Math.round(bx + bw * 0.5) - 1, by - 3, 3, bh + 6);
     c.strokeStyle = ex ? '#ffd24a' : '#8a6a30'; c.lineWidth = 2; c.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
-    G.txt(c, Math.ceil(m.hp) + ' / ' + Math.round(m.maxHp), bx + bw / 2, by + bh / 2, 10, '#ffffff', 'center');
+    G.txt(c, Math.ceil(m.hp) + ' / ' + Math.round(m.maxHp), bx + bw / 2, by + bh / 2, 15, '#ffffff', 'center');
+    // T-F1-08 fase 3: fichas de debilidad / resistencia bajo la barra, a la derecha (antes junto al nombre, medido con la fuente que quedara en el contexto)
+    var wk = M.weakness(m), wl = wk.weak.slice(0, 2).map(function (tg) { return [tg, true]; }).concat(wk.resist.slice(0, 1).map(function (tg) { return [tg, false]; })), cx = bx + bw;
+    for (var wi = wl.length - 1; wi >= 0; wi--) cx = chip(c, cx, by + bh + 32, TAGTXT[wl[wi][0]], wl[wi][1] ? TAGCOL[wl[wi][0]] : '#9a9aa8', wl[wi][1], true);
     // medidor de la parte (120 x 8): dorado cuando es el objetivo (núcleo abierto)
     var pm = P.broken ? 0 : P.hp / P.max, gold = m.coreOpen || (P.mode === 'head' && false);
     c.fillStyle = '#1a0a12'; c.fillRect(bx, by + bh + 5, 120, 8);
     c.fillStyle = P.flash > 0 ? '#fff' : gold ? '#ffd24a' : '#8fb4e8'; c.fillRect(bx + 1, by + bh + 6, 118 * pm, 6);
-    G.txt(c, P.broken ? P.name + ' ROTO' + (P.mode === 'head' && m.cauterized ? ' (CAUTERIZADA)' : '') : P.name, bx + 128, by + bh + 9, 10, P.broken ? '#ffd27a' : '#d8cfe8', 'left');
+    G.txt(c, P.broken ? P.name + ' ROTO' + (P.mode === 'head' && m.cauterized ? ' (CAUTERIZADA)' : '') : P.name, bx + 128, by + bh + 12, 15, P.broken ? '#ffd27a' : '#d8cfe8', 'left');
     var ln = De.statusLine ? De.statusLine(m) : null;
-    if (ln) G.txt(c, ln, bx + bw / 2, by + bh + 22, 11, '#ffe9a0', 'center');
+    if (ln) G.txt(c, ln, bx + bw / 2, by + bh + 54, 15, '#ffe9a0', 'center');
     if (ex) {
       var wf = G.clamp(m.expT / (m.expMax || 1), 0, 1);
       c.fillStyle = 'rgba(255,210,58,0.9)'; c.fillRect(bx + bw - bw * 0.35 * wf, by + bh + 3, bw * 0.35 * wf, 3);
-      G.txt(c, 'x' + (+m.expMul.toFixed(2)) + ' EXPUESTO', bx + bw, by + bh + 14, 11, '#ffd24a', 'right');
+      G.txt(c, 'x' + (+m.expMul.toFixed(2)) + ' EXPUESTO', bx + bw, by + bh + 12, 15, '#ffd24a', 'right');
     } else m.expMax = 0;
     if (m.banner > 0 && m.age < 2600) {   // subtítulo del banner de entrada
-      G.txt(c, De.sub, G.W / 2, 128, 14, '#d8cfe8', 'center');
+      G.txt(c, De.sub, G.W / 2, 150, 15, '#d8cfe8', 'center');
     }
   };
-  function chip(c, x, y, txt, col, weak) {
-    c.save(); c.font = 'bold 10px "Courier New", monospace'; var w = c.measureText(txt).width + 22;
-    c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(x, y - 8, w, 15); c.strokeStyle = col; c.lineWidth = 1.5; c.strokeRect(x + 0.5, y - 7.5, w - 1, 14); c.restore();
-    try { c.drawImage(Assets.sprite(weak ? 'icon_weak' : 'icon_resist', 0), x + 3, y - 5, 10, 10); } catch (e) { /* sin icono */ }
-    G.txt(c, txt, x + 14 + (w - 14) / 2 - 2, y, 10, col, 'center');
-    return x + w + 4;
+  function chip(c, x, y, txt, col, weak, rtl) {   // rtl: x es el borde DERECHO y devuelve el izquierdo (fila alineada a la derecha)
+    c.save(); c.font = 'bold 15px "Courier New", monospace'; var w = c.measureText(txt).width + 24; if (rtl) x -= w;
+    c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(x, y - 10, w, 20); c.strokeStyle = col; c.lineWidth = 1.5; c.strokeRect(x + 0.5, y - 9.5, w - 1, 19); c.restore();
+    try { c.drawImage(Assets.sprite(weak ? 'icon_weak' : 'icon_resist', 0), x + 3, y - 6, 12, 12); } catch (e) { /* sin icono */ }
+    G.txt(c, txt, x + 16 + (w - 16) / 2 - 2, y, 15, col, 'center');
+    return rtl ? x - 4 : x + w + 4;
   }
 
   // ================================================================= DEPURACIÓN / AUDITORÍA

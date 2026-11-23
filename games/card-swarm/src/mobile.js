@@ -1,10 +1,11 @@
 /* mobile.js - Swarm Hand en móvil (Nivel 1): G.Sys.
-   - Escala: el lienzo 960x540 conserva su proporción 16:9 (letterbox) dentro del área segura (env(safe-area-inset-*)) y se redimensiona con innerWidth/innerHeight
-     (arregla el 100vh móvil). Resolución interna = tamaño CSS x DPR (máx. 2) limitado por la calidad; en escritorio sigue siendo 960x540 pixelado como siempre.
+   - Escala (T-F1-08): pantalla ancha por defecto. El alto lógico es siempre 540 y el ancho lógico G.W crece de 960 a 1200 según la forma de la pantalla; el lienzo
+     ocupa toda la ventana (también bajo la muesca; el HUD respeta G.safe). ?wide=0 vuelve al lienzo clásico 960x540 16:9 con franjas (letterbox) dentro del área segura.
+     Se redimensiona con innerWidth/innerHeight (arregla el 100vh móvil). Resolución interna = tamaño CSS x DPR (máx. 2) limitado por la calidad; en escritorio G.W x 540 pixelado.
    - Vertical: aviso "gira el teléfono" (la partida se pausa). Pantalla completa (Fullscreen API; en iOS Safari no existe: se recomienda instalar la app).
    - Calidad adaptativa: medidor de fps (media móvil), Auto baja efectos si < 45 fps sostenidos; manual Alta / Media / Baja / Auto en Ajustes (se guarda en el save).
    - Ciclo de vida: pausa automática en visibilitychange / pagehide / blur / orientationchange, reloj sin saltos al volver, audio suspendido y reanudado, silencio persistente.
-   - Botones de sistema dibujados en el lienzo (pausa, silencio, pantalla completa) con zona táctil de 50 px.
+   - Botones de sistema dibujados en el lienzo (pausa, silencio, pantalla completa) de 64-66 lógicos (>= 43 px reales a 740x360), anclados a la esquina superior derecha segura.
    Parámetros URL de depuración: ?q=alta|media|baja|auto  ?safe=top,right,bottom,left (px, simula la muesca)  ?fps=1 (contador en pantalla)  ?mobile=1 (fuerza modo móvil). */
 (function () {
   'use strict';
@@ -131,8 +132,8 @@
   function portrait() { return Sys.isMobile && window.innerHeight > window.innerWidth * 1.05; }
   // T-F1-08: pantalla ancha. Con la perilla activa, el lienzo ocupa toda la ventana (también bajo la muesca) y el ancho lógico G.W crece de 960 a 1200 según la forma
   // de la pantalla (alto lógico siempre 540). Las reglas de juego no cambian (ventana de juego fija G.SW, main.js). ?wide=0 fuerza el comportamiento clásico (960, letterbox
-  // dentro del área segura) y ?wide=1 activa el ancho. WIDE_DEFAULT = valor sin perilla: 0 hasta la fase 4 de la SPEC T-F1-08 (entonces pasa a 1).
-  var WIDE_DEFAULT = 0, WIDE_MAX = 1200;
+  // dentro del área segura) y ?wide=1 activa el ancho. WIDE_DEFAULT = valor sin perilla: 1 desde la fase 4 de la SPEC T-F1-08 (?wide=0 = vuelta atrás).
+  var WIDE_DEFAULT = 1, WIDE_MAX = 1200;
   Sys.WIDE_DEFAULT = WIDE_DEFAULT;
   Sys.wide = q('wide') === '1' ? true : q('wide') === '0' ? false : !!WIDE_DEFAULT;
   G.safe = { l: 0, r: 0, t: 0, b: 0 }; G.OX = 0; G.M = 12;
@@ -222,11 +223,8 @@
   // ------------------------------------------------------------------ Botones de sistema en el lienzo
   var BTN = {
     pause: { x: 246, y: 6, w: 48, h: 48 },
-    muteRun: { x: 298, y: 6, w: 48, h: 48 },
-    muteAld: { x: 346, y: 6, w: 48, h: 48 },
-    fsAld: { x: 398, y: 6, w: 48, h: 48 }
+    muteRun: { x: 298, y: 6, w: 48, h: 48 }
   };
-  function col(r) { return G.OX ? { x: r.x + G.OX, y: r.y, w: r.w, h: r.h } : r; }   // T-F1-08: la aldea va en la columna de 960 centrada (coordenadas de lienzo)
   function barKind() {
     if (G.state === 'play') return 'run';
     if (G.state === 'aldea' && G.Aldea.sysBarOK()) return 'aldea';
@@ -239,7 +237,7 @@
       if (G.hudWide()) { var A = G.anchor(); out.push(['pause', { x: A.R - 64, y: A.T, w: 64, h: 64, big: 1 }]); out.push(['mute', { x: A.R - 136, y: A.T, w: 64, h: 64, big: 1 }]); }   // T-F1-08: esquina superior derecha segura, 64x64
       else { out.push(['pause', BTN.pause]); out.push(['mute', BTN.muteRun]); }
     }
-    else if (k === 'aldea') { out.push(['mute', col(BTN.muteAld)]); if (Sys.fsSupported() && !Sys.standalone()) out.push(['fs', col(BTN.fsAld)]); }
+    else if (k === 'aldea') { var A2 = G.anchor(), y2 = Math.max(4, A2.T - 6); out.push(['mute', { x: A2.R - 138, y: y2, w: 66, h: 66, big: 1 }]); if (Sys.fsSupported() && !Sys.standalone()) out.push(['fs', { x: A2.R - 210, y: y2, w: 66, h: 66, big: 1 }]); }   // T-F1-08 fase 3: 66x66 a la izquierda del menú, anclados al borde derecho seguro
     return out;
   }
   Sys.buttons = function () { return active().map(function (a) { return { id: a[0], x: a[1].x, y: a[1].y, w: a[1].w, h: a[1].h }; }); };   // pruebas: rectángulos (lienzo) de los botones de sistema visibles
