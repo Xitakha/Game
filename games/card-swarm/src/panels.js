@@ -42,7 +42,9 @@
     if (name === 'vesper') { G.Quests.seen(); st.vt = st.vt || 0; huntFix(); }
     if (name === 'logros') { st.lsel = 0; st.lscroll = 0; G.Ach.markSeen(); }
     if (name === 'archive') { st.edit = false; st.lo = st.lo || 0; }
+    if (RETO[name]) G.RetoUI.open(name);   // v10: reto del día, ficha del kit y diario (reto_ui.js)
   };
+  var RETO = { reto: 1, kit: 1, diario: 1 };
   P.closeAll = function () { cur = null; st.armorFrom = null; if (G.Smith) G.Smith.close(); };
   P.vesperTab = function (n) { st.vt = n; huntFix(); };   // 0 = Tablón, 1 = Cacería (lo usa el diálogo de Vesper)
   P.current = function () { return cur; };
@@ -52,6 +54,7 @@
     if (msgT > 0) msgT -= dt; if (confirmT > 0) confirmT -= dt; else confirm = '';
     if (cur === 'manual') { if (G.Manual.update(dt)) { G.Manual.close(); cur = st.manBack || 'menu'; } return false; }
     if (cur === 'forge') return G.Tree.update(dt);
+    if (RETO[cur]) return G.RetoUI.update(cur, dt);
     if (cur === 'armor') { var ra = G.Smith.update(dt); if (ra && st.armorFrom === 'portal') { st.armorFrom = null; cur = 'portal'; return false; } return ra; }
     var esc = inp.hit('Escape'), cl = onR(R_CLOSE);
     if (cur === 'archive' && st.edit) { updEdit(); return false; }   // renombrar un loadout: Esc/Enter terminan la edición, no cierran el panel
@@ -87,6 +90,7 @@
     try { drawCur(c); } finally { G.minFont = mf; }
   };
   function drawCur(c) {
+    if (RETO[cur]) return G.RetoUI.draw(c, cur);
     if (cur === 'forge') return G.Tree.draw(c);
     if (cur === 'armor') return G.Smith.draw(c);
     if (cur === 'manual') return G.Manual.draw(c);
@@ -195,6 +199,7 @@
   }
   function updVesper() {
     for (var ti = 0; ti < 2; ti++) if (onR(tabRect(ti))) { st.vt = ti; huntFix(); G.sfx('flip', { vol: 0.4 }); }
+    if (G.Obj && G.Obj.isOpen() && onR(tabRect(2))) { P.open('diario'); G.sfx('flip', { vol: 0.4 }); return false; }   // v10: objetivos diarios
     if (st.vt === 1) return updHunt();
     var n = G.Quests.board().length;
     for (var i = 0; i < n; i++) if (inp.hit('Digit' + (i + 1)) || onR(qBtn(i))) qAction(i);
@@ -204,6 +209,7 @@
     var Q = G.Quests, act = Q.active(), list = Q.board();
     bg(c, 'VESPER'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
     ['TABLÓN', 'CACERÍA'].forEach(function (t, i) { U.button(c, tabRect(i), t, { size: 15, color: st.vt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.vt === i ? '#bfeaff' : '#6a5a80', sub: i === 1 && !P.huntAvailable() ? 'vence a un jefe' : null }); });
+    if (G.Obj && G.Obj.isOpen()) U.button(c, tabRect(2), G.Obj.t('tab'), { size: 15, color: '#2c2438', hot: '#3a8ad0', border: G.Obj.unseen() ? '#ffd24a' : '#6a5a80' });
     if (st.vt === 1) { drawHunt(c); return; }
     list.forEach(function (d, i) {
       var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
@@ -861,6 +867,7 @@
     if (onR(MB(0))) { G.Aldea.fromMenu = true; cur = 'archive'; st.csel = 0; }
     else if (onR(MB(1))) { cur = 'settings'; }
     else if (onR(MB(4))) { st.manBack = 'menu'; P.open('manual'); }
+    else if (onR(MB(5)) && G.RetoUI && G.RetoUI.chipsOn()) { P.open(G.Daily.isOpen() ? 'reto' : 'diario'); }   // v10
     else if (onR(MB(2))) {
       if (confirm === 'del') { G.Save.reset(); G.Aldea.open(false); say('Progreso borrado.'); return false; }
       confirm = 'del'; confirmT = 4000; say('Pulsa otra vez para BORRAR todo el progreso (no se puede deshacer; exporta antes si dudas).');
@@ -876,6 +883,7 @@
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
     U.button(c, MB(3), G.hint('CERRAR [Esc]', 'CERRAR'), { size: 20 });
     U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
+    if (G.RetoUI && G.RetoUI.chipsOn()) U.button(c, MB(5), G.Daily.t('menuBtn'), { size: 18, color: '#8a6a1a', hot: '#b88a2a', border: '#ffd24a', sub: G.Daily.t('menuSub') });   // v10
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
   var CB = { calm: { x: 250, y: 84, w: 460, h: 66 }, intro: { x: 250, y: 158, w: 460, h: 66 }, entries: { x: 250, y: 232, w: 460, h: 66 }, epi: { x: 250, y: 306, w: 226, h: 66 }, cred: { x: 484, y: 306, w: 226, h: 66 }, back: { x: 330, y: 462, w: 300, h: 66 } };   // T-F1-08 fase 3: 66 de alto

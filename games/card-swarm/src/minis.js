@@ -308,7 +308,7 @@
 
   // ================================================================= INSIGNIAS (trofeo menor, no cuenta como Esencia)
   M.dropInsignia = function (e) {
-    if (G.mode === 'practice' || e.insDropped) return;
+    if (G.mode === 'practice' || G.daily || e.insDropped) return;   // v10: el reto no da insignias
     e.insDropped = true;
     G.Combat.dropGem(e.x - 18, e.y + 10, 'insignia', 1); var g = G.gems[G.gems.length - 1]; g.ins = e.D.ins.id; g.mid = e.mid;
     M.snd('mini_insignia', null, { vol: 0.7 });

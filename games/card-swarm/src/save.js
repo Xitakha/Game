@@ -6,6 +6,8 @@
    intacto (no se escribe) y navigator.storage.persist(). Otro dominio (portal, itch, TWA): cada origen tiene su localStorage e IndexedDB, así que el guardado
    no viaja solo; el camino es Exportar (texto SWARM1: o archivo) en el origen viejo e Importar en el nuevo. Si algún día hay servidor, el mismo texto sellado
    sirve como formato de subida (G.Platform.saveSync en T-F3-02).
+   v13 (v10 retención, T-F1-05 / T-F1-06): daily { maxDay, claims{}, reto { seenDay, official, live, retry, extraDay, hist[30], best, medals, firstSeen, kit{ seenWeek } }, obj { day, list, rerollDay, yday, week, wlist, wprev, wpaid, wdays, wfuse }, streak { n, best, last, wood, woodAcc, miles } },
+   stats.dailyRuns y flags.dseen. Migración v12 -> v13 con copia en swarmhand.fusion.save.v12 (la escribe load antes de migrar): solo añade daily; el kit del reto NUNCA se guarda.
    v12 (v9 cinemáticas): cine { introSeen, introVer, entrySeen{}, epilogueSeen, creditsSeen } y settings.cine { calm (Reducir destellos; null = según prefers-reduced-motion), textSpeed, soundCaps }. Migración v11 -> v12 con copia en swarmhand.fusion.save.v11: las cuentas con progreso (runs, bossKills, bossSeen, PF o final visto) reciben la intro como vista.
    v11 (v8.1 sets nuevos): sin campos nuevos; regala el Peto de Escama / Pelaje / Jalea / Brasa por jefe ya vencido (Letea, Yarlak, Melaria, Cenizar) y equipa el de mayor tier. Migración v10 -> v11 con copia en swarmhand.fusion.save.v10.
    v10 (v8 Herrero): armor { owned, equipped, seen, stats, ped }, trophiesEver / insigniasEver (acumulado: Ruta, logros y Archivo; trophies / insignias pasan a ser saldo gastable), loadouts[i].armor, stats.playMs, flags.smithMet / smithGift. Migración v9 -> v10 con copia en swarmhand.fusion.save.v9: regala set Aldeano + Peto de cada jefe vencido.
@@ -26,7 +28,7 @@
 (function () {
   'use strict';
   var G = window.G, S = G.Save = {};
-  var KEY = 'swarmhand.fusion.save', VERSION = 12;
+  var KEY = 'swarmhand.fusion.save', VERSION = 13;
   var STARTERS = ['spark', 'shard', 'dart', 'dagger', 'fang', 'hourglass'];   // set básico desbloqueado (Rango I)
   S.STARTERS = STARTERS;
   S.VERSION = VERSION;
@@ -48,10 +50,18 @@
       bossKills: {}, trophies: {}, bossSeen: {}, biome: 'bosque',
       loadouts: [null, null, null],            // v3: { name, anchors: [ids], dish: id|null, len: 7|9|10 }
       ach: {}, combosSeen: {}, manualSeen: {}, cooked: 0, lossStreak: 0,
-      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, cine: freshCine(), portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {} };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
+      peligro: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }, endingSeen: false, cine: freshCine(), portalSeen: { bosque: 1 }, peligroSel: {}, pelWins: {}, hunts: {}, practice: {}, daily: freshDaily() };   // v4 (J3)   // v4: jefes vencidos por id, trofeos acumulados, intro ya vista, destino elegido en el Portal
   }
 
   function freshCine() { return { introSeen: false, introVer: 1, entrySeen: {}, epilogueSeen: false, creditsSeen: false }; }
+  // v13 (T-F1-05 / T-F1-06): reto diario, objetivos y racha. Sin textos largos: el texto para compartir se genera al vuelo
+  function freshDaily() {
+    return { maxDay: 0, claims: {},
+      reto: { seenDay: 0, official: null, live: null, retry: { day: 0, best: 0, medal: 0 }, extraDay: 0, hist: [], best: null, medals: { part: 0, bronce: 0, plata: 0, oro: 0 }, firstSeen: 0, kit: { seenWeek: 0 } },
+      obj: { day: 0, list: [], rerollDay: 0, yday: [], week: 0, wlist: [], wprev: [], wpaid: { brasas: 0, parts: 0, rare: 0, trim: 0 }, wdays: {}, wfuse: {} },
+      streak: { n: 0, best: 0, last: 0, wood: 2, woodAcc: 0, miles: {} } };
+  }
+  S.freshDaily = freshDaily;
   function freshArmor() { return { owned: {}, equipped: [null, null, null, null], seen: {}, stats: { blocked: 0, crafts: 0 }, ped: {} }; }
   // ================================================================ Guardado a prueba de pérdidas (T-F1-11)
   // Claves (todas empiezan por swarmhand.fusion.): principal KEY; copias rotativas .reciente (la versión anterior, un guardado por detrás),
@@ -135,9 +145,10 @@
     map(d, 'parts', 0, BIG); map(d, 'cards', 0, L.MAXRANK || 3);
     ['bossKills', 'trophies', 'trophiesEver', 'insignias', 'insigniasEver', 'elites', 'bossSeen', 'ach', 'combosSeen', 'manualSeen', 'portalSeen', 'ever'].forEach(function (k) { map(d, k, 0, HUGE); });
     map(d, 'peligro', 1, 5); map(d, 'peligroSel', 0, 5);
-    ['pf', 'nodes', 'quest', 'shop', 'pending', 'flags', 'pelWins', 'hunts', 'practice', 'stats', 'armor', 'cine', 'settings'].forEach(function (k) { obj(d, k); });
+    ['pf', 'nodes', 'quest', 'shop', 'pending', 'flags', 'pelWins', 'hunts', 'practice', 'stats', 'armor', 'cine', 'settings', 'daily'].forEach(function (k) { obj(d, k); });
+    if (isObj(d.daily)) dailyRules(d.daily, num, map, obj, bad);
     if (isObj(d.pf)) { num(d.pf, 'earned', 0, L.PF_CAP || 24, 'pf.'); num(d.pf, 'frag', 0, BIG, 'pf.'); }
-    if (isObj(d.stats)) num(d.stats, 'playMs', 0, HUGE, 'stats.');
+    if (isObj(d.stats)) { num(d.stats, 'playMs', 0, HUGE, 'stats.'); num(d.stats, 'dailyRuns', 0, BIG, 'stats.'); }
     if (isObj(d.flags) && isObj(d.flags.fte)) {   // T-F1-02: estado de la primera sesión (flags.fte)
       var ft = d.flags.fte;
       num(ft, 'runs', 0, BIG, 'flags.fte.'); num(ft, 'ann', 0, BIG, 'flags.fte.'); map(ft, 'hints', 0, 1, 'flags.fte.'); map(ft, 'seen', 0, 1, 'flags.fte.'); obj(ft, 'hints', 'flags.fte.'); obj(ft, 'seen', 'flags.fte.');
@@ -161,6 +172,39 @@
       if (l.name != null && (typeof l.name !== 'string' || l.name.length > 24)) { bad.push('loadouts[' + i + '].name'); l.name = 'LOADOUT ' + (i + 1); }
       if (typeof l.name === 'string') l.name = l.name.toUpperCase().replace(/[^A-Z0-9 ÁÉÍÓÚÑ-]/g, '').slice(0, 12) || 'LOADOUT ' + (i + 1);   // mismo filtro que al renombrar (panels.js)
     });
+  }
+  // v13: rangos del campo daily (3.2 punto 4). Días 0-1e6, semana 0-2e5, racha 0-1e5, Leña 0-2, puntos 0-1e7, medalla 0-3, Peligro 2-4
+  function dailyRules(dy, num, map, obj, bad) {
+    var DMAX = 1e6, SC = 1e7, P = 'daily.';
+    num(dy, 'maxDay', 0, DMAX, P); map(dy, 'claims', 0, 1, P); ['reto', 'obj', 'streak'].forEach(function (k) { obj(dy, k, P); });
+    function entry(e, p) {
+      if (!isObj(e)) { bad.push(p); return false; }
+      num(e, 'score', 0, SC, p + '.'); num(e, 'base', 0, SC, p + '.'); num(e, 'medal', 0, 3, p + '.'); num(e, 'peligro', 2, 4, p + '.'); num(e, 'dayN', 0, DMAX, p + '.'); num(e, 'mul', 0, 10, p + '.');
+      if (e.mut != null && !Array.isArray(e.mut)) { bad.push(p + '.mut'); e.mut = []; }
+      return true;
+    }
+    var R = dy.reto;
+    if (isObj(R)) {
+      num(R, 'seenDay', 0, DMAX, P + 'reto.'); num(R, 'extraDay', 0, DMAX, P + 'reto.'); num(R, 'firstSeen', 0, 1, P + 'reto.');
+      ['retry', 'medals', 'kit'].forEach(function (k) { obj(R, k, P + 'reto.'); });
+      if (isObj(R.retry)) { num(R.retry, 'day', 0, DMAX, P + 'reto.retry.'); num(R.retry, 'best', 0, SC, P + 'reto.retry.'); num(R.retry, 'medal', 0, 3, P + 'reto.retry.'); }
+      if (isObj(R.medals)) map(R, 'medals', 0, 1e6, P + 'reto.');
+      if (isObj(R.kit)) num(R.kit, 'seenWeek', 0, 2e5, P + 'reto.kit.');
+      if (R.best != null) { if (!isObj(R.best)) { bad.push(P + 'reto.best'); R.best = null; } else { num(R.best, 'score', 0, SC, P + 'reto.best.'); num(R.best, 'day', 0, DMAX, P + 'reto.best.'); num(R.best, 'medal', 0, 3, P + 'reto.best.'); } }
+      if (R.official != null && !entry(R.official, P + 'reto.official')) R.official = null;
+      if (R.live != null) { if (!isObj(R.live)) { bad.push(P + 'reto.live'); R.live = null; } else { num(R.live, 'day', 0, DMAX, P + 'reto.live.'); num(R.live, 'score', 0, SC, P + 'reto.live.'); num(R.live, 'base', 0, SC, P + 'reto.live.'); num(R.live, 'medal', 0, 3, P + 'reto.live.'); } }
+      if (R.hist != null) { if (!Array.isArray(R.hist)) { bad.push(P + 'reto.hist'); R.hist = []; } else R.hist = R.hist.filter(function (e, i) { return entry(e, P + 'reto.hist[' + i + ']'); }); }
+    }
+    var O = dy.obj;
+    if (isObj(O)) {
+      num(O, 'day', 0, DMAX, P + 'obj.'); num(O, 'rerollDay', 0, DMAX, P + 'obj.'); num(O, 'week', 0, 2e5, P + 'obj.');
+      ['list', 'wlist', 'yday', 'wprev'].forEach(function (k) { if (O[k] != null && !Array.isArray(O[k])) { bad.push(P + 'obj.' + k); O[k] = []; } });
+      ['list', 'wlist'].forEach(function (k) { if (Array.isArray(O[k])) O[k] = O[k].filter(function (e, i) { if (!isObj(e) || typeof e.id !== 'string') { bad.push(P + 'obj.' + k + '[' + i + ']'); return false; } num(e, 'goal', 0, 1e6, P + 'obj.' + k + '.'); num(e, 'prog', 0, 1e6, P + 'obj.' + k + '.'); return true; }); });
+      obj(O, 'wpaid', P + 'obj.'); if (isObj(O.wpaid)) { num(O.wpaid, 'brasas', 0, 1e4, P + 'obj.wpaid.'); num(O.wpaid, 'parts', 0, 1e4, P + 'obj.wpaid.'); num(O.wpaid, 'rare', 0, 10, P + 'obj.wpaid.'); num(O.wpaid, 'trim', 0, 1e6, P + 'obj.wpaid.'); }
+      map(O, 'wdays', 0, 1, P + 'obj.'); map(O, 'wfuse', 0, 1, P + 'obj.');
+    }
+    var K = dy.streak;
+    if (isObj(K)) { num(K, 'n', 0, 1e5, P + 'streak.'); num(K, 'best', 0, 1e5, P + 'streak.'); num(K, 'last', 0, DMAX, P + 'streak.'); num(K, 'wood', 0, 2, P + 'streak.'); num(K, 'woodAcc', 0, 5, P + 'streak.'); map(K, 'miles', 0, 1, P + 'streak.'); }
   }
   // obj: resultado de JSON.parse. strict (importar): cualquier valor raro rechaza; sin strict (cargar): se corrige y se anota en fixes
   S.validate = function (obj, strict) {
@@ -360,6 +404,10 @@
       d.cine = freshCine(); d.cine.introSeen = !!prog; d.cine.epilogueSeen = d.cine.creditsSeen = !!d.endingSeen;
       Object.keys(bs11).forEach(function (k) { if (bs11[k]) d.cine.entrySeen[k] = 1; });
     }
+    if (d.v === 12) {   // v10 retención: reto diario, objetivos y racha. Sin pérdida: solo se añade el campo daily (racha 0 con 2 Leñas)
+      d.v = 13; d.flags = (d.flags && typeof d.flags === 'object') ? d.flags : {}; d.flags.migrated13 = 1;
+      if (!d.daily || typeof d.daily !== 'object' || Array.isArray(d.daily)) d.daily = freshDaily();
+    }
     return d.v === VERSION ? d : null;
   }
 
@@ -414,7 +462,11 @@
     if (!d) d = fresh();
     var f = fresh();
     for (var k in f) if (d[k] == null) d[k] = f[k];
-    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'manualSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen', 'trophiesEver', 'insigniasEver', 'stats', 'armor', 'cine'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key]) d[key] = f[key]; });
+    ['pf', 'nodes', 'ever', 'elites', 'quest', 'shop', 'pending', 'flags', 'bossKills', 'trophies', 'bossSeen', 'ach', 'combosSeen', 'manualSeen', 'peligro', 'peligroSel', 'pelWins', 'hunts', 'practice', 'insignias', 'portalSeen', 'trophiesEver', 'insigniasEver', 'stats', 'armor', 'cine', 'daily'].forEach(function (key) { if (typeof d[key] !== 'object' || !d[key] || (key === 'daily' && Array.isArray(d[key]))) d[key] = f[key]; });
+    var dy = d.daily, fd = freshDaily(), dk;   // v13: subcampos que falten con los valores por defecto (como cine)
+    for (dk in fd) if (dy[dk] == null || typeof dy[dk] !== typeof fd[dk] || (dk !== 'maxDay' && (typeof dy[dk] !== 'object' || Array.isArray(dy[dk])))) dy[dk] = fd[dk];
+    ['reto', 'obj', 'streak'].forEach(function (sk) { var a = dy[sk], b = fd[sk]; for (var q in b) { if (a[q] === undefined || (b[q] !== null && typeof b[q] === 'object' && (a[q] === null || typeof a[q] !== 'object' || Array.isArray(a[q]) !== Array.isArray(b[q])))) a[q] = b[q]; } });
+    if (typeof dy.maxDay !== 'number') dy.maxDay = 0;
     var ar = d.armor; ['owned', 'seen', 'stats', 'ped'].forEach(function (k) { if (!ar[k] || typeof ar[k] !== 'object') ar[k] = freshArmor()[k]; });
     if (!Array.isArray(ar.equipped) || ar.equipped.length !== 4) ar.equipped = [null, null, null, null];
     if (typeof ar.stats.blocked !== 'number') ar.stats.blocked = 0; if (typeof ar.stats.crafts !== 'number') ar.stats.crafts = 0;

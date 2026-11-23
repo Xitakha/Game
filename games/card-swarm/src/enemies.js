@@ -13,7 +13,7 @@
   E.spawn = function (type, x, y, o) {
     o = o || {};
     var d = B.enemy[type], m = mins(), hp, dmg;
-    if (type === 'boss' || d.elite) { hp = d.hp * (d.elite ? G.Loot.dur().guardHp : 1); dmg = d.dmg; }   // guardianes: x guardHp de la duración (L.DUR)       // jefe y élites no escalan por minuto
+    if (type === 'boss' || d.elite) { hp = d.hp * (d.elite ? G.Loot.dur().guardHp * (G.daily ? G.daily.guardMul : 1) : 1); dmg = d.dmg; }   // guardianes: x guardHp de la duración (L.DUR)       // jefe y élites no escalan por minuto
     else { hp = d.hp * B.hpMult(m); dmg = d.dmg * B.dmgMult(m); }
     // Familia del bioma activo (families.js): piel, multiplicadores hp/spd/dmg y material. o.nofam = sin familia. Sin familia ready, fe = null (roster legado).
     var fe = (type === 'boss' || d.elite || o.nofam) ? null : B.entry(type), spdK = 1, spr = d.spr, fbSkin = null;

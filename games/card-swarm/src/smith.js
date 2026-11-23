@@ -49,6 +49,7 @@
     c.fillStyle = 'rgba(255,255,255,0.22)'; c.fillRect(x + 3, y + 3, s - 6, (s - 6) / 3);
     G.txt(c, SLOT_LET[p.slot], x + s / 2, y + s / 2 + 1, Math.round(s * 0.5), '#1b1124', 'center', 'rgba(0,0,0,0)');
   }
+  S.icon = icon;   // v10: la ficha del kit del reto (reto_ui.js) usa los mismos iconos del taller
   function pStats(p, n) {   // texto de la estadística propia de la pieza
     var s = D.SETS[p.set], t = D.tierOf(p), mul = 1 + D.REF * Math.max(0, n);
     if (p.slot === 0) return '+' + Math.round(D.HP[t] * mul * A.HPMUL) + ' HP máx.';

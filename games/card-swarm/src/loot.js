@@ -181,6 +181,8 @@
   L.onKill = function (e) {
     if (e.summoned || G.mode === 'practice') return;   // la práctica no suelta ni cuenta nada
     var t = e.type, R = L.run; R.kills[t] = (R.kills[t] || 0) + 1;
+    if (G.Obj) G.Obj.onKill(e);   // v10: objetivos diarios (no tocan la simulación)
+    if (G.daily) { G.Daily.onKill(e); return; }   // v10: el reto diario no suelta botín, ni PF, ni avanza encargos (paga una tabla fija por medalla)
     try { if (!e.noQuest) G.Quests.onKill(t, e); if (B.enemy[t].elite) G.Tree.onElite(t, e); } catch (x) { /* meta opcional */ }
     var pityP = (L.RARE_P + (G.Save.data.pity || 0)) * L.dur().rare;   // Larga: x1,5 sobre la base y el pity
     var gt = L.GUARANTEED[t];
@@ -207,6 +209,7 @@
   // Parte rota de un minijefe (Escudo / Saco): botín extra garantizado
   L.dropPart = drop;   // P4.5: la Hidra cauterizada suelta Placa extra
   L.onMiniPart = function (e) {
+    if (G.daily) return;   // v10: sin botín en el reto (la parte rota cuenta en L.run.miniParts, quests.js)
     var b = L.MINI_PART_BONUS[e.type]; if (!b) return;
     for (var k in b) drop(e, k, L.scaleN(b[k], L.dur().parts));
   };
@@ -255,11 +258,13 @@
     var qdone = null, P0 = G.clamp(Math.round(G.peligro || 1), 1, 5);
     try { qdone = G.Quests.onRunEnd({ won: won && !hunt, parts: bs && bs.parts ? bs.parts.slice() : [], bossId: bs ? bs.id : null, bossWon: !!(bs && bs.won), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [], clean: R.clean / 1000, lenMin: Math.round(G.RUN_LEN / 60000), hitBy: R.hitBy || {}, peligro: P0, biome: G.curBiome, coldPeak: G.cold ? Math.max(G.cold.runPeak || 0, G.cold.peak || 0) : 0, coldBoss: G.cold ? G.cold.bossPeak || 0 : 0, honeyBoss: !!R.honeyBoss, honeyBest: R.honeyBest || 0 }); } catch (x) { /* encargos opcionales */ }
     try { G.Armor.onRunEnd({ won: won, hunt: hunt, lastHit: R.lastHit, bossWon: !!(bs && bs.won), peligro: P0, ins: (R.insignias || []).length }); } catch (xa) { /* armadura opcional */ }
+    var objS = null; try { if (G.Obj) objS = G.Obj.runEnd({ won: won, bossWon: !!(bs && bs.won), peligro: P0, parts: bs && bs.parts ? bs.parts.length : 0, runSecs: hunt ? (G.Boss.combatT || 0) / 1000 : runSecs, total: R.total, firstP: !!(binfo && binfo.firstP), reached: !!(G.Waves.bossSpawned || bs), hand: G.finalHand ? G.finalHand.hand.filter(Boolean).map(function (h) { return h.id; }) : [] }); } catch (xo) { /* objetivos y racha (v10) */ }
     G.Save.save();
     var aff = L.affordable(), fresh = [];
     for (var id in aff) if (!L.startAff[id]) fresh.push(id);
     var q = null; try { q = G.Quests.statusLine(); } catch (x) { /* sin encargos */ }
     L.summary = { dur: { min: DU.min, name: DU.name, parts: DU.parts, brasas: DU.brasas, pf: DU.pf, rare: DU.rare, bossHp: DU.bossHp, guardHp: DU.guardHp }, parts: R.parts, total: R.total, brasas: brasas, rare: R.rare, newCards: fresh, blocked: Math.round((G.Armor && G.Armor.run && G.Armor.run.blocked) || 0), rawDmg: Math.round((G.Armor && G.Armor.run && G.Armor.run.raw) || 0), won: won, kills: G.kills, diff: G.D && G.D.id, quest: q, pfGained: R.pf || 0, boss: binfo };
+    L.summary.obj = objS;
     L.summary.first = fteFirst; L.summary.quit = !won && !(p && p.dead);   // T-F1-02 / T-F1-04
     try { G.EndInfo.fill(L.summary, { runSecs: runSecs, lvl: p.level, hunt: hunt }); } catch (eE) { /* pantalla de fin: récord y objetivos opcionales */ }
   };
@@ -267,6 +272,7 @@
   L.endPractice = function (won) {
     var be = G.Boss.e, id = G.bossId, S = G.Save.data, rec = S.practice[id] = S.practice[id] || { tries: 0, wins: 0 };
     if (won) rec.wins++;
+    try { if (G.Obj) G.Obj.runEnd({ practice: true, runSecs: (G.Boss.combatT || 0) / 1000 }); } catch (xo) { /* racha (v10): la práctica de 60 s enciende el día, no avanza objetivos */ }
     G.Save.save();
     for (var i = G.gems.length - 1; i >= 0; i--) if (G.gems[i].kind === 'part') G.gems.splice(i, 1);
     L.summary = { practice: true, parts: {}, total: 0, brasas: 0, rare: 0, newCards: [], won: won, kills: G.kills, quest: null, pfGained: 0,

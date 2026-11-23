@@ -130,7 +130,7 @@
   Q.TAGN = TAGN;
 
   function S() { return G.Save.data.quest; }
-  Q.active = function () { var a = S().active; return a ? BY[a] || null : null; };
+  Q.active = function () { if (G.daily) return null; var a = S().active; return a ? BY[a] || null : null; };   // v10: en el reto diario el encargo ni avanza ni pesa en el director
   Q.progress = function (id) {
     var d = BY[id];
     if (d && d.kind === 'armped') { var pd = G.Armor.PED.filter(function (x) { return x.id === d.ped; })[0]; return pd && pd.ok(G.Save.data) ? 1 : 0; }
@@ -154,6 +154,7 @@
   function hash(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   Q.dayIndex = function () { return Math.floor(Date.now() / 86400000); };
+  G.util = G.util || {}; G.util.hash = hash; G.util.rng = rng;   // v10 (reto diario, objetivos): mismas funciones para todas las semillas de calendario
   Q.boardKey = function () { return Q.dayIndex() + ':' + G.Save.data.runs; };
   var cache = { key: null, list: null };
   Q.offers = function () {
