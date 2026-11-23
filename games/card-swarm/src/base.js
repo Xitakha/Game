@@ -10,7 +10,8 @@
 
   Bs.launch = function () { G.sfx('card_select', { vol: 0.7 }); G.startGame(); if (G.Fte) G.Fte.nextFrom = null; };
   // Reintentar la misma salida: normal, cacería (misma bestia y Peligro) o práctica (misma mano; la fase de inicio puede cambiarse con 1-3)
-  Bs.retry = function () { logEnd('again'); G.launchReq = G.lastReq ? { mode: G.lastReq.mode, boss: G.lastReq.boss, peligro: G.lastReq.peligro, phase: G.lastReq.phase, final: G.lastReq.final } : null; if (G.Fte) G.Fte.nextFrom = 'retry'; Bs.launch(); };
+  Bs.retry = function () { logEnd('again'); if (G.RetoUI && G.RetoUI.endActive()) { G.Daily.retry(); return; }   // v10: el reto se reintenta sin premio con la misma semilla
+    G.launchReq = G.lastReq ? { mode: G.lastReq.mode, boss: G.lastReq.boss, peligro: G.lastReq.peligro, phase: G.lastReq.phase, final: G.lastReq.final } : null; if (G.Fte) G.Fte.nextFrom = 'retry'; Bs.launch(); };
   Bs.retryPractice = function () { if (G.mode === 'practice') Bs.retry(); };
   function phCount() { var d = G.Boss.DEFS[G.bossId]; return d ? d.phases.length : 3; }
   var PH_BTN = function (i) { return phCount() > 4 ? { x: 516 + i * 70, y: 328, w: 66, h: 66 } : { x: 516 + i * 136, y: 328, w: 130, h: 66 }; };   // T-F1-08 fase 3: 66 de alto
@@ -27,6 +28,7 @@
   function detailOnly() { return G.mode !== 'run' || G.final || !(G.Loot.summary && G.Loot.summary.goals); }   // cacería, asalto y práctica: pantalla de siempre (ya es el detalle)
   Bs.endView = function () { return endS.view; };
   Bs.updateEnd = function () {
+    if (G.RetoUI && G.RetoUI.endActive()) { G.RetoUI.updateEnd(); return; }   // v10: resultado del reto diario
     var m = inp.mouse, sm = G.Loot.summary;
     if (endS.sm !== sm) { endS.sm = sm; endS.t = 0; endS.view = 'main'; endS.logged = false; }
     endS.t += G.STEP;
@@ -233,6 +235,7 @@
     drawEndButtons(c, S);
   }
   Bs.drawEnd = function (c) {
+    if (G.RetoUI && G.RetoUI.endActive()) { G.RetoUI.drawEnd(c); return; }
     if (detailOnly()) { drawDetail(c, false); return; }
     if (endS.view === 'detail') drawDetail(c, true); else drawMain(c);
   };

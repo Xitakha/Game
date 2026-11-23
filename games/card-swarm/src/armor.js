@@ -37,21 +37,24 @@
     var eq = [null, null, null, null], ref = {}; D.ofSet(sid).forEach(function (p) { eq[p.slot] = p.id; ref[p.id] = n; });
     A.trial = { eq: eq, ref: ref, sid: sid, n: n }; dirty = true;
   };
+  // v10 (reto diario): capa del kit de la semana, por encima de todo (equipo real, ?armset y equipo de prueba). Solo en memoria: { eq, ref: { id: n }, tier: n } (G.Kit.begin / end)
+  A.kitOvr = null;
+  A.setKit = function (k) { A.kitOvr = k || null; dirty = true; };
   A.baseRef = function (id) { if (ovr && ovr.ref[id] != null) return ovr.ref[id]; var o = SV().armor.owned; return o[id] == null ? -1 : o[id]; };   // -1 = no fabricada (sin el equipo de prueba)
-  A.ref = function (id) { if (trialOn() && A.trial.ref[id] != null) return A.trial.ref[id]; return A.baseRef(id); };
+  A.ref = function (id) { if (A.kitOvr) return A.kitOvr.ref[id] != null ? A.kitOvr.ref[id] : -1; if (trialOn() && A.trial.ref[id] != null) return A.trial.ref[id]; return A.baseRef(id); };
   A.owned = function (id) { return A.baseRef(id) >= 0; };
-  A.eq = function () { return trialOn() ? A.trial.eq : ovr ? ovr.eq : SV().armor.equipped; };
+  A.eq = function () { return A.kitOvr ? A.kitOvr.eq : trialOn() ? A.trial.eq : ovr ? ovr.eq : SV().armor.equipped; };
   A.realRef = function (id) { var o = SV().armor.owned; return o[id] == null ? -1 : o[id]; };
   A.dirty = function () { dirty = true; };
   A.maxRef = function (p) { return D.tierOf(p) === 0 ? 1 : 3; };
 
   // ---- cálculo de estadísticas
-  A.calc = function (eq, refOf) {
+  A.calc = function (eq, refOf, tierOf) {   // tierOf (opcional, v10): tier nivelado del kit del reto en vez del de cada pieza
     var r = { def: 0, hp: 0, apl: 0, ims: 0, resP: {}, resS: {}, dmg: {}, sets: {}, set4: {}, n: 0, any: false, tiers: 0, cold: 0, honey: 0, util: {} }, i, id, p, s, n, mul, t;
     for (i = 0; i < 4; i++) {
       id = eq[i]; p = id && D.BY[id]; if (!p) continue;
       n = refOf(id); if (n < 0) continue;
-      s = D.SETS[p.set]; t = D.tierOf(p); mul = 1 + D.REF * n; r.n++; r.any = true; r.tiers = Math.max(r.tiers, t);
+      s = D.SETS[p.set]; t = tierOf ? tierOf(p) : D.tierOf(p); mul = 1 + D.REF * n; r.n++; r.any = true; r.tiers = Math.max(r.tiers, t);
       r.def += D.DEF[t] * (p.util ? 0.4 : D.SLOT_DEF[p.slot]) * mul;
       if (p.slot === 0) r.hp += D.HP[t] * mul * A.HPMUL;
       else if (p.slot === 1) r.resP[s.fam] = (r.resP[s.fam] || 0) + D.PETO[t] * mul;
@@ -72,7 +75,7 @@
     return r;
   };
   A.get = function () {
-    if (dirty || !M) { M = A.calc(A.eq(), A.ref); dirty = false; }
+    if (dirty || !M) { var ko = A.kitOvr; M = A.calc(A.eq(), A.ref, ko ? function () { return ko.tier; } : null); dirty = false; }
     return M;
   };
   A.hp = function () { return A.OFF ? 0 : A.get().hp; };

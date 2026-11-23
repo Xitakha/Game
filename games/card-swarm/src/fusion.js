@@ -22,7 +22,7 @@
   // ------------------------------------------------------------- Pool: todas las cartas (el desbloqueo lo decide Loot.unlocked / la forja)
   F.inPool = function () { return true; };
   G.fusionAll = /[?&]all=1/.test(Dev.search);   // ?all=1: todas las cartas desbloqueadas (pruebas / bots con cuenta vacía)
-  F.unlockedCard = function (id) { return !!C.def(id) && (G.fusionAll || G.Loot.unlocked(id)); };
+  F.unlockedCard = function (id) { if (G.Kit && G.Kit.cur) return !!C.def(id) && G.Kit.cur.deck.indexOf(id) >= 0; return !!C.def(id) && (G.fusionAll || G.Loot.unlocked(id)); };   // v10: en el reto, solo la baraja del día (cartas prestadas)
   var INF_TXT = {
     fire: 'Quema (3 dps). Nv3: el impacto explota.', ice: 'Ralentiza 25 %. Nv3: congela 0,5 s la 1.ª vez.', lightning: 'Encadena 1 salto (-20 %). Nv3: 2 saltos.',
     poison: 'Aplica 1 stack de veneno (apila 3).', blood: '20 % de curar 1 HP al impactar. Nv3: sangrado.', steel: 'Atraviesa 1 enemigo y 10 % de crítico. Nv3: atraviesa 2.'

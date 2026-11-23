@@ -10,6 +10,7 @@
     'bdmg', 'bcd', 'pcd', 'pinf', 'pmul', 'vdmg', 'vmax', 'vpow', 'vstep', 'infmul', 'corr', 'lvheal', 'fuseheal', 'fuseAsh', 'bosscap', 'bossmul', 'aux', 'auxcd', 'auxmul',
     'open', 'pk1', 'xp2',   // ritmo de los primeros 30 s (T-F1-03)
     'dq', 'dn', 'dh', 'dd', 'ds', 'dx',   // perfil de dificultad por calidad (T-F0-05)
+    'today', 'kit', 'reto', 'obj',   // v10: fecha simulada, kit forzado y apagados del reto / objetivos
     'arm', 'armk', 'armcap', 'armcost', 'armhp', 'armdmg', 'armset', 'armtier', 'armref', 'zdmg', 'zdmgall', 'mdmg', 'ydmg', 'ycad', 'yheart'
   ];
   var q = location.search, on = /[?&]dev=1(&|$)/.test(q);

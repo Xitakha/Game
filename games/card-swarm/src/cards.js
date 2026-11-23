@@ -65,7 +65,7 @@
     C.active = {}; C.flash = {}; C.off = null;
     // anclas de la Base: precargadas en los primeros slots (solo si siguen desbloqueadas)
     // FUSION: anclas de la Base (1 slot; 2 con el nodo del tronco). La 1.ª ancla es la carta inicial que se conserva en la 1.ª fusión. Sin ancla: elección inicial (modo 'start')
-    var an = G.Save.data.anchors || [];
+    var an = (G.Kit && G.Kit.cur) ? [G.Kit.cur.anchor] : G.Save.data.anchors || [];   // v10: en el reto diario, el ancla del kit de la semana
     for (i = 0; i < an.length && i < G.B.anchorSlots; i++) if (G.Fusion.unlockedCard(an[i])) { var ar = C.add(an[i]); if (ar && !hand().some(function (h) { return h && h.starter; })) hand()[ar.slot].starter = true; }
     G.Fusion.reset();
     C.recalc(false); G.player.hp = G.player.maxHp;
@@ -240,6 +240,7 @@
   };
   C.reroll = function () {
     var O = C.off, cost = C.rerollCost(), p = G.player;
+    if (G.daily && G.daily.noReroll) { msg(G.Daily.t('mut_sincambio_msg')); return; }   // v10: mutador del reto 'Sin cambios'
     if (p.ash < cost) { msg('Ceniza insuficiente (' + cost + ').'); return; }
     p.ash -= cost; O.rerolls++; O.cards = C.makeOffer(O.mode); O.rt = 0; O.replacing = null; G.Snd.play('reroll');
   };

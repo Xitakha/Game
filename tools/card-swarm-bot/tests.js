@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|wide] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|daily|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|wide] [base=http://localhost:8811]
 //   WIDE=0 node tools/card-swarm-bot/tests.js <grupo> ...   corre el grupo con el lienzo clásico de 960 (?wide=0; la pantalla ancha es el valor por defecto desde la fase 4 de la SPEC T-F1-08)
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
@@ -485,7 +485,7 @@ async function armor() {
   const b = await launch();
   // 1) cuenta vacia: sin Carapa; ?smith=1 la abre y la escena entrega el set Aldeano
   let pg = await mk(b, 'reset=1&nosw=1');
-  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 12), 'cuenta nueva: guardado v12, Carapa aun no ha llegado');
+  ok(await E(pg, () => !G.Armor.smithOn() && !G.Save.data.flags.smithMet && G.Save.data.v === 13), 'cuenta nueva: guardado v13 (v10 retención), Carapa aun no ha llegado');
   const zb = await E(pg, () => { G.curBiome = 'bosque'; return [G.Armor.engaged(), G.Armor.zone()]; });
   ok(zb[0] === false && zb[1] === 1, 'cuenta vacia en Bosque: sin zoneDmg ni armadura (rama antigua de hurt)');
   await done(pg, 'armor-vacia');
@@ -498,9 +498,9 @@ async function armor() {
     G.Save.load(); const d = G.Save.data;
     return { v: d.v, brasas: d.brasas, thread: d.parts.thread, pf: d.pf.earned, te: d.trophiesEver, ie: d.insigniasEver, tr: d.trophies, owned: Object.keys(d.armor.owned).sort(), eq: d.armor.equipped, gift: d.flags.smithGift, bak: !!localStorage.getItem('swarmhand.fusion.save.v9') };
   });
-  ok(mig.v === 12 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v11 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
+  ok(mig.v === 13 && mig.brasas === 777 && mig.thread === 33 && mig.pf === 9 && mig.tr.horn === 2 && mig.te.horn === 2 && mig.ie.carnero === 2 && mig.bak, 'migracion v9->v13 sin perdida + copia .v9: ' + JSON.stringify({ b: mig.brasas, t: mig.thread, pf: mig.pf }));
   ok(mig.owned.join() === 'ald_amulet,ald_boots,ald_chest,ald_helm,car_chest,esq_chest' && mig.eq[1] === 'car_chest' && mig.gift === 1, 'regalo: Aldeano + Peto por jefe vencido (Esquila y Carcelero), mejor equipado: ' + mig.owned.length + ' piezas');
-  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 13, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
+  const imp = await E(pg, () => { const txt = G.Save.exportText(); const r = G.Save.importText(txt); const r2 = G.Save.importText(JSON.stringify({ v: 14, parts: {}, cards: {} })); return [r.ok, r2.ok]; });
   ok(imp[0] === true && imp[1] === false, 'importText acepta la v11 y rechaza versiones mayores');
   await done(pg, 'armor-migra');
   // 3) panel: fabricar, equipar, reforzar con toques en 844x390
@@ -586,7 +586,7 @@ async function armor2() {
     localStorage.setItem('swarmhand.fusion.save', JSON.stringify(old)); G.Save.load(); const x = G.Save.data;
     return { v: x.v, owned: Object.keys(x.armor.owned).sort().join(), eq: x.armor.equipped, brasas: x.brasas, bak: !!localStorage.getItem('swarmhand.fusion.save.v10'), tr: x.trophies.horn };
   });
-  ok(m11.v === 12 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
+  ok(m11.v === 13 && m11.bak && m11.brasas === 555 && m11.tr === 1, 'migracion v10->v11 sin perdida + copia .v10');
   ok(['bra_chest', 'esc_chest', 'gla_chest', 'jal_chest', 'car_chest', 'esq_chest'].every(id => m11.owned.includes(id)) && m11.eq[1] === 'bra_chest', 'regalo: Peto de Escama, Pelaje, Jalea y Brasa por jefe vencido; equipa el de mayor tier (' + m11.eq[1] + ')');
   // datos y costes
   const dt = await E(pg, () => {
@@ -1010,8 +1010,8 @@ async function cine() {
     out.end = { cr: G.Save.data.cine.creditsSeen, ep: G.Save.data.cine.epilogueSeen, set: G.Save.data.settings };
     return out;
   });
-  ok(mig.false.v === 12 && mig.false.intro === false && mig.false.backup, 'migracion v11->v12 (cuenta sin progreso): intro NO vista, copia swarmhand.fusion.save.v11');
-  ok(mig.true.v === 12 && mig.true.intro === true && mig.true.entry.pastor === 1 && mig.true.runs === 4 && mig.true.bk.pastor === 1, 'migracion v11->v12 (con progreso): introSeen=true, entrySeen desde bossSeen, sin perdidas');
+  ok(mig.false.v === 13 && mig.false.intro === false && mig.false.backup, 'migracion v11->v12 (cuenta sin progreso): intro NO vista, copia swarmhand.fusion.save.v11');
+  ok(mig.true.v === 13 && mig.true.intro === true && mig.true.entry.pastor === 1 && mig.true.runs === 4 && mig.true.bk.pastor === 1, 'migracion v11->v12 (con progreso): introSeen=true, entrySeen desde bossSeen, sin perdidas');
   ok(mig.end.cr && mig.end.ep && mig.end.set.master === 0.5 && mig.end.set.cine && mig.end.set.cine.calm === null, 'endingSeen => creditsSeen/epilogueSeen; settings conservados + settings.cine');
   await done(pg, 'cine-save');
   // 6. La simulacion no se entera: hash identico con ?cine=0 y con cine (titulo + intro + direct)
@@ -1304,7 +1304,7 @@ async function manual() {
   ok(r1.kc === r1.starters && r1.kf === 0, `cuenta nueva: solo ${r1.kc} cartas iniciales conocidas y ${r1.kf} fusiones (el resto '???')`);
   const r1b = await E(pg, () => { G.Save.data.combosSeen.vapor = 1; return G.Manual.isKnown(G.Manual.entries().find(e => e.id === 'vapor')); });
   ok(r1b, 'una fusión creada (combosSeen) pasa a estar descubierta');
-  ok((await E(pg, () => G.Save.VERSION)) === 12, 'el guardado sigue en la versión 12 (manualSeen se normaliza sin subirla)');
+  ok((await E(pg, () => G.Save.VERSION)) === 13, 'el guardado está en la versión 13 (v10 retención; manualSeen se normaliza sin subirla)');
   await done(pg, 'manual-cuenta');
   // 2. ?manual=all + demos
   pg = await mk(b, 'reset=1&manual=all');
@@ -1504,10 +1504,10 @@ async function save2() {
   r = await E(pg, () => { const d = G.Save.data; return { rc: G.Save.recovered, fx: G.Save.repairs.length, b: d.brasas, runs: d.runs, pity: d.pity, wick: d.parts.wick, frost: d.parts.frost, spark: d.cards.spark, pel: G.Save.pelMax('pastor'), pf: d.pf.earned, vol: d.settings.master, st: G.state }; });
   ok(!r.rc && r.fx >= 8 && r.b === 0 && r.runs === 0 && r.pity <= 1 && r.wick === 0 && r.frost === 7 && r.spark === 3 && r.pel === 5 && r.pf === 24 && r.vol === 1, 'valores fuera de rango y tipos erróneos en un guardado sin sello: se corrigen al cargar (' + r.fx + ' campos) y se conserva lo sano');
   // 6. versión futura en el principal: se conserva y no se pisa
-  await E(pg, () => { const k = G.Save.KEY, d = JSON.parse(localStorage.getItem(k)); delete d._sum; d.v = 13; d.brasas = 1313; localStorage.setItem(k, JSON.stringify(d)); });
+  await E(pg, () => { const k = G.Save.KEY, d = JSON.parse(localStorage.getItem(k)); delete d._sum; d.v = 14; d.brasas = 1313; localStorage.setItem(k, JSON.stringify(d)); });
   await reload(pg);
-  r = await E(pg, () => { const S = G.Save, before = localStorage.getItem(S.KEY); S.data.brasas = 1; const sv = S.save(); return { hold: S.hold, sv, same: localStorage.getItem(S.KEY) === before, v13: !!localStorage.getItem(S.KEY + '.v13'), v: JSON.parse(before).v }; });
-  ok(r.hold && r.sv === false && r.same && r.v === 13 && r.v13, 'guardado de una versión futura: no se sobrescribe (copia .v13) y se juega en memoria');
+  r = await E(pg, () => { const S = G.Save, before = localStorage.getItem(S.KEY); S.data.brasas = 1; const sv = S.save(); return { hold: S.hold, sv, same: localStorage.getItem(S.KEY) === before, v14: !!localStorage.getItem(S.KEY + '.v14'), v: JSON.parse(before).v }; });
+  ok(r.hold && r.sv === false && r.same && r.v === 14 && r.v14, 'guardado de una versión futura: no se sobrescribe (copia .v14) y se juega en memoria');
   ok(/versión más nueva/.test(await toastTxt(pg)), 'aviso de versión futura con RECARGAR');
   await done(pg, 'save2-corrupcion');
   // 7. cuota llena simulada (total y parcial) y vuelta a la normalidad
@@ -1551,7 +1551,7 @@ async function save2() {
     p2.on('console', m => { if (m.type() === 'error') p2.errs.push(m.text()); }); p2.on('pageerror', e => p2.errs.push('PAGEERR ' + e.message));
     await p2.goto(`${base}/index.html?dev=1&nosw=1&direct=1`); await sleep(p2, 1200);
     r = await E(p2, () => { const sv = G.Save.save(); return { ok: G.Save.ok, boot: G.Save.boot, sv, st: G.state, v: G.Save.data.v }; });
-    ok(!r.ok && r.boot === 'sin-almacen' && r.sv === false && r.v === 12 && (r.st === 'play' || r.st === 'cards'), 'almacenamiento bloqueado: arranca y se juega (estado ' + r.st + '), save() devuelve false sin lanzar');
+    ok(!r.ok && r.boot === 'sin-almacen' && r.sv === false && r.v === 13 && (r.st === 'play' || r.st === 'cards'), 'almacenamiento bloqueado: arranca y se juega (estado ' + r.st + '), save() devuelve false sin lanzar');
     ok(/bloquea el guardado/.test(await toastTxt(p2)), 'almacenamiento bloqueado: aviso al jugador');
     await done(p2, 'save2-bloqueado');
   }
@@ -1569,7 +1569,7 @@ async function save2() {
       hugeTxt: 'SWARM1:' + 'A'.repeat(900000),
       hugeArr: JSON.stringify(mk({ anchors: new Array(5000).fill('spark') })),
       neg: b64(mk({ brasas: -5 })), big: b64(mk({ brasas: 1e15 })), rank: b64(mk({ cards: { spark: 99 } })), pf: b64(mk({ pf: { earned: 999 } })), type: b64(mk({ runs: '5' })), inf: '{"v":12,"parts":{},"cards":{},"brasas":1e999}',
-      future: b64(mk({ v: 13 })), noVer: b64(mk({ v: 'doce' })), trunc: good.slice(0, Math.floor(good.length * 0.6)), flip: good.slice(0, 40) + (good[40] === 'A' ? 'B' : 'A') + good.slice(41),
+      future: b64(mk({ v: 14 })), noVer: b64(mk({ v: 'doce' })), trunc: good.slice(0, Math.floor(good.length * 0.6)), flip: good.slice(0, 40) + (good[40] === 'A' ? 'B' : 'A') + good.slice(41),
       garbage: 'hola, esto no es un guardado', js: 'alert(1)', arr: '[1,2,3]', badB64: 'SWARM1:%%%<script>'
     };
     const out = {};
@@ -2163,8 +2163,330 @@ async function wide() {
   await b.close();
 }
 
+// ---------------------------------------------------------------- v10 retención (T-F1-05 / T-F1-06): reto diario, kits semanales, objetivos y racha
+// Fecha simulada con G.Daily.setNow(ms) (equivale a ?dev=1&today=AAAA-MM-DD). Con ?dev=1 + parámetros cerrados el intento es PRUEBA: las pruebas del intento con premio ponen G.Daily.forceOfficial = true.
+const DUTC = (s, h) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), h == null ? 12 : h);
+const ACC_FULL = () => { const S = G.Save.data; S.runs = 3; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; };
+const ACC_VET = () => { const S = G.Save.data; S.runs = 60; S.wins = 25; S.bossKills = { pastor: 4, karceron: 3, letea: 3, yarlak: 2, melaria: 2, cenizar: 1 }; S.pf.earned = 24;
+  ['bra_helm', 'bra_chest', 'bra_greaves', 'bra_talis'].forEach(id => { S.armor.owned[id] = 3; }); S.armor.equipped = ['bra_helm', 'bra_chest', 'bra_greaves', 'bra_talis']; S.armor.seen.brasa = 1;
+  S.nodes = { F1: { c: 'A' }, F2: { c: '1' }, F4: { c: '1' }, R2: { c: '1' }, R3: { c: '1' }, ANC: { c: '1' }, ASH: { c: '1' }, RT6: { c: '1' }, A1: { c: 'B' }, A4: { c: '1' } };
+  S.cards.spark = 3; S.cards.ember = 3; S.cards.dagger = 3; S.anchors = ['ember', 'spark']; S.pending.dish = 'hogar'; S.pending.tonic = 1; S.peligro.pastor = 5; S.trophies.horn = 4; S.insignias.carnero = 2; S.quest.active = 'sheep'; G.Tree.sync(); G.Armor.dirty(); };
+async function daily() {
+  console.log('--- v10 retención: reto diario (semilla UTC, kit de la semana, un cobro, reloj, corte, mortal, campaña intacta, guardado v13), kits, objetivos y racha, pantallas');
+  const b = await launch();
+  const SP = process.env.SHOTS || '';
+  const reload = async (pg, extra) => { await pg.goto(`${base}/index.html?dev=1&nosw=1&cine=0&${extra || ''}${WX}`); await sleep(pg, 900); };
+  // 1. día UTC
+  let pg = await mk(b, 'reset=1&cine=0&speed=0');
+  let r = await E(pg, () => ({ a: G.Daily.dayKey(G.Daily.dayIndex(Date.UTC(2026, 10, 14, 23, 59, 59))), b: G.Daily.dayKey(G.Daily.dayIndex(Date.UTC(2026, 10, 15, 0, 0, 0))),
+    w1: G.Daily.weekOf(G.Daily.dayIndex(Date.UTC(2026, 10, 15, 23, 59))), w2: G.Daily.weekOf(G.Daily.dayIndex(Date.UTC(2026, 10, 16, 0, 0))), dow: new Date(Date.UTC(2026, 10, 16)).getUTCDay() }));
+  ok(r.a === '2026-11-14' && r.b === '2026-11-15', `día UTC: 23:59:59 -> ${r.a}, 00:00:00 -> ${r.b}`);
+  ok(r.dow === 1 && r.w2 === r.w1 + 1, `la semana cambia el lunes 00:00 UTC (domingo 23:59 semana ${r.w1}, lunes 00:00 semana ${r.w2})`);
+  // 2. reglas puras: misma fecha = mismo JSON en dos cargas y dos cuentas con todo abierto; instantánea fijada
+  const rulesOf = () => { G.Daily.setNow(Date.UTC(2026, 10, 14, 12)); const x = G.Daily.rules(G.Daily.dayIndex()); return JSON.stringify(x); };
+  const j1 = await E(pg, new Function('(' + ACC_FULL + ')(); return (' + rulesOf + ')();'));
+  await done(pg, 'daily-reglas-1');
+  pg = await mk(b, 'reset=1&cine=0&speed=0&seed=99');
+  const j2 = await E(pg, new Function('(' + ACC_VET + ')(); return (' + rulesOf + ')();'));
+  const R14 = JSON.parse(j1);
+  ok(j1 === j2, 'reglas del 2026-11-14 idénticas en dos cargas y dos cuentas con todo abierto (nueva con 3 salidas y veterana)');
+  ok(R14.key === '2026-11-14' && R14.biome === R14.perm[0] && R14.rv === 'r1' && R14.kv === 'k1' && JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]) === DAILY_SNAP, 'instantánea fijada del 2026-11-14: ' + JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]));
+  await done(pg, 'daily-reglas-2');
+  // 6. apertura y filtros de la cuenta; 7. 365 fechas
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, () => {
+    const S = G.Save.data, D = G.Daily, out = {};
+    S.runs = 2; out.closed2 = !D.isOpen(); S.runs = 3; out.open3 = D.isOpen() && S.bossKills.pastor == null;
+    let bos = true, pelOk = true;
+    for (let d = 20000; d < 20060; d++) { const R = D.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.biome !== 'bosque') bos = false; if (R.peligro > 2) pelOk = false; }
+    out.bos = bos; out.pel2 = pelOk;
+    const all = { unlocked: ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'], kills: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 } };
+    const cnt = { 2: 0, 3: 0, 4: 0 }; let fire = true, bud = true, fam = true, rng = true, first = true, dosBad = 0, r6 = true, n = 0;
+    for (let d = 20400; d < 20765; d++) {
+      const R = D.rules(d, all); n++; cnt[R.peligro]++;
+      if (R.biome !== R.perm[0]) first = false;
+      if ((R.biome === 'tundra' || R.biome === 'panal') && R.tags.indexOf('fire') < 0) fire = false;
+      const w = R.mut.reduce((a, id) => a + D.mut(id).w, 0); if (w > { 2: 2, 3: 1.5, 4: 1 }[R.peligro] + 1e-9 || R.mut.length < 1) bud = false;
+      if (new Set(R.mut.map(id => D.mut(id).fam)).size !== R.mut.length) fam = false;
+      if (R.peligro < 2 || R.peligro > 4) rng = false;
+      if (R.mut.indexOf('dos') >= 0 && (R.biome === 'tundra' || R.biome === 'panal') && !G.Kit.hasFire(G.Kit.get(R.kit))) dosBad++;
+      const wk = []; (G.Boss.DEFS[R.boss].weak || []).forEach(x => wk.push(x.tag)); if (R.comp.length && !R.comp.some(t => wk.indexOf(t) >= 0) && G.Kit.TAGS.some(t => wk.indexOf(t) >= 0 && G.Kit.get(R.kit).tags.indexOf(t) < 0)) r6 = false;
+    }
+    Object.assign(out, { cnt, fire, bud, fam, rng, first, dosBad, r6, n });
+    return out;
+  });
+  ok(r.closed2 && r.open3, 'el reto se abre tras la 3.ª expedición (2 salidas: cerrado; 3: abierto aunque no hayas vencido al Pastor)');
+  ok(r.bos && r.pel2, 'cuenta con solo el Bosque: reto en el Bosque y Peligro <= II (reto suave), 60 días');
+  ok(r.first, '365 días, cuenta completa: el bioma es siempre permutación[0]');
+  ok(r.fire && r.dosBad === 0, '365 días: Fuego en la baraja siempre que toca Tundra o Panal (R4) y nunca "Dos etiquetas" sin Fuego allí (R5)');
+  ok(r.bud && r.fam && r.rng && r.r6, '365 días: presupuesto de mutadores, familias distintas, al menos 1 mutador, Peligro II-IV y debilidad del jefe en el acompañamiento (R6)');
+  const pc = k => Math.round(r.cnt[k] / r.n * 1000) / 10;
+  ok(Math.abs(pc(2) - 35) <= 5 && Math.abs(pc(3) - 45) <= 5 && Math.abs(pc(4) - 20) <= 5, `reparto de Peligro en 365 días: II ${pc(2)} %, III ${pc(3)} %, IV ${pc(4)} % (objetivo 35/45/20 +-5)`);
+  // kits: rotación de 104 semanas, potencia nivelada y reglas R1-R3
+  r = await E(pg, () => {
+    const K = G.Kit, out = { cnt: {}, rep: 0 }; let prev = null;
+    for (let w = 8 * 300; w < 8 * 300 + 104; w++) { const k = K.ofWeek(w); out.cnt[k] = (out.cnt[k] || 0) + 1; if (k === prev) out.rep++; prev = k; }
+    out.def = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'].map(bi => { const bd = K.build('pantano', bi), v = K.view(bd); return [Math.round(v.stats.def * 10) / 10, bd.pfSpent]; });
+    out.hog = ['bosque', 'panal'].map(bi => K.build('hogar', bi).pfSpent);
+    const pt = K.build('pantano', 'tundra'), vt = K.build('ventisca', 'tundra'), cp = K.build('carmesi', 'panal'), fp = K.build('fragua', 'panal');
+    out.r1 = [pt.fx.crampones, pt.dish, vt.fx.crampones, vt.dish]; out.r2 = [cp.fx.ahumador, cp.dish, fp.dish];
+    const R = G.Daily.rules(20500, { unlocked: ['tundra'], kills: { letea: 1, yarlak: 1 } }, 'pantano');
+    out.yar = [R.biome, R.boss, R.comp, R.tags.indexOf('fire') >= 0];
+    out.mon = [K.ofWeek(G.Daily.weekOf(G.Daily.dayIndex(Date.UTC(2026, 10, 15, 23, 59)))), K.ofWeek(G.Daily.weekOf(G.Daily.dayIndex(Date.UTC(2026, 10, 16, 0, 0))))];
+    return out;
+  });
+  ok(Object.keys(r.cnt).length === 8 && Object.values(r.cnt).every(n => n === 13) && r.rep === 0, '104 semanas: cada uno de los 8 kits sale 13 veces y nunca se repite el de la semana anterior ' + JSON.stringify(r.cnt));
+  ok(r.mon[0] !== r.mon[1], `el kit cambia el lunes 00:00 UTC (domingo ${r.mon[0]}, lunes ${r.mon[1]})`);
+  ok(JSON.stringify(r.def) === JSON.stringify([[12, 6], [20.7, 9], [27.6, 11], [34.5, 15], [41.4, 17]]), 'potencia nivelada con 4 piezas de un set: DEF 12 / 20,7 / 27,6 / 34,5 / 41,4 y PF del kit 6 / 9 / 11 / 15 / 17 ' + JSON.stringify(r.def));
+  ok(r.r1[0] && r.r1[1] === 'caldobrasa' && r.r1[2] && r.r1[3] === 'pan', 'R1: Pantano en la Tundra recibe Crampones y Caldo de brasa; Ventisca (Pelaje Glacial) solo Crampones ' + JSON.stringify(r.r1));
+  ok(r.r2[0] && r.r2[1] === 'sopa' && r.r2[2] === 'tostada', 'R2/R3: Carmesí (Jalea Real) en el Panal recibe el Ahumador sin Tostada; Fragua sí la recibe ' + JSON.stringify(r.r2));
+  ok(r.yar[0] === 'tundra' && r.yar[1] === 'yarlak' && r.yar[3], 'R4/R6: Pantano contra Yarlak lleva Fuego de acompañamiento (debilidad del jefe) ' + JSON.stringify(r.yar));
+  await done(pg, 'daily-reglas-365');
+  // 3-5. Determinismo: misma fecha y mismas entradas, cuentas distintas (y con ?seed= y un encargo de caza) -> mismo hash; ALTA y BAJA. Kit idéntico (kit 1 y 4)
+  const runDaily = async (acc, url, cps, extra) => {
+    const p = await mk(b, url);
+    const k = await E(p, new Function('(' + acc + ')(); ' + (extra || '') + ' G.Daily.setNow(' + DUTC('2026-11-14') + '); G.Aldea.open(false); G.Daily.start(false);' +
+      ' const C = G.Cards, sl = C.slotOf(G.Kit.cur.anchor); return { god: G.god, A: JSON.stringify(G.Armor.get()), fx: JSON.stringify(G.Tree.fx), rk: G.Kit.cur.deck.map(id => G.Loot.rm(id)).join(), anc: G.player.hand.filter(Boolean).map(h => h.id).join(), rb: JSON.stringify(G.runBuff), hp: G.player.maxHp, slots: G.B.anchorSlots, seed: G.seed, mode: G.mode, len: G.RUN_LEN };'));
+    await E(p, SEED_UTILS);
+    const hs = [];
+    for (const cp of cps) { let h = null; for (let g = 0; g < 1000; g++) { const t = await E(p, () => __tick()); if (t >= cp) break; h = await E(p, n => __adv(n), Math.min(600, cp - t)); } hs.push(h ? h.hash : -1); }
+    const after = await E(p, () => { G.player.hurtT = 0; G.Boss.noHurt = 0; const h0 = G.player.hp; G.Player.hurt(G.player, 5, G.player.x + 20, G.player.y, { src: 'worm' }); const hit = G.player.hp < h0; G.finish(false); return { seed: G.seed, god: G.god, hit, A: JSON.stringify(G.Armor.get()), fx: JSON.stringify(G.Tree.fx) }; });
+    return { p, k, hs, after };
+  };
+  const CPS = [600, 1800, 3600];
+  for (const q of ['alta', 'baja']) {
+    const A = await runDaily(ACC_FULL, `reset=1&cine=0&speed=0&q=${q}&dq=${q}`, CPS);
+    const B = await runDaily(ACC_VET, `reset=1&cine=0&speed=0&q=${q}&dq=${q}&seed=99&god=1`, CPS);
+    ok(A.hs.every(h => h !== -1) && JSON.stringify(A.hs) === JSON.stringify(B.hs), `determinismo del reto (${q}): cuenta nueva y veterana (con ?seed=99, ?god=1, plato y Tónico pendientes y encargo activo) -> mismo hash en los ticks ${CPS.join(', ')} ` + (JSON.stringify(A.hs) === JSON.stringify(B.hs) ? '' : JSON.stringify([A.hs, B.hs])));
+    if (q === 'alta') {
+      const same = ['A', 'fx', 'rk', 'anc', 'rb', 'hp', 'slots'].filter(f => A.k[f] !== B.k[f]);
+      ok(!same.length, 'kit idéntico en las dos cuentas: Armor.get(), Tree.fx, rangos de la baraja, ancla, plato (runBuff) y vida máxima' + (same.length ? ' -> difieren ' + same.join(',') : ''));
+      ok(A.k.god === false && B.k.god === false && A.k.slots === 1 && A.k.len === 540000 && A.k.mode === 'run', 'reto siempre mortal (también con ?god=1), 1 ancla y 9 min');
+      ok(B.after.seed === 99 && A.after.seed === null && B.after.god === true, `al terminar: la semilla vuelve (?seed=99 -> ${B.after.seed}) y la inmortalidad de la cuenta se restaura (${B.after.god})`);
+      ok(A.hs.length && (A.after.hit || B.after.hit), 'el jugador recibe daño en el reto');
+      ok(B.after.A !== B.k.A && B.after.fx !== B.k.fx, 'tras el reto, Armor.get() y Tree.fx vuelven a ser los de la cuenta');
+    }
+    await done(A.p, 'daily-det-a-' + q); await done(B.p, 'daily-det-b-' + q);
+  }
+  // 8 y 14. Un solo cobro y campaña intacta (comparación profunda) + 1.10.8 nada del kit en el guardado
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, new Function('(' + ACC_VET + ')();' + ` G.Daily.forceOfficial = true; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false);
+    const S = G.Save.data, pick = () => JSON.stringify({ runs: S.runs, wins: S.wins, bk: S.bossKills, pw: S.pelWins, pel: S.peligro, tr: S.trophies, ins: S.insignias, pf: S.pf, pity: S.pity, quest: S.quest, shop: S.shop, armor: S.armor, nodes: S.nodes, ever: S.ever, cards: S.cards, anchors: S.anchors, pending: S.pending, manual: S.manualSeen, trE: S.trophiesEver, insE: S.insigniasEver, ls: S.lossStreak });
+    S.daily.obj.list = []; S.daily.obj.wlist = [];   // (sin objetivos: aquí solo se mide el premio del reto)
+    const before = pick(), b0 = S.brasas, sh = S.daily.reto.medals;
+    const out = { can0: G.Daily.canOfficial() };
+    G.Daily.start(true);
+    for (let i = 0; i < 1800; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); }
+    G.Save.save(); const raw = localStorage.getItem(G.Save.KEY); out.leak = /kitOvr|"fx":\\{"dosis/.test(raw) || JSON.parse(raw).armor.equipped[0] !== 'bra_helm';
+    G.finish(false);
+    out.paid1 = S.brasas - b0; out.can1 = G.Daily.canOfficial(); out.hist = S.daily.reto.hist.length; out.claims = Object.keys(S.daily.claims);
+    out.same = pick() === before; out.diff = before === pick() ? '' : before.slice(0, 80) + ' / ' + pick().slice(0, 80);
+    const b1 = S.brasas; G.Daily.retry(); for (let i = 0; i < 300; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } G.finish(false);
+    out.paid2 = S.brasas - b1; out.retry = S.daily.reto.retry; out.hist2 = S.daily.reto.hist.length; out.same2 = pick() === before; out.dailyRuns = S.stats.dailyRuns;
+    return out;`));
+  ok(r.can0 && r.paid1 === 40 && !r.can1 && r.hist === 1, `intento con premio: paga una vez (+${r.paid1} Brasas de Participación) y gasta el intento del día (claims ${r.claims})`);
+  ok(r.paid2 === 0 && r.hist2 === 1 && r.retry.best > 0, 'reintento: misma semilla, sin premio, no entra en el historial; guarda su mejor marca aparte ' + JSON.stringify(r.retry));
+  ok(r.same && r.same2, 'campaña intacta tras el reto y el reintento: runs, wins, jefes, Peligro, trofeos, insignias, PF, pity, encargo, tienda, armadura, nodos, cartas, anclas, compras pendientes y manual' + (r.same ? '' : ' -> ' + r.diff));
+  ok(!r.leak, 'guardar a mitad del reto no filtra el kit: el texto guardado no lleva kitOvr y su armadura es la de la cuenta');
+  ok(r.dailyRuns === 2, 'stats.dailyRuns cuenta oficial + reintento (' + r.dailyRuns + ')');
+  await reload(pg);
+  r = await E(pg, () => { G.Daily.forceOfficial = true; G.Daily.setNow(Date.UTC(2026, 10, 14, 12)); G.Aldea.open(false); return { can: G.Daily.canOfficial(), b: G.Save.data.brasas, h: G.Save.data.daily.reto.hist.length }; });
+  ok(!r.can && r.h === 1, 'recargar: el intento del día sigue gastado y no se paga otra vez');
+  // 9-11. reloj
+  r = await E(pg, () => {
+    const D = G.Daily, out = {};
+    D.setNow(Date.UTC(2026, 10, 13, 12)); D._backWarned = false; const msgs = D.onAldea(); out.back1 = !D.canOfficial() && D.today() === D.dayIndex(Date.UTC(2026, 10, 14)) && msgs.some(m => /hacia atrás/.test(m));
+    D.setNow(Date.UTC(2026, 10, 17, 12)); out.fwd = D.canOfficial(); const b0 = G.Save.data.brasas; D.start(true); G.finish(false); out.fwdPaid = G.Save.data.brasas - b0;
+    D.setNow(Date.UTC(2026, 10, 14, 12)); out.backTo14 = D.today() === D.dayIndex(Date.UTC(2026, 10, 14, 12)); out.can14 = D.canOfficial();
+    D.setNow(Date.UTC(2026, 10, 10, 12)); out.reset = D.today() === D.dayIndex(Date.UTC(2026, 10, 10)) && G.Save.data.daily.maxDay === D.today(); out.can10 = D.canOfficial();
+    D.setNow(Date.UTC(2026, 10, 17, 12)); out.again17 = D.canOfficial();
+    return out;
+  });
+  ok(r.back1, 'reloj 1 día hacia atrás tras jugar: no hay intento con premio y sale el aviso E9');
+  ok(r.fwd && r.fwdPaid > 0 && r.backTo14 && !r.can14, 'reloj adelante (D+3): se juega y paga; al volver a D, el de D (ya jugado) sigue gastado');
+  ok(r.reset && r.can10 && !r.again17, 'reloj atrás más de 2 días: maxDay se reajusta; D+3 ya cobrado no se paga dos veces');
+  await done(pg, 'daily-cobro');
+  // 12. corte a mitad: punto de control, recarga, se cierra con lo guardado y paga una vez
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, new Function('(' + ACC_FULL + ')();' + ` G.Daily.forceOfficial = true; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false); G.Daily.start(true);
+    for (let i = 0; i < 1300; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); }
+    const lv = G.Save.data.daily.reto.live; return { lv: lv && lv.score, b: G.Save.data.brasas };`));
+  const b0 = r.b;
+  await reload(pg, 'speed=0');
+  r = await E(pg, () => ({ b: G.Save.data.brasas, live: G.Save.data.daily.reto.live, h: G.Save.data.daily.reto.hist.length, sc: G.Save.data.daily.reto.hist[0] && G.Save.data.daily.reto.hist[0].score, god: G.god, kit: !!G.Kit.cur }));
+  ok(r.live === null && r.h === 1 && r.b - b0 === 40 && r.sc > 0 && !r.kit, `corte a mitad: al recargar el intento se cierra con el punto de control (${r.sc} puntos) y paga su medalla una vez (+${r.b - b0})`);
+  await reload(pg, 'speed=0');
+  r = await E(pg, () => ({ b: G.Save.data.brasas, h: G.Save.data.daily.reto.hist.length }));
+  ok(r.h === 1 && r.b - b0 === 40, 'segunda recarga: no se paga otra vez');
+  await done(pg, 'daily-corte');
+  // 13. modo PRUEBA (?dev=1 con parámetros): sin marca ni historial, no gasta el intento
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, new Function('(' + ACC_FULL + ')();' + ` G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false); const t = G.Daily.isTest(); G.Daily.start(true); const dv = G.daily.test; G.finish(false);
+    const e = G.Daily.endRes; return { t, dv, h: G.Save.data.daily.reto.hist.length, best: G.Save.data.daily.reto.best, claims: Object.keys(G.Save.data.daily.claims).length, dev: e.entry.dev, paid: !!e.pay };`));
+  ok(r.t && r.dv && r.h === 0 && !r.best && r.claims === 0 && r.dev === 1 && r.paid, 'modo PRUEBA (?dev=1 con parámetros): dev: 1, sin historial ni récord, no gasta el intento (y paga para probar el flujo)');
+  // 16. historial de 30 y texto para compartir exacto
+  r = await E(pg, () => {
+    const D = G.Daily, R = G.Save.data.daily.reto;
+    for (let i = 0; i < 31; i++) { R.hist.push({ rv: 'r1', day: 'x', dayN: 20000 + i, biome: 'bosque', boss: 'pastor', peligro: 2, mut: [], kit: 'fragua', score: i, base: i, mul: 1, medal: 0, won: false }); while (R.hist.length > 30) R.hist.shift(); }
+    const e = { day: '2026-11-14', biome: 'tundra', peligro: 3, mut: ['veloz', 'sincor'], medal: 2, score: 4511, won: false, bossFrac: 0.62, kills: 812 };
+    const w = Object.assign({}, e, { won: true, medal: 3, bt: 102000 });
+    return { n: R.hist.length, first: R.hist[0].dayN, txt: D.shareText(e), won: D.shareText(w).split('\n')[4] };
+  });
+  ok(r.n === 30 && r.first === 20001, 'historial: con 31 retos quedan los 30 últimos');
+  ok(r.txt === 'Swarm Hand - Reto 2026-11-14\nTundra, Peligro III\nEnjambre veloz + Sin corazones\nPLATA - 4.511 puntos\nJefe al 38 % - 812 bajas' && r.won === 'Jefe vencido en 1:42 - 812 bajas', 'texto para compartir: 5 líneas exactas (y con victoria "Jefe vencido en 1:42")');
+  // 17. mutadores
+  r = await E(pg, new Function('(' + ACC_FULL + ')();' + ` const D = G.Daily, out = {}; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false);
+    const base = D.rules(D.today()); const R = JSON.parse(JSON.stringify(base)); R.mut = ['veloz', 'marea', 'duros', 'sincor', 'bolsillo', 'cristal', 'sincambio', 'curtidos'];
+    G.launchReq = { daily: true, official: false, rules: R }; G.Base.launch();
+    const d0 = G.diffProfile(G.Q.level); out.D = [G.D.s / d0.s, G.D.n / d0.n, G.D.h / d0.h].map(v => Math.round(v * 100) / 100);
+    out.m = [G.daily.heartMul, G.daily.pickMul, G.daily.dmgTaken, G.daily.noReroll, G.daily.guardMul];
+    const g = G.Enemies.spawn('mini_bulwark', 300, 300); out.guard = Math.round(g.maxHp || g.hp); G.Enemies.kill && (g.hp = 0);
+    G.player.ash = 999; G.Cards.open('level'); const c0 = G.Cards.off.cards.join(); G.Cards.reroll(); out.reroll = G.Cards.off.cards.join() === c0 && G.player.ash === 999; G.Cards.closeOffer();
+    const hp0 = G.player.hp; G.player.hurtT = 0; G.Player.hurt(G.player, 10, G.player.x + 30, G.player.y, { src: 'worm' }); out.hurt = Math.round((hp0 - G.player.hp) * 100) / 100;
+    G.finish(false);
+    const R2 = D.rules(D.today(), null, 'fragua'); const dosR = JSON.parse(JSON.stringify(R2)); dosR.mut = ['dos']; dosR.comp = []; 
+    out.dosDeck = D.rules(20517, { unlocked: ['bosque'], kills: {} }, 'fragua');
+    return out;`));
+  ok(JSON.stringify(r.D) === '[1.15,1.15,1.2]', 'mutadores de horda: velocidad x1,15, cantidad x1,15 y vida x1,2 sobre el perfil G.D ' + JSON.stringify(r.D));
+  ok(r.m[0] === 0 && r.m[1] === 0.6 && r.m[2] === 1.2 && r.m[3] === true && r.m[4] === 1.35 && r.reroll, 'Sin corazones, Bolsillos cortos (x0,6), Piel de cristal (x1,2), Sin cambios (el cambio de oferta no cobra ni cambia) y Guardianes curtidos (x1,35) ' + JSON.stringify(r.m));
+  await done(pg, 'daily-mutadores');
+  // "Dos etiquetas": la baraja solo trae las 2 etiquetas del kit (busca un día con el mutador)
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, () => { for (let d = 20000; d < 21000; d++) { const R = G.Daily.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.mut.indexOf('dos') >= 0) { const kt = G.Kit.get(R.kit).tags; return { d, ok: R.comp.length === 0 && R.deck.every(id => { const c = G.Cards.def(id); return c.tag === 'neutral' || c.id === 'heart' || kt.indexOf(c.tag) >= 0; }), n: R.deck.length }; } } return null; });
+  ok(r && r.ok && r.n >= 8 && r.n <= 11, 'Dos etiquetas: la baraja solo trae las 2 del kit y 3 neutrales (' + (r && r.n) + ' cartas)');
+  await done(pg, 'daily-dos');
+  // 15 / 15b. Migración v12 -> v13 con copia, cadena v9 -> v13, v13 que sobrevive a la recuperación e importación estricta
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  await E(pg, () => { const S = G.Save; S.data.brasas = 321; S.data.runs = 7; S.data.parts.wick = 9; const d = JSON.parse(JSON.stringify(S.data)); d.v = 12; delete d.daily; delete d.flags.migrated13; localStorage.setItem(S.KEY, JSON.stringify(d)); window.__d12 = JSON.stringify(d); localStorage.setItem('__d12', JSON.stringify(d)); localStorage.removeItem(S.KEY + '.v12'); });
+  await reload(pg, 'speed=0');
+  r = await E(pg, () => { const S = G.Save, bk = !!localStorage.getItem(S.KEY + '.v12'); localStorage.setItem(S.KEY, localStorage.getItem('__d12')); S.load(); const d = JSON.parse(JSON.stringify(S.data)), o = JSON.parse(localStorage.getItem('__d12'));   // (se vuelve a cargar el v12 sin pasar por la aldea: solo la migración)
+    const strip = x => { const y = JSON.parse(JSON.stringify(x)); delete y.v; delete y.daily; delete y._sum; if (y.flags) { delete y.flags.migrated13; delete y.flags.fte; } if (y.stats) delete y.stats.playMs; if (y.settings) delete y.settings.cine; const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']' : v && typeof v === 'object' ? '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}' : JSON.stringify(v); return canon(y); };   // (settings.cine lo rellena adopt desde v12)
+    const a1 = strip(d), a2 = strip(o); let i = 0; while (i < a1.length && a1[i] === a2[i]) i++;
+    return { v: d.v, bak: bk && !!localStorage.getItem(S.KEY + '.v12'), bakV: JSON.parse(localStorage.getItem(S.KEY + '.v12') || '{}').v, daily: JSON.stringify(d.daily) === JSON.stringify(S.freshDaily()), dd: JSON.stringify(d.daily).slice(0, 200), mig: d.flags.migrated13, same: a1 === a2, at: a1.slice(Math.max(0, i - 60), i + 60) + ' / ' + a2.slice(Math.max(0, i - 60), i + 60), b: d.brasas }; });
+  ok(r.v === 13 && r.bak && r.bakV === 12 && r.mig === 1, 'migración v12 -> v13: copia swarmhand.fusion.save.v12 escrita antes de migrar y flags.migrated13');
+  ok(r.daily && r.same && r.b === 321, 'migración v12 -> v13: daily con sus valores por defecto (racha 0, 2 Leñas) y el resto idéntico (comparación profunda)' + (r.daily && r.same ? '' : ' -> ' + (r.daily ? r.at : r.dd)));
+  r = await E(pg, () => { const S = G.Save; const d = { v: 9, parts: { wick: 3 }, cards: { spark: 1 }, brasas: 50, runs: 2, bossKills: { pastor: 1 }, anchors: ['spark'], pf: { earned: 3 }, flags: {} };
+    localStorage.setItem(S.KEY, JSON.stringify(d)); S.load(); return { v: S.data.v, b: S.data.brasas, dy: !!S.data.daily && S.data.daily.streak.wood === 2, chest: S.data.armor.owned.esq_chest }; });
+  ok(r.v === 13 && r.b === 50 && r.dy, 'cadena v9 -> v13 entera: sin pérdidas y con daily');
+  r = await E(pg, () => {
+    const S = G.Save, K = S.KEYS, out = {};
+    S.data.daily.streak.n = 9; S.data.daily.reto.hist.push({ rv: 'r1', day: '2026-11-14', dayN: 20771, biome: 'bosque', boss: 'pastor', peligro: 2, mut: ['veloz'], kit: 'fragua', score: 1234, base: 1000, mul: 1.2, medal: 1, won: false });
+    S.data.brasas = 1; S.save(); S.data.brasas = 2; S.save(); localStorage.removeItem(S.KEY);
+    S.load(); out.rec = S.recovered && S.recovered.from; out.n = S.data.daily.streak.n; out.h = S.data.daily.reto.hist.length;
+    const txt = S.exportText(); const bad = JSON.parse(S.serialize(S.data).replace(/,"_sum":"[^"]+"\}$/, '}')); bad.daily.streak.wood = 7;
+    out.imp1 = S.importText(JSON.stringify(bad)); const bad2 = JSON.parse(JSON.stringify(bad)); bad2.daily.streak.wood = 1; bad2.daily.reto.hist[0].score = -1; out.imp2 = S.importText(JSON.stringify(bad2));
+    out.ok = S.importText(txt).ok;
+    const k = S.KEY, d = JSON.parse(localStorage.getItem(k)); delete d._sum; d.daily.streak.wood = 7; d.daily.reto.hist[0].score = -1; localStorage.setItem(k, JSON.stringify(d)); S.load();
+    out.fixed = [S.data.daily.streak.wood, S.data.daily.reto.hist[0].score, S.repairs.filter(x => /^daily\./.test(x)).length];
+    localStorage.setItem(k + '.v12', localStorage.getItem('__d12')); out.restore = S.restore('v12'); out.rv = S.data.v; out.rd = !!S.data.daily;
+    return out; });
+  ok(r.rec === 'reciente' && r.n === 9 && r.h === 1, 'v13 con daily sobrevive a sellar, borrar el principal y recuperar desde .reciente');
+  ok(!r.imp1.ok && /imposibles/.test(r.imp1.err) && /streak\.wood/.test(r.imp1.err) && !r.imp2.ok && /score/.test(r.imp2.err) && r.ok, 'importar un v13 con streak.wood = 7 o score = -1 se rechaza (rango); el exportado vuelve a entrar');
+  ok(r.fixed[0] === 2 && r.fixed[1] === 0 && r.fixed[2] >= 2, 'al cargar, los rangos de daily se corrigen y quedan en S.repairs ' + JSON.stringify(r.fixed));
+  ok(r.restore.ok && r.rv === 13 && r.rd, 'restaurar a mano la copia .v12 la migra a v13');
+  await done(pg, 'daily-guardado');
+  // ---- objetivos y racha (grupo obj del diseño)
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, () => {
+    const D = G.Daily, O = G.Obj, S = G.Save.data, out = {};
+    S.runs = 1; D.setNow(Date.UTC(2026, 10, 14, 9)); G.Aldea.open(false);
+    out.ids1 = S.daily.obj.list.map(e => e.id); out.wk = S.daily.obj.wlist.map(e => e.id);
+    out.newAcc = out.ids1.concat(out.wk).filter(id => ['d_reto', 'd_pel2', 'w_oro', 'w_medal3'].indexOf(id) >= 0);
+    S.bossKills.pastor = 1; S.peligro.pastor = 2; S.runs = 4; G.Aldea.open(false); out.stable = JSON.stringify(S.daily.obj.list.map(e => e.id)) === JSON.stringify(out.ids1);
+    D.setNow(Date.UTC(2026, 10, 15, 9)); G.Aldea.open(false); const ids2 = S.daily.obj.list.map(e => e.id);
+    out.noRepeat = ids2.every((id, i) => id !== out.ids1[i]); out.ids2 = ids2;
+    // avance y pago automático una sola vez
+    const ob = S.daily.obj; ob.list = [{ id: 'd_kills', goal: 300, prog: 0, done: 0, paid: 0 }, { id: 'd_mini', goal: 1, prog: 0, done: 0, paid: 0 }, { id: 'd_clean60', goal: 60, prog: 0, done: 0, paid: 0 }];
+    ob.wlist = [{ id: 'w_kills', goal: 2000, prog: 0, done: 0, paid: 0 }, { id: 'w_oro', goal: 1, prog: 0, done: 0, paid: 0 }];
+    const b0 = S.brasas; O.beginRun(); G.mode = 'run';
+    for (let i = 0; i < 305; i++) O.onKill({ type: 'worm' });
+    O.onKill({ type: 'mini_bulwark', mini: true });
+    out.kills = [ob.list[0].prog, ob.list[0].done, ob.list[0].paid, ob.list[1].done, ob.wlist[0].prog]; out.paid = S.brasas - b0;
+    const b1 = S.brasas; for (let i = 0; i < 10; i++) O.onKill({ type: 'worm' }); out.once = S.brasas === b1;
+    G.Loot.run.clean = 61000; G.Fusion.stats.fusions = [{ id: 'vapor' }, { id: 'plasma' }]; O.runEnd({ runSecs: 120, total: 30 });
+    out.clean = ob.list[2].done; out.wfuse = Object.keys(ob.wfuse).length;
+    G.mode = 'practice'; O.beginRun(); const k0 = ob.wlist[0].prog; O.onKill({ type: 'worm' }); out.prac = ob.wlist[0].prog === k0; G.mode = 'run';
+    // cambio gratis: 1 al día
+    ob.list[1] = { id: 'd_power', goal: 20, prog: 0, done: 0, paid: 0 }; ob.rerollDay = 0;
+    const r1 = O.reroll(1), r2 = O.reroll(1); out.reroll = [r1.ok, r2.ok, ob.list[1].id];
+    // tope duro semanal
+    ob.wpaid = { brasas: 350, parts: 128, rare: 1, trim: 0 }; const b2 = S.brasas, th0 = S.parts.thread || 0; ob.list[1] = { id: 'd_mini', goal: 1, prog: 0, done: 0, paid: 0 };
+    O.debugApply({ minis: 1 }); out.cap = [S.brasas - b2, ob.wpaid.brasas, ob.wpaid.parts, ob.wpaid.trim];
+    return out;
+  });
+  ok(r.newAcc.length === 0, 'cuenta nueva (1 expedición): sin d_reto, d_pel2, w_oro ni w_medal3 ' + JSON.stringify(r.ids1.concat(r.wk)));
+  ok(r.stable, 'la lista del día es estable al volver a la aldea y al vencer a un jefe a media tarde');
+  ok(r.noRepeat, 'día UTC nuevo: lista nueva sin repetir el objetivo de ayer de cada dificultad ' + JSON.stringify([r.ids1, r.ids2]));
+  ok(r.kills[0] === 300 && r.kills[1] === 1 && r.kills[2] === 1 && r.kills[3] === 1 && r.kills[4] === 306 && r.paid === 8 + 12 && r.once, 'avance de bajas y guardián con pago automático una sola vez (+' + r.paid + ' Brasas) ' + JSON.stringify(r.kills));
+  ok(r.clean === 1 && r.wfuse === 2 && r.prac, 'tiempo sin daño (60 s) y fusiones distintas de la semana avanzan; la práctica no avanza nada');
+  ok(r.reroll[0] && !r.reroll[1] && r.reroll[2] !== 'd_power', 'cambio gratis: 1 al día; el segundo queda bloqueado ' + JSON.stringify(r.reroll));
+  ok(r.cap[0] === 10 && r.cap[1] === 360 && r.cap[2] === 130 && r.cap[3] === 1, 'tope duro semanal (360 Brasas / 130 partes): el pago se recorta y se anota trim ' + JSON.stringify(r.cap));
+  r = await E(pg, () => {
+    const O = G.Obj, S = G.Save.data, out = { pats: 0, ok: 0, fails: [] }, d0 = 20700;
+    for (let m = 0; m < 128; m++) { let bits = 0; for (let k = 0; k < 7; k++) if (m & (1 << k)) bits++; if (bits !== 5) continue; out.pats++;
+      S.daily.streak = { n: 0, best: 0, last: 0, wood: 2, woodAcc: 0, miles: {} }; for (let k = 0; k < 7; k++) if (m & (1 << k)) O.played(d0 + k);
+      if (S.daily.streak.n === 5) out.ok++; else out.fails.push(m); }
+    S.daily.streak = { n: 12, best: 12, last: d0, wood: 0, woodAcc: 0, miles: {} }; O.notes = []; out.half = [O.played(d0 + 4), S.daily.streak.n];
+    S.daily.streak = { n: 12, best: 12, last: d0, wood: 2, woodAcc: 0, miles: {} }; out.welcome = [O.played(d0 + 21), S.daily.streak.n];
+    S.daily.streak = { n: 7, best: 7, last: d0, wood: 2, woodAcc: 0, miles: {} }; out.back = [O.played(d0 - 1).length, S.daily.streak.n, S.daily.streak.last];
+    S.daily.streak = { n: 2, best: 2, last: d0, wood: 2, woodAcc: 0, miles: {} }; const res0 = JSON.stringify([S.brasas, S.parts, S.pf]); for (let k = 1; k <= 30; k++) O.played(d0 + k);
+    out.miles = Object.keys(S.daily.streak.miles).join(); out.econ = res0 === JSON.stringify([S.brasas, S.parts, S.pf]); out.best = S.daily.streak.best;
+    return out;
+  });
+  ok(r.pats === 21 && r.ok === 21, `racha 5 de 7: los ${r.pats} patrones conservan la racha (n = 5)` + (r.fails.length ? ' -> fallan ' + r.fails : ''));
+  ok(/templó: racha 12 -> 6/.test(r.half[0].join()) && r.half[1] === 6, 'sin Leña y 3 días seguidos sin jugar: la racha baja a la mitad (aviso E7) ' + JSON.stringify(r.half));
+  ok(/Has vuelto/.test(r.welcome[0].join()) && r.welcome[1] === 6, 'ausencia de 20 días: mitad y bienvenida (E8) ' + JSON.stringify(r.welcome));
+  ok(r.back[0] === 0 && r.back[1] === 7, 'reloj hacia atrás: la racha ni sube ni baja');
+  ok(r.miles === '3,7,14,21,28' && r.econ && r.best === 32, 'hitos de racha 3/7/14/21/28: solo cosméticos (Brasas, partes y PF iguales)');
+  await done(pg, 'daily-obj');
+  // ---- pantallas: texto >= 17, sin solapes; botones de 66; capturas
+  const report = async (p, name, min) => { const d = await TC.snap(p, 2); const iss = TC.analyze(d, { minSize: min || TC.MIN_MENU }); const kb = kbdHints(d); ok(kb.length === 0 && d.texts.length > 5 && iss.length === 0, `${name}: ${d.texts.length} textos, ${iss.length} problemas, sin pistas de teclado` + (iss.length || kb.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).concat(kb.slice(0, 2)).join(' | ') : '')); if (SP) await p.screenshot({ path: path.join(SP, 'daily-' + name.replace(/[^a-z0-9]+/gi, '_') + '.png') }); };
+  pg = await mk(b, 'reset=1&cine=0&give=brasas:5000');
+  await E(pg, new Function('(' + ACC_FULL + ')();' + ` G.Save.data.runs = 5; G.Save.data.flags.smithMet = 1; G.Save.data.flags.smithGift = 1; G.Daily.forceOfficial = true; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false); G.Aldea.pos.x = 700; G.Aldea.pos.y = 300;`));
+  await sleep(pg, 400);
+  { const d = await TC.snap(pg, 2), low = { texts: d.texts.filter(t => t.y0 >= 400 || /RACHA|RETO DEL/.test(t.s)), boxes: [], W: d.W, k: d.k }; const iss = TC.analyze(low, { minSize: TC.MIN_MENU });
+    ok(low.texts.length >= 4 && iss.length === 0 && kbdHints(low).length === 0, 'aldea: chips RACHA y RETO DEL DÍA con letra >= 17 y sin solapes (' + low.texts.map(t => t.s).join(' / ') + ')' + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); if (SP) await pg.screenshot({ path: path.join(SP, 'daily-aldea.png') }); }
+  const rc = await E(pg, () => { const c = G.RetoUI.rects().chips(); return [c.fire, c.reto]; });
+  ok(rc.every(q => q.h >= 66), 'chips de la aldea de 66 de alto');
+  await tap(pg, rc[1].x + 20, rc[1].y + 30); await sleep(pg, 300);
+  ok((await E(pg, () => G.Panels.current())) === 'reto', 'tocar el chip RETO DEL DÍA abre el panel del reto');
+  await report(pg, 'panel reto');
+  const R0 = await E(pg, () => G.RetoUI.rects()); R0.tab = k => ({ x: 404 + k * 160, y: 0, w: 154, h: 66 });
+  await tap(pg, R0.go.x + 50, R0.go.y + 30); await sleep(pg, 400);
+  await report(pg, 'confirmacion');
+  await tap(pg, R0.no.x + 50, R0.no.y + 30); await sleep(pg, 300);
+  ok((await E(pg, () => G.state)) === 'aldea' && !(await E(pg, () => G.daily)), 'AÚN NO cierra la confirmación sin gastar el intento');
+  await tap(pg, R0.kit.x + 50, R0.kit.y + 30); await sleep(pg, 300);
+  for (const k of [0, 1, 2]) { await tap(pg, R0.tab(k).x + 40, 30); await sleep(pg, 200); await report(pg, 'ficha kit ' + ['armadura', 'forja', 'mano'][k]); }
+  await tap(pg, R0.back.x + 40, R0.back.y + 30); await sleep(pg, 200);
+  await tap(pg, R0.obj.x + 40, R0.obj.y + 30); await sleep(pg, 300);
+  ok((await E(pg, () => G.Panels.current())) === 'diario', 'OBJETIVOS Y RACHA abre el panel DIARIO');
+  for (const k of [0, 1]) { await tap(pg, R0.tab(k).x + 40, 30); await sleep(pg, 200); await report(pg, 'diario ' + ['objetivos', 'hoguera'][k]); }
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('menu'); }); await sleep(pg, 200); await report(pg, 'menu con RETO Y OBJETIVOS');
+  await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('reto'); }); await sleep(pg, 200);
+  await tap(pg, R0.go.x + 50, R0.go.y + 30); await sleep(pg, 400); await tap(pg, R0.yes.x + 50, R0.yes.y + 30); await sleep(pg, 400);
+  r = await E(pg, () => ({ d: !!G.daily, off: G.daily && G.daily.official, st: G.state }));
+  ok(r.d && r.off, 'EMPEZAR en la confirmación lanza el intento con premio');
+  await E(pg, () => { for (let i = 0; i < 1200; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } });
+  const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /^RETO\s+[\d.]+$/.test(t.s)) && TC.analyze(dh, { minSize: WX === '&wide=0' ? 11.5 : TC.MIN_HUD }).filter(i => i.k === 'solape').length === 0, 'chip del HUD "RETO  n" visible y sin solapes');
+  if (SP) await pg.screenshot({ path: path.join(SP, 'daily-hud.png') });
+  await E(pg, () => { G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa del reto');
+  ok((await TC.snap(pg, 1)).texts.some(t => t.s === 'TERMINAR INTENTO'), 'pausa: TERMINAR INTENTO');
+  await E(pg, () => { G.state = 'play'; G.finish(false); }); await sleep(pg, 700);
+  await report(pg, 'resultado del reto');
+  const Rr = await E(pg, () => G.RetoUI.rects());
+  await tap(pg, Rr.share.x + 30, Rr.share.y + 30); await sleep(pg, 400);
+  await E(pg, () => { G.Base.retry(); }); r = await E(pg, () => ({ d: !!G.daily, off: G.daily && G.daily.official }));
+  ok(r.d && r.off === false, 'REINTENTAR (SIN PREMIO) relanza el reto sin premio');
+  await E(pg, () => { G.finish(false); G.Base.open(true); }); await sleep(pg, 300);
+  ok((await E(pg, () => G.state)) === 'aldea' && !(await E(pg, () => G.Kit.cur)), 'IR A LA ALDEA vuelve a Rescoldo sin kit en memoria');
+  await done(pg, 'daily-pantallas');
+  await b.close();
+}
+const DAILY_SNAP = '["tundra",3,["sincor","sincambio"],"lana",["fire","ice"]]';   // reglas r1 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
+
 (async () => {
-  const run = { fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide };
+  const run = { daily, fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

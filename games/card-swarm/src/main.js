@@ -381,27 +381,33 @@
   G.D = G.diffProfile('alta');
   G.startGame = function () {
     try { Assets.unlock(); } catch (e) { /* sin audio */ }
-    G.setLen(G.lenOverride || G.Save.data.len || 9);
+    // v10 (T-F1-05): reto diario. G.Daily.prepare fija la semilla del día, quita la inmortalidad, instala el kit de la semana (G.Kit) y deja las reglas en G.daily (null en cualquier otra salida)
+    var drq = G.launchReq && G.launchReq.daily ? G.launchReq : null;
+    if (G.Daily) G.Daily.prepare(drq); else G.daily = null;
+    var DL = G.daily;
+    G.setLen(DL ? 9 : (G.lenOverride || G.Save.data.len || 9));   // el reto dura siempre 9 min (jefe a las 7:30)
     var pd = G.Save.data.pending;   // compras de Rufo (Tónico / Imán): valen para ESTA expedición
-    var prac = (G.launchReq && G.launchReq.mode === 'practice') || (!G.launchReq && G.practiceUrl && (G.huntUrl || G.bossUrl));   // la práctica no gasta compras ni platos
+    var prac = !!DL || (G.launchReq && G.launchReq.mode === 'practice') || (!G.launchReq && G.practiceUrl && (G.huntUrl || G.bossUrl));   // la práctica y el reto no gastan compras ni platos
     G.runBuff = { tonic: !prac && !!pd.tonic, magnet: !prac && !!pd.magnet }; if (!prac) { pd.tonic = 0; pd.magnet = 0; } G.Save.save();
-    if (prac) { G.runBuff.dish = null; G.runBuff.fx = {}; }
+    if (prac) { G.runBuff.dish = null; G.runBuff.fx = {}; if (DL) G.Kit.applyDish(); }   // reto: el plato del kit, sin gastar el de la cuenta
     else try { G.Cook.begin(); } catch (e0) { G.runBuff.dish = null; G.runBuff.fx = {}; }   // Fase 2b: plato de Tía Castaña (consume pending.dish y deja su buff en G.runBuff.fx)
+    if (G.Obj) G.Obj.beginRun();   // v10: día de la salida (racha y objetivos) y contadores de la partida
     G.Loot.beginRun();
     G.D = G.diffProfile(G.Q.level);   // T-F0-05: perfil fijado al empezar (un cambio de calidad a mitad solo cambia los graficos)
+    if (DL) G.Daily.applyD(G.D);   // mutadores de horda (velocidad, cantidad, vida) sobre el perfil
     G.reset();
     // Destino (bioma) y jefe: el bioma elegido en el Portal decide el jefe (bosque = Pastor, cripta = Karceron, asfodelo = Letea).
     // Cripta exige haber vencido al Pastor y Asfodelo a Karceron (persistido en Save.data.bossKills); ?biome= y ?boss= saltan el bloqueo.
     // Modo de la salida (J3): 'run' normal, 'hunt' (cacería de Vesper: sin hordas) o 'practice' (sin riesgo ni recompensas). G.launchReq lo pide el Portal / el Tablón de Vesper.
-    var rq = G.launchReq; G.launchReq = null;
+    var rq = G.launchReq; G.launchReq = null; if (DL) rq = null;
     if (!rq && G.huntUrl) rq = { mode: G.practiceUrl ? 'practice' : 'hunt', boss: G.huntUrl };
     if (!rq && G.practiceUrl && G.bossUrl) rq = { mode: 'practice', boss: G.bossUrl };
-    G.lastReq = rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
+    G.lastReq = DL ? { mode: 'run', daily: true } : rq ? { mode: rq.mode, boss: rq.boss, peligro: rq.peligro, phase: rq.phase } : null;
     G.mode = rq ? rq.mode : 'run'; if (G.Armor) G.Armor.modeSet(); G.nointro = G.nointroUrl; G.huntHpMul = G.mode === 'hunt' ? 0.75 : G.mode === 'practice' ? 0.5 : 1; G.prep = null; G.dbgPhaseReq = 0;
     var biome = G.biomeUrl || G.Save.data.biome || 'bosque', BK = G.Save.data.bossKills;
     G.final = false;
-    if (!rq && !G.biomeUrl && !G.bossUrl && biome === 'crater' && G.Save.craterOpen()) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.Save.pelSel('cenizar'), phase: 0, final: true };   // P6.5: el Cráter es el Asalto (estilo cacería, HP completo)
-    if (!rq && /[?&]assault=1/.test(Dev.search)) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.peligroUrl ? qnum('peligro', 1) : 1, phase: 0, final: true };
+    if (!DL && !rq && !G.biomeUrl && !G.bossUrl && biome === 'crater' && G.Save.craterOpen()) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.Save.pelSel('cenizar'), phase: 0, final: true };   // P6.5: el Cráter es el Asalto (estilo cacería, HP completo)
+    if (!DL && !rq && /[?&]assault=1/.test(Dev.search)) rq = { mode: 'hunt', boss: 'cenizar', peligro: G.peligroUrl ? qnum('peligro', 1) : 1, phase: 0, final: true };
     if (rq && rq.final) { G.final = true; G.mode = 'hunt'; G.huntHpMul = 1; G.lastReq = { mode: 'hunt', boss: 'cenizar', peligro: rq.peligro, phase: 0, final: true }; }
     if (rq && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[rq.boss] || biome;
     else if (G.bossUrl && !G.biomeUrl) biome = ({ pastor: 'bosque', karceron: 'cripta', letea: 'asfodelo', yarlak: 'tundra', melaria: 'panal', cenizar: 'crater' })[G.bossUrl] || biome;
@@ -412,6 +418,7 @@
       if (biome === 'crater' && !G.Save.craterOpen()) biome = BK.yarlak ? 'panal' : BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P6.5: el Cráter se abre al vencer a los 5 jefes
       if (biome === 'panal' && !BK.yarlak) biome = BK.letea ? 'tundra' : BK.karceron ? 'asfodelo' : BK.pastor ? 'cripta' : 'bosque';   // P6: el Panal se abre al vencer a Yarlak
     }
+    if (DL) biome = DL.biome;   // reto: el bioma del día (?biome= no cuenta)
     G.curBiome = biome; try { if (!Assets.setBiome(biome)) Assets.setBiome(biome === 'crater' ? 'cripta' : 'bosque'); } catch (e2) { /* sin bioma */ }   // la Tundra la registra assets_fam3.js (arena, vignette, nieve); si faltara, usa el bosque y el suelo propio de tundra.js
     G.Tundra.begin(biome);   // P3: hielo, Frío, ventisca, hogueras y estalagmitas solo en la Tundra
     G.Panal.begin(biome);    // P5: arena hexagonal, celdas de miel, humo y pilares de cera solo en el Panal
@@ -426,8 +433,9 @@
     else if (rq && rq.peligro) G.peligro = G.peligroUrl ? qnum('peligro', 1) : Math.min(rq.peligro, G.Save.pelMax(G.bossId));
     else if (!G.peligroUrl) G.peligro = G.bossUrl || rq ? 1 : G.Save.pelSel(G.bossId);
     else G.peligro = qnum('peligro', 1);
+    if (DL) { G.bossId = DL.boss; G.peligro = DL.peligro; }   // reto: jefe y Peligro del día, aunque la cuenta no los tenga abiertos
     G.dbgPhase = (rq && rq.phase) || qnum('phase', 0);
-    if (G.bossUrl || rq) { G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true, mini1: true, mini2: true }; }
+    if ((G.bossUrl || rq) && !DL) { G.time = G.runT = G.BOSS_T - 100; G.Waves.elitesDone = { mini_bulwark: true, mini_hive: true, mini1: true, mini2: true }; }
     if (G.mode !== 'run') {   // cacería / práctica: arena solo con el jefe; 6 ofertas de preparación (la práctica reutiliza la mano del primer intento)
       var sv = G.Save.data, rec = sv.practice[G.bossId] = sv.practice[G.bossId] || { tries: 0, wins: 0 };
       if (G.mode === 'practice') { rec.tries++; G.practiceTries = rec.tries; }
@@ -455,7 +463,7 @@
     if (G.state === 'gameover') return;
     G.won = won; G.state = 'gameover';
     G.finalHand = G.Cards.snapshot();
-    if (G.mode === 'practice') G.Loot.endPractice(won); else G.Loot.endRun(won);   // la práctica no toca el guardado (solo el contador de intentos)
+    if (G.mode === 'practice') G.Loot.endPractice(won); else if (G.daily) G.Daily.finish(won); else G.Loot.endRun(won);   // v10: el reto paga su tabla y no toca la campaña   // la práctica no toca el guardado (solo el contador de intentos)
     var fin = won && G.bossId === 'cenizar' && G.mode !== 'practice' && G.Ending && G.Ending.eligible();   // v9 F3: final con cinemática (el orden de jingles lo lleva ending.js: nada de stg_cenizar_win aquí)
     if (!fin) G.sfx(won ? 'boss_die' : 'game_over');
     if (won && !fin) { try { G.Snd.play(G.bossId === 'cenizar' ? 'stg_cenizar_win' : G.bossId === 'yarlak' ? 'stg_yarlak_victory' : G.bossId === 'melaria' ? 'stg_melaria_victory' : 'win'); } catch (e) { /* audio */ } }
@@ -477,6 +485,7 @@
     G.Panal.update(dt);    // celdas de miel, humo, charcos, pilares y cura (solo en el Panal)
     G.Waves.update(dt);
     G.Hud.update(dt);
+    if (G.daily) G.Daily.tick(dt);   // v10: puntuación en vivo, hitos de medalla y punto de control (no toca G.rng)
     G.fx.update(dt);
     if (G.onTick) G.onTick(dt);   // gancho de pruebas/bots (tools/): entradas por tick de mundo, nunca por reloj real
     var p = G.player;

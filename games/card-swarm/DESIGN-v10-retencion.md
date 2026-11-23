@@ -941,3 +941,25 @@ Todo puede ser procedural en el estilo de `src/assets_*.js` y `src/sfx_*.js`. No
 | Sonido: jingle de resultado (3 variantes por medalla) | Resultado | 1-2 s | Puede derivar de `win` / `boss_die` |
 | Sonido: objetivo cumplido | Banner | < 0,4 s | Puede reutilizar `card_select` con otro tono |
 | Sonido: farolillo encendido | Aldea | < 1 s | Crepitar cálido |
+
+---
+
+## 8. Estado de la implementación (programmer, 2026-11-23)
+
+Implementado en esta tanda (T-F1-05 y T-F1-06, MVP con los 8 kits por decisión del dueño): `src/kits.js`, `src/daily.js`, `src/objectives.js`, `src/reto_ui.js`, guardado v13 (`src/save.js`) y ganchos mínimos en `main.js`, `armor.js`, `cards.js`, `fusion.js`, `loot.js`, `quests.js`, `combat.js`, `player.js`, `enemies.js`, `minis.js`, `smith.js`, `panels.js`, `aldea.js`, `base.js`, `hud.js`, `dev.js` e `index.html`. Pruebas: grupo `daily` de `tools/card-swarm-bot/tests.js` (incluye lo de los grupos `kit` y `obj` de 5.2).
+
+### 8.1 Sin calibrar (pendiente de balance-designer, 1.10.6)
+- **Los 8 kits** llevan exactamente los valores de 1.10.3-1.10.4 (tramos de PF 6/9/12/15/18, tier y refuerzo por bioma, piezas, nodos, platos). No se ha corrido ninguna fase A-D. Palancas en `G.Kit.POWER` y `G.Kit.KITS` (`src/kits.js`); si se tocan, subir `G.Kit.KV` a `k2`.
+- **Pesos de Peligro** (35/45/20), **presupuesto de mutadores** (2 / 1,5 / 1) y **pesos de cada mutador** (`G.Daily.MUT`): los del diseño. Si cambian, subir `G.Daily.RV` a `r2`.
+- **Puntuación y multiplicador** (1.4) y **tabla de premios** (1.6): tal cual el diseño.
+- Falta en el banco de T-F2-01 la opción `KIT=<id>` / `BIOME=` para el bot de partida (5.1, última fila de `tools/`): hoy se puede forzar con `?dev=1&kit=<id>` y lanzar el reto con `G.Daily.start(false)`.
+
+### 8.2 Desvíos respecto al diseño
+1. **Entrada del reto**: no hay pestaña RETO en el Portal (no cabía una 4.ª pestaña de 154 de ancho con letra 17 junto al cierre). El reto se abre desde el **chip RETO DEL DÍA** de la aldea (junto a PORTAL), desde **MENÚ > RETO Y OBJETIVOS** y, el diario, desde el chip RACHA y la pestaña DIARIO de Vesper. Por eso tampoco hay marca dorada sobre el Portal: el chip lleva el borde dorado y una medalla mientras el intento de hoy está pendiente.
+2. **Aviso de kit nuevo** (A10l): etiqueta NUEVO junto al nombre del kit en la pestaña del reto, no un aviso flotante (pisaba la cabecera).
+3. **`d_hunt`** (objetivo diario "Derrota a N [enemigo]") no está: dependía de los encargos de caza y de `Q.feasible` por bioma; el catálogo diario queda en 18.
+4. **Racha a la mitad**: la cifra que se muestra (E7, E8) es la mitad y el día de hoy no suma encima ("12 -> 6").
+5. **Manual "Lo viste prestado en el reto"** (A10k): no implementado. Lo prestado no se marca como visto en ningún sitio (no cuenta como descubierto), pero el Manual tampoco recuerda que lo viste en un kit.
+6. **Modo PRUEBA**: con `?dev=1` y cualquier parámetro cerrado de `src/dev.js` (o `today`, `kit`, `god`, `reto`). `?dev=1` a secas juega el intento con premio.
+7. **Burbuja "Reto del día listo" del Portal** (D3) y **sonidos nuevos** (sección 7): no hechos; se usan `card_select` y los banners existentes. Emblemas de kit: no hay arte (se usa el color del kit y los iconos de etiqueta).
+8. **Tabla en línea**: solo el dato preparado en cada entrada de `daily.reto.hist` (formato de 1.4, con `build` vacío si el service worker no lo expone). El 2.º intento por anuncio solo tiene el campo `extraDay`.

@@ -336,7 +336,7 @@
     else if (e.type === 'worm' || e.type === 'archer' || e.type === 'bomb') { if (G.rng() < 0.5 * rx) C.dropGem(e.x, e.y, 'ash', 2); }
     else if (rx === 1) for (var j = 0; j < (e.type === 'boss' ? 6 : 1); j++) C.dropGem(e.x, e.y, 'ash', d.ash / (e.type === 'boss' ? 6 : 1));
     else { var ac = G.D.ashAcc + d.ash * rx, an = Math.floor(ac + 1e-9); G.D.ashAcc = ac - an; if (an >= 1) C.dropGem(e.x, e.y, 'ash', an); }   // el resto fraccionario se acumula (la gema se redondea al recoger)
-    if (G.rng() < B.player.heartP * rx) C.dropGem(e.x, e.y, 'heart', B.player.heal);
+    if (G.rng() < B.player.heartP * rx * (G.daily ? G.daily.heartMul : 1)) C.dropGem(e.x, e.y, 'heart', B.player.heal);
     G.Loot.onKill(e);
     if (e.burnT > 0) {
       var tf = G.Tree.fx;
@@ -397,7 +397,7 @@
   }
 
   function updateGems(dt) {
-    var p = G.player, s = dt / 1000, R = (p.level === 1 ? B.player.pickup1 : B.player.pickup) * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1) * (G.Armor ? G.Armor.magnetMul() : 1);
+    var p = G.player, s = dt / 1000, R = (p.level === 1 ? B.player.pickup1 : B.player.pickup) * M().magnet * (G.runBuff && G.runBuff.magnet ? 1.5 : 1) * (G.Armor ? G.Armor.magnetMul() : 1) * (G.daily ? G.daily.pickMul : 1);
     for (var i = G.gems.length - 1; i >= 0; i--) {
       var g = G.gems[i]; g.t += dt;
       var dx = p.x - g.x, dy = p.y - g.y, d = Math.hypot(dx, dy);

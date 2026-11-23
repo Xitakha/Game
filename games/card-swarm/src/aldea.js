@@ -82,6 +82,11 @@
     if (fromRun && G.Ending && G.Ending.dawn) { G.Ending.dawn = false; dawnT = 4200; A.timeMode = 'dia'; }   // tras el final: cartel "Amanece en Rescoldo"
     M.opened = true;
     try { G.Ach.check().forEach(function (a) { flash('Logro: ' + a.name + ' (habla con Lanudo)'); }); } catch (e) { /* logros */ }
+    try {   // v10: reto cortado a mitad, aviso de apertura, rotación de objetivos y avisos de la racha
+      if (G.Daily) G.Daily.onAldea().forEach(flash);
+      if (G.Obj) { G.Obj.ensure(); G.Obj.takeNotes().forEach(flash); }
+      if (G.RetoUI) G.RetoUI.reset();
+    } catch (eD) { if (window.Diag) Diag.log(eD && eD.message, { kind: 'reto', stack: eD && eD.stack }); }
     applySettings();
   };
   function applySettings() {
@@ -180,6 +185,7 @@
     if (!S.cooked) out.push('Tía Castaña cocina un plato por expedición. Un buen guiso vale más que un cuerno de jefe.');
     if (!S.loadouts.some(Boolean) && S.runs >= 2) out.push('Ulalume guarda hasta tres mazos de anclas. Así no tienes que elegir cada vez.');
     out.push('Los sets de la forja se activan con 3 cartas de la misma etiqueta en la mano, y a 4 hacen algo especial.');
+    if (G.Daily && G.Daily.isOpen()) out.push(G.Daily.t('lanudo'));   // v10: el reto del día
     return out;
   }
   function talkLanudo(it) {
@@ -340,13 +346,14 @@
     if (inp.hit('Tab')) toPortal();
     else if (inp.hit('Escape') || (click && U.inR(R_MENU, m))) openPanel('menu');
     else if (click && U.inR(R_PORTAL, m)) toPortal();
+    else if (click && G.RetoUI && G.RetoUI.aldeaClick(m)) { M.moving = false; }   // v10: chips de la racha y del reto
     else if ((inp.hit('KeyE', 'Enter') && tg) || (click && tg && U.inR(R_TALK, m))) { M.moving = false; talk(tg); }
   };
   // Ladridos: al acercarte a un NPC dice una frase corta si tiene algo que contarte (máx. 1 cada 25 s por NPC)
   function barkFor(id) {
     var S = G.Save.data, Q = G.Quests, T = G.Tree;
     if (id === 'grum') return T.availableCount() > 0 ? '¡Hay hierro listo para ti!' : null;
-    if (id === 'vesper') return Q.isReady() ? '¡Eso lo tengo que cobrar!' : Q.mark() === 'new' ? 'El Tablón tiene encargos nuevos.' : null;
+    if (id === 'vesper') return Q.isReady() ? '¡Eso lo tengo que cobrar!' : Q.mark() === 'new' ? 'El Tablón tiene encargos nuevos.' : G.Obj && G.Obj.unseen() ? G.Obj.t('vesper') : null;
     if (id === 'rufo') return (S.shop.trade || 0) < G.Loot.TRADE.cupo && totalParts() > 12 ? '¡Precio de amigo, siempre!' : null;
     if (id === 'ulalume') return S.runs > 0 && !S.loadouts.some(Boolean) ? '¿Guardamos un mazo?' : null;
     if (id === 'castana') return G.Cook.anyAffordable() ? '¡Ven a comer algo, mapachito!' : null;
@@ -526,6 +533,7 @@
     }
     if (!haveArt) { drawFallback(c, now); drawMarlo(c); }
     drawBrasero(c, now); drawCarapaFallback(c, now); drawUpgrades(c, now, A.level());
+    if (G.RetoUI) G.RetoUI.drawVillage(c, now);   // v10: cosméticos de la racha
     drawMarks(c, now, tg);
     drawEmotes(c, now); drawBark(c);
     if (mode !== 'panel') drawTopHud(c);
@@ -542,7 +550,7 @@
     NO().concat(['portal']).forEach(function (id) {
       var kind = null;
       if (id === 'grum') { if (T.availableCount() > 0 || Object.keys(G.Loot.affordable()).length) kind = 'green'; }
-      else if (id === 'vesper') { var mk = Q.mark(); kind = mk === 'ready' ? 'green' : mk === 'new' ? 'gold' : null; }
+      else if (id === 'vesper') { var mk = Q.mark(); kind = mk === 'ready' ? 'green' : mk === 'new' || (G.Obj && G.Obj.unseen()) ? 'gold' : null; }   // v10: objetivos del día sin ver (el verde manda)
       else if (id === 'lanudo') { if (G.Ach.unseen().length) kind = 'gold'; }
       else if (id === 'castana') { if (G.Cook.anyAffordable()) kind = 'gold'; }
       else if (id === 'carapa') { if (G.Armor.readyCount() > 0) kind = 'green'; else if (G.Armor.newSets() > 0 || G.Armor.pedReadyCount() > 0) kind = 'gold'; }
@@ -587,6 +595,7 @@
   function drawButtons(c, tg) {
     layoutHud();
     U.button(c, R_PORTAL, 'PORTAL', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.Sys.isTouch() ? null : 'Tab' });
+    if (G.RetoUI) G.RetoUI.drawChips(c);   // v10: racha (abre el DIARIO) y reto del día
     if (tg && !D.active()) U.button(c, R_TALK, tg.id === 'portal' ? 'PORTAL' : 'HABLAR', { size: 18, sub: G.Sys.isTouch() ? null : '[E]' });
   }
   // T-F1-08: con la pantalla ancha (G.OX > 0) la aldea se ve a todo el ancho: franjas laterales con decorado propio (assets_village.js). En los paneles,

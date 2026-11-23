@@ -163,7 +163,7 @@
     if (G.Tundra.noBoss()) G.txt(c, 'Tundra: prueba sin jefe  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#9fd8ff', 'center');
     else if (G.Panal.noBoss()) G.txt(c, 'Panal: prueba sin jefa  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#f3a31f', 'center');
     else if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
-    G.txt(c, durLine(), G.W / 2, 60, 12, '#8a7f96', 'center');
+    if (!G.daily) G.txt(c, durLine(), G.W / 2, 60, 12, '#8a7f96', 'center');   // (en el reto, el chip del reto ocupa esta línea)
     }
     // kills, ceniza
     G.txt(c, 'Bajas ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
@@ -194,7 +194,7 @@
     // ayuda inicial
     var since = G.time - G.t0;
     if (G.Fte && G.Fte.engaged()) G.Fte.draw(c);   // T-F1-02: cuatro avisos de una línea en la 1.ª expedición (sustituyen la ayuda de dos líneas)
-    else if (since < 9000 && G.state === 'play') {
+    else if (since < 9000 && G.state === 'play' && !G.daily) {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
       if (wide) { drawHelpWide(c); c.restore(); } else {
       G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 300, 16, '#ffffff', 'center');
@@ -203,6 +203,7 @@
       }
     }
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
+    if (G.daily && G.RetoUI) G.RetoUI.drawHud(c);   // v10: chip del reto diario
     drawBanner(c);
     G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
     if (G.state === 'paused') { G.minFont = G.MIN_UI; G.column(c, function () { drawPause(c); if (H.eqOpen) G.Smith.draw(c); if (G.Manual.isOpen()) G.Manual.draw(c); }, H.eqOpen || G.Manual.isOpen() ? '#08040e' : 'rgba(8,4,14,0.9)'); }
@@ -241,7 +242,7 @@
     var U = G.UI, now = performance.now();
     c.fillStyle = 'rgba(8,4,14,0.9)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, 'PAUSA', G.W / 2, 46, 44, '#ffd27a', 'center');
-    if (G.hudWide() && G.mode === 'run') G.txt(c, durLine(), G.W / 2, 86, 17, '#b8aec8', 'center');   // T-F1-08: la línea de duración y botín sale del combate y se ve aquí
+    if (G.hudWide() && G.mode === 'run' && !G.daily) G.txt(c, durLine(), G.W / 2, 86, 17, '#b8aec8', 'center');   // T-F1-08: la línea de duración y botín sale del combate y se ve aquí
     U.button(c, PB.go, 'CONTINUAR', { size: 26, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     U.button(c, PB.qual, 'GRÁFICOS', { size: 18, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Sys.qualityLabel() });
     U.button(c, PB.snd, 'SONIDO', { size: 18, color: G.Sys.muted ? '#7a3a3a' : '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Sys.muted ? 'NO' : 'SÍ' });
@@ -249,9 +250,9 @@
     if (G.Armor && G.Armor.smithOn()) U.button(c, eqRect(), 'EQUIPO', { size: 18, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: G.Armor.OFF ? 'apagado' : 'DEF ' + Math.round(G.Armor.get().def) });
     if (G.mode === 'practice') U.button(c, redoRect(), G.Sys.isTouch() ? 'REINICIAR' : 'REINICIAR PRÁCTICA', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     var ask = quitAsk > now;
-    U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a' });
+    U.button(c, PB.quit, ask ? 'SEGURO? TOCA OTRA VEZ' : G.daily ? G.Daily.t('quit') : 'ABANDONAR EXPEDICIÓN', { size: ask ? 20 : 18, color: ask ? '#a02030' : '#3a2f48', hot: '#c03040', border: ask ? '#ff8a8a' : '#8a6a8a', sub: !ask && G.daily ? G.Daily.t('quitSub') : null });
     if (G.Armor && !G.Armor.OFF && G.Armor.get().any) { var am = G.Armor.get(); G.txt(c, 'DEF ' + Math.round(am.def) + '  =  ' + Math.round(am.rd * 1000) / 10 + ' % de reducción   HP +' + am.hp + '   Aplomo ' + Math.round(am.apl * 100) + ' %', G.W / 2, 410, 17, '#6ac8d8', 'center'); }
-    G.txt(c, 'Conservas las partes recogidas', G.W / 2, 434, 17, '#ffb347', 'center');
+    G.txt(c, G.daily ? G.Daily.t('confirm2') : 'Conservas las partes recogidas', G.W / 2, 434, 17, '#ffb347', 'center');
     if (G.Sys.isTouch()) {
       G.txt(c, 'El ataque básico es automático: esquiva y usa los poderes', G.W / 2, 468, 17, '#d8cfe8', 'center');
       G.txt(c, 'Mueve el pulgar en la mitad izquierda para andar', G.W / 2, 492, 17, '#9a8fb0', 'center');
