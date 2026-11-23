@@ -855,6 +855,10 @@ Pendiente o dudoso tras estas decisiones: servicio de analítica (1), traducció
 - **Kits del reto diario (T-F1-05).** Las piezas de sets no descubiertos se muestran completas y marcadas "PRESTADO", sin contar como descubiertas. Se empieza con los 8 kits (no con 4): la calibración es la completa del diseño. La variedad dentro de la semana viene del día (bioma, Peligro, mutadores y etiquetas de acompañamiento).
 - **Ritmo inicial (T-F1-03).** Se acepta que el primer medio minuto sea más exigente para quien no se mueve o no usa su primer poder. Vale para todas las expediciones. Radio de recogida: se mantiene como está (60 px en todos los niveles); el cambio C4 de la especificación no se aplica.
 
+### Nota sobre modelos (2026-11-23)
+
+Fable 5.2 exige créditos de uso en la cuenta del dueño y las tareas que lo pedían fallaron al arrancar. Decisión del dueño: continuar con Opus 5.5. Toda tarea del plan que dice "Fable 5.2" (balance-designer, calibración de kits, revisiones críticas) se ejecuta con Opus 5.5 con esfuerzo alto, salvo que el dueño vuelva a habilitar Fable. El archivo `.claude/agents/balance-designer.md` conserva Fable como modelo por defecto: al lanzarlo hay que indicar `model: opus` explícitamente.
+
 ## 7. Los 5 primeros pasos recomendados
 
 Hecho el 2026-11-13: T-F0-13 (retirada de Ember Flock y del clásico), T-F0-09 (salvo los conteos del README) y la resolución de T-F0-08. Decididas pero con trabajo pendiente: T-F0-07 (texto de Marlo).
