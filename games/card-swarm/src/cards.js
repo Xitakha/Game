@@ -261,6 +261,7 @@
   C.slotRect = function (i, big) {
     if (big === 'end') return { x: 20 + i * 94, y: 112, w: 86, h: 114 };
     if (big) return { x: 110 + i * 86, y: 350, w: 76, h: 100 };
+    if (G.hudWide()) { var A = G.anchor(); return { x: A.L + i * 84, y: A.B - 104, w: 78, h: 104 }; }   // T-F1-08: mano anclada a la esquina inferior izquierda segura
     return { x: 8 + i * 77, y: 430, w: 72, h: 96 };   // FUSION: la mano va a la IZQUIERDA (los 4 botones de poderes ocupan la zona del pulgar derecho)
   };
   C.skipRect = { x: 580, y: 440, w: 250, h: 48 };
@@ -410,7 +411,7 @@
     var rk = G.Save.rank(slot.id);
     if (rk > 1) G.txt(c, U_roman(rk), x + 9 * f, y + 24 * f, Math.round(10 * f), '#ffd24a', 'center');
     // nombre
-    G.txt(c, d.short, x + w / 2, y + h - 11 * f, Math.max(12, Math.round(10 * f)), '#fff', 'center');
+    G.txt(c, d.short, x + w / 2, y + h - 11 * f, o.ns || Math.max(12, Math.round(10 * f)), '#fff', 'center');   // o.ns: tamaño del nombre (HUD ancho: 14)
     // cooldown (barrido)
     if (!o.nocd && d.type === 'attack' && slot.cdMax && !ORB[d.id] && d.kind !== 'aura' && slot.cd > 0) {
       var fr = G.clamp(slot.cd / slot.cdMax, 0, 1);

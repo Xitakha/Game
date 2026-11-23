@@ -1,6 +1,7 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|wide] [base=http://localhost:8811]
+//   WIDE=1 node tools/card-swarm-bot/tests.js <grupo> ...   corre el grupo con la pantalla ancha (?wide=1, SPEC T-F1-08)
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
 const { execSync } = require('child_process');
@@ -11,11 +12,12 @@ const mode = process.argv[2] || 'all', base = process.argv[3] || 'http://localho
 const ROOT = path.join(__dirname, '..', '..');
 let fails = 0, total = 0;
 const ok = (c, msg) => { total++; if (!c) fails++; console.log((c ? 'OK     ' : 'FALLO  ') + msg); };
+const WX = process.env.WIDE ? '&wide=' + process.env.WIDE : '';   // T-F1-08: WIDE=1 corre los grupos existentes con la pantalla ancha (?wide=1)
 const launch = () => pwLaunch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
 async function mk(b, url) {
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
   pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
-  await pg.goto(`${base}/index.html?${/(^|&)nodev(&|$)/.test(url) ? '' : 'dev=1&'}nosw=1&${url}`);   // dev=1: los parámetros de trampa (give, pf, cmul, reset...) solo valen con él (src/dev.js); 'nodev' lo omite await pg.waitForTimeout(600);
+  await pg.goto(`${base}/index.html?${/(^|&)nodev(&|$)/.test(url) ? '' : 'dev=1&'}nosw=1&${url}${WX}`);   // dev=1: los parámetros de trampa (give, pf, cmul, reset...) solo valen con él (src/dev.js); 'nodev' lo omite await pg.waitForTimeout(600);
   return pg;
 }
 const done = async (pg, name) => { ok(pg.errs.length === 0, `${name}: 0 errores de consola` + (pg.errs.length ? ' -> ' + pg.errs.slice(0, 3).join(' | ') : '')); await pg.close(); await pg.ctx.close(); };
@@ -23,7 +25,8 @@ const E = (pg, fn, arg) => pg.evaluate(fn, arg);
 const sleep = (pg, ms) => pg.waitForTimeout(ms);
 const key = async (pg, k) => { await sleep(pg, 320); await pg.keyboard.press(k); await sleep(pg, 120); };   // las ventanas ignoran pulsaciones los primeros 200 ms
 // coordenadas del juego (960x540) -> punto de la página
-async function gp(pg, x, y) { const r = await E(pg, () => { const b = document.getElementById('game').getBoundingClientRect(); return { l: b.left, t: b.top, w: b.width, h: b.height }; }); return { x: r.l + x * r.w / 960, y: r.t + y * r.h / 540 }; }
+// T-F1-08: con la pantalla ancha (G.W > 960) los menús van en la columna de 960 centrada (G.OX); el HUD de combate ('play') usa coordenadas de lienzo
+async function gp(pg, x, y) { const r = await E(pg, () => { const b = document.getElementById('game').getBoundingClientRect(); return { l: b.left, t: b.top, w: b.width, h: b.height, W: G.W || 960, ox: G.state === 'play' ? 0 : (G.OX || 0) }; }); return { x: r.l + (x + r.ox) * r.w / r.W, y: r.t + y * r.h / 540 }; }
 async function tap(pg, x, y) { const p = await gp(pg, x, y); await pg.touchscreen.tap(p.x, p.y); await sleep(pg, 80); }
 async function waitState(pg, st, ms = 4000) { const t0 = Date.now(); while (Date.now() - t0 < ms) { if ((await E(pg, () => G.state)) === st) return true; await sleep(pg, 50); } return false; }
 const autoSkip = pg => E(pg, () => { setInterval(() => { if (G.state === 'cards' && G.Cards.off && G.Cards.off.mode === 'level' && !G.Cards.off.modal && !G.Cards.off.keep) G.Cards.skip(); }, 150); });   // las subidas de nivel por XP no deben frenar las pruebas de poderes
@@ -247,15 +250,16 @@ async function ui() {
   console.log('--- interfaz: 4 botones, teclas, mano a la izquierda, 844x390 y vertical');
   const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&speed=2&nointro=1&actives=vapor,plasma,forja,hemo&hand=spark:1,shard:1,dart:1,dagger:1,fang:1');
   await sleep(pg, 800);
-  const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)), n: G.Fusion.activeCount() }));
+  const g = await E(pg, () => { G.Fusion.layout(); const A = G.anchor(); return { btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)), n: G.Fusion.activeCount(), sys: G.Sys.buttons(), W: G.W, wide: G.hudWide(), A }; });
   const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
-  const sysBtns = [{ x: 246, y: 6, w: 48, h: 48 }, { x: 298, y: 6, w: 48, h: 48 }];   // mobile.js BTN.pause / muteRun
-  const hud = [{ x: 8, y: 6, w: 240, h: 34 }, { x: 760, y: 6, w: 196, h: 110 }];       // barra de vida y bloque Kills / Ceniza / Partes (derecha arriba)
+  const sysBtns = g.sys;   // mobile.js: pausa / silencio
+  const hud = g.wide ? [{ x: g.A.L, y: g.A.T, w: 240, h: 22 }, { x: g.A.R - 260, y: g.A.T, w: 260, h: 130 }]   // T-F1-08: vida y columna derecha ancladas
+    : [{ x: 8, y: 6, w: 240, h: 34 }, { x: 760, y: 6, w: 196, h: 110 }];       // barra de vida y bloque Kills / Ceniza / Partes (derecha arriba)
   ok(g.n === 4 && g.btn.length === 4, '4 slots de poderes y 4 botones');
-  ok(g.hand.every(r => r.x + r.w <= 480), 'la mano de cartas está a la IZQUIERDA (termina en x=' + (g.hand[4].x + g.hand[4].w) + ')');
-  ok(g.btn.every(c => c.x - c.r >= 480), 'botones en la mitad derecha (zona del pulgar derecho; el joystick solo nace en x < 480)');
+  ok(g.hand.every(r => r.x + r.w <= g.W / 2), 'la mano de cartas está a la IZQUIERDA (termina en x=' + (g.hand[4].x + g.hand[4].w) + ')');
+  ok(g.btn.every(c => c.x - c.r >= g.W / 2), `botones en la mitad derecha (zona del pulgar derecho; el joystick solo nace en x < ${g.W / 2})`);
   ok(g.btn.every(c => c.r >= 38) && g.btn.every((c, i) => g.btn.every((d, j) => i === j || Math.hypot(c.x - d.x, c.y - d.y) > c.r + d.r)), 'radio >= 38 (55 px CSS en 844x390) y botones sin solaparse');
-  ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && !hud.some(r => hit(c, r)) && c.x + c.r <= 960 && c.y + c.r <= 540), 'sin solapar mano, pausa / silencio ni HUD');
+  ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && !hud.some(r => hit(c, r)) && c.x + c.r <= g.W && c.y + c.r <= 540), 'sin solapar mano, pausa / silencio ni HUD');
   ok(g.btn.every(c => !hit(c, { x: g.auto.x, y: g.auto.y, w: g.auto.w, h: g.auto.h })) && g.hand.every(r => r.x + r.w < g.auto.x), 'chip AUTO libre de mano y botones');
   await E(pg, () => { G.enemies.length = 0; for (let i = 0; i < 10; i++) G.Enemies.spawn('worm', G.player.x + 60 + i * 12, G.player.y + (i % 3) * 20); G.enemies.forEach(e => { e.spawnT = 0; e.hp = e.maxHp = 9999; }); G.player.actives.forEach(s => { s.cd = 0; }); });
   for (const k of ['KeyQ', 'KeyE', 'KeyR', 'Space']) { await pg.keyboard.press(k); await sleep(pg, 120); }
@@ -292,18 +296,18 @@ async function touch() {
   console.log('--- táctil: botones grandes, sin chocar con el joystick ni con mobile.js');
   const b = await launch(); const pg = await mk(b, 'reset=1&god=1&direct=1&all=1&actives=vapor,plasma,forja,hemo&hand=spark:1&speed=2&bcd=60000&aux=0');
   await autoSkip(pg); await sleep(pg, 800);
-  const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)) }));
+  const g = await E(pg, () => ({ btn: G.Fusion.BTN, auto: G.Fusion.AUTO, hand: [0, 1, 2, 3, 4].map(i => G.Cards.slotRect(i, false)), sys: G.Sys.buttons(), W: G.W }));
   const hit = (c, r) => { const px = Math.max(r.x, Math.min(c.x, r.x + r.w)), py = Math.max(r.y, Math.min(c.y, r.y + r.h)); return Math.hypot(c.x - px, c.y - py) < c.r; };
-  const sysBtns = [{ x: 246, y: 6, w: 48, h: 48 }, { x: 298, y: 6, w: 48, h: 48 }];   // mobile.js BTN.pause / muteRun
-  ok(g.btn.every(c => c.x - c.r >= 480), 'botones en la mitad derecha (el joystick flotante solo nace en x < 480)');
-  ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && c.x + c.r <= 960 && c.y + c.r <= 540), 'sin solapar la mano ni los botones de pausa / silencio de mobile.js');
+  const sysBtns = g.sys;   // mobile.js: pausa / silencio (con ?wide=1, arriba a la derecha)
+  ok(sysBtns.length === 2 && g.btn.every(c => c.x - c.r >= g.W / 2), `botones en la mitad derecha (el joystick flotante solo nace en x < ${g.W / 2})`);
+  ok(g.btn.every(c => !g.hand.some(r => hit(c, r)) && !sysBtns.some(r => hit(c, r)) && c.x + c.r <= g.W && c.y + c.r <= 540), 'sin solapar la mano ni los botones de pausa / silencio de mobile.js');
   // toque en el botón 1 dispara
   await E(pg, () => { G.player.actives[0].cd = 0; }); await spawnAround(pg, 6, 80); await sleep(pg, 1300);
   await tap(pg, g.btn[0].x, g.btn[0].y);
   ok((await E(pg, () => G.player.actives[0].uses)) === 1, 'toque en el botón 1 dispara el poder 1');
   // joystick y botón a la vez (dos dedos)
   const res = await E(pg, async ([c]) => {
-    const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / 960, Y = y => r.top + y * r.height / 540;
+    const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / G.W, Y = y => r.top + y * r.height / 540;
     const ev = (t, id, x, y) => cv.dispatchEvent(new PointerEvent(t, { pointerType: 'touch', pointerId: id, clientX: X(x), clientY: Y(y), bubbles: true, cancelable: true, isPrimary: id === 5 }));
     G.player.actives[1].cd = 0; const x0 = G.player.x;
     ev('pointerdown', 5, 150, 400); ev('pointermove', 5, 220, 400);
@@ -318,7 +322,7 @@ async function touch() {
   // dos dedos con los 4 botones: joystick izquierdo mantenido mientras se tocan los botones 3 y 4
   await spawnAround(pg, 14, 80); await sleep(pg, 450); await waitState(pg, "play", 3000);
   const r4 = await E(pg, async ([bs]) => {
-    const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / 960, Y = y => r.top + y * r.height / 540;
+    const cv = document.getElementById('game'), r = cv.getBoundingClientRect(), X = x => r.left + x * r.width / G.W, Y = y => r.top + y * r.height / 540;
     const ev = (t, id, x, y) => cv.dispatchEvent(new PointerEvent(t, { pointerType: 'touch', pointerId: id, clientX: X(x), clientY: Y(y), bubbles: true, cancelable: true, isPrimary: id === 5 }));
     G.player.actives.forEach(s => { s.cd = 0; s.st = null; }); const u0 = G.player.actives.map(s => s.uses), x0 = G.player.x;
     ev('pointerdown', 5, 120, 380); ev('pointermove', 5, 200, 380);
@@ -709,9 +713,7 @@ const simHash = (pg, ticks) => E(pg, (ticks) => {
 const SEED_CP = [600, 900, 1800, 3600, 5400, 7200, 10800, 12600, 14400, 18000, 21600, 25200];
 const SEED_BASE = 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&hand=spark:3,ember:3,dart:3,shard:2,ring:1';
 const SEED_BOSS = id => `reset=1&god=1&direct=1&all=1&noanchor=1&nointro=1&cine=0&speed=0&peligro=3&hand=spark:3,ember:3,dart:3,shard:2,ring:1&boss=${id}`;
-async function seedRun(b, url, cps, block, wait) {
-  const pg = await mk(b, url), hs = [];
-  await E(pg, () => {   // utilidades de la prueba dentro de la pagina
+const SEED_UTILS = () => {   // utilidades de la prueba de semilla dentro de la pagina: __tick(), __adv(n) avanza n ticks con el guion de movimiento y devuelve el hash
     window.__t0 = Math.round(G.time / G.STEP);   // las peleas de jefe empiezan con G.time > 0: se cuenta desde el inicio de la prueba
     window.__tick = () => Math.round(G.time / G.STEP) - __t0;
     window.__adv = (n) => {
@@ -732,7 +734,10 @@ async function seedRun(b, url, cps, block, wait) {
       mix(G.D.id); mix(G.D.n); mix(G.D.ashAcc); mix(G.D.questAcc);   // T-F0-05: el perfil de dificultad forma parte del estado
       return { hash: h, kills: G.kills, en: G.enemies.length, tick: __tick() };
     };
-  });
+  };
+async function seedRun(b, url, cps, block, wait) {
+  const pg = await mk(b, url), hs = [];
+  await E(pg, SEED_UTILS);
   for (const cp of cps) {
     let r = null;
     for (let guard = 0; guard < 100000; guard++) {
@@ -963,7 +968,7 @@ async function cine() {
   await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.creditsSeen = false; G.Cine.playIntro({ replay: true }); });
   ok(await E(pg, () => G.Cine.info().locked === false), 'repeticion: saltable (boton SALTAR)');
   await stepN(pg, 30);
-  const sk = await E(pg, () => { const r = G.Cine.skipRect(); G.input.mouse.x = r.x + 5; G.input.mouse.y = r.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { st: G.state, act: G.Cine.active(), cs: G.Save.data.cine.creditsSeen }; });
+  const sk = await E(pg, () => { const r = G.Cine.skipRect(); G.input.mouse.x = r.x + 5 + (G.OX || 0); G.input.mouse.y = r.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { st: G.state, act: G.Cine.active(), cs: G.Save.data.cine.creditsSeen }; });
   ok(sk.st === 'aldea' && !sk.act && sk.cs === false, 'repeticion: el boton SALTAR termina y no toca el guardado');
   await done(pg, 'cine1');
   // 3. Reducir destellos y sacudidas
@@ -1215,7 +1220,7 @@ async function cine2(b) {
     for (const id of G.Cine.entryIds) { let r = null; G.Cine.playEntry(id, { onEnd: x => { r = x; } }); const a = G.Cine.info(); out[id] = a && a.id; let n = 0; while (G.Cine.active() && n++ < 600) G.step(); out[id + '_skipped'] = r; }
     out.same = before === JSON.stringify(cs); return out; });
   ok(['pastor', 'karceron', 'letea', 'yarlak', 'melaria'].every(id => gal[id] === 'entry-' + id) && gal.cenizar === 'cenizar-preroll', 'galeria: arranca la cinematica de cada jefe (Cenizar empieza por el prerrollo)');
-  const gal2 = await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.entrySeen.pastor = 1; G.Cine.playEntry('pastor', {}); const i0 = G.Cine.info(); for (let i = 0; i < 40; i++) G.step(); const r = G.Cine.info().locked; const rc = G.Cine.skipRect(); G.input.mouse.x = rc.x + 5; G.input.mouse.y = rc.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { locked: r, active: G.Cine.active(), st: G.state, es: JSON.stringify(G.Save.data.cine.entrySeen) }; });
+  const gal2 = await E(pg, () => { G.Save.data.cine.introSeen = true; G.Save.data.cine.entrySeen.pastor = 1; G.Cine.playEntry('pastor', {}); const i0 = G.Cine.info(); for (let i = 0; i < 40; i++) G.step(); const r = G.Cine.info().locked; const rc = G.Cine.skipRect(); G.input.mouse.x = rc.x + 5 + (G.OX || 0); G.input.mouse.y = rc.y + 5; G.input.pressed.Mouse0 = true; G.input.lock = 0; G.step(); return { locked: r, active: G.Cine.active(), st: G.state, es: JSON.stringify(G.Save.data.cine.entrySeen) }; });
   ok(!gal2.locked && !gal2.active && gal2.st === 'aldea', 'galeria: saltable con el boton SALTAR y vuelve a la aldea');
   ok(gal.same, 'galeria: no escribe en el guardado');
   const ui = await E(pg, () => { G.Aldea.open(false); G.Panels.open && G.Panels.open('menu'); return typeof G.Panels.current === 'function'; });
@@ -1802,7 +1807,7 @@ const mkV = async (b, url, w = 844, h = 390) => {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx; pg.ext = [];
   pg.on('console', m => { if (m.type() === 'error' && !/ph\.test|net::ERR|Failed to load resource/.test(m.text())) pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
   await ctx.route(u => new URL(u).origin !== new URL(base).origin, r => { pg.ext.push(r.request().url()); return r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: '{}' }); });
-  await pg.goto(`${base}/index.html?dev=1&nosw=1&${url}`); await sleep(pg, 700);
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&${url}${WX}`); await sleep(pg, 700);
   return pg;
 };
 // colocar la partida en una expedición "a mano": pasos de simulación con joystick opcional
@@ -2023,8 +2028,141 @@ async function end() {
   await b.close();
 }
 
+// ---------------------------------------------------------------- T-F1-08 (fases 0-2): pantalla ancha (?wide=1)
+// Ancho lógico por forma de pantalla, simulación idéntica con cualquier ancho (ventana de juego fija de 960), HUD de combate dentro de la zona segura,
+// objetivos táctiles, velo lateral y cambio de tamaño en plena partida. Todo con 0 errores de consola.
+async function mkW(b, url, w, h, mob = true) {
+  const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: mob, isMobile: mob }), pg = await ctx.newPage(); pg.errs = []; pg.ctx = ctx;
+  pg.on('console', m => { if (m.type() === 'error') pg.errs.push(m.text()); }); pg.on('pageerror', e => pg.errs.push('PAGEERR ' + e.message));
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&${url}`); await sleep(pg, 600);
+  return pg;
+}
+async function seedW(b, url, cps, w, h, mob, pre, mid) {   // corrida con semilla en un tamaño de ventana; mid(pg, i): acción tras el punto de control i
+  const pg = await mkW(b, url, w, h, mob), hs = [];
+  if (pre) await E(pg, pre);
+  await E(pg, SEED_UTILS);
+  const W = await E(pg, () => G.W);
+  for (let i = 0; i < cps.length; i++) {
+    let r = null;
+    for (let guard = 0; guard < 100000; guard++) { const t = await E(pg, () => __tick()); if (t >= cps[i]) break; r = await E(pg, n => __adv(n), Math.min(600, cps[i] - t)); await sleep(pg, 8); }
+    hs.push(r ? r.hash : -1);
+    if (mid) await mid(pg, i);
+  }
+  const W2 = await E(pg, () => G.W);
+  await done(pg, `wide-semilla ${w}x${h}`); return { hs, W, W2 };
+}
+// HUD de combate de un fotograma: textos (G.txt) y botones dibujados por G.Hud.draw y G.Sys.drawBar, en coordenadas de lienzo (las barras de jefe/guardián se marcan aparte)
+const HUD_REC = () => {
+  if (window.__HR) return;
+  const R = window.__HR = { on: 0, boss: 0, texts: [], boxes: [] }, cvm = document.createElement('canvas').getContext('2d');
+  const tf = (c, x, y) => { const m = c.getTransform(), rs = G.rs || 1; return { x: (m.a * x + m.c * y + m.e) / rs, y: (m.b * x + m.d * y + m.f) / rs, sc: m.a / rs }; };
+  const oT = G.txt; G.txt = function (c, s, x, y, size, color, align) {
+    if (R.on) { s = String(s); cvm.font = 'bold ' + size + 'px "Courier New", monospace'; const p = tf(c, x, y), w = cvm.measureText(s).width * p.sc, hh = size * p.sc, al = align || 'left', x0 = al === 'center' ? p.x - w / 2 : al === 'right' ? p.x - w : p.x;
+      R.texts.push({ s, x0, x1: x0 + w, y0: p.y - hh / 2, y1: p.y + hh / 2, py: p.y, size: hh, color: color || '#fff', boss: R.boss > 0 }); }
+    return oT.apply(this, arguments);
+  };
+  const oH = G.Hud.draw; G.Hud.draw = function (c) { R.on++; try { return oH.apply(this, arguments); } finally { R.on--; } };
+  const oS = G.Sys.drawBar; G.Sys.drawBar = function (c) { R.on++; try { return oS.apply(this, arguments); } finally { R.on--; } };
+  const oB = G.Boss.drawHud; G.Boss.drawHud = function (c) { R.boss++; try { return oB.apply(this, arguments); } finally { R.boss--; } };
+  const oQ = G.Fusion.drawHud; G.Fusion.drawHud = function (c) { R.on++; try { return oQ.apply(this, arguments); } finally { R.on--; } };
+};
+async function hudSnap(pg) {
+  await E(pg, HUD_REC);
+  return E(pg, async () => {
+    const R = window.__HR; R.texts = []; R.on = 0; await new Promise(r => requestAnimationFrame(r));
+    const s = G.safe, F = G.Fusion; F.layout();
+    const boxes = G.Sys.buttons().map(b => ({ id: 'sys-' + b.id, x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h, min: Math.min(b.w, b.h) }))
+      .concat(F.BTN.map((b, i) => ({ id: 'poder' + (i + 1), x0: b.x - b.r, y0: b.y - b.r, x1: b.x + b.r, y1: b.y + b.r, min: 2 * b.hit })))
+      .concat([{ id: 'AUTO', x0: F.AUTO.x, y0: F.AUTO.y, x1: F.AUTO.x + F.AUTO.w, y1: F.AUTO.y + F.AUTO.h, min: Math.min(F.AUTO.w, F.AUTO.h) }])
+      .concat([0, 1, 2, 3, 4].map(i => { const r = G.Cards.slotRect(i, false); return { id: 'mano' + (i + 1), x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h, min: Math.min(r.w, r.h) }; }));
+    return { texts: R.texts, boxes, W: G.W, safe: { l: s.l, r: s.r, t: s.t, b: s.b }, k: G.Sys.layout.k, state: G.state };
+  });
+}
+async function wide() {
+  console.log('--- T-F1-08 pantalla ancha: ancho por tamaño, simulación idéntica, zona segura, objetivos táctiles, velo y cambio de tamaño');
+  const b = await launch();
+  // 1. ancho lógico por tamaño (?wide=1) y clásico (?wide=0)
+  const SZ = [[844, 390, 1, 1168], [740, 360, 1, 1110], [915, 412, 1, 1200], [932, 430, 1, 1170], [667, 375, 1, 960], [1024, 768, 0, 960], [1280, 720, 0, 960]];
+  for (const [w, h, mob, W] of SZ) {
+    for (const wd of [1, 0]) {
+      const pg = await mkW(b, `reset=1&cine=0&wide=${wd}`, w, h, !!mob);
+      const r = await E(pg, () => ({ W: G.W, OX: G.OX, cw: G.Sys.layout.cw, ch: G.Sys.layout.ch, cv: document.getElementById('game').width }));
+      if (wd) ok(r.W === W && (w === 1024 ? r.ch === 576 : r.cw >= 0.99 * w) && r.OX === (W - 960) / 2, `?wide=1 a ${w}x${h}: G.W ${r.W} (esperado ${W}), lienzo ${r.cw}x${r.ch} CSS, G.OX ${r.OX}`);
+      else ok(r.W === 960 && r.OX === 0, `?wide=0 a ${w}x${h}: G.W 960 y G.OX 0 (${r.W}, lienzo ${r.cw}x${r.ch})`);
+      await done(pg, `wide-ancho ${w}x${h} wide=${wd}`);
+    }
+  }
+  { const pg = await mkW(b, 'reset=1&cine=0', 844, 390); const r = await E(pg, () => ({ W: G.W, d: G.Sys.WIDE_DEFAULT })); ok(r.W === (r.d ? 1168 : 960), `sin perilla: valor por defecto WIDE_DEFAULT=${r.d} (fases 0-3: 0 => 960; G.W ${r.W})`); await done(pg, 'wide-defecto'); }
+  // 2. simulación idéntica: misma semilla y movimiento con ?wide=1 / ?wide=0 a 844x390, ?wide=1 a 915x412 (1200) y PC 1280x720
+  const PRE_V = () => { G.Tree.fx.eraGlacial = true; G.Fusion.auto = true; };   // rayo (weapons.js strike) + era glacial + Descarga en AUTO: reglas de "enemigo visible"
+  const SCW = [['bosque', `${SEED_BASE}&seed=1234&q=alta`, [600, 1800, 3600], null],
+    ['rayo + era glacial + Descarga AUTO', 'reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&seed=4321&q=alta&hand=storm:3,dart:3,spark:3&actives=descarga2', [600, 1800, 3600], PRE_V],
+    ['jefe karceron (cámara sesgada)', `${SEED_BOSS('karceron')}&seed=77&q=alta&hand=storm:3,dart:3`, [600, 1800], PRE_V]];
+  const VPS = [[844, 390, true, 'wide=1'], [844, 390, true, 'wide=0'], [915, 412, true, 'wide=1'], [1280, 720, false, 'wide=1']];
+  let nRuns = 0;
+  for (const [name, url, cps, pre] of SCW) {
+    const res = [];
+    for (const [w, h, mob, wd] of VPS) { res.push(await seedW(b, `${url}&${wd}`, cps, w, h, mob, pre)); nRuns++; }
+    const same = res.every(r => r.hs.length === cps.length && r.hs.every((x, i) => x === res[0].hs[i] && x !== -1));
+    ok(same, `${name}: hash idéntico en ${cps.length} puntos de control con G.W ${res.map(r => r.W).join(' / ')}` + (same ? '' : ' -> ' + res.map(r => r.hs.join(',')).join(' | ')));
+  }
+  // 7. cambio de tamaño en plena partida (844x390 -> 667x375): G.W 1168 -> 960 y la partida sigue igual
+  { const url = `${SEED_BASE}&seed=1234&q=alta&wide=1`, cps = [600, 1200, 1800];
+    const A = await seedW(b, url, cps, 844, 390, true, null, async (pg, i) => { if (i === 0) { await pg.setViewportSize({ width: 667, height: 375 }); await sleep(pg, 300); } });
+    const B0 = await seedW(b, url, cps, 844, 390, true);
+    ok(A.W === 1168 && A.W2 === 960 && A.hs.every((x, i) => x === B0.hs[i]), `cambio de tamaño en plena partida: G.W ${A.W} -> ${A.W2} y hash igual que sin el cambio`); nRuns += 2; }
+  console.log(`       ${nRuns} corridas con semilla comparadas`);
+  // 3-5. HUD de combate: dentro de la zona segura, sin solapes, objetivos táctiles (con muesca simulada ?safe=0,47,21,47 en los teléfonos)
+  const HUDSZ = [[844, 390, 1], [740, 360, 1], [915, 412, 1], [932, 430, 1], [667, 375, 1], [1280, 720, 0]];
+  const FORCE = () => { const C = G.Cards; C.combos.slice(0, 2).forEach(cb => { C.active[cb.k] = true; }); G.Quests.accept('bombs'); G.player.cdSlowT = 1500; G.player.cdSlowPct = 0.4; G.Loot.run.rare = 2; G.runBuff.dish = (G.Cook.DISHES[0] || {}).id; };
+  for (const [w, h, mob] of HUDSZ) {
+    for (const sc of ['run', 'boss']) {
+      const url = sc === 'run' ? 'reset=1&god=1&direct=1&all=1&cine=0&speed=0&seed=5&hand=spark:3,ember:2,dart:1&actives=descarga2,vapor' : 'reset=1&god=1&all=1&cine=0&nointro=1&speed=0&seed=5&boss=cenizar&peligro=2&hand=spark:3,ember:2&actives=descarga2';
+      const pg = await mkW(b, `${url}&wide=1${mob ? '&safe=0,47,21,47' : ''}`, w, h, !!mob);
+      await E(pg, FORCE); await E(pg, () => { for (let i = 0; i < 400; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } G.state = 'play'; });
+      const d = await hudSnap(pg), s = d.safe, X0 = s.l - 0.5, X1 = d.W - s.r + 0.5, Y0 = s.t - 0.5, Y1 = 540 - s.b + 0.5;
+      const outT = d.texts.filter(t => t.x0 < X0 || t.x1 > X1 || t.y0 < Y0 || t.y1 > Y1), outB = d.boxes.filter(q => q.x0 < X0 || q.x1 > X1 || q.y0 < Y0 || q.y1 > Y1);
+      ok(d.state === 'play' && d.texts.length > 8 && !outT.length && !outB.length, `HUD ${sc} a ${w}x${h} (G.W ${d.W}, seguro ${[s.l, s.r, s.t, s.b].map(Math.round)}): ${d.texts.length} textos y ${d.boxes.length} botones dentro de la zona segura` + (outT.length || outB.length ? ' -> ' + outT.slice(0, 3).map(t => t.s + ' ' + Math.round(t.x0) + '..' + Math.round(t.x1)).concat(outB.map(q => q.id)).join(' | ') : ''));
+      // solapes entre el HUD anclado y el resto (los de la barra del jefe consigo misma son previos y no dependen del ancho: nombre / chips de Peligro, boss.js drawBar)
+      const iss = [];
+      for (let i = 0; i < d.texts.length; i++) for (let j = i + 1; j < d.texts.length; j++) {
+        const a = d.texts[i], c2 = d.texts[j]; if (a.boss && c2.boss) continue;
+        const r = TC.analyze({ texts: [a, c2].map(t => Object.assign({}, t, { color: '#fff' })), boxes: [], W: d.W }, { minSize: 1 }).filter(x => x.k === 'solape' || (x.k === 'pegadas' && !a.boss && !c2.boss)); iss.push(...r);   // con la barra del jefe solo cuenta pisarse
+      }
+      ok(!iss.length, `HUD ${sc} a ${w}x${h}: sin textos que se pisen ni líneas pegadas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : ''));
+      if (sc === 'run') {
+        const k = d.k, sys = d.boxes.filter(q => /^sys-/.test(q.id)), pw = d.boxes.filter(q => /^poder|^AUTO/.test(q.id)), small = d.texts.filter(t => !t.boss).map(t => t.size * k).sort((a, b2) => a - b2);
+        ok(sys.length === 2 && sys.every(q => q.min >= 64), `pausa y silencio a ${w}x${h}: 64x64 lógicos (${sys.map(q => q.id + ' ' + Math.round(q.min * k) + ' px reales').join(', ')})`);
+        ok(pw.every(q => q.min * k >= 44 - 0.01), `poderes y AUTO a ${w}x${h}: objetivo táctil >= 44 px reales (${pw.map(q => q.id + ' ' + (q.min * k).toFixed(1)).join(', ')})`);
+        console.log(`       (info) ${w}x${h}: texto del HUD más pequeño ${small[0].toFixed(1)} px reales; < 9,5 px: ${small.filter(v => v < 9.5).length} de ${small.length}`);
+      }
+      await done(pg, `wide-hud ${sc} ${w}x${h}`);
+    }
+  }
+  // 6. velo y aparición: a 915x412 (G.W 1200) las apariciones dentro de la ventana de juego son las mismas con ?wide=1 y ?wide=0 (la ventana, no la pantalla, decide);
+  //    las franjas fuera de la ventana llevan el velo (el borde de pantalla sale más oscuro que con el velo apagado)
+  { const cnt = async (wd) => {
+      const pg = await mkW(b, `reset=1&god=1&direct=1&all=1&noanchor=1&speed=0&seed=31&q=alta&hand=spark:1&wide=${wd}`, 915, 412);
+      const r = await E(pg, () => { const seen = new Set(); let inWin = 0, n = 0, inStrip = 0; for (let i = 0; i < 3600; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step();
+        G.enemies.forEach(e => { if (e.spawnT > 0 && !seen.has(e)) { seen.add(e); n++; if (G.inPlay(e.x, e.y, 0)) inWin++; else if (e.x > G.cam.x && e.x < G.cam.x + G.W && e.y > G.cam.y && e.y < G.cam.y + G.VH) inStrip++; } }); }
+        return { n, inWin, inStrip, W: G.W }; });
+      await done(pg, `wide-aparicion wide=${wd}`); return r; };
+    const A = await cnt(1), B0 = await cnt(0);
+    ok(A.W === 1200 && A.n > 50 && A.n === B0.n && A.inWin === B0.inWin, `apariciones a 915x412: ${A.n} enemigos, ${A.inWin} dentro de la ventana de 960 con ?wide=1 y ${B0.inWin} con ?wide=0 (iguales); ${A.inStrip} en las franjas con velo`);
+    const pg = await mkW(b, 'reset=1&god=1&direct=1&all=1&speed=0&seed=31&q=alta&hand=spark:1&wide=1', 915, 412);
+    const v = await E(pg, () => {   // el velo pintado sobre blanco: 45 % en el borde de la pantalla, 0 % en el borde de la ventana de juego
+      for (let i = 0; i < 60; i++) G.step(); G.syncCam();
+      const cv = document.createElement('canvas'); cv.width = G.W; cv.height = G.H; const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, G.W, G.H); G.drawVeil(g);
+      const px = x => g.getImageData(Math.round(x), 270, 1, 1).data[0], wx = G.simCam.x - G.cam.x;
+      return { W: G.W, edge: wx, a0: px(0), a1: px(wx + 1), mid: px(G.W / 2), b1: px(G.W - 1) };
+    });
+    ok(v.W === 1200 && v.edge > 0 && Math.abs(v.a0 - 255 * 0.55 - 7 * 0.45) < 6 && v.a1 > 248 && v.mid === 255 && Math.abs(v.b1 - v.a0) < 6, `velo lateral: borde de pantalla ${v.a0}/255 (45 % #07050c), borde de la ventana ${v.a1}, centro ${v.mid}, borde derecho ${v.b1} (ventana a ${Math.round(v.edge)} px)`);
+    await done(pg, 'wide-velo'); }
+  await b.close();
+}
+
 (async () => {
-  const run = { fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance };
+  const run = { fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

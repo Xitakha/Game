@@ -738,6 +738,11 @@
   };
   Cook.drawHud = function (c) {
     var d = G.runBuff && G.runBuff.dish ? Cook.def(G.runBuff.dish) : null; if (!d) return;
+    if (G.hudWide()) {   // T-F1-08: chip anclado a la derecha de la mano (sobre el reloj roto), texto 14
+      var A = G.anchor(), x = A.L + 5 * 84 + 6, y = A.B - 110, nm = d.name.length > 16 ? d.short : d.name, w = Math.ceil(nm.length * 8.4) + 34;
+      c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(x, y, w, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, w - 2, 20);
+      U.part(c, d.icon, x + 14, y + 11, 7); G.txt(c, nm, x + 28, y + 12, 14, '#ffe9f0', 'left'); c.restore(); return;
+    }
     c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(462, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(463, G.H - 33, 146, 20);   // FUSION: a la derecha de la mano
     U.part(c, d.icon, 476, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 490, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
   };

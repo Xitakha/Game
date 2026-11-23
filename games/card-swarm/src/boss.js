@@ -793,12 +793,12 @@
     if (!I || !e) {
       G.cam.zoom = (e && S.active && !e.dead && G.combatZoom) || 1;   // zoom de combate opcional (?zoom=0.9): un poco más de campo de visión durante la pelea
       var cw = e && S.active && !e.dead && e.def.h && e.def.h.camW;   // jefes casi inmóviles (Karceron, Letea): la cámara se sesga hacia ellos para que quepan en pantalla
-      if (cw) return { x: tx + (G.clamp(e.x - G.W / 2, 0, G.AW - G.W) - tx) * cw * 0.5, y: ty + (G.Proj.clampCamY(e.y + 20 - G.VH / 2) - ty) * cw };
+      if (cw) return { x: tx + (G.clamp(e.x - G.SW / 2, 0, G.AW - G.SW) - tx) * cw * 0.5, y: ty + (G.Proj.clampCamY(e.y + 20 - G.VH / 2) - ty) * cw };
       return { x: tx, y: ty };
     }
     var t = I.t, w = t < 800 ? ease(t / 800) : t < 2400 ? 1 : 1 - ease((t - 2400) / 900);
     G.cam.zoom = 1 + 0.15 * (1 - ease(t / 800)) * (t < 2400 ? 1 : 0);
-    var bx = G.clamp(e.x - G.W / 2, 0, G.AW - G.W), by = G.Proj.clampCamY(e.y - 40 - G.VH / 2);
+    var bx = G.clamp(e.x - G.SW / 2, 0, G.AW - G.SW), by = G.Proj.clampCamY(e.y - 40 - G.VH / 2);   // sobre la ventana de juego (G.simCam)
     return { x: tx + (bx - tx) * w, y: ty + (by - ty) * w };
   };
 
@@ -1046,7 +1046,7 @@
   };
   function W() { return G.W; }
   function drawIntro(c, e, I) {
-    if (I.mode && I.mode !== 'off' && G.Cine.entryDraw && G.Cine.entryDraw(c, e, I)) return;   // v9: capa de cinemática (barras, presagio, cartel, subtítulo)
+    if (I.mode && I.mode !== 'off' && G.Cine.entryDraw && G.column(c, function () { return G.Cine.entryDraw(c, e, I); })) return;   // T-F1-08: capa de cine a 960 centrada (barras y presagio a todo el ancho)   // v9: capa de cinemática (barras, presagio, cartel, subtítulo)
     var t = I.t, Wd = G.W, Hd = G.H, bar = 48;
     var inB = G.clamp(t / 300, 0, 1), outB = t > 2400 ? G.clamp((t - 2400) / 400, 0, 1) : 0, b = bar * (ease(inB) * (1 - ease(outB)));
     c.fillStyle = '#000'; c.fillRect(0, 0, Wd, b); c.fillRect(0, Hd - b, Wd, b);

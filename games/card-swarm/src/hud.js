@@ -38,7 +38,7 @@
       c.lineWidth = 9; c.strokeStyle = '#0a0610'; c.lineJoin = 'round'; c.strokeText(bn.text, 0, 0);
       c.shadowColor = ca; c.shadowBlur = 24; c.fillStyle = gr; c.fillText(bn.text, 0, 0); c.restore();
       G.txt(c, G.TAGS[cb.a].name + '  +  ' + G.TAGS[cb.b].name, G.W / 2, 178, 16, '#ffe9a0', 'center');
-      G.txt(c, cb.desc, G.W / 2, 196, 12, '#d8cfe8', 'center');
+      G.txt(c, cb.desc, G.W / 2, 196, G.hudWide() ? 15 : 12, '#d8cfe8', 'center');
       // destello inicial
       if (e < 0.08) { c.fillStyle = 'rgba(255,255,255,' + 0.25 * (1 - e / 0.08) + ')'; c.fillRect(0, 0, G.W, G.H); }
     } else {
@@ -51,7 +51,7 @@
     var p = G.player, h = p.hand, i;
     for (i = 0; i < h.length; i++) {
       var r = G.Cards.slotRect(i, false);
-      if (h[i]) G.Cards.drawCard(c, h[i], r.x, r.y, r.w, r.h, {});
+      if (h[i]) G.Cards.drawCard(c, h[i], r.x, r.y, r.w, r.h, G.hudWide() ? { ns: 14 } : {});
       else G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '');
     }
     G.Cards.drawComboLines(c, false);
@@ -60,7 +60,7 @@
   // M9 (A.5): icono de RELOJ ROTO a la izquierda de la mano mientras las cartas recargan más lento (zona del Lirio del olvido); el aro se vacía con los 2 s de gracia
   H.drawCdSlow = function (c, p) {
     if (!(p.cdSlowT > 0) || p.dead) return;
-    var x = 424, y = 470, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
+    var wide = G.hudWide(), A = wide ? G.anchor() : null, x = wide ? A.L + 5 * 84 + 22 : 424, y = wide ? A.B - 64 : 470, r = 16, pulse = 0.75 + 0.25 * Math.sin(G.time / 120), u = Math.min(1, p.cdSlowT / 2000);
     c.save(); c.globalAlpha = pulse;
     c.fillStyle = 'rgba(8,4,14,0.8)'; c.beginPath(); c.arc(x, y, r + 4, 0, 6.283); c.fill();
     if (G.hasSpr('icon_olvido')) { var ic = Assets.sprite('icon_olvido', Math.floor(G.time / 500) % 2); c.drawImage(ic, Math.round(x - ic.width / 2), Math.round(y - ic.height / 2)); }   // arte P2: reloj roto turquesa (32x32)
@@ -71,26 +71,84 @@
     }
     c.strokeStyle = '#7fffe0'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r + 7, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke();
     c.restore();
-    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, 11, '#7fffe0', 'center');
+    G.txt(c, '-' + Math.round(Math.min(0.4, p.cdSlowPct) * 100) + '%', x, y + r + 14, wide ? 14 : 11, '#7fffe0', 'center');
   };
 
   function drawCombosList(c) {
     var y = 64 + (G.Tundra.on ? 16 : 0), any = false, t = G.time / 1000;   // Tundra: el medidor de Frío y su etiqueta ocupan hasta y 68
+    var wide = G.hudWide(), L = 16, dy = 18, s1 = 12, s2 = 13;
+    if (wide) { var A = G.anchor(); L = A.L; y = A.T + 44 + (G.Tundra.on ? 34 : 0) + (G.mode === 'practice' ? 0 : 0); dy = 22; s1 = 14; s2 = 14; }   // T-F1-08: bajo la barra de vida, filas de 22, letra 14
     G.Cards.combos.forEach(function (cb) {
       if (!G.Cards.active[cb.k]) return;
-      if (!any) { G.txt(c, 'COMBOS', 16, y, 12, '#9a8fb0', 'left'); y += 18; any = true; }
+      if (!any) { G.txt(c, 'COMBOS', L, y, s1, '#9a8fb0', 'left'); y += dy; any = true; }
       var fl = (G.Cards.flash[cb.k] || 0) > 0 && Math.floor(G.time / 120) % 2;
-      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(22, y, 5, 0, 6.283); c.fill();
-      c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(32, y, 5, 0, 6.283); c.fill();
-      G.txt(c, cb.name, 44, y, 13, fl ? '#ffffff' : '#ffe9a0', 'left');
-      y += 18;
+      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(L + 6, y, 5, 0, 6.283); c.fill();
+      c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(L + 16, y, 5, 0, 6.283); c.fill();
+      G.txt(c, cb.name, L + 28, y, s2, fl ? '#ffffff' : '#ffe9a0', 'left');
+      y += dy;
     });
+  }
+  // T-F1-08: línea de duración y botín (en combate solo con el ancho clásico; con la pantalla ancha va en la pausa)
+  function durLine() {
+    var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
+    return DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : '');
+  }
+  // T-F1-08 fase 2: ancho de media barra de jefe / guardián visible (para que la columna derecha no la pise)
+  function bossBarHalf() {
+    var e = G.Boss.e; if (e && !e.dead && !e.dying && G.Boss.active) return 320;
+    var gm = G.Enemies.minis && G.Enemies.minis()[0]; return gm && gm.spawnT <= 0 ? 260 : 0;
+  }
+  // Parte superior del HUD anclada (vida, reloj, contadores, encargo) y ayuda inicial en la franja superior central
+  var colLeft = 1e9;
+  function drawTopWide(c, p) {
+    var A = G.anchor(), L = A.L, R = A.R, T = A.T, CX = A.CX, LR = G.Loot.run, half = bossBarHalf();
+    var hw = half ? G.clamp(CX - half - 14 - L, 170, 240) : 240;   // con barra de jefe (nombre arriba a la izquierda de la barra) la de vida se acorta para no tocarla
+    bar(c, L, T, hw, 22, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
+    G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, L + hw / 2, T + 12, 16, '#fff', 'center');
+    G.Tundra.drawHud(c);
+    if (G.mode !== 'run') {
+      G.txt(c, G.mode === 'practice' ? 'PRÁCTICA  -  intento ' + (G.practiceTries || 1) : (G.final ? 'ASALTO AL CRÁTER  -  Peligro ' : 'CACERÍA  -  Peligro ') + G.Boss.ROMAN[G.clamp(Math.round(G.peligro || 1), 1, 5)], CX, T + 12, 18, G.mode === 'practice' ? '#9dffb4' : '#6ac8ff', 'center');
+      if (G.mode === 'practice' && !G.Boss.active) G.txt(c, G.Sys.isTouch() ? 'sin recompensas  -  pausa y REINICIAR' : 'sin recompensas  -  P y luego R: reiniciar', CX, T + 36, 14, '#9a8fb0', 'center');
+    } else {
+      if (bossBarHalf()) G.txt(c, G.fmtTime(G.runT), CX, T + 4, 22, G.Boss.active ? '#8a7f96' : '#ffd27a', 'center');   // con la barra del jefe (nombre a y 41) el reloj se encoge para no pisarla
+      else G.txt(c, G.fmtTime(G.runT), CX, T + 12, 26, '#ffd27a', 'center');
+      if (G.Tundra.noBoss()) G.txt(c, 'Tundra: prueba sin jefe  -  fin a ' + G.fmtTime(G.RUN_LEN), CX, T + 38, 15, '#9fd8ff', 'center');
+      else if (G.Panal.noBoss()) G.txt(c, 'Panal: prueba sin jefa  -  fin a ' + G.fmtTime(G.RUN_LEN), CX, T + 38, 15, '#f3a31f', 'center');
+      else if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), CX, T + 38, 15, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
+    }
+    // columna derecha: a la izquierda de silencio y pausa; si no cabe (pantalla de 960 o barra de jefe ancha), apilada bajo los botones
+    var cx = R - 144, y = T + 10;
+    if (G.W < 1100 || (half && CX + half + 10 > cx - 112)) { cx = R; y = Math.max(T + 64 + 18, half ? 116 : 0); }   // apilada: bajo los botones (y bajo las marcas de la barra del jefe, hasta y ~104)
+    colLeft = cx === R ? R - 136 : cx - 112;   // borde izquierdo de lo que hay arriba a la derecha (botones o columna): la ayuda central no lo pisa
+    G.txt(c, 'Bajas ' + G.kills, cx, y, 16, '#fff', 'right');
+    c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(cx - 100, y + 16); c.lineTo(cx - 95, y + 22); c.lineTo(cx - 100, y + 28); c.lineTo(cx - 105, y + 22); c.closePath(); c.fill();
+    G.txt(c, 'Ceniza ' + p.ash, cx, y + 22, 16, '#ff9a3c', 'right');
+    G.UI.part(c, 'thread', cx - 105, y + 44, 7); G.txt(c, 'Partes ' + LR.total, cx, y + 44, 16, '#e8dcb0', 'right');
+    var ny = y + 66;
+    if (LR.rare) { G.UI.part(c, 'rare', cx - 105, ny, 7); G.txt(c, 'Rara x' + LR.rare, cx, ny, 16, '#e0a8ff', 'right'); ny += 22; }
+    var qt = G.Quests.hudText();
+    if (qt) {
+      var qy = cx === R ? ny + 4 : Math.max(T + 80, ny - 22 + 4), tgt = G.Quests.target();   // bajo la columna (o bajo los botones, a la derecha)
+      G.txt(c, 'Encargo', R, qy, 13, '#9a8fb0', 'right');
+      G.txt(c, qt, R, qy + 20, 15, tgt ? '#ffe9a0' : '#9dffb4', 'right');
+    }
+    drawCombosList(c);
+  }
+  function drawHelpWide(c) {   // ayuda inicial: franja superior central bajo el reloj, ancho máx. 640, partida en líneas
+    var A = G.anchor(), y = A.T + 62, i, mw = Math.min(640, 2 * (colLeft - A.CX - 10)), L1 = G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo';
+    L1 = G.Cine.wrap(c, L1, mw, 16);
+    var L2 = G.Cine.wrap(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: ' + G.hint('botones o Q E R Espacio', 'usa sus botones') + ').', mw, 15);
+    for (i = 0; i < L1.length; i++) { G.txt(c, L1[i], A.CX, y, 16, '#ffffff', 'center'); y += 21; }
+    for (i = 0; i < L2.length; i++) { G.txt(c, L2[i], A.CX, y + 1, 15, '#d8cfe8', 'center'); y += 20; }
   }
 
   H.draw = function (c) {
     var p = G.player, i;
-    if (G.state === 'cards') { G.Cards.draw(c); return; }
+    if (G.state === 'cards') { G.column(c, function () { G.Cards.draw(c); }, 'rgba(8,4,14,0.82)'); return; }   // T-F1-08: menús en la columna de 960 (franjas con el mismo velo)
     if (G.state === 'gameover') { G.Base.drawEnd(c); return; }
+    var wide = G.hudWide();
+    if (wide) drawTopWide(c, p);
+    else {
     // vida
     bar(c, 16, 14, 220, 18, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#e0405a' : '#ff2a2a', '#3a1020');
     G.txt(c, 'HP ' + Math.ceil(p.hp) + '/' + p.maxHp, 126, 24, 13, '#fff', 'center');
@@ -105,8 +163,7 @@
     if (G.Tundra.noBoss()) G.txt(c, 'Tundra: prueba sin jefe  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#9fd8ff', 'center');
     else if (G.Panal.noBoss()) G.txt(c, 'Panal: prueba sin jefa  -  fin a ' + G.fmtTime(G.RUN_LEN), G.W / 2, 42, 12, '#f3a31f', 'center');
     else if (!G.Waves.bossSpawned) G.txt(c, 'Jefe en ' + G.fmtTime(Math.max(0, G.BOSS_T - G.runT)), G.W / 2, 42, 12, G.BOSS_T - G.runT < 30000 ? '#ff6a6a' : '#9a8fb0', 'center');
-    var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
-    G.txt(c, DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : ''), G.W / 2, 60, 12, '#8a7f96', 'center');
+    G.txt(c, durLine(), G.W / 2, 60, 12, '#8a7f96', 'center');
     }
     // kills, ceniza
     G.txt(c, 'Bajas ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
@@ -123,6 +180,7 @@
       G.txt(c, 'Encargo', G.W - 16, qy, 11, '#9a8fb0', 'right');
       G.txt(c, qt, G.W - 16, qy + 17, 14, tgt ? '#ffe9a0' : '#9dffb4', 'right');
     }
+    }
     // mano y XP
     drawHand(c);
     G.Fusion.drawHud(c);   // FUSION: botones de poderes activos con enfriamiento
@@ -131,20 +189,23 @@
     var xh = G.Fte && G.Fte.xpBig() ? 12 : 8;   // barra de experiencia legible (antes 4 px = 2,9 px reales); más alta mientras el aviso de gemas está activo
     c.fillStyle = 'rgba(10,6,18,0.85)'; c.fillRect(0, G.H - xh - 2, G.W, xh + 2);
     c.fillStyle = '#4dd870'; c.fillRect(0, G.H - xh - 1, G.W * G.clamp(p.xp / need, 0, 1), xh);
-    G.txt(c, 'NV ' + p.level, 408, G.H - 20, 15, '#9dffb4', 'left');   // FUSION: la mano ocupa la esquina inferior izquierda
+    if (wide) { var AN = G.anchor(); G.txt(c, 'NV ' + p.level, AN.L + 5 * 84 + 6, AN.B - 12, 17, '#9dffb4', 'left'); }   // T-F1-08: a la derecha de la mano anclada
+    else G.txt(c, 'NV ' + p.level, 408, G.H - 20, 15, '#9dffb4', 'left');   // FUSION: la mano ocupa la esquina inferior izquierda
     // ayuda inicial
     var since = G.time - G.t0;
     if (G.Fte && G.Fte.engaged()) G.Fte.draw(c);   // T-F1-02: cuatro avisos de una línea en la 1.ª expedición (sustituyen la ayuda de dos líneas)
     else if (since < 9000 && G.state === 'play') {
       c.save(); c.globalAlpha = since > 7000 ? (9000 - since) / 2000 : 1;
+      if (wide) { drawHelpWide(c); c.restore(); } else {
       G.txt(c, G.Sys.isTouch() ? 'Mueve el dedo en la mitad izquierda: tu ataque básico dispara solo' : 'Muévete con WASD / flechas: tu ataque básico dispara solo', G.W / 2, 300, 16, '#ffffff', 'center');
       G.txt(c, 'Las cartas son infusiones. Fusiona dos etiquetas distintas para crear un PODER (hasta 4: ' + G.hint('botones o Q E R Espacio', 'usa sus botones') + ').', G.W / 2, 322, 13, '#d8cfe8', 'center');
       c.restore();
+      }
     }
     try { G.Quests.tick(); G.Cook.drawHud(c); } catch (e0) { /* encargo de racha sin daño y chip del plato (Fase 2b) */ }
     drawBanner(c);
     G.Boss.drawHud(c);   // barra del jefe, intro cinematográfica (barras de cine sobre la mano), viñeta de ataque firma (boss.js)
-    if (G.state === 'paused') { G.minFont = G.MIN_UI; drawPause(c); if (H.eqOpen) G.Smith.draw(c); if (G.Manual.isOpen()) G.Manual.draw(c); }
+    if (G.state === 'paused') { G.minFont = G.MIN_UI; G.column(c, function () { drawPause(c); if (H.eqOpen) G.Smith.draw(c); if (G.Manual.isOpen()) G.Manual.draw(c); }, H.eqOpen || G.Manual.isOpen() ? '#08040e' : 'rgba(8,4,14,0.9)'); }
     if (p.hurtT > 300) { c.fillStyle = 'rgba(255,0,0,' + (0.18 * (p.hurtT - 300) / 300) + ')'; c.fillRect(0, 0, G.W, G.H); }
   };
 
@@ -179,6 +240,7 @@
     var U = G.UI, now = performance.now();
     c.fillStyle = 'rgba(8,4,14,0.9)'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, 'PAUSA', G.W / 2, 82, 44, '#ffd27a', 'center');
+    if (G.hudWide() && G.mode === 'run') G.txt(c, durLine(), G.W / 2, 116, 15, '#b8aec8', 'center');   // T-F1-08: la línea de duración y botín sale del combate y se ve aquí
     U.button(c, PB.go, 'CONTINUAR', { size: 24, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     U.button(c, PB.qual, 'GRÁFICOS: ' + G.Sys.qualityLabel(), { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, PB.snd, G.Sys.muted ? 'SONIDO: NO' : 'SONIDO: SÍ', { size: 14, color: G.Sys.muted ? '#7a3a3a' : '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });

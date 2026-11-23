@@ -194,7 +194,7 @@
       return true;
     },
     strike: function (s, d, L, p) {
-      var list = G.enemies.filter(function (e) { return !e.dead && e.spawnT <= 0 && !e.untarget && e.x > G.cam.x && e.x < G.cam.x + G.W && e.y > G.cam.y && e.y < G.cam.y + G.VH; });
+      var list = G.enemies.filter(function (e) { return !e.dead && e.spawnT <= 0 && !e.untarget && G.inPlay(e.x, e.y, 0); });   // enemigos de la ventana de juego (G.SW), no del lienzo
       if (!list.length) return false;
       var tf = G.Tree.fx, ia = Math.floor(G.rng() * list.length), e = list[ia];
       function bolt(e2, mul) {
@@ -320,7 +320,7 @@
         fx.ring(p.x, p.y, 10, 760, 700, '#bfeaff', 10); fx.shockwave(p.x, p.y, 900); fx.shake(5, 300);
         G.Hud.banner('¡ERA GLACIAL!', 1600, '#bfeaff');
         C().inRange(p.x, p.y, 1100).forEach(function (en) {
-          if (en.x < G.cam.x - 40 || en.x > G.cam.x + G.W + 40 || en.y < G.cam.y - 40 || en.y > G.cam.y + G.VH + 40) return;
+          if (!G.inPlay(en.x, en.y, 40)) return;   // solo la ventana de juego
           C().stun(en, 2000); C().slow(en, 0.6, 3000); fx.burst(en.x, en.y, 5, '#e8f6ff', 100, 400, 3, { add: true });
         });
       }

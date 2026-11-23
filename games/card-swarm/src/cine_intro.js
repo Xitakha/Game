@@ -16,7 +16,12 @@
   function art(name) { try { var A = window.Assets && Assets.cine; return A && typeof A[name] === 'function' ? A[name] : null; } catch (e) { return null; } }
 
   function artScene(id, c, t, p) {   // arte de assets_cine.js (Assets.cine.scene); la cámara y el paralaje los lleva el propio arte (por p)
-    try { var A = window.Assets && Assets.cine; return !!(A && typeof A.scene === 'function' && A.scene(id, c, W, H, t, { p: p, calm: C.cfg().calm, vignette: false })); } catch (e) { return false; }
+    try {
+      var A = window.Assets && Assets.cine; if (!(A && typeof A.scene === 'function')) return false;
+      var ox = G.colOX || 0;   // T-F1-08: el arte de assets_cine.js admite ancho variable: se pinta a todo el lienzo (fuera de la columna de 960)
+      if (!ox) return !!A.scene(id, c, W, H, t, { p: p, calm: C.cfg().calm, vignette: false });
+      c.save(); c.translate(-ox, 0); try { return !!A.scene(id, c, G.colW, H, t, { p: p, calm: C.cfg().calm, vignette: false }); } finally { c.restore(); }
+    } catch (e) { return false; }
   }
   function sky(c, top, bot, h) { var g = c.createLinearGradient(0, 0, 0, h || H); g.addColorStop(0, top); g.addColorStop(1, bot); c.fillStyle = g; c.fillRect(-200, -100, W + 400, (h || H) + 200); }
   function stars(c, t, a) { c.save(); c.fillStyle = '#e8e4ff'; for (var k = 0; k < STARS.length; k++) { var s = STARS[k]; c.globalAlpha = (a == null ? 1 : a) * (0.35 + 0.35 * Math.sin(t / 700 + s.ph)); c.fillRect(Math.round(s.x), Math.round(s.y), s.s, s.s); } c.restore(); }
@@ -116,7 +121,7 @@
     dark(c, 0.15);
   }
   function over(c) {   // viñeta oscura común
-    var g = c.createRadialGradient(W / 2, H / 2, 220, W / 2, H / 2, 620); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.55)'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    var ox = G.colOX || 0, g = c.createRadialGradient(W / 2, H / 2, 220, W / 2, H / 2, 620 + ox); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.55)'); c.fillStyle = g; c.fillRect(-ox, 0, W + 2 * ox, H);
   }
 
   var INTRO = {
@@ -204,8 +209,13 @@
     }
   };
   C.titleDraw = function (c) {
-    var t = T ? T.t : 0, k;
-    try { if (Assets.cine && Assets.cine.title && Assets.cine.title(c, W, H, t, { calm: C.cfg().calm })) return; } catch (ea) { /* reserva */ }
+    var t = T ? T.t : 0;
+    try { if (Assets.cine && Assets.cine.title && Assets.cine.title(c, G.W, H, t, { calm: C.cfg().calm })) return; } catch (ea) { /* reserva */ }   // T-F1-08: el arte admite ancho variable (fondo a G.W, logotipo centrado)
+    if (G.OX) { c.fillStyle = '#05030a'; c.fillRect(0, 0, G.W, H); }
+    G.column(c, function () { titleFallback(c, t); });
+  };
+  function titleFallback(c, t) {
+    var k;
     sky(c, '#05030a', '#1c0e14'); stars(c, t, 0.8);
     for (k = 0; k < EMB.length; k++) { var e = EMB[k], u = ((t * 0.00006 * e.sp * 1000) / 60 + e.y) % 1; c.fillStyle = 'rgba(255,' + (140 + Math.floor(80 * (1 - u))) + ',60,' + (0.7 * (1 - u)) + ')'; c.fillRect(Math.round(e.x + Math.sin(t / 900 + e.ph) * 14), Math.round(H - u * (H + 20)), 3, 3); }
     hills(c, 420, '#0c0714', 16, 0.007, 1.3); ground(c, 470, '#08050c'); flame(c, 480, 478, 0.9, t);
@@ -220,7 +230,7 @@
     if (t > 700) { c.save(); c.globalAlpha = 0.55 + 0.45 * Math.sin(t / 380); G.txt(c, 'TOCA PARA JUGAR', W / 2, 330, 30, '#fff2b0', 'center'); c.restore(); }
     G.txt(c, 'Mini Estudio  -  v9', W - 14, H - 12, 10, 'rgba(200,190,220,0.4)', 'right');
     var vg = c.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 640); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.5)'); c.fillStyle = vg; c.fillRect(0, 0, W, H);
-  };
+  }
 
   /* Arranque desde G.init: devuelve true si el título toma el control (y entonces `next` se llama al terminar el flujo; ahí van ?direct= / ?boss= / ?hunt= cuando se forzó ?cine=1). */
   C.boot = function (next) {

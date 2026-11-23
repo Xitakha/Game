@@ -3,6 +3,16 @@
 Autor: diseño UX (móvil). Fecha: 2026-11-23. Estado: propuesta para implementar.
 Decisión del dueño (PLAN-MAESTRO, "Decisiones del dueño", fila 7): **ensanchar el área de juego en teléfonos alargados**. La vía de "solo mover los controles a las franjas" queda descartada.
 
+**Decisiones del dueño (2026-11-23), respuestas a la sección 5:**
+1. Ensanchar el área de juego en teléfonos alargados (opción A).
+2. Velo lateral suave en las franjas extra (0 a 45 %, `#07050c`) para que ningún teléfono tenga ventaja.
+3. Ancho lógico máximo **1200**.
+4. **Sin opción en Ajustes**: solo la perilla `?wide=0` para pruebas y vuelta atrás (`?wide=1` la activa mientras dure la implementación; por defecto pasa a 1 en la fase 4).
+5. La línea "NORMAL 9 min - botín x1" sale del combate y se muestra en la pausa.
+6. El arte de la aldea a todo el ancho queda para **después de la fase 2**.
+
+**Estado (2026-11-23):** fases 0, 1 y 2 implementadas detrás de `?wide=1` (`WIDE_DEFAULT = 0` en `src/mobile.js`; la fase 4 lo pone a 1). Pruebas: grupo `wide` de `tools/card-swarm-bot/tests.js` y `WIDE=1 node tools/card-swarm-bot/tests.js <grupo>` para correr los grupos existentes con la pantalla ancha. Fases 3 y 4 pendientes.
+
 Convenciones:
 - **px lógicos**: coordenadas del juego (hoy 960x540).
 - **px reales**: píxeles CSS en la pantalla del teléfono (lo que el ojo y el pulgar perciben). `real = lógico x k`, con `k` = alto CSS del lienzo / 540.

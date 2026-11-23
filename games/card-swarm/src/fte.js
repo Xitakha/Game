@@ -105,7 +105,7 @@
   F.draw = function (c) {   // banda de aviso y anillo del botón de poder (Hud.draw, estado 'play')
     if (!cur || G.state !== 'play') return;
     var H = HINT[cur.id]; if (!H) return;
-    var calm = !!(G.Cine && G.Cine.cfg && G.Cine.cfg().calm), w = 580, h = 44, x = G.W / 2 - w / 2, y = 74;
+    var calm = !!(G.Cine && G.Cine.cfg && G.Cine.cfg().calm), w = 580, h = 44, x = G.W / 2 - w / 2, y = G.hudWide() ? G.anchor().T + 62 : 74;   // T-F1-08: franja superior central, bajo el reloj
     c.save(); c.globalAlpha = calm ? 1 : fade(cur.t);
     c.fillStyle = 'rgba(10,6,18,0.82)'; c.fillRect(x, y, w, h); c.strokeStyle = '#ffd27a'; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, w - 2, h - 2);
     var ix = x + 26, iy = y + h / 2;   // icono de 28 px

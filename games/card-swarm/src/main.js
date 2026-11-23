@@ -5,7 +5,10 @@
 (function () {
   'use strict';
   var G = window.G = {};
-  G.W = 960; G.H = 540;          // viewport
+  G.W = 960; G.H = 540;          // viewport (lienzo lógico). G.W puede ser 960-1200 con la pantalla ancha (T-F1-08, mobile.js fit()); G.H es siempre 540
+  G.CW = 960; G.OX = 0; G.colOX = 0; G.colW = 0;   // (colOX / colW: desplazamiento y ancho reales mientras se dibuja dentro de G.column; 0 fuera)
+                                 // T-F1-08: columna de menús (960 de ancho) centrada en el lienzo con el desplazamiento G.OX = (G.W - 960) / 2 (lo fija mobile.js fit())
+  G.SW = 960;                    // T-F1-08: ancho FIJO de la ventana de juego (G.simCam). Las reglas de juego usan esta ventana, nunca G.W: el reto es el mismo en todos los teléfonos
   G.AW = 1440; G.AH = 810;       // arena (la cámara sigue al jugador)
   G.WALL = 28;                   // margen de pared
   G.STEP = 1000 / 60;            // paso fijo en ms
@@ -324,7 +327,32 @@
   }
 
   // ---------------------------------------------------------------- Mundo
+  // T-F1-08 fase 0: dos cámaras. G.simCam = ventana de juego de G.SW x G.VH (la calcula el paso de simulación; las reglas de "enemigo visible" la usan vía G.inPlay).
+  // G.cam = cámara de DIBUJO (G.W de ancho), derivada de G.simCam: centrada sobre la ventana de juego y limitada a la arena. Con G.W = 960 son iguales.
   G.cam = { x: 0, y: 0 };
+  G.simCam = { x: 0, y: 0 };
+  G.syncCam = function () {
+    if (G.W === G.SW) { G.cam.x = G.simCam.x; G.cam.y = G.simCam.y; return; }
+    G.cam.x = G.clamp(G.simCam.x + G.SW / 2 - G.W / 2, 0, Math.max(0, G.AW - G.W)); G.cam.y = G.simCam.y;
+  };
+  // ¿(x, y) dentro de la ventana de juego (más el margen m)? Sustituye a las comprobaciones "en pantalla" de las reglas (rayo, era glacial, poderes, AUTO)
+  // T-F1-08 fase 1: ejecuta fn (dibujo o actualización de un menú) "dentro de la columna": c trasladado G.OX, G.W = 960 y el puntero en coordenadas de columna.
+  // Así los menús, la aldea y las pantallas, diseñados a 960x540 con coordenadas literales, se ven y se tocan igual con cualquier ancho. strip: color con el que se
+  // pintan antes las dos franjas laterales (el velo de la pantalla que va debajo). Con G.OX = 0 (clásico) es una llamada directa: comportamiento idéntico.
+  G.column = function (c, fn, strip) {
+    var ox = G.OX; if (!ox) return fn();
+    var W = G.W, m = inp.mouse, r;
+    if (c && strip) { c.fillStyle = strip; c.fillRect(0, 0, ox, G.H); c.fillRect(W - ox, 0, ox, G.H); }
+    if (c) { c.save(); c.translate(ox, 0); }
+    G.W = G.CW; G.OX = 0; G.colOX = ox; G.colW = W; m.x -= ox;
+    try { r = fn(); } finally { G.W = W; G.OX = ox; G.colOX = 0; G.colW = 0; m.x += ox; if (c) c.restore(); }
+    return r;
+  };
+  // T-F1-08 fase 2: HUD de combate anclado a los bordes seguros. Solo con la pantalla ancha (?wide=1); con el ancho clásico el HUD sigue con sus coordenadas de siempre.
+  // L/R/T/B = rectángulo seguro del HUD (zonas seguras G.safe + margen G.M = 12 lógicos), CX = centro del lienzo.
+  G.hudWide = function () { return !!(G.Sys && G.Sys.wide); };
+  G.anchor = function () { var s = G.safe || { l: 0, r: 0, t: 0, b: 0 }, M = G.M || 12; return { L: s.l + M, R: G.W - s.r - M, T: s.t + M, B: G.H - s.b - M, CX: G.W / 2 }; };
+  G.inPlay = function (x, y, m) { var c = G.simCam; m = m || 0; return x > c.x - m && x < c.x + G.SW + m && y > c.y - m && y < c.y + G.VH + m; };
   G.state = 'aldea';   // aldea | play | paused | cards | gameover
   G.time = 0; G.kills = 0; G.won = false;
 
@@ -337,8 +365,9 @@
     G.Weapons.reset();
     G.Waves.reset();
     G.Boss.reset();
-    G.cam.x = G.clamp(G.player.x - G.W / 2, 0, G.AW - G.W);
-    G.cam.y = G.Proj.clampCamY(G.player.y - G.VH / 2);
+    G.simCam.x = G.clamp(G.player.x - G.SW / 2, 0, G.AW - G.SW);
+    G.simCam.y = G.Proj.clampCamY(G.player.y - G.VH / 2);
+    G.syncCam();
   };
 
   // Perfil de dificultad (G.D): se calcula UNA vez por expedicion a partir de la calidad vigente (o ?dq=) y entra en el estado de la partida (hash de la prueba de semilla).
@@ -449,9 +478,10 @@
     G.fx.update(dt);
     if (G.onTick) G.onTick(dt);   // gancho de pruebas/bots (tools/): entradas por tick de mundo, nunca por reloj real
     var p = G.player;
-    var tx = G.clamp(p.x - G.W / 2, 0, G.AW - G.W), ty = G.Proj.clampCamY(p.y - G.VH / 2);
+    var tx = G.clamp(p.x - G.SW / 2, 0, G.AW - G.SW), ty = G.Proj.clampCamY(p.y - G.VH / 2);   // ventana de juego fija (G.SW), no el ancho del lienzo
     var ct = G.Boss.camTarget(tx, ty);   // la intro del jefe desplaza la cámara y hace zoom
-    G.cam.x += (ct.x - G.cam.x) * 0.15; G.cam.y += (ct.y - G.cam.y) * 0.15;
+    var sc = G.simCam; sc.x += (ct.x - sc.x) * 0.15; sc.y += (ct.y - sc.y) * 0.15;
+    G.syncCam();   // la cámara de dibujo se deriva (el apuntado con ratón la usa entre pasos); nada de la simulación la lee
     if (p.dead) { G.deadT += dt; if (G.deadT > 900) G.finish(false); return; }
     if (G.bossDead) { G.endT += dt; if (G.Ending && G.Ending.victoryOn()) G.Ending.victoryUpdate(); if (G.endT > (G.Ending ? G.Ending.waitMs() : 3000)) G.finish(true); return; }   // v9 F3: la victoria in-world de Cenizar dura 6 s
     if (G.pendingLevels > 0) { G.state = 'cards'; G.Cards.open('level'); }
@@ -463,7 +493,7 @@
     if (inp.pressed.Mouse0 && G.Sys && G.Sys.tap(inp.mouse)) inp.pressed.Mouse0 = false;   // botones de sistema (pausa, silencio, pantalla completa)
     switch (G.state) {
       case 'aldea':
-        G.Aldea.update(dt);
+        G.column(null, function () { G.Aldea.update(dt); });
         break;
       case 'play':
         if (inp.hit('KeyP', 'Escape')) { G.state = 'paused'; G.Hud.pauseOpen(); break; }
@@ -472,6 +502,31 @@
         for (var wi = 0; wi < wn; wi++) { updateWorld(dt); if (!G.Boss.intro || G.state !== 'play') break; }
         break;
       case 'paused':
+        G.column(null, function () { stepPause(dt); });
+        break;
+      case 'cards':
+        G.fx.updateShake(dt);
+        G.column(null, function () { G.Cards.update(dt); });
+        break;
+      case 'title':
+        G.column(null, function () { G.Cine.titleUpdate(dt); });
+        break;
+      case 'privacy':
+        G.column(null, function () { G.TrackUI.update(dt); });   // T-F1-01: aviso de privacidad (track_ui.js)
+        break;
+      case 'cine':
+        G.column(null, function () { G.Cine.update(dt); });   // v9: cinemática a pantalla completa (solo dibujo y audio; no avanza G.time ni la simulación)
+        break;
+      case 'gameover':
+        G.fx.update(dt);
+        G.column(null, function () { G.Base.updateEnd(); });
+        break;
+    }
+    inp.pressed = {}; inp.swipe = 0; inp.dragY = 0;
+  }
+  function stepPause(dt) {
+    switch (G.state) {
+      case 'paused':
         if (G.Manual && G.Manual.isOpen()) { if (G.Manual.update(dt)) { G.Manual.close(); G.input.lock = 150; } break; }   // Manual abierto desde la pausa
         if (G.Hud.eqOpen) { if (G.Smith.update(dt)) { G.Hud.eqOpen = false; G.Smith.close(); } break; }   // v8.1: EQUIPO (solo lectura) dentro de la pausa
         if (inp.hit('KeyP', 'Escape')) G.state = 'play';
@@ -479,25 +534,7 @@
         else if (inp.hit('KeyR') && G.mode === 'practice') G.Base.retryPractice();   // práctica: reinicio rápido
         else if (inp.hit('Mouse0')) G.Hud.pauseClick(inp.mouse);   // táctil / ratón: CONTINUAR, CALIDAD, SONIDO, REINICIAR, ABANDONAR
         break;
-      case 'cards':
-        G.fx.updateShake(dt);
-        G.Cards.update(dt);
-        break;
-      case 'title':
-        G.Cine.titleUpdate(dt);
-        break;
-      case 'privacy':
-        G.TrackUI.update(dt);   // T-F1-01: aviso de privacidad (track_ui.js)
-        break;
-      case 'cine':
-        G.Cine.update(dt);   // v9: cinemática a pantalla completa (solo dibujo y audio; no avanza G.time ni la simulación)
-        break;
-      case 'gameover':
-        G.fx.update(dt);
-        G.Base.updateEnd();
-        break;
     }
-    inp.pressed = {}; inp.swipe = 0; inp.dragY = 0;
   }
 
   G.step = step;   // para tests deterministicos (con ?speed=0 el bucle no avanza solo)
@@ -519,17 +556,44 @@
     c.fillStyle = '#ffe9a0'; c.beginPath(); c.arc(j.ox + j.x * 40, j.oy + j.y * 40, 22, 0, 6.283); c.fill(); c.restore();
   }
 
+  // T-F1-08: velo lateral. Fuera de la ventana de juego de 960 (G.simCam) el mundo se ve, pero oscurecido de 0 % (borde de la ventana) a 45 % (borde de la pantalla),
+  // color #07050c: nadie gana ventaja por tener un teléfono más ancho y la aparición de enemigos (anillo de 500-580 px) queda dentro del velo.
+  var VEIL_A = 0.45;
+  function veilBand(c, x0, x1, inner) {   // franja [x0, x1]; inner = x donde el velo vale 0
+    if (x1 - x0 < 0.5) return;
+    var g = c.createLinearGradient(inner, 0, inner === x0 ? x1 : x0, 0);
+    g.addColorStop(0, 'rgba(7,5,12,0)'); g.addColorStop(1, 'rgba(7,5,12,' + VEIL_A + ')');
+    c.fillStyle = g; c.fillRect(x0, 0, x1 - x0, G.H);
+  }
+  function drawVeil(c) {
+    if (G.W <= G.SW) return;
+    var zm = G.cam.zoom || 1, wx = G.W / 2 + (G.simCam.x - G.cam.x - G.W / 2) * zm, ww = G.SW * zm;   // ventana de juego en pantalla (con el zoom de cámara alrededor del centro)
+    var a = G.clamp(wx, 0, G.W), b = G.clamp(wx + ww, 0, G.W);
+    veilBand(c, 0, a, a); veilBand(c, b, G.W, b);
+  }
+  G.drawVeil = drawVeil;
+  // Aldea / aviso de privacidad: las franjas fuera de la columna prolongan la columna de píxeles del borde (estirada) y llevan el velo encima
+  function sideFill(c) {
+    var ox = G.OX; if (!ox) return;
+    var cv = c.canvas, rs = cv.width / G.W, sx = Math.round(ox * rs), sx2 = Math.round((ox + G.CW) * rs) - 1;
+    c.drawImage(cv, sx, 0, 1, cv.height, 0, 0, ox, G.H);
+    c.drawImage(cv, sx2, 0, 1, cv.height, ox + G.CW, 0, G.W - ox - G.CW, G.H);
+    veilBand(c, 0, ox, ox); veilBand(c, ox + G.CW, G.W, ox + G.CW);
+  }
+  G.sideFill = sideFill;
+
   function draw() {
     var rs = G.rs || 1;
     G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' ) ? G.MIN_UI : 0;
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;
-    if (G.state === 'aldea') { G.Aldea.draw(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }
-    if (G.state === 'privacy') { G.TrackUI.draw(ctx); return; }
-    if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }
-    if (G.state === 'cine') { G.Cine.draw(ctx); return; }
+    if (G.state === 'aldea') { G.column(ctx, function () { G.Aldea.draw(ctx); }); sideFill(ctx); drawJoy(ctx); G.Sys.drawBar(ctx); return; }   // T-F1-08: aldea de 960 centrada; franjas = borde del mapa estirado + velo
+    if (G.state === 'privacy') { G.column(ctx, function () { G.TrackUI.draw(ctx); }); sideFill(ctx); return; }
+    if (G.state === 'title') { G.Cine.titleDraw(ctx); return; }   // el título pinta su fondo a G.W y centra logotipo y textos (cine_intro.js)
+    if (G.state === 'cine') { if (G.OX) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, G.W, G.H); } G.column(ctx, function () { G.Cine.draw(ctx); }); return; }   // cinemáticas a 960 con franjas negras (pillarbox)
     ctx.fillStyle = '#0d0a14'; ctx.fillRect(0, 0, G.W, G.H);
-    if (G.state === 'gameover') { G.Hud.draw(ctx); return; }   // la pantalla de fin es opaca: no se pinta el mundo detrás (ahorra trabajo y evita textos flotantes fuera de sitio)
+    if (G.state === 'gameover') { G.column(ctx, function () { G.Hud.draw(ctx); }); return; }   // la pantalla de fin es opaca: no se pinta el mundo detrás (ahorra trabajo y evita textos flotantes fuera de sitio)
+    G.syncCam();   // T-F1-08: por si G.W cambió (giro / pantalla completa) desde el último paso
     var off = G.fx.offset();
     ctx.save();
     var zm = G.cam.zoom || 1, P = G.Proj, i, TN = G.Tundra.on, PN = G.Panal.on;
@@ -585,6 +649,7 @@
     }
     if (Q.vig) ctx.drawImage(Assets.vignette(G.W, G.H, { strength: 0.8 }), 0, 0);
     if (TN) G.Tundra.drawVignette(ctx);   // escarcha del Frío en bordes y esquinas
+    drawVeil(ctx);   // T-F1-08: velo lateral fuera de la ventana de juego (solo con G.W > 960)
     if (G.Ending && G.state === 'play' && G.Ending.victoryOn()) G.Ending.drawVictory(ctx);   // v9 F3: victoria in-world (barras, desaturado, la última brasa)
     G.Hud.draw(ctx);
     drawJoy(ctx);
