@@ -313,7 +313,8 @@
     return d;
   }
   function tickEnemy(e, key, ms) { var tk = e.tk || (e.tk = {}); if ((tk[key] || 0) > G.time) return false; tk[key] = G.time + ms; return true; }
-  function visible(e) { return e.x > G.cam.x - 20 && e.x < G.cam.x + G.W + 20 && e.y > G.cam.y - 20 && e.y < G.cam.y + G.VH + 20; }
+  function visible(e) { return G.inPlay(e.x, e.y, 20); }   // regla de juego: ventana de juego fija (G.simCam, T-F1-08)
+  function onScreen(e) { return e.x > G.cam.x - 20 && e.x < G.cam.x + G.W + 20 && e.y > G.cam.y - 20 && e.y < G.cam.y + G.VH + 20; }   // solo dibujo
   function densest(p, range, rad) {   // enemigo con más vecinos en rad (centro de la nube / granada)
     var list = CB.inRange(p.x, p.y, range), best = null, bn = -1;
     for (var i = 0; i < list.length; i++) {
@@ -768,10 +769,21 @@
   // 844x390 (canvas 960x540 con escala 0,72): radio 38 = 55 px CSS. Arco en la esquina inferior derecha; AUTO a la izquierda del arco; pausa / silencio están arriba a la izquierda.
   var BTN = [{ x: 906, y: 486, r: 38 }, { x: 826, y: 496, r: 38 }, { x: 892, y: 404, r: 38 }, { x: 810, y: 414, r: 38 }], AUTO = { x: 700, y: 488, w: 88, h: 38 };
   F.BTN = BTN; F.AUTO = AUTO;
+  // T-F1-08 fase 2: con la pantalla ancha el arco y AUTO se anclan a la esquina inferior derecha segura (R, B): radio 40, zona de toque 48, AUTO 100x66 (>= 44 px reales a 740x360).
+  // Se recalculan en el sitio (F.BTN / F.AUTO son los mismos objetos) en cada dibujo y toque; con el ancho clásico quedan las constantes de siempre.
+  var BTN0 = BTN.map(function (b) { return { x: b.x, y: b.y, r: b.r }; }), AUTO0 = { x: AUTO.x, y: AUTO.y, w: AUTO.w, h: AUTO.h };
+  F.layout = function () {
+    var i;
+    if (!G.hudWide()) { for (i = 0; i < NS; i++) { BTN[i].x = BTN0[i].x; BTN[i].y = BTN0[i].y; BTN[i].r = BTN0[i].r; BTN[i].hit = BTN0[i].r + 6; } AUTO.x = AUTO0.x; AUTO.y = AUTO0.y; AUTO.w = AUTO0.w; AUTO.h = AUTO0.h; return; }
+    var A = G.anchor(), R = A.R, B = A.B, P = [[R - 44, B - 38], [R - 128, B - 28], [R - 58, B - 122], [R - 142, B - 112]];
+    for (i = 0; i < NS; i++) { BTN[i].x = P[i][0]; BTN[i].y = P[i][1]; BTN[i].r = 40; BTN[i].hit = 48; }
+    AUTO.w = 100; AUTO.h = 66; AUTO.x = R - 196 - AUTO.w; AUTO.y = B - AUTO.h;
+  };
   F.press = function (m, type) {
+    F.layout();
     if (G.Sys) G.Sys.touchActive = type !== 'mouse';
     if (m.x >= AUTO.x && m.x <= AUTO.x + AUTO.w && m.y >= AUTO.y && m.y <= AUTO.y + AUTO.h) { F.auto = !F.auto; snd('fx_btn', 0); return true; }
-    for (var i = 0; i < NS; i++) if (Math.hypot(m.x - BTN[i].x, m.y - BTN[i].y) <= BTN[i].r + 6) { if (G.player.actives[i]) F.fire(i); else snd('fx_btn_cancel', 150); return true; }
+    for (var i = 0; i < NS; i++) if (Math.hypot(m.x - BTN[i].x, m.y - BTN[i].y) <= BTN[i].hit) { if (G.player.actives[i]) F.fire(i); else snd('fx_btn_cancel', 150); return true; }
     return false;
   };
 
@@ -828,7 +840,7 @@
       else if (RBY[s.id].kind === 'mark' && a2) for (j = 0; j < st.marks.length; j++) { var e = st.marks[j]; if (!e.dead && e.hemoT > 0) a2.mark(c, e.x, e.y, e.r + 4, G.time / 1000); }
     }
     for (i = 0; i < F.axes.length; i++) { var ax = F.axes[i]; if (a2) a2.axe(c, ax.x, ax.y, ax.t / 1000, 1); else { c.fillStyle = '#ff8a2a'; c.beginPath(); c.arc(ax.x, ax.y, 18, 0, 6.283); c.fill(); } }
-    if (corrodeN > 0) for (i = 0; i < G.enemies.length; i++) { var ce = G.enemies[i]; if (ce.corrodeT > 0 && !ce.dead && visible(ce) && !art('status', c, 'corrode', ce.x, ce.y, ce.r, G.time / 1000)) { c.save(); c.strokeStyle = '#9ad05a'; c.setLineDash([3, 4]); c.beginPath(); c.arc(ce.x, ce.y, ce.r + 3, 0, 6.283); c.stroke(); c.restore(); } }
+    if (corrodeN > 0) for (i = 0; i < G.enemies.length; i++) { var ce = G.enemies[i]; if (ce.corrodeT > 0 && !ce.dead && onScreen(ce) && !art('status', c, 'corrode', ce.x, ce.y, ce.r, G.time / 1000)) { c.save(); c.strokeStyle = '#9ad05a'; c.setLineDash([3, 4]); c.beginPath(); c.arc(ce.x, ce.y, ce.r + 3, 0, 6.283); c.stroke(); c.restore(); } }
     if (p.fusBuffT > 0 && a2) a2.aura(c, p.x, p.y, G.time / 1000, Math.min(1, p.fusBuffT / 500), 26);
     if (a2 && a2.fx2Draw) a2.fx2Draw(c);   // FX2: particulas (chispas, escombros, fuego->humo, flares) y estados sobre enemigos
   };
@@ -836,14 +848,15 @@
     c.fillStyle = 'rgba(8,4,14,0.72)'; c.beginPath(); c.moveTo(x, y); c.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + 6.283 * frac); c.closePath(); c.fill();
   }
   F.drawHud = function (c) {
-    var p = G.player, t = G.time / 1000, touch = G.Sys.isTouch(), a2 = A2();
+    F.layout();
+    var p = G.player, t = G.time / 1000, touch = G.Sys.isTouch(), a2 = A2(), wide = G.hudWide();
     for (var i = 0; i < NS; i++) {
       var b = BTN[i], s = p.actives[i], r = s && RBY[s.id], ready = s && s.cd <= 0 && !s.st;
       c.save();
       if (!s) {
         c.fillStyle = 'rgba(10,6,18,0.6)'; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fill();
         c.strokeStyle = 'rgba(160,140,190,0.4)'; c.lineWidth = 3; c.setLineDash([6, 6]); c.beginPath(); c.arc(b.x, b.y, b.r - 2, 0, 6.283); c.stroke(); c.setLineDash([]);
-        G.txt(c, touch ? String(i + 1) : KEYL[i] === '_' ? 'ESP' : KEYL[i], b.x, b.y, 14, 'rgba(180,160,210,0.6)', 'center');
+        G.txt(c, touch ? String(i + 1) : KEYL[i] === '_' ? 'ESP' : KEYL[i], b.x, b.y, wide ? 18 : 14, 'rgba(180,160,210,0.6)', 'center');
         c.restore(); continue;
       }
       var st = s.press > 0 ? 'press' : s.st ? 'active' : s.cd > 0 ? 'cd' : 'ready';
@@ -857,12 +870,14 @@
       if (s.st) { c.strokeStyle = r.color; c.lineWidth = 4; c.beginPath(); c.arc(b.x, b.y, b.r + 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * (s.st.t / s.st.dur)); c.stroke(); }
       if (s.readyT > 0) { c.strokeStyle = 'rgba(255,233,160,' + s.readyT / 700 + ')'; c.lineWidth = 3; c.beginPath(); c.arc(b.x, b.y, b.r + 4 + (700 - s.readyT) / 700 * 16, 0, 6.283); c.stroke(); }
       if (s.cd > 0) G.txt(c, (s.cd >= 10000 ? Math.ceil(s.cd / 1000) : (s.cd / 1000).toFixed(1)), b.x, b.y + 2, 20, '#fff', 'center');
-      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, 12, ready ? '#ffe9a0' : '#d8cfe8', 'center');
+      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, wide ? 14 : 12, ready ? '#ffe9a0' : '#d8cfe8', 'center');
       if (!touch) { c.fillStyle = '#0c0814'; c.fillRect(b.x - b.r + 4, b.y - b.r + 4, 24, 20); G.txt(c, KEYL[i] === '_' ? 'ESP' : KEYL[i], b.x - b.r + 16, b.y - b.r + 14, 12, '#ffd27a', 'center'); }
       c.restore();
     }
     var a = AUTO; c.save(); c.fillStyle = F.auto ? '#2a8a4a' : 'rgba(10,6,18,0.8)'; c.fillRect(a.x, a.y, a.w, a.h); c.strokeStyle = F.auto ? '#9dffb4' : '#6a5a86'; c.lineWidth = 2; c.strokeRect(a.x + 1, a.y + 1, a.w - 2, a.h - 2);
-    G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO') + (touch ? '' : ' (F)'), a.x + a.w / 2, a.y + a.h / 2, 12, '#fff', 'center'); c.restore();
+    if (wide && !touch) { G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO'), a.x + a.w / 2, a.y + a.h / 2 - 9, 16, '#fff', 'center'); G.txt(c, '(F)', a.x + a.w / 2, a.y + a.h / 2 + 13, 14, '#d8cfe8', 'center'); }
+    else G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO') + (touch ? '' : ' (F)'), a.x + a.w / 2, a.y + a.h / 2, wide ? 16 : 12, '#fff', 'center');
+    c.restore();
   };
   F.chipRects = function () { var out = []; for (var i = 0; i < NS; i++) out.push({ x: 8 + i * 84, y: 8, w: 80, h: 34 }); return out; };
   F.drawChips = function (c) {   // pantalla de oferta: panel PODERES arriba a la derecha (4 slots)

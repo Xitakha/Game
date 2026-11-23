@@ -66,12 +66,13 @@
     // presagio sobre el mundo real (se desvanece antes del final para que la pelea empiece limpia)
     var fade = 1 - cl((p - 0.55) / 0.4, 0, 1);
     if (fade > 0.01) {
-      var cx = cl(e.x - G.cam.x, 80, W - 80), gy = cl(e.y + (D.gy || 88) - G.cam.y, H * 0.5, H * 0.9) / H;
+      var cx = cl(e.x - G.cam.x - (G.colOX || 0), 80, W - 80), gy = cl(e.y + (D.gy || 88) - G.cam.y, H * 0.5, H * 0.9) / H;
       c.save(); c.globalAlpha = fade; a2.omen(id, c, W, H, p, { short: short, calm: calm, cx: cx, gy: gy }); c.restore();
     }
     // barras de cine
     var bar = 48, inB = cl(real / 300, 0, 1), outB = I.t > 2400 ? cl((I.t - 2400) / 400, 0, 1) : 0, b = Math.round(bar * G.Boss.u.ease(inB) * (1 - G.Boss.u.ease(outB)));
-    c.fillStyle = '#000'; c.fillRect(0, 0, W, b); c.fillRect(0, H - b, W, b);
+    var X0 = -(G.colOX || 0), WF = W - 2 * X0;   // T-F1-08: barras de cine a todo el lienzo
+    c.fillStyle = '#000'; c.fillRect(X0, 0, WF, b); c.fillRect(X0, H - b, WF, b);
     // cartel
     var pl = PLATE[short ? 'short' : 'long'], cp = (real - pl[0]) / pl[1];
     if (cp >= 0 && cp <= 1) a2.card(id, c, W, H, cp, { short: short, calm: calm, lore: false, y: 0.27 });

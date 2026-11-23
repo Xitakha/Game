@@ -129,6 +129,14 @@
   Sys.insets = function () { return insets; };
   Sys.layout = { cw: 0, ch: 0, left: 0, top: 0, dpr: 1 };
   function portrait() { return Sys.isMobile && window.innerHeight > window.innerWidth * 1.05; }
+  // T-F1-08: pantalla ancha. Con la perilla activa, el lienzo ocupa toda la ventana (también bajo la muesca) y el ancho lógico G.W crece de 960 a 1200 según la forma
+  // de la pantalla (alto lógico siempre 540). Las reglas de juego no cambian (ventana de juego fija G.SW, main.js). ?wide=0 fuerza el comportamiento clásico (960, letterbox
+  // dentro del área segura) y ?wide=1 activa el ancho. WIDE_DEFAULT = valor sin perilla: 0 hasta la fase 4 de la SPEC T-F1-08 (entonces pasa a 1).
+  var WIDE_DEFAULT = 0, WIDE_MAX = 1200;
+  Sys.WIDE_DEFAULT = WIDE_DEFAULT;
+  Sys.wide = q('wide') === '1' ? true : q('wide') === '0' ? false : !!WIDE_DEFAULT;
+  G.safe = { l: 0, r: 0, t: 0, b: 0 }; G.OX = 0; G.M = 12;
+  Sys.onResize = [];   // cachés que dependen de G.W (viñeta de Frío, ventisca...): se vacían al cambiar el ancho
   function fit() {
     if (!canvas) return;
     var vv = window.visualViewport;
@@ -136,13 +144,28 @@
     if (vv && vv.width && vv.height && Math.abs(vv.scale - 1) < 0.01) { w = Math.floor(vv.width); h = Math.floor(vv.height); }
     stage.style.width = w + 'px'; stage.style.height = h + 'px';
     readInsets();
-    var aw = Math.max(50, w - insets.l - insets.r), ah = Math.max(50, h - insets.t - insets.b);
-    var cw = aw, ch = aw * 9 / 16;
-    if (ch > ah) { ch = ah; cw = ah * 16 / 9; }
-    cw = Math.floor(cw); ch = Math.floor(ch);
-    var left = Math.round(insets.l + (aw - cw) / 2), top = Math.round(insets.t + (ah - ch) / 2);
+    var cw, ch, left, top, W0 = G.W, k;
+    if (Sys.wide) {
+      var ratio = w / Math.max(1, h);
+      G.W = ratio > 16 / 9 ? G.clamp(2 * Math.round(540 * ratio / 2), 960, WIDE_MAX) : 960;
+      k = Math.min(w / G.W, h / G.H);
+      cw = Math.floor(G.W * k); ch = Math.floor(G.H * k);
+      left = Math.round((w - cw) / 2); top = Math.round((h - ch) / 2);
+      k = ch / G.H;
+      var l0 = Math.max(0, insets.l - left), r0 = Math.max(0, insets.r - (w - left - cw)), t0 = Math.max(0, insets.t - top), b0 = Math.max(0, insets.b - (h - top - ch));
+      G.safe = { l: l0 / k, r: r0 / k, t: t0 / k, b: b0 / k };
+    } else {
+      G.W = 960;
+      var aw = Math.max(50, w - insets.l - insets.r), ah = Math.max(50, h - insets.t - insets.b);
+      cw = aw; ch = aw * 9 / 16;
+      if (ch > ah) { ch = ah; cw = ah * 16 / 9; }
+      cw = Math.floor(cw); ch = Math.floor(ch);
+      left = Math.round(insets.l + (aw - cw) / 2); top = Math.round(insets.t + (ah - ch) / 2);
+      G.safe = { l: 0, r: 0, t: 0, b: 0 };   // clásico: el lienzo ya queda dentro del área segura
+    }
+    G.OX = (G.W - G.CW) / 2;
     canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px'; canvas.style.left = left + 'px'; canvas.style.top = top + 'px';
-    // resolución interna: móvil = CSS x DPR (máx. 2) limitado por la calidad; escritorio = 960x540 como siempre (pixelado)
+    // resolución interna: móvil = CSS x DPR (máx. 2) limitado por la calidad; escritorio = G.W x 540 como siempre (pixelado)
     var dpr = Math.min(window.devicePixelRatio || 1, 2), s = 1;
     if (Sys.isMobile) s = Math.max(1, Math.min(cw * dpr / G.W, Q.s));
     s = Math.round(s * 20) / 20;
@@ -150,7 +173,8 @@
     if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
     G.rs = bw / G.W;
     canvas.style.imageRendering = Sys.isMobile && s > 1 ? 'auto' : 'pixelated';
-    Sys.layout = { cw: cw, ch: ch, left: left, top: top, dpr: dpr, w: w, h: h };
+    Sys.layout = { cw: cw, ch: ch, left: left, top: top, dpr: dpr, w: w, h: h, k: ch / G.H };
+    if (G.W !== W0) { for (var i = 0; i < Sys.onResize.length; i++) { try { Sys.onResize[i](); } catch (e) { /* caché */ } } if (G.syncCam) G.syncCam(); }
     var port = portrait();
     rotate.style.display = port ? 'flex' : 'none';
     if (port) autoPause();
@@ -202,6 +226,7 @@
     muteAld: { x: 346, y: 6, w: 48, h: 48 },
     fsAld: { x: 398, y: 6, w: 48, h: 48 }
   };
+  function col(r) { return G.OX ? { x: r.x + G.OX, y: r.y, w: r.w, h: r.h } : r; }   // T-F1-08: la aldea va en la columna de 960 centrada (coordenadas de lienzo)
   function barKind() {
     if (G.state === 'play') return 'run';
     if (G.state === 'aldea' && G.Aldea.sysBarOK()) return 'aldea';
@@ -209,10 +234,15 @@
   }
   function active() {
     var k = barKind(), out = [];
-    if (k === 'run') { if (G.Boss && G.Boss.intro) return out; out.push(['pause', BTN.pause]); out.push(['mute', BTN.muteRun]); }   // sin botones durante la intro del jefe
-    else if (k === 'aldea') { out.push(['mute', BTN.muteAld]); if (Sys.fsSupported() && !Sys.standalone()) out.push(['fs', BTN.fsAld]); }
+    if (k === 'run') {
+      if (G.Boss && G.Boss.intro) return out;   // sin botones durante la intro del jefe
+      if (G.hudWide()) { var A = G.anchor(); out.push(['pause', { x: A.R - 64, y: A.T, w: 64, h: 64, big: 1 }]); out.push(['mute', { x: A.R - 136, y: A.T, w: 64, h: 64, big: 1 }]); }   // T-F1-08: esquina superior derecha segura, 64x64
+      else { out.push(['pause', BTN.pause]); out.push(['mute', BTN.muteRun]); }
+    }
+    else if (k === 'aldea') { out.push(['mute', col(BTN.muteAld)]); if (Sys.fsSupported() && !Sys.standalone()) out.push(['fs', col(BTN.fsAld)]); }
     return out;
   }
+  Sys.buttons = function () { return active().map(function (a) { return { id: a[0], x: a[1].x, y: a[1].y, w: a[1].w, h: a[1].h }; }); };   // pruebas: rectángulos (lienzo) de los botones de sistema visibles
   Sys.onButton = function (m) { var a = active(); for (var i = 0; i < a.length; i++) if (G.UI.inR(a[i][1], m)) return true; return false; };
   Sys.tap = function (m) {
     var a = active();
@@ -228,7 +258,8 @@
   };
   function icon(c, id, r) {
     var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-    c.save(); c.fillStyle = '#fff'; c.strokeStyle = '#fff'; c.lineWidth = 4; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.save(); if (r.big) { c.translate(cx, cy); c.scale(1.3, 1.3); c.translate(-cx, -cy); }   // T-F1-08: icono de 26 px en los botones de 64
+    c.fillStyle = '#fff'; c.strokeStyle = '#fff'; c.lineWidth = 4; c.lineCap = 'round'; c.lineJoin = 'round';
     if (id === 'pause') { c.fillRect(cx - 9, cy - 10, 6, 20); c.fillRect(cx + 3, cy - 10, 6, 20); }
     else if (id === 'mute') {
       c.beginPath(); c.moveTo(cx - 12, cy - 4); c.lineTo(cx - 6, cy - 4); c.lineTo(cx + 1, cy - 11); c.lineTo(cx + 1, cy + 11); c.lineTo(cx - 6, cy + 4); c.lineTo(cx - 12, cy + 4); c.closePath(); c.fill();
@@ -252,7 +283,7 @@
       c.strokeStyle = '#8a7aa6'; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3); c.restore();
       icon(c, a[i][0], r);
     }
-    if (fpsShow) G.txt(c, Math.round(Sys.fps) + ' fps  Q:' + Q.level + '  x' + (G.rs || 1).toFixed(2), 480, 528, 11, '#9dffb4', 'center');
+    if (fpsShow) G.txt(c, Math.round(Sys.fps) + ' fps  Q:' + Q.level + '  x' + (G.rs || 1).toFixed(2) + (G.W !== 960 ? '  W' + G.W : ''), G.W / 2, 528, 11, '#9dffb4', 'center');
   };
 
   // ------------------------------------------------------------------ Inicio

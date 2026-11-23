@@ -164,7 +164,7 @@
     }
   }
   C.advance = function () { if (S) advance(); };
-  function skipRect() { return { x: G.W - 116, y: 52, w: 104, h: 40 }; }
+  function skipRect() { return { x: G.CW - 116, y: 52, w: 104, h: 40 }; }   // coordenadas de la columna de 960 (T-F1-08: la cinemática se dibuja centrada)
   C.skipRect = skipRect;
 
   C.update = function (dt) {
@@ -223,7 +223,8 @@
   C.draw = function (c) {
     if (!S) return;
     var W = G.W, H = G.H, t = S.t, sc = S.script, i, sh = { x: 0, y: 0 };
-    c.fillStyle = '#05030a'; c.fillRect(0, 0, W, H);
+    var X0 = -(G.colOX || 0), WF = W - 2 * X0;   // T-F1-08: dentro de la columna, fondos, barras, fundidos y destellos cubren todo el lienzo (el arte que admite ancho variable se pinta entero)
+    c.fillStyle = '#05030a'; c.fillRect(X0, 0, WF, H);
     if (S.shake) {
       var u = (t - S.shake.t0) / S.shake.ms;
       if (u >= 1) S.shake = null; else { var a = S.shake.amp * (1 - u); sh.x = Math.sin(t * 0.09) * a * 0.7; sh.y = Math.cos(t * 0.13) * a * 0.7; S.shakePx = Math.max(S.shakePx, Math.hypot(sh.x, sh.y)); }
@@ -245,7 +246,7 @@
       var bu = 1, bar = lb.bar || 44;
       if (lb.in) bu = cl((t - lb.in[0]) / Math.max(1, lb.in[1] - lb.in[0]), 0, 1);
       if (lb.out && t > lb.out[0]) bu = Math.min(bu, 1 - cl((t - lb.out[0]) / Math.max(1, lb.out[1] - lb.out[0]), 0, 1));
-      var bh = Math.round(bar * EASE.out(bu)); c.fillStyle = '#000'; c.fillRect(0, 0, W, bh); c.fillRect(0, H - bh, W, bh);
+      var bh = Math.round(bar * EASE.out(bu)); c.fillStyle = '#000'; c.fillRect(X0, 0, WF, bh); c.fillRect(X0, H - bh, WF, bh);
     }
     // cartel
     if (S.title) {
@@ -259,7 +260,7 @@
     // fundidos
     for (i = S.fades.length - 1; i >= 0; i--) {
       var fd = S.fades[i], fu2 = cl((t - fd.t0) / fd.dur, 0, 1), fa = lerp(fd.from, fd.to, fu2);
-      c.save(); c.globalAlpha = fa; c.fillStyle = fd.color; c.fillRect(0, 0, W, H); c.restore();
+      c.save(); c.globalAlpha = fa; c.fillStyle = fd.color; c.fillRect(X0, 0, WF, H); c.restore();
       if (fu2 >= 1 && fd.to <= 0.001) S.fades.splice(i, 1);
     }
     // destellos (filtrados por Reducir destellos en run())
@@ -267,7 +268,7 @@
       var fl = S.flashes[i], fu3 = (t - fl.t0) / fl.ms;
       if (fu3 >= 1) { S.flashes.splice(i, 1); continue; }
       var al = fl.a * (1 - fu3); if (al > S.maxFlashA) S.maxFlashA = al;
-      c.save(); c.globalAlpha = al; c.fillStyle = fl.color; c.fillRect(0, 0, W, H); c.restore();
+      c.save(); c.globalAlpha = al; c.fillStyle = fl.color; c.fillRect(X0, 0, WF, H); c.restore();
     }
     // subtítulo / diálogo (siempre visible)
     var L = S.line;
@@ -280,7 +281,7 @@
     }
     G.txt(c, isLocked() ? 'Toca: avanzar' : G.hint('Toca: avanzar  -  Esc: saltar', 'Toca: avanzar  -  SALTAR'), 14, H - 12, 12, '#b4a8c8', 'left');
     if (S.paused) {
-      c.fillStyle = 'rgba(5,3,10,0.82)'; c.fillRect(0, 0, W, H);
+      c.fillStyle = 'rgba(5,3,10,0.82)'; c.fillRect(X0, 0, WF, H);
       G.txt(c, 'PAUSA', W / 2, H / 2 - 24, 34, '#ffd27a', 'center'); G.txt(c, 'TOCA PARA CONTINUAR', W / 2, H / 2 + 22, 20, '#f0e8d8', 'center');
     }
   };

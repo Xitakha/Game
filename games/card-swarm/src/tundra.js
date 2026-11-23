@@ -445,6 +445,7 @@
     edgeCache = c; return c;
   }
   var hzC = null, hzG = null, hzN = 0, hzQ = '';
+  if (G.Sys && G.Sys.onResize) G.Sys.onResize.push(function () { edgeCache = null; hzC = null; hzG = null; frostCache = null; });   // T-F1-08: cachés de pantalla (G.W x G.H) al cambiar el ancho
   T.hazeAlpha = function () { return BZS.a; };
   T.drawHaze = function (c) {
     var Q = G.Q, p = G.player, K = G.Proj.K, sx = p.x - G.cam.x, sy = (p.y - G.cam.y) * K, a = BZS.a;
@@ -508,6 +509,7 @@
   T.drawHud = function (c) {
     if (!T.on || !coldOn) return;
     var k = G.cold, x = 16, y = 40, st = T.state();
+    if (G.hudWide()) { var A = G.anchor(); x = A.L; y = A.T + 32; }   // T-F1-08: bajo la barra de vida anclada
     if (typeof Assets.drawColdBar === 'function') {   // arte P3: copo + barra 140x10 + "NN%" con marcas en 40 y 70
       Assets.drawColdBar(c, x, y, k.v, performance.now(), { w: 140, h: 10, frozen: k.frozenT > 0 });
       var lab0 = st === 'escarcha' ? 'ESCARCHA ' + Math.ceil(k.frozenT / 1000) + 's' : st === 'helado' ? 'HELADO' : k.hearth ? 'CALOR' : '';

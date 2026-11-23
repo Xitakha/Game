@@ -1,5 +1,5 @@
 // Auditoría de texto de Swarm Hand: graba cada G.txt / U.panel / U.button de UN fotograma y detecta solapes, desbordes, fuentes pequeñas y bajo contraste.
-// Uso desde tests.js (modo 'text') y desde la herramienta de capturas. Todo en coordenadas LÓGICAS (960x540).
+// Uso desde tests.js (modo 'text') y desde la herramienta de capturas. Todo en coordenadas LÓGICAS de lienzo (G.W x 540; G.W = 960 salvo la pantalla ancha de T-F1-08, ?wide=1).
 const REC = () => {
   if (window.__TC) return;
   const T = window.__TC = { on: false, list: [], boxes: [] };
@@ -30,7 +30,7 @@ async function snap(pg, frames = 2) {
     if (G.state === 'paused') { const k = T.list.findIndex(t => t.s === 'PAUSA'); if (k > 0) T.list = T.list.slice(k); T.boxes = T.boxes.filter(b => b.k === 'button'); }   // el HUD de debajo queda tapado por el velo
     const seen = new Set(), out = [];
     for (const t of T.list) { const k = t.s + '|' + Math.round(t.x0) + '|' + Math.round(t.py); if (!seen.has(k)) { seen.add(k); out.push(t); } }
-    return { texts: out, boxes: T.boxes };
+    return { texts: out, boxes: T.boxes, W: G.W || 960, OX: G.OX || 0, safe: G.safe || null, k: (G.Sys && G.Sys.layout && G.Sys.layout.k) || null };
   }, frames);
 }
 // contraste WCAG aproximado contra un fondo oscuro estimado (los fondos del juego son #07050c .. #2a1d3a); todos los textos llevan contorno oscuro
@@ -39,7 +39,7 @@ const lum = (hex) => { let h = String(hex).replace('#', ''); if (h.length === 3)
 const contrast = (fg, bg = '#1a1226') => { const a = lum(fg), b = lum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
 // opciones: minSize (px lógicos), W/H pantalla
 function analyze(d, o = {}) {
-  const minSize = o.minSize || 11, W = o.W || 960, H = o.H || 540, issues = [], T = d.texts;
+  const minSize = o.minSize || 11, W = o.W || d.W || 960, H = o.H || 540, issues = [], T = d.texts;
   for (const t of T) {
     if (t.size < minSize - 0.01 && !/^\s*$/.test(t.s)) issues.push({ k: 'size', msg: `fuente ${t.size.toFixed(1)} < ${minSize}: "${t.s.slice(0, 40)}"` });
     if (t.x1 < 0 || t.x0 > W || t.y1 < 0 || t.y0 > H) continue;   // fuera por completo (texto flotante del mundo): invisible
