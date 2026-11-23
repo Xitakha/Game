@@ -11,7 +11,14 @@ Decisión del dueño (PLAN-MAESTRO, "Decisiones del dueño", fila 7): **ensancha
 5. La línea "NORMAL 9 min - botín x1" sale del combate y se muestra en la pausa.
 6. El arte de la aldea a todo el ancho queda para **después de la fase 2**.
 
-**Estado (2026-11-23):** fases 0, 1 y 2 implementadas detrás de `?wide=1` (`WIDE_DEFAULT = 0` en `src/mobile.js`; la fase 4 lo pone a 1). Pruebas: grupo `wide` de `tools/card-swarm-bot/tests.js` y `WIDE=1 node tools/card-swarm-bot/tests.js <grupo>` para correr los grupos existentes con la pantalla ancha. Fases 3 y 4 pendientes.
+**Estado (2026-11-23):** fases 0 a 4 implementadas. La pantalla ancha es el valor por defecto (`WIDE_DEFAULT = 1` en `src/mobile.js`); `?wide=0` es la vuelta atrás. Pruebas: grupo `wide` de `tools/card-swarm-bot/tests.js`; `WIDE=0 node tools/card-swarm-bot/tests.js <grupo>` corre un grupo con el lienzo clásico.
+
+**Fase 3, lo hecho y lo pendiente (desvíos de la sección 4):**
+- `G.MIN_UI = 17`. Rehechos para 17 lógicos y botones de 66: pausa, oferta de cartas (y su ventana de FUSIÓN), pantallas de fin (principal, detalle, práctica), HUD de la aldea y diálogo de los NPC, Menú, Ajustes (2 páginas), Cinemáticas, Informe de errores, Privacidad, tarjeta "Antes de salir", Portal (3 páginas: DESTINO / SALIDA / CARTAS), Archivo (2 páginas: COLECCIÓN / ANCLAS Y LOADOUTS) y Forja (vista MAPA a todo el ancho + vista DETALLE).
+- Pendientes de rehacer (siguen con su maquetación; `G.Panels.minFor`): Rufo y Manual a 15 lógicos (`G.MIN_DENSE`, 10 px reales a 740x360); Tablón / Cacería de Vesper, Cocina, Logros y Herrería a 12 (`G.MIN_OLD`, como antes).
+- HUD de combate: ningún texto por debajo de 15 lógicos (10 px reales a 740x360), barras de jefe, guardián y minijefe incluidas (las fichas de Peligro van dentro de la barra; antes pisaban el nombre). Etiquetas del mundo (números de daño) sin cambio.
+- La X de cerrar de los paneles es de 66x66; las pestañas de filtro del Archivo y las del árbol de la Forja quedan en 48 y 58 de alto.
+- Arte de la aldea a todo el ancho: las franjas laterales se pintan por código (`Assets.drawVillageSides`: cielo, suelo, luz nocturna y viñeta en espejo desde el borde del mapa, sin costura, y decorado propio). El mapa jugable sigue siendo de 960. En los paneles, las franjas siguen siendo el borde estirado con velo. Si arte quiere un decorado lateral dibujado a mano, sustituye esa función.
 
 Convenciones:
 - **px lógicos**: coordenadas del juego (hoy 960x540).

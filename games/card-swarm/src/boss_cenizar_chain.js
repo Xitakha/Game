@@ -253,7 +253,7 @@
     var ch = A().ch; if (!ch) return;
     ch.waves.forEach(function (w) { if (!w.done) out.push({ ref: w, k: 'band', x: w.x0, dir: w.dir, v: 260, w: 120, gaps: [w.gap], t0: Math.max(0, w.launchRel - ch.t), t1: Math.max(0, w.launchRel - ch.t) + (G.AW + 160) / 260 * 1000 }); });
   };
-  Z.hudChain = function (c, e, bx, by, bw) { var ch = A().ch; if (ch && ch.t > -ANN) G.txt(c, (ch.final ? 'CADENA FINAL' : 'ROSARIO') + '  ' + Math.max(0, ch.n) + '/' + ch.links.length, bx + bw / 2, by + 52, 11, '#fff2b0', 'center'); };
+  Z.hudChain = function (c, e, bx, by, bw) { var ch = A().ch; if (ch && ch.t > -ANN) G.txt(c, (ch.final ? 'CADENA FINAL' : 'ROSARIO') + '  ' + Math.max(0, ch.n) + '/' + ch.links.length, bx + bw / 2, by + 106, 15, '#fff2b0', 'center'); };
 
   // ---- pruebas / calibración
   S.chainInfo = function () { var ch = A().ch; return ch ? { ann2: ch.ann2 == null ? null : ch.ann2 - A().clk, t: ch.t, n: ch.n, links: ch.links, valid: ch.spec.valid, tries: ch.spec.tries, events: ch.keys, end: ch.end, final: ch.final } : null; };

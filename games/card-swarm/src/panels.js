@@ -1,4 +1,4 @@
-/* panels.js - Paneles de la aldea (todo en canvas 960x540, botones >= 44 px): Tablón de Vesper (ofertas rotativas), Mercader Rufo (trueque / vender / comprar),
+/* panels.js - Paneles de la aldea (columna de 960x540 centrada en el lienzo ancho; T-F1-08: letra 17 y botones de 66 en los rehechos, ver P.minFor): Tablón de Vesper (ofertas rotativas), Mercader Rufo (trueque / vender / comprar),
    Portal (mano al salir, anclas, duración, encargo, plato, SALIR), Archivo de Ulalume (colección con filtros por etiqueta, 3 loadouts, anclas con vista previa de combos),
    cocina de Tía Castaña (G.Cook: 1 plato por expedición), logros de Lanudo, Menú y Ajustes.
    La forja de Grum vive en tree.js (P.open('forge') la abre). Interfaz: P.open(nombre), P.update(dt) -> true si hay que cerrar, P.draw(c). */
@@ -6,7 +6,7 @@
   'use strict';
   var G = window.G, P = G.Panels = {}, U = G.UI, inp = G.input, L = G.Loot;
   var cur = null, msg = '', msgT = 0, confirm = '', confirmT = 0;
-  var R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
+  var R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
   var st = { rt: 0, give: 'wick', get: 'thread', qty: 1, buy: 'thread', csel: 0 };
   var LENS = [7, 9, 10];
   G.touchUI = ('ontouchstart' in window) && !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);   // táctil: el renombrado de loadouts usa el teclado nativo
@@ -18,9 +18,15 @@
   function common() { return L.PARTS.filter(function (p) { return !p.rare; }); }
   function bg(c, title) {
     c.fillStyle = 'rgb(10,5,16)'; c.fillRect(0, 0, G.W, G.H);
-    G.txt(c, title, 14, 24, 24, '#ffd27a', 'left');
-    U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
-    if (msgT > 0 && msg) G.txt(c, msg, 480, 56, 13, '#ffe9a0', 'center');
+    G.txt(c, title, 14, 26, 24, '#ffd27a', 'left');
+    U.button(c, R_CLOSE, 'X', { size: 22, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
+  }
+  // T-F1-08 fase 3: el aviso (msg) se pinta ENCIMA de todo el panel, con placa y en hasta 2 líneas de 17 (antes una línea de 13 en y 56 que, con 17, no cabía)
+  function drawMsg(c) {
+    if (!(msgT > 0 && msg)) return;
+    var ls = U.wrap(c, msg, 840, 17).slice(0, 2), h = ls.length * 22 + 12, y0 = 70;
+    c.fillStyle = 'rgba(8,4,14,0.92)'; c.fillRect(50, y0, 860, h); c.strokeStyle = '#ffd27a'; c.lineWidth = 2; c.strokeRect(51, y0 + 1, 858, h - 2);
+    ls.forEach(function (l, i) { G.txt(c, l, 480, y0 + 17 + i * 22, 17, '#ffe9a0', 'center'); });
   }
   function header(c, x) {
     var S = SV(); U.part(c, 'brasa', x, 24, 10); G.txt(c, 'Brasas ' + S.brasas, x + 16, 24, 16, '#ff9a3c', 'left');
@@ -71,7 +77,16 @@
     if (cur === 'privacy') return updPriv();
     return true;
   };
+  // T-F1-08 fase 3: letra mínima por panel. Rehechos para 17 (G.MIN_UI = 11 px reales a 740x360): menú, ajustes y sus subpantallas, Portal, Archivo y Forja.
+  // Pendientes de rehacer (siguen con su maquetación de 960 de siempre): Rufo y Manual a 15 (G.MIN_DENSE, 10 px reales); Tablón / Cacería de Vesper, Cocina,
+  // Logros y Herrería a 12 (G.MIN_OLD, como antes de la fase 3).
+  var MINF = { rufo: 'MIN_DENSE', manual: 'MIN_DENSE', vesper: 'MIN_OLD', cook: 'MIN_OLD', logros: 'MIN_OLD', armor: 'MIN_OLD' };
+  P.minFor = function (name) { return G[MINF[name || cur]] || G.MIN_UI; };
   P.draw = function (c) {
+    var mf = G.minFont; G.minFont = P.minFor(cur);
+    try { drawCur(c); } finally { G.minFont = mf; }
+  };
+  function drawCur(c) {
     if (cur === 'forge') return G.Tree.draw(c);
     if (cur === 'armor') return G.Smith.draw(c);
     if (cur === 'manual') return G.Manual.draw(c);
@@ -87,7 +102,8 @@
     else if (cur === 'cine2') drawCine2(c);
     else if (cur === 'errlog') drawErr(c);
     else if (cur === 'privacy') drawPriv(c);
-  };
+    drawMsg(c);
+  }
 
   // ============================================================= VESPER
   // Filas: el encargo activo (si ya rotó fuera del Tablón) + 3 ofertas rotativas (Quests.board). Teclas 1-4.
@@ -286,7 +302,7 @@
     }
     if (st.rt === 0) {
       var left = L.TRADE.cupo - (S.shop.trade || 0), n = giveN(st.give);
-      G.txt(c, 'Cupo de trueques esta salida: ' + left + ' de ' + L.TRADE.cupo + '   (se reinicia al volver de una expedición)', 14, 124, 12, left ? '#9dffb4' : '#ff8a8a', 'left');
+      G.txt(c, 'Cupo de trueques esta salida: ' + left + ' de ' + L.TRADE.cupo + '   (se reinicia al volver de una expedición)', 14, 121, 12, left ? '#9dffb4' : '#ff8a8a', 'left');
       G.txt(c, 'ENTREGAS  (3 por 1; la Hebra, 6 por 1)', 14, 140, 12, '#9a8fb0', 'left');
       cm.forEach(function (p, k) { partTile(c, p, tile(k, 150), p.id === st.give, p.id === 'thread' ? '6 por 1' : '3 por 1'); });
       G.txt(c, 'RECIBES 1 DE...', 14, 264, 12, '#9a8fb0', 'left');
@@ -317,11 +333,15 @@
   // ============================================================= PORTAL
   // v (textos): el Portal se reparte en dos páginas para que nada se apelotone: SALIDA (destino, duración, Peligro, encargo y compras; la de siempre al abrir) y CARTAS (mano y anclas).
   // El botón SALIR A LA EXPEDICIÓN está siempre visible abajo a la derecha. Tab / T / toque en la pestaña cambia de página.
-  function handRect(i) { return { x: 20 + i * 84, y: 130, w: 72, h: 96 }; }
-  function ancRect(i) { return { x: 20 + (i % 10) * 62, y: 308 + Math.floor(i / 10) * 76, w: 56, h: 72 }; }
-  function lenRect(i) { return { x: 470 + i * 156, y: 118, w: 148, h: 52 }; }
-  var R_GO = { x: 470, y: 470, w: 470, h: 56 };
-  function ptabRect(i) { return { x: 20 + i * 150, y: 56, w: 142, h: 38 }; }
+  // T-F1-08 fase 3: Portal en 3 páginas (DESTINO, SALIDA, CARTAS; pestañas arriba) para letra 17 y botones de 66 de alto.
+  // st.ptab: 0 = DESTINO, 1 = CARTAS, 2 = SALIDA (ids estables para P.portalTab; el orden en pantalla es DESTINO, SALIDA, CARTAS)
+  var PTAB_ORDER = [0, 2, 1];
+  function handRect(i) { return { x: 14 + i * 96, y: 96, w: 90, h: 90 }; }
+  function ancRect(i) { return { x: 14 + (i % 10) * 94, y: 238 + Math.floor(i / 10) * 76, w: 88, h: 72 }; }
+  function lenRect(i) { return { x: 14 + i * 160, y: 98, w: 152, h: 66 }; }
+  var R_GO = { x: 470, y: 468, w: 476, h: 66 };
+  function ptabRect(id) { var k = PTAB_ORDER.indexOf(id); return { x: 404 + k * 160, y: 0, w: 154, h: 66 }; }
+  P.portalRects = function () { return { tab: ptabRect, len: lenRect, pel: pelRect, hand: handRect, anc: ancRect, go: R_GO, equip: R_EQUIP }; };   // pruebas
   // Destino (bioma): decide el jefe. Orden de desbloqueo en cadena (P7): Cripta con el Pastor, Asfódelo con Karceron, Tundra con Letea, Panal con Yarlak, Cráter con los cinco.
   // hint = pista del Portal ('Lleva Fuego' en Tundra y Panal); lock = requisito en texto corto (chip) y largo (panel de destino).
   var BIOMES = [{ id: 'bosque', name: 'BOSQUE', boss: 'El Pastor Corrupto', bid: 'pastor', hint: 'Sin requisitos. El Pastor sufre más con Fuego y Acero.' },
@@ -331,8 +351,7 @@
     { id: 'panal', name: 'PANAL', boss: 'Melaria la Reina Abeja', need: 'yarlak', needName: 'Yarlak', lockMsg: 'Bloqueado: vence a Yarlak, el Coloso Gélido, para abrir el Panal.', short: 'Yarlak', bid: 'melaria', fire: true, hint: 'LLEVA FUEGO: derrite la cera y carameliza la miel; el humo sedante duerme a las abejas.' },
     { id: 'crater', name: 'CRÁTER', boss: 'Cenizar el Incendio Primero', need: '*', needName: 'los cinco jefes', short: 'los 5', bid: 'cenizar', hint: 'ASALTO: 6 ofertas de carta, sin horda ni checkpoints. Cada fase cambia la debilidad: lleva de todo.' }];
   var BIOME_GRID = [0, 1, 2, 3, 4, 5];   // orden de lectura: 2 columnas x 3 filas
-  var DEST = { x: 14, y: 100, w: 430, h: 154 };
-  function biomeRect(i) { return { x: DEST.x + 8 + (i % 3) * 138, y: DEST.y + 28 + Math.floor(i / 3) * 60, w: 132, h: 54 }; }
+  function biomeRect(i) { return { x: 14 + (i % 3) * 312, y: 80 + Math.floor(i / 3) * 74, w: 308, h: 66 }; }
   P.biomeRect = biomeRect; P.BIOMES = BIOMES; P.portalTab = function (n) { st.ptab = n; };
   // Peligro I-V (J3): se elige por jefe; vencer el Peligro N abre el N+1 (Save.data.peligro[jefe])
   var PEL_TXT = ['', 'Base.', '+1 add en las invocaciones, telegrafías -10 %.', 'Ataque nuevo o variante por jefe.', 'Furia a los 120 s, partes +30 %, derribos más cortos, 2 trofeos por parte.', 'Último aliento (2 desesperados), hasta 6 adds.'];
@@ -346,7 +365,7 @@
     cenizar: ['', 'Base: 7 fases, Rosario de 6 eslabones.', 'Daño +5 %, +1 add en Llamadas; telegrafías con suelo de esquiva.', 'Martillazo triple (F3), Eco de 3 s (F4) y 7.º eslabón Eco.', 'Furia 120 s, partes +30 %, 2.º Aviso fantasma de 1 s en el Rosario.', 'Último aliento: dos Cadenas Finales (6 % y 3 %), hasta 6 adds.']
   };
   P.pelText = function (bid, n) { return (PEL_BOSS[bid] || [])[n] || PEL_TXT[n]; };
-  function pelRect(i) { return { x: 14 + i * 86, y: 372, w: 80, h: 44 }; }
+  function pelRect(i) { return { x: 14 + i * 90, y: 362, w: 84, h: 66 }; }
   function biomeUnlocked(b, S) { S = S || SV(); return !b.need || (b.need === '*' ? G.Save.craterOpen() : (S.bossKills[b.need] || 0) > 0); }
   function effBiome() {   // el destino que de verdad se usará (como G.startGame: un bioma bloqueado cae al último abierto)
     var S = SV(), id = S.biome || 'bosque', b = BIOMES.filter(function (x) { return x.id === id; })[0] || BIOMES[0], k = 0;
@@ -368,12 +387,12 @@
     if (i >= 0) a.splice(i, 1); else { a.push(id); if (a.length > G.B.anchorSlots) a.shift(); }
     G.Save.save(); G.sfx('card_select', { vol: 0.5 });
   }
-  var R_EQUIP = { x: 752, y: 4, w: 136, h: 46 };
+  var R_EQUIP = { x: 14, y: 384, w: 300, h: 66 };
   function updPortal() {
-    if (G.Armor.smithOn() && onR(R_EQUIP)) { st.armorFrom = 'portal'; P.open('armor'); G.sfx('flip', { vol: 0.5 }); return false; }
     var S = SV(), i, list = unlockedList(), pt = st.ptab || 0;
-    for (i = 0; i < 2; i++) if (onR(ptabRect(i))) { st.ptab = pt = i; G.sfx('flip', { vol: 0.4 }); return false; }
-    if (inp.hit('Tab', 'KeyT')) { st.ptab = pt = 1 - pt; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (pt === 2 && G.Armor.smithOn() && onR(R_EQUIP)) { st.armorFrom = 'portal'; P.open('armor'); G.sfx('flip', { vol: 0.5 }); return false; }
+    for (i = 0; i < 3; i++) if (onR(ptabRect(i))) { st.ptab = pt = i; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (inp.hit('Tab', 'KeyT')) { st.ptab = pt = PTAB_ORDER[(PTAB_ORDER.indexOf(pt) + 1) % 3]; G.sfx('flip', { vol: 0.4 }); return false; }
     if (pt === 1) {   // página CARTAS: mano y anclas
       for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
       for (i = 0; i < list.length; i++) if (onR(ancRect(i))) toggleAnchor(list[i].id);
@@ -381,8 +400,8 @@
       if (onR(R_GO) || inp.hit('Enter')) { G.Base.launch(); }
       return false;
     }
-    for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
+    if (pt === 2) for (i = 0; i < 3; i++) if (onR(lenRect(i))) { S.len = LENS[i]; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (pt === 0) for (i = 0; i < BIOMES.length; i++) if (onR(biomeRect(i))) {
       if (biomeOpen(BIOMES[i])) { S.biome = BIOMES[i].id; S.portalSeen[BIOMES[i].id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
       else { st.pv = BIOMES[i].id; say(lockText(BIOMES[i])); G.sfx('discard', { vol: 0.4 }); }   // un destino cerrado se puede mirar: el panel dice qué hay que vencer
     }
@@ -391,7 +410,7 @@
       if (nx) { S.biome = nx.id; S.portalSeen[nx.id] = 1; st.pv = null; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     }
     var bid = effBiome().bid;
-    for (i = 0; i < 5; i++) if (onR(pelRect(i))) {
+    if (pt === 0) for (i = 0; i < 5; i++) if (onR(pelRect(i))) {
       if (i + 1 <= G.Save.pelMax(bid)) { G.Save.setPelSel(bid, i + 1); G.sfx('card_select', { vol: 0.5 }); }
       else say('Bloqueado: vence a ' + effBiome().boss + ' en Peligro ' + G.Boss.ROMAN[i] + ' para abrirlo.');
     }
@@ -405,105 +424,104 @@
     var S = SV(), i;
     for (i = 0; i < 5; i++) {
       var r = handRect(i), isAn = i < G.B.anchorSlots, id = S.anchors[i];
-      if (isAn && id) { G.Cards.drawCard(c, { id: id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true }); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 14, 12, '#ffd24a', 'center'); }
-      else if (isAn) { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '+'); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 14, 12, '#ffd24a', 'center'); }
-      else { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '?'); G.txt(c, 'ABIERTO', r.x + r.w / 2, r.y + r.h + 14, 12, '#a89cc0', 'center'); }
+      if (isAn && id) { G.Cards.drawCard(c, { id: id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true }); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 13, 12, '#ffd24a', 'center'); }
+      else if (isAn) { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '+'); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + r.h + 13, 12, '#ffd24a', 'center'); }
+      else { G.Cards.drawEmptySlot(c, r.x, r.y, r.w, r.h, '?'); G.txt(c, 'LIBRE', r.x + r.w / 2, r.y + r.h + 13, 12, '#a89cc0', 'center'); }
     }
   }
   function fx(v) { return String(v).replace('.', ','); }
   function drawPortal(c) {
     var S = SV(), list = unlockedList(), i, Q = G.Quests, pt = st.ptab || 0;
-    bg(c, '¿LISTO, MARLO?'); header(c, 360);
-    if (G.Armor.smithOn()) {   // v8: defensa recomendada del destino y acceso al taller sin caminar
-      var AR = G.Armor, cbi = effBiome(), rec = AR.recDef(cbi.id), my = Math.round(AR.OFF ? 0 : AR.get().def), col = my >= rec ? '#7dff9a' : my >= rec * 0.7 ? '#ffd24a' : '#ff8a6a';
-      G.txt(c, 'DEF ' + my + ' / recomendada ' + rec, 540, 24, 13, AR.OFF ? '#b4a8c8' : col, 'left');
-      U.button(c, R_EQUIP, 'EQUIPO', { size: 16, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: AR.readyCount() ? AR.readyCount() + ' listas' : null });
-    }
-    ['SALIDA', 'CARTAS'].forEach(function (nm, k) { U.button(c, ptabRect(k), nm + (k === 1 ? '  (' + list.length + ')' : ''), { size: 16, color: pt === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: pt === k ? '#bfeaff' : '#6a5a80' }); });
-    if (!G.Sys.isTouch()) G.txt(c, 'Tab: cambiar de página', 340, 75, 12, '#b4a8c8', 'left');
+    bg(c, '¿LISTO, MARLO?'); header(c, 236);
+    [['DESTINO', 0], ['SALIDA', 2], ['CARTAS (' + list.length + ')', 1]].forEach(function (t) { var on = pt === t[1]; U.button(c, ptabRect(t[1]), t[0], { size: 18, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80' }); });
     var names = S.anchors.map(function (a) { return G.Cards.def(a).short; }).join(' + ') || 'sin anclas';
-    if (pt === 1) {
-      G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 20, 112, 13, '#b4a8c8', 'left');
+    var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
+    var dd = L.DUR[S.len] || L.DUR[9];
+    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 20, sub: G.hint('Enter  -  ' + names, names) });
+    if (pt !== 1) G.txt(c, cb.name + '  -  ' + dd.name + ' ' + dd.min + ' min  -  Peligro ' + G.Boss.ROMAN[psel], 14, 500, 13, '#b4a8c8', 'left');   // resumen junto a SALIR
+    if (!G.Sys.isTouch()) G.txt(c, 'Tab: cambiar de página', 14, 524, 12, '#9a8fb0', 'left');
+    if (pt === 1) {   // ---- CARTAS: mano al salir y anclas
+      G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 82, 13, '#b4a8c8', 'left');
       drawHand(c);
-      G.txt(c, G.B.anchorSlots + ' anclas fijas; el resto se llena al subir de nivel.', 20, 262, 12, '#b4a8c8', 'left');
-      G.txt(c, 'TUS CARTAS  (toca para fijar / quitar como ancla)', 20, 284, 13, '#b4a8c8', 'left');
-      for (i = 0; i < list.length; i++) {
+      G.txt(c, 'TUS CARTAS  (toca para fijar o quitar como ancla)  -  ' + G.B.anchorSlots + ' ancla', 14, 224, 13, '#b4a8c8', 'left');
+      for (i = 0; i < list.length && i < 30; i++) {
         var r = ancRect(i), isA = S.anchors.indexOf(list[i].id) >= 0;
-        G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y + 8, r.w, r.h - 8, { nocd: true, glow: isA ? '#ffd24a' : null });
-        if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y - 6, r.w, 14); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + 1, 12, '#2a1a00', 'center', '#ffd24a'); }
+        G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true, glow: isA ? '#ffd24a' : null });
+        if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x, r.y, r.w, 20); G.txt(c, 'ANCLA', r.x + r.w / 2, r.y + 10, 12, '#2a1a00', 'center', '#ffd24a'); }
       }
-      U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: G.hint('Enter  -  ' + names, names) });
       return;
     }
-    var cb = effBiome(), bid = cb.bid, pmax = G.Save.pelMax(bid), psel = G.Save.pelSel(bid), PD = G.Boss.PELIGRO[psel], pelHpK = G.Boss.DEFS[bid].pelHp ? G.Boss.DEFS[bid].pelHp[psel] : PD.hp;
-    // ---- columna derecha: duración, encargo y compras
-    G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 470, 106, 13, '#b4a8c8', 'left');
-    LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 17, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
-    var dd = L.DUR[S.len] || L.DUR[9], pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp, yy = 192;
-    U.wrap(c, dd.name + ': ' + dd.tag, 460, 13).slice(0, 2).forEach(function (l) { G.txt(c, l, 470, yy, 13, '#ffe9a0', 'left'); yy += 19; });
-    G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare) + '  Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9), 470, yy, 13, '#9dffb4', 'left'); yy += 19;
-    G.txt(c, 'HP jefe ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg) + '  guardianes ' + pc(dd.guardHp), 470, yy, 13, '#ffb08a', 'left');
-    // encargo y compras pendientes (T-F1-02: solo con los NPC ya presentes; el destino, el jefe y su debilidad se ven siempre)
     var fg = G.Fte && G.Fte.engaged(), showQ = !fg || G.Fte.npcVisible('vesper'), showBuy = !fg || G.Fte.npcVisible('rufo') || G.Fte.npcVisible('castana'), showPel = !fg || pmax > 1;
-    if (showQ) {
-    U.panel(c, 470, 272, 470, 78);
-    G.txt(c, 'ENCARGO ACTIVO', 484, 290, 13, '#b4a8c8', 'left');
-    var ql = Q.statusLine();
-    var ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 440, 13);
-    for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 484, 312 + i * 19, 13, ql ? '#ffe9a0' : '#b4a8c8', 'left');
-    var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
-    if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 926, 290, 12, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 926, 290, 12, '#9dffb4', 'right'); }
+    if (pt === 2) {   // ---- SALIDA: duración, encargo, compras y equipo
+      G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 14, 84, 13, '#b4a8c8', 'left');
+      LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 18, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
+      var pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp, yy = 104;
+      U.wrap(c, dd.name + ': ' + dd.tag, 440, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 500, yy, 13, '#ffe9a0', 'left'); yy += 22; });
+      G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare), 500, yy, 13, '#9dffb4', 'left'); yy += 22;
+      G.txt(c, 'Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9) + '  HP ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg), 500, yy, 13, '#ffb08a', 'left');
+      if (showQ) {
+        U.panel(c, 14, 196, 932, 84);
+        G.txt(c, 'ENCARGO ACTIVO', 28, 214, 13, '#b4a8c8', 'left');
+        var ql = Q.statusLine(), ls = U.wrap(c, ql || 'Ninguno. Vesper tiene encargos en el Tablón.', 900, 17);
+        for (i = 0; i < ls.length && i < 2; i++) G.txt(c, ls[i], 28, 238 + i * 22, 13, ql ? '#ffe9a0' : '#b4a8c8', 'left');
+        var qt = Q.target(), qf = qt && G.B.enemy[qt] && !G.B.enemy[qt].elite && G.B.famOf(effBiome().id);   // v5 A.10: si el rol del encargo no existe en la familia del destino, el encargo no avanza
+        if (qt) { if (qf && !qf.use[qt]) G.txt(c, 'No avanza en este destino', 932, 214, 12, '#ff9a8a', 'right'); else G.txt(c, 'Objetivo: peso x2,5', 932, 214, 12, '#9dffb4', 'right'); }
+      }
+      if (showBuy) {
+        U.panel(c, 14, 288, 932, 84);
+        G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 28, 306, 13, '#b4a8c8', 'left');
+        var dsh = G.Cook.pending(), buy = (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '');
+        G.txt(c, buy || 'Ninguna (Rufo las vende)', 28, 330, 13, buy ? '#ffe9a0' : '#b4a8c8', 'left');
+        G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 28, 352, 13, dsh ? '#ffd0dc' : '#b4a8c8', 'left');
+      }
+      if (G.Armor.smithOn()) {   // v8: defensa recomendada del destino y acceso al taller sin caminar
+        var AR = G.Armor, rec = AR.recDef(cb.id), my = Math.round(AR.OFF ? 0 : AR.get().def), col = my >= rec ? '#7dff9a' : my >= rec * 0.7 ? '#ffd24a' : '#ff8a6a';
+        U.button(c, R_EQUIP, 'EQUIPO', { size: 18, color: '#2a6a74', hot: '#3a9aaa', border: '#a8e8f0', sub: AR.readyCount() ? AR.readyCount() + ' listas' : null });
+        G.txt(c, 'DEF ' + my + ' / recomendada ' + rec, 330, 417, 13, AR.OFF ? '#b4a8c8' : col, 'left');
+      }
+      return;
     }
-    if (showBuy) {
-    U.panel(c, 470, 358, 470, 82);
-    G.txt(c, 'COMPRAS Y PLATO PARA ESTA SALIDA', 484, 376, 13, '#b4a8c8', 'left');
-    var dsh = G.Cook.pending();
-    G.txt(c, (S.pending.tonic ? 'Tónico (+40 Ceniza)  ' : '') + (S.pending.magnet ? 'Imán x1,5' : '') || '', 484, 398, 13, '#ffe9a0', 'left');
-    if (!S.pending.tonic && !S.pending.magnet) G.txt(c, 'Ninguna (Rufo las vende)', 484, 398, 13, '#b4a8c8', 'left');
-    G.txt(c, dsh ? 'Plato: ' + dsh.name : 'Plato: ninguno (Tía Castaña cocina)', 484, 420, 13, dsh ? '#ffd0dc' : '#b4a8c8', 'left');
-    }
-    // ---- columna izquierda: destinos (2 x 3 chips de 132 x 54), su información y el Peligro
-    U.panel(c, DEST.x, DEST.y, DEST.w, DEST.h, { border: '#4a5a8a' });
-    G.txt(c, 'DESTINO  (toca uno)  -  Jefe: ' + cb.boss, DEST.x + 12, DEST.y + 15, 13, '#b4a8c8', 'left');
+    // ---- DESTINO: 6 destinos (3 x 2), información del elegido (o del cerrado que se mira) y Peligro
     BIOMES.forEach(function (b, k) {
       var r = biomeRect(k), open = biomeOpen(b), on = cb.id === b.id, pv = st.pv === b.id, hov = U.inR(r, inp.mouse);
       c.fillStyle = on ? '#2a6aa8' : open ? (hov ? '#3a3050' : '#2c2438') : (pv ? '#2a1e32' : '#1a1422'); c.fillRect(r.x, r.y, r.w, r.h);
       c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(r.x, r.y, r.w, 8);
       c.strokeStyle = on ? '#bfeaff' : pv ? '#c0a060' : open ? '#6a5a80' : '#3a3046'; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3);
-      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 22, r.y + 27, 28, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 8, r.y + 12, 28, 28); }
-      G.txt(c, b.name, r.x + 42, r.y + 19, 13, open ? '#fff' : '#a89cc0', 'left');
-      G.txt(c, open ? (on ? 'ELEGIDO  P ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 42, r.y + 40, 12, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
+      if (!(window.Assets && Assets.drawDestIcon && Assets.drawDestIcon(c, b.id, r.x + 26, r.y + 33, 32, { dim: !open }))) { c.fillStyle = open ? '#9a8fb0' : '#4a4058'; c.fillRect(r.x + 10, r.y + 17, 32, 32); }
+      G.txt(c, b.name, r.x + 52, r.y + 21, 13, open ? '#fff' : '#a89cc0', 'left');
+      G.txt(c, open ? (on ? 'ELEGIDO  -  Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)] : 'Peligro ' + G.Boss.ROMAN[G.Save.pelSel(b.bid)]) : 'Tras ' + b.short, r.x + 52, r.y + 45, 12, open ? (on ? '#ffe9a0' : '#c8b8e8') : '#ff9a8a', 'left');
       if (on && !SV().portalSeen[b.id]) { SV().portalSeen[b.id] = 1; G.Save.save(); }
-      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 44, r.y + 8, 40, 15); G.txt(c, 'NUEVO', r.x + r.w - 24, r.y + 15.5, 12, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
-      else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 14, r.y + 14, { size: 12 });   // pista: 'Lleva Fuego'
-      if (!open) { c.fillStyle = '#a89cc0'; c.fillRect(r.x + r.w - 16, r.y + 14, 8, 6); c.strokeStyle = '#a89cc0'; c.lineWidth = 2; c.strokeRect(r.x + r.w - 15, r.y + 9, 6, 6); }
+      if (open && !SV().portalSeen[b.id]) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 70, r.y + 10, 62, 22); G.txt(c, 'NUEVO', r.x + r.w - 39, r.y + 21, 12, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
+      else if (b.fire && open) Assets.drawWeakIcon(c, 'fire', r.x + r.w - 16, r.y + 18, { size: 14 });   // pista: 'Lleva Fuego'
+      if (!open) { c.fillStyle = '#a89cc0'; c.fillRect(r.x + r.w - 20, r.y + 18, 10, 8); c.strokeStyle = '#a89cc0'; c.lineWidth = 2; c.strokeRect(r.x + 19 + r.w - 38, r.y + 12, 8, 7); }
     });
-    // info del destino elegido (o del cerrado que se está mirando): chips de debilidades, pista y requisito
-    var ib = st.pv ? BIOMES.filter(function (x) { return x.id === st.pv; })[0] : cb, ln = ib && biomeOpen(ib) ? G.B.matLens(ib.id) : null, iy = 270;
+    var ib = st.pv ? BIOMES.filter(function (x) { return x.id === st.pv; })[0] : cb, ln = ib && biomeOpen(ib) ? G.B.matLens(ib.id) : null, iy = 248;
     if (ib && !biomeOpen(ib)) {
-      G.txt(c, ib.name + ' (' + ib.boss + ')', 20, iy, 13, '#ffb08a', 'left'); iy += 20;
-      U.wrap(c, lockText(ib), 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, '#ff9a8a', 'left'); iy += 19; });
-      if (ib.need === '*') G.Save.FIVE.forEach(function (bk, k) { var got = (SV().bossKills[bk] || 0) > 0; c.fillStyle = got ? '#ffd24a' : '#3a3046'; c.beginPath(); c.arc(30 + k * 20, iy + 4, 6, 0, 6.283); c.fill(); c.strokeStyle = '#1b1124'; c.lineWidth = 2; c.stroke(); });
+      G.txt(c, ib.name + '  -  Jefe: ' + ib.boss, 14, iy, 13, '#ffb08a', 'left'); iy += 22;
+      U.wrap(c, lockText(ib), 900, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 14, iy, 13, '#ff9a8a', 'left'); iy += 22; });
+      if (ib.need === '*') G.Save.FIVE.forEach(function (bk, k) { var got = (SV().bossKills[bk] || 0) > 0; c.fillStyle = got ? '#ffd24a' : '#3a3046'; c.beginPath(); c.arc(24 + k * 22, iy + 2, 7, 0, 6.283); c.fill(); c.strokeStyle = '#1b1124'; c.lineWidth = 2; c.stroke(); });
     } else if (ib) {
+      G.txt(c, ib.name + '  -  Jefe: ' + ib.boss, 14, iy, 13, '#ffe9a0', 'left');
       if (ln) {   // v5 A.8: etiquetas mejores / peores contra la familia del destino (solo biomas con familia y materiales activos)
-        var lx = 20;
-        G.txt(c, 'MEJOR', lx, iy, 12, '#9dffb4', 'left'); lx += 48;
-        ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 6, { size: 12 }); lx += 17; });
-        lx += 14; G.txt(c, 'PEOR', lx, iy, 12, '#ff9a8a', 'left'); lx += 40;
-        ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 6, { resist: true, size: 12 }); lx += 17; });
-        iy += 22;
+        var lx = 600;
+        G.txt(c, 'MEJOR', lx, iy, 12, '#9dffb4', 'left'); lx += 62;
+        ln.best.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 8, { size: 16 }); lx += 22; });
+        lx += 16; G.txt(c, 'PEOR', lx, iy, 12, '#ff9a8a', 'left'); lx += 52;
+        ln.worst.forEach(function (t) { Assets.drawWeakIcon(c, t, lx, iy - 8, { resist: true, size: 16 }); lx += 22; });
       }
-      U.wrap(c, ib.hint, 420, 13).slice(0, 3).forEach(function (l) { G.txt(c, l, 20, iy, 13, ib.fire ? '#ffc890' : '#d4c8ec', 'left'); iy += 19; });
+      iy += 22;
+      U.wrap(c, ib.hint, 920, 17).slice(0, 3).forEach(function (l) { G.txt(c, l, 14, iy, 13, ib.fire ? '#ffc890' : '#d4c8ec', 'left'); iy += 22; });
     }
-    if (showPel) G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO') + '  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  DPS 110+' : ''), 14, 358, 13, '#b4a8c8', 'left');
-    for (i = 0; i < 5 && showPel; i++) {
-      var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
-      U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 18, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
+    if (showPel) {
+      G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO') + '  -  desbloqueado hasta ' + G.Boss.ROMAN[pmax] + (psel >= 4 ? '  -  DPS 110+' : ''), 14, 346, 13, '#b4a8c8', 'left');
+      for (i = 0; i < 5; i++) {
+        var pr = pelRect(i), pon = psel === i + 1, pop = i + 1 <= pmax;
+        U.button(c, pr, pop ? G.Boss.ROMAN[i + 1] : '?', { size: 20, off: !pop, color: pon ? ['', '#6a6a5a', '#a8801a', '#c4601c', '#b8341a', '#9a1a80'][i + 1] : '#2c2438', hot: '#3a8ad0', border: pon ? '#ffffff' : pop ? '#6a5a80' : '#3a3046' });
+      }
+      var py = 374;
+      G.txt(c, 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos' : ''), 470, py, 13, '#ffe9a0', 'left'); py += 22;
+      U.wrap(c, P.pelText(bid, psel), 470, 17).slice(0, 2).forEach(function (ln2) { G.txt(c, ln2, 470, py, 13, '#d4c8ec', 'left'); py += 22; });
     }
-    var pl1 = 'HP jefe x' + pelHpK.toFixed(2).replace('.', ',') + '  daño +' + Math.round((PD.dmg - 1) * 100) + ' %  Brasas x' + PD.brasas.toFixed(2).replace('.', ',') + (PD.troph > 1 ? '  2 trofeos/parte' : ''), py = 440;
-    if (showPel) { G.txt(c, pl1, 14, py, 13, '#ffe9a0', 'left'); py += 19;
-    U.wrap(c, P.pelText(bid, psel), 440, 13).slice(0, 3).forEach(function (ln2) { G.txt(c, ln2, 14, py, 13, '#d4c8ec', 'left'); py += 19; }); }
-    U.button(c, R_GO, 'SALIR A LA EXPEDICIÓN', { size: 18, sub: G.hint('Enter  -  ' + names, names) });
   }
 
   // ============================================================= ARCHIVO (Ulalume) / COLECCIÓN
@@ -511,16 +529,21 @@
   var FILTERS = [{ id: 'all', name: 'TODAS', color: '#e8dcb0' }, { id: 'fire', name: 'FUEGO' }, { id: 'ice', name: 'HIELO' }, { id: 'lightning', name: 'RAYO' },
     { id: 'poison', name: 'VENENO' }, { id: 'blood', name: 'SANGRE' }, { id: 'steel', name: 'ACERO' }, { id: 'neutral', name: 'NEUTRO' }];
   FILTERS.forEach(function (f) { if (!f.color) f.color = G.TAGS[f.id].color; });
-  var CELL = { w: 56, h: 76, gx: 60, gy: 82, x0: 14, y0: 104, cols: 10 };
+  // T-F1-08 fase 3: el Archivo va en 2 páginas (pestañas arriba) para letra 17 y botones de 66: COLECCIÓN (filtros, rejilla de 7 x 4 y detalle con insignias)
+  // y ANCLAS (mano al salir, sinergias y los 3 loadouts). st.atab = 0 / 1.
+  var CELL = { w: 84, h: 86, gx: 86, gy: 90, x0: 14, y0: 132, cols: 7 };
   function cellRect(i) { return { x: CELL.x0 + (i % CELL.cols) * CELL.gx, y: CELL.y0 + Math.floor(i / CELL.cols) * CELL.gy, w: CELL.w, h: CELL.h }; }
-  function chipRect(i) { return { x: 14 + i * 76, y: 64, w: 72, h: 30 }; }
-  var R_ANC = { x: 626, y: 304, w: 312, h: 48 };
-  var LOX = 620, LOW = 324;
-  function loRect(i) { return { x: LOX, y: 388 + i * 46, w: LOW, h: 44 }; }
-  function loName(i) { return { x: LOX, y: 388 + i * 46, w: 120, h: 44 }; }
-  function loSave(i) { return { x: LOX + 124, y: 388 + i * 46, w: 94, h: 44 }; }
-  function loApply(i) { return { x: LOX + 222, y: 388 + i * 46, w: 102, h: 44 }; }
-  function handRect2(i) { return { x: 14 + i * 70, y: 390, w: 64, h: 86 }; }
+  function chipRect(i) { return { x: 14 + i * 74, y: 76, w: 70, h: 48 }; }
+  function atabRect(i) { return { x: 404 + i * 240, y: 0, w: 232, h: 66 }; }
+  var R_ANC = { x: 626, y: 362, w: 312, h: 66 };
+  var LOX = 500, LOW = 436;
+  function loRect(i) { return { x: LOX, y: 116 + i * 136, w: LOW, h: 128 }; }
+  function loName(i) { return { x: LOX, y: 116 + i * 136, w: LOW, h: 52 }; }
+  function loSave(i) { return { x: LOX + 8, y: 116 + i * 136 + 56, w: 206, h: 66 }; }
+  function loApply(i) { return { x: LOX + 222, y: 116 + i * 136 + 56, w: 206, h: 66 }; }
+  function handRect2(i) { return { x: 14 + i * 94, y: 96, w: 88, h: 90 }; }
+  P.archRects = function () { return { tab: atabRect, chip: chipRect, cell: cellRect, anc: R_ANC, lo: loRect, save: loSave, apply: loApply, hand: handRect2 }; };   // pruebas
+  P.archTab = function (n) { st.atab = n; };
   function archList() {
     var f = st.filter || 'all';
     return G.Cards.defs.filter(function (d) { return d.id && (f === 'all' || d.tag === f); });
@@ -580,7 +603,23 @@
     if (click() && !U.inR(loName(st.lo), inp.mouse)) { lo.name = (st.buf || '').trim() || lo.name; G.Save.save(); st.edit = false; }
   }
   function updArchive() {
-    var list = archList(), i, S = SV();
+    var list = archList(), i, S = SV(), at = st.atab || 0;
+    for (i = 0; i < 2; i++) if (onR(atabRect(i)) && at !== i) { st.atab = i; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (inp.swipe) { st.atab = at ? 0 : 1; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (at === 1) {
+      for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect2(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
+      for (i = 0; i < 3; i++) {
+        if (inp.hit('Digit' + (i + 1))) { st.lo = i; G.sfx('flip', { vol: 0.3 }); }
+        if (onR(loSave(i))) { st.lo = i; saveLoadout(i); }
+        else if (onR(loApply(i))) { st.lo = i; applyLoadout(i); }
+        else if (onR(loName(i))) { if (st.lo === i && S.loadouts[i]) startEdit(); else st.lo = i; }
+        else if (onR(loRect(i))) st.lo = i;
+      }
+      if (inp.hit('KeyZ')) saveLoadout(st.lo);
+      if (inp.hit('KeyX')) applyLoadout(st.lo);
+      if (inp.hit('KeyN')) startEdit();
+      return false;
+    }
     if (st.csel >= list.length) st.csel = Math.max(0, list.length - 1);
     if (inp.hit('ArrowRight', 'KeyD')) st.csel = Math.min(list.length - 1, st.csel + 1);
     if (inp.hit('ArrowLeft', 'KeyA')) st.csel = Math.max(0, st.csel - 1);
@@ -592,25 +631,16 @@
     list = archList();
     if ((inp.hit('KeyE', 'Enter') || onR(R_ANC)) && list[st.csel]) toggleAnchor(list[st.csel].id);
     for (i = 0; i < list.length; i++) if (onR(cellRect(i))) { st.csel = i; G.sfx('flip', { vol: 0.4 }); }
-    for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect2(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
-    for (i = 0; i < 3; i++) {
-      if (inp.hit('Digit' + (i + 1))) { st.lo = i; G.sfx('flip', { vol: 0.3 }); }
-      if (onR(loRect(i))) st.lo = i;
-      if (onR(loSave(i))) saveLoadout(i);
-      else if (onR(loApply(i))) applyLoadout(i);
-      else if (onR(loName(i)) && st.lo === i && S.loadouts[i]) startEdit();
-    }
-    if (inp.hit('KeyZ')) saveLoadout(st.lo);
-    if (inp.hit('KeyX')) applyLoadout(st.lo);
-    if (inp.hit('KeyN')) startEdit();
     return false;
   }
   function nodeFor(card) { return G.Tree.NODES.filter(function (n) { return n.card === card && n.type === 'C'; })[0]; }
   function drawArchive(c) {
-    var list = archList(), S = SV(), i, d = list[Math.min(st.csel, list.length - 1)] || list[0], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color;
+    var list = archList(), S = SV(), i, d = list[Math.min(st.csel, list.length - 1)] || list[0], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color, at = st.atab || 0;
     var owned = G.Cards.defs.filter(function (q) { return q.id && L.unlocked(q.id); }).length;
-    bg(c, 'ARCHIVO  -  Ulalume');
-    G.txt(c, 'Colección ' + owned + '/' + G.Cards.defs.length + '  -  anclas ' + S.anchors.length + '/' + G.B.anchorSlots, 290, 24, 13, '#b4a8c8', 'left');
+    bg(c, 'ARCHIVO');
+    ['COLECCIÓN ' + owned + '/' + G.Cards.defs.length, 'ANCLAS ' + S.anchors.length + '/' + G.B.anchorSlots + ' Y LOADOUTS'].forEach(function (t, k) { U.button(c, atabRect(k), t, { size: 17, color: at === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: at === k ? '#bfeaff' : '#6a5a80' }); });
+    if (!G.Sys.isTouch()) G.txt(c, at ? '1-3 elegir  Z guardar  X aplicar  N nombre  -  Esc: volver' : 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 528, 12, '#b4a8c8', 'left');
+    if (at === 1) { drawArchAnchors(c, S, d); return; }
     for (i = 0; i < FILTERS.length; i++) {
       var f = FILTERS[i], cr = chipRect(i), on = (st.filter || 'all') === f.id;
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(cr.x, cr.y, cr.w, cr.h); c.strokeStyle = on ? f.color : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(cr.x + 1, cr.y + 1, cr.w - 2, cr.h - 2);
@@ -620,77 +650,78 @@
       var r = cellRect(i), rk = G.Save.rank(list[i].id), isA = S.anchors.indexOf(list[i].id) >= 0;
       G.Cards.drawCard(c, { id: list[i].id, lvl: 0 }, r.x, r.y, r.w, r.h, { nocd: true, dim: rk === 0, glow: list[i] === d ? '#ffe9a0' : null });
       if (list[i] === d) { c.strokeStyle = '#ffe9a0'; c.lineWidth = 3; c.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4); }
-      if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 20, r.y + 4, 16, 14); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 18, r.y + 7, 12, 9); }
-      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 20, r.y + 3, 17, 15); G.txt(c, 'A', r.x + r.w - 11.5, r.y + 11, 12, '#2a1a00', 'center', '#ffd24a'); }
+      if (rk === 0) { c.fillStyle = '#0c0814'; c.fillRect(r.x + r.w - 22, r.y + 4, 18, 16); c.fillStyle = '#9a8fb0'; c.fillRect(r.x + r.w - 20, r.y + 8, 14, 10); }
+      if (isA) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 24, r.y + 2, 22, 22); G.txt(c, 'A', r.x + r.w - 13, r.y + 13, 12, '#2a1a00', 'center', '#ffd24a'); }
     }
-    // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
-    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 614, 20, 12, '#c8a0ff', 'left');
-    G.Minis.ALL.forEach(function (mid, k) {
-      var have = (S.insigniasEver || {})[mid], ix = 614 + k * 26;
-      try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 30, 24, 24); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
-    });
     // detalle de la carta
-    U.panel(c, 614, 60, 336, 296, { border: tc });
-    G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 70, 62, 84, { nocd: true });
-    G.txt(c, d.name, 700, 84, 17, '#ffd27a', 'left');
-    G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), 700, 105, 12, tc, 'left');
-    G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', 700, 125, 13, rank ? '#fff' : '#ff8a8a', 'left');
-    var ls = U.wrap(c, d.desc, 306, 12);
-    for (i = 0; i < ls.length && i < 4; i++) G.txt(c, ls[i], 626, 170 + i * 17, 12, '#d8cfe8', 'left');
+    U.panel(c, 614, 76, 336, 458, { border: tc });
+    G.Cards.drawCard(c, { id: id, lvl: 0 }, 626, 86, 62, 84, { nocd: true, noName: true });
+    G.txt(c, d.name, 700, 100, 20, '#ffd27a', 'left');
+    G.txt(c, G.TAGS[d.tag].name + ' - ' + (d.type === 'attack' ? 'ATAQUE' : 'PASIVA'), 700, 126, 12, tc, 'left');
+    G.txt(c, rank ? 'RANGO ' + U.roman(rank) : 'BLOQUEADA', 700, 150, 13, rank ? '#fff' : '#ff8a8a', 'left');
+    var y = 190, ls = U.wrap(c, d.desc, 310, 17);
+    for (i = 0; i < ls.length && i < 4; i++) { G.txt(c, ls[i], 626, y, 12, '#d8cfe8', 'left'); y += 22; }
     var how = rank ? 'Mejoras de rango: árbol de Grum.' : G.Save.STARTERS.indexOf(id) >= 0 ? 'Carta inicial.' : 'Se desbloquea en el árbol de Grum' + (nodeFor(id) ? ': ' + nodeFor(id).name + ' (' + (G.Tree.tabOf(nodeFor(id).tree) || {}).name + ').' : '.');
-    var hl = U.wrap(c, how, 306, 12); for (i = 0; i < hl.length && i < 2; i++) G.txt(c, hl[i], 626, 242 + i * 17, 12, '#9dffb4', 'left');
+    y += 4; var hl = U.wrap(c, how, 310, 17); for (i = 0; i < hl.length && i < 2; i++) { G.txt(c, hl[i], 626, y, 12, '#9dffb4', 'left'); y += 22; }
     var isAnchor = S.anchors.indexOf(id) >= 0, nw = comboNames(S.anchors.concat(isAnchor ? [] : [id]));
     var gain = isAnchor || !rank ? [] : nw.filter(function (cb) { return comboNames(S.anchors).indexOf(cb) < 0; });
-    if (gain.length) G.txt(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 626, 282, 12, '#ffe9a0', 'left');
-    U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 16, sub: G.hint('[E]', null) });
-    // mano al salir
-    G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 376, 12, '#9a8fb0', 'left');
+    if (gain.length && y < 340) U.wrap(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 310, 17).slice(0, y < 320 ? 2 : 1).forEach(function (l) { G.txt(c, l, 626, y, 12, '#ffe9a0', 'left'); y += 22; });
+    U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 18, sub: G.hint('[E]', null) });
+    // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
+    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 626, 450, 12, '#c8a0ff', 'left');
+    G.Minis.ALL.forEach(function (mid, k) {
+      var have = (S.insigniasEver || {})[mid], ix = 626 + k * 30;
+      try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 468, 26, 26); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
+    });
+  }
+  // Página ANCLAS del Archivo: mano al salir, sinergias y loadouts
+  function drawArchAnchors(c, S, d) {
+    var i;
+    G.txt(c, 'TU MANO AL SALIR  (toca un ancla para quitarla)', 14, 84, 12, '#9a8fb0', 'left');
     for (i = 0; i < 5; i++) {
       var hr = handRect2(i), isAn = i < G.B.anchorSlots, a = S.anchors[i];
-      if (isAn && a) { G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true }); G.txt(c, 'ANCLA', hr.x + hr.w / 2, hr.y + hr.h + 11, 12, '#ffd24a', 'center'); }
+      if (isAn && a) { G.Cards.drawCard(c, { id: a, lvl: 0 }, hr.x, hr.y, hr.w, hr.h, { nocd: true }); G.txt(c, 'ANCLA', hr.x + hr.w / 2, hr.y + hr.h + 13, 12, '#ffd24a', 'center'); }
       else if (isAn) G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '+');
-      else { G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?'); G.txt(c, 'ABIERTO', hr.x + hr.w / 2, hr.y + hr.h + 11, 12, '#a89cc0', 'center'); }
+      else { G.Cards.drawEmptySlot(c, hr.x, hr.y, hr.w, hr.h, '?'); G.txt(c, 'LIBRE', hr.x + hr.w / 2, hr.y + hr.h + 13, 12, '#a89cc0', 'center'); }
     }
-    drawSynergy(c, S, d, isAnchor);
-    // loadouts
-    U.panel(c, 614, 372, 336, 156);
-    G.txt(c, G.Sys.isTouch() ? 'LOADOUTS  (toca uno)' : 'LOADOUTS  1-3 elegir  Z guardar  X aplicar', 626, 381, 12, '#b4a8c8', 'left');
+    drawSynergy(c, S, d, S.anchors.indexOf(d.id) >= 0);
+    U.panel(c, LOX - 10, 76, LOW + 20, 458);
+    G.txt(c, G.Sys.isTouch() ? 'LOADOUTS  (toca el nombre para renombrar)' : 'LOADOUTS', LOX + 2, 96, 12, '#b4a8c8', 'left');
     for (i = 0; i < 3; i++) {
       var lr = loRect(i), lo = S.loadouts[i], sel = st.lo === i;
       c.fillStyle = sel ? '#2a1d3a' : '#150f20'; c.fillRect(lr.x, lr.y, lr.w, lr.h); c.strokeStyle = sel ? '#ffd27a' : '#3a2f48'; c.lineWidth = sel ? 3 : 2; c.strokeRect(lr.x + 1, lr.y + 1, lr.w - 2, lr.h - 2);
       var nm = st.edit && sel ? (st.buf || 'ESCRIBE...') + (Math.floor(Date.now() / 400) % 2 ? '_' : ' ') : (lo ? lo.name : 'VACÍO ' + (i + 1));
-      G.txt(c, nm, lr.x + 8, lr.y + 14, 12, lo ? '#fff' : '#6a5f78', 'left');
-      var sub = lo ? lo.anchors.map(function (a2) { return (G.Cards.def(a2) || { short: '?' }).short; }).join('+') + ' ' + lo.len + 'm' + (lo.dish ? ' *' : '') : 'sin guardar';
-      G.txt(c, sub.length > 16 ? sub.slice(0, 15) + '.' : sub, lr.x + 8, lr.y + 32, 12, '#b4a8c8', 'left');
-      U.button(c, loSave(i), 'GUARDAR', { size: 12, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
-      U.button(c, loApply(i), 'APLICAR', { size: 12, off: !lo, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+      G.txt(c, nm, lr.x + 10, lr.y + 16, 12, lo ? '#fff' : '#8a7f96', 'left');
+      var sub = lo ? lo.anchors.map(function (a2) { return (G.Cards.def(a2) || { short: '?' }).short; }).join(' + ') + '  -  ' + lo.len + ' min' + (lo.dish ? '  -  plato' : '') : 'sin guardar';
+      G.txt(c, sub.length > 40 ? sub.slice(0, 39) + '.' : sub, lr.x + 10, lr.y + 38, 12, '#b4a8c8', 'left');
+      U.button(c, loSave(i), 'GUARDAR', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
+      U.button(c, loApply(i), 'APLICAR', { size: 18, off: !lo, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     }
-    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
   }
   // Vista previa de sinergias de etiqueta de las anclas (y de la carta señalada)
   function drawSynergy(c, S, d, isAnchor) {
-    var i, N = {}, ids = S.anchors.slice(0, G.B.anchorSlots), x = 372, y = 372;
-    U.panel(c, x, y, 232, 156);
-    G.txt(c, 'SINERGIAS DE TUS ANCLAS', x + 10, y + 14, 12, '#b4a8c8', 'left');
+    var i, N = {}, ids = S.anchors.slice(0, G.B.anchorSlots), x = 14, y = 226, w = 462;
+    U.panel(c, x, y, w, 308);
+    G.txt(c, 'SINERGIAS DE TUS ANCLAS', x + 12, y + 18, 12, '#b4a8c8', 'left');
     ids.forEach(function (a) { var t = G.Cards.def(a).tag; N[t] = (N[t] || 0) + 1; });
-    var tags = Object.keys(N), px = x + 10;
-    if (!tags.length) G.txt(c, 'Sin anclas: sal con la mano vacía.', x + 10, y + 34, 12, '#b4a8c8', 'left');
-    tags.forEach(function (t, k) {
-      var col = (G.TAGS[t] || {}).color || '#fff'; c.fillStyle = col; c.beginPath(); c.arc(px + 5, y + 34, 5, 0, 6.283); c.fill();
-      G.txt(c, (G.TAGS[t] || { name: t }).name + ' x' + N[t], px + 14, y + 34, 12, '#d8cfe8', 'left'); px += 14 + (G.TAGS[t].name.length + 3) * 7.2 + 8;
+    var tags = Object.keys(N), px = x + 12;
+    if (!tags.length) G.txt(c, 'Sin anclas: sal con la mano vacía.', x + 12, y + 42, 12, '#b4a8c8', 'left');
+    tags.forEach(function (t) {
+      var col = (G.TAGS[t] || {}).color || '#fff', nm = (G.TAGS[t] || { name: t }).name + ' x' + N[t]; c.fillStyle = col; c.beginPath(); c.arc(px + 6, y + 42, 6, 0, 6.283); c.fill();
+      G.txt(c, nm, px + 16, y + 42, 12, '#d8cfe8', 'left'); px += 16 + nm.length * 10.2 + 16;
     });
     var cur = comboNames(ids);
-    G.txt(c, cur.length ? 'FUSIONES POSIBLES' : 'Sin fusiones aún', x + 10, y + 54, 12, cur.length ? '#9dffb4' : '#b4a8c8', 'left');
-    cur.slice(0, 2).forEach(function (cb, k) {
-      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x + 15, y + 74 + k * 18, 4, 0, 6.283); c.fill(); c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x + 25, y + 74 + k * 18, 4, 0, 6.283); c.fill();
-      G.txt(c, cb.name, x + 34, y + 74 + k * 18, 12, '#ffe9a0', 'left');
+    G.txt(c, cur.length ? 'FUSIONES POSIBLES' : 'Sin fusiones aún', x + 12, y + 66, 12, cur.length ? '#9dffb4' : '#b4a8c8', 'left');
+    cur.slice(0, 4).forEach(function (cb, k) {
+      c.fillStyle = G.TAGS[cb.a].color; c.beginPath(); c.arc(x + 18, y + 88 + k * 22, 5, 0, 6.283); c.fill(); c.fillStyle = G.TAGS[cb.b].color; c.beginPath(); c.arc(x + 30, y + 88 + k * 22, 5, 0, 6.283); c.fill();
+      G.txt(c, cb.name, x + 42, y + 88 + k * 22, 12, '#ffe9a0', 'left');
     });
-    if (cur.length > 2) G.txt(c, '+' + (cur.length - 2) + ' más', x + 222, y + 92, 12, '#b4a8c8', 'right');
+    if (cur.length > 4) G.txt(c, '+' + (cur.length - 4) + ' más', x + w - 12, y + 66, 12, '#b4a8c8', 'right');
     var set = Object.keys(N).filter(function (t) { return N[t] >= 2 && t !== 'neutral'; });
-    if (set.length) G.txt(c, 'Set ' + G.TAGS[set[0]].name + ': 3 cartas +25 %', x + 10, y + 112, 12, '#c8b8e8', 'left');
+    if (set.length) G.txt(c, 'Set ' + G.TAGS[set[0]].name + ': 3 cartas +25 %', x + 12, y + 186, 12, '#c8b8e8', 'left');
     var gain = !isAnchor && G.Save.rank(d.id) ? comboNames(ids.concat([d.id])).filter(function (cb) { return cur.indexOf(cb) < 0; }) : [];
     var gt = gain.length ? 'Con ' + d.short + ': ' + gain.map(function (cb) { return cb.name; }).join(', ') : (isAnchor ? d.short + ' ya es ancla.' : 'Con ' + d.short + ': sin fusión nueva.');
-    U.wrap(c, gt, 212, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, x + 10, y + 132 + k * 16, 12, gain.length ? '#ffe9a0' : '#b4a8c8', 'left'); });
+    U.wrap(c, gt, w - 24, 17).slice(0, 3).forEach(function (ln, k) { G.txt(c, ln, x + 12, y + 216 + k * 22, 12, gain.length ? '#ffe9a0' : '#b4a8c8', 'left'); });
   }
 
   // ============================================================= COCINA de Tía Castaña
@@ -738,10 +769,10 @@
   };
   Cook.drawHud = function (c) {
     var d = G.runBuff && G.runBuff.dish ? Cook.def(G.runBuff.dish) : null; if (!d) return;
-    if (G.hudWide()) {   // T-F1-08: chip anclado a la derecha de la mano (sobre el reloj roto), texto 14
-      var A = G.anchor(), x = A.L + 5 * 84 + 6, y = A.B - 110, nm = d.name.length > 16 ? d.short : d.name, w = Math.ceil(nm.length * 8.4) + 34;
+    if (G.hudWide()) {   // T-F1-08: chip anclado a la derecha de la mano (sobre el reloj roto), texto 15
+      var A = G.anchor(), x = A.L + 5 * 84 + 6, y = A.B - 110, nm = d.name.length > 16 ? d.short : d.name, w = Math.ceil(nm.length * 9) + 34;
       c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(x, y, w, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, w - 2, 20);
-      U.part(c, d.icon, x + 14, y + 11, 7); G.txt(c, nm, x + 28, y + 12, 14, '#ffe9f0', 'left'); c.restore(); return;
+      U.part(c, d.icon, x + 14, y + 11, 7); G.txt(c, nm, x + 28, y + 12, 15, '#ffe9f0', 'left'); c.restore(); return;
     }
     c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(462, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(463, G.H - 33, 146, 20);   // FUSION: a la derecha de la mano
     U.part(c, d.icon, 476, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 490, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
@@ -823,7 +854,7 @@
   }
 
   // ============================================================= MENÚ y AJUSTES
-  var MB = function (i) { return { x: 330, y: 110 + i * 78, w: 300, h: 62 }; };
+  var MB = function (i) { return { x: 250, y: 96 + i * 74, w: 460, h: 66 }; };   // T-F1-08 fase 3: 66 de alto, ancho para la letra 17
   function updMenu() {
     var S = SV();
     if (onR(R_CLOSE) || onR(MB(3))) return true;
@@ -839,7 +870,7 @@
   function drawMenu(c) {
     var S = SV();
     bg(c, 'MENÚ');
-    G.txt(c, 'Expediciones ' + S.runs + '   Victorias ' + S.wins + (S.pity > 0 ? '   Rara +' + (S.pity * 100).toFixed(1) + '%' : ''), 480, 88, 13, '#9a8fb0', 'center');
+    G.txt(c, 'Expediciones ' + S.runs + '   Victorias ' + S.wins + (S.pity > 0 ? '   Rara +' + (S.pity * 100).toFixed(1) + '%' : ''), 480, 76, 13, '#9a8fb0', 'center');
     U.button(c, MB(0), 'COLECCIÓN', { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
@@ -847,7 +878,7 @@
     U.button(c, MB(4), 'MANUAL', { size: 20, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a', sub: 'cartas, fusiones y demostraciones' });
   }
   // ---- CINEMÁTICAS (v9): Reducir destellos y repetir la intro (saltable en repeticiones; no escribe en el guardado)
-  var CB = { calm: { x: 290, y: 100, w: 380, h: 56 }, intro: { x: 290, y: 166, w: 380, h: 56 }, entries: { x: 290, y: 232, w: 380, h: 56 }, epi: { x: 290, y: 298, w: 186, h: 56 }, cred: { x: 484, y: 298, w: 186, h: 56 }, back: { x: 330, y: 440, w: 300, h: 48 } };
+  var CB = { calm: { x: 250, y: 84, w: 460, h: 66 }, intro: { x: 250, y: 158, w: 460, h: 66 }, entries: { x: 250, y: 232, w: 460, h: 66 }, epi: { x: 250, y: 306, w: 226, h: 66 }, cred: { x: 484, y: 306, w: 226, h: 66 }, back: { x: 330, y: 462, w: 300, h: 66 } };   // T-F1-08 fase 3: 66 de alto
   function endUnlocked() { var S = G.Save.data; return !!(S.endingSeen || (S.cine && (S.cine.epilogueSeen || S.cine.creditsSeen)) || (S.bossKills && S.bossKills.cenizar > 0)); }
   function updCine() {
     if (onR(CB.calm)) { G.Cine.setCalm(!G.Cine.cfg().calm); G.sfx('card_select', { vol: 0.5 }); }
@@ -864,7 +895,7 @@
     return false;
   }
   // ---- Ver entradas de jefe (galería): una por jefe; las que aún no viste salen bloqueadas
-  var EB = function (i) { return { x: 150 + (i % 2) * 340, y: 110 + Math.floor(i / 2) * 76, w: 320, h: 64 }; };
+  var EB = function (i) { return { x: 100 + (i % 2) * 390, y: 80 + Math.floor(i / 2) * 74, w: 370, h: 66 }; };
   var EN_NAMES = { pastor: 'El Pastor', karceron: 'Karceron', letea: 'Letea', yarlak: 'Yarlak', melaria: 'Melaria', cenizar: 'Cenizar (con prerrollo)' };
   function updCine2() {
     var ids = G.Cine.entryIds;
@@ -882,7 +913,7 @@
       var seen = G.Cine.entrySeen(ids[i]);
       U.button(c, EB(i), seen ? EN_NAMES[ids[i]] : '???', { size: 18, off: !seen || G.Cine.off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Cine.off ? 'apagadas con ?cine=0' : seen ? 'se puede saltar' : 'aún no te has enfrentado a él' });
     }
-    G.txt(c, 'Se ven a pantalla completa. No cambian nada de tus partidas.', 480, 360, 12, '#9a8fb0', 'center');
+    G.txt(c, 'Se ven a pantalla completa. No cambian nada de tus partidas.', 480, 316, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
   function drawCine(c) {
@@ -893,34 +924,35 @@
     var eu = endUnlocked(), off = G.Cine.off || !eu, sb = G.Cine.off ? 'apagado con ?cine=0' : eu ? 'se puede saltar' : 'tras vencer a Cenizar';
     U.button(c, CB.epi, eu ? 'Ver epílogo' : '???', { size: 16, off: off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: sb });
     U.button(c, CB.cred, eu ? 'Ver créditos' : '???', { size: 16, off: off, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: sb });
-    G.txt(c, 'Los subtítulos están siempre activos. Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 380, 12, '#9a8fb0', 'center');
+    G.txt(c, 'Los subtítulos están siempre activos.', 480, 396, 12, '#9a8fb0', 'center'); G.txt(c, 'Las sacudidas siguen el ajuste "Reducir sacudidas".', 480, 420, 12, '#9a8fb0', 'center');
     U.button(c, CB.back, 'ATRÁS', { size: 20 });
   }
   // ---- Informe de errores (diag.js): los últimos 20 errores de este dispositivo; se copian para pegarlos al estudio. No se envía nada.
-  var ER = { copy: { x: 150, y: 368, w: 320, h: 52 }, clear: { x: 490, y: 368, w: 320, h: 52 } };
+  var ER = { copy: { x: 150, y: 384, w: 320, h: 66 }, clear: { x: 490, y: 384, w: 320, h: 66 }, back: { x: 330, y: 472, w: 300, h: 66 } };
   function updErr() {
     if (onR(ER.copy) && Diag.count()) { Diag.copy().then(function (ok) { st.errMsg = ok ? 'Informe copiado: pégalo donde te lo pidan.' : 'No se pudo copiar: este navegador lo impide.'; }); G.sfx('card_select', { vol: 0.5 }); }
     if (onR(ER.clear) && Diag.count()) { Diag.clear(); st.errMsg = 'Registro vaciado.'; G.sfx('card_select', { vol: 0.5 }); }
-    if (onR(CB.back)) cur = 'settings';
+    if (onR(ER.back)) cur = 'settings';
     return false;
   }
   function drawErr(c) {
-    bg(c, 'INFORME DE ERRORES'); var es = Diag.entries().reverse(), i;
-    G.txt(c, es.length ? es.length + ' errores guardados en este dispositivo (los más nuevos arriba). Versión ' + Diag.build + '.' : 'No hay errores guardados.', 480, 72, 13, '#b4a8c8', 'center');
-    for (i = 0; i < es.length && i < 5; i++) {
-      var e = es[i], y = 92 + i * 50;
-      c.fillStyle = 'rgba(20,12,32,0.7)'; c.fillRect(60, y, 840, 46);
-      G.txt(c, (e.n > 1 ? 'x' + e.n + '  ' : '') + e.msg.slice(0, 80), 72, y + 14, 13, '#ffd2c8', 'left');
-      G.txt(c, (e.src ? e.src + ':' + e.line + '  ' : '') + e.kind + '  ' + e.at.slice(0, 19).replace('T', ' ') + '  ' + (e.ctx && e.ctx.state || ''), 72, y + 33, 12, '#9a8fb0', 'left');
+    bg(c, 'INFORME DE ERRORES'); var es = Diag.entries().reverse(), i;   // T-F1-08 fase 3: letra 17, 4 errores por pantalla (el resto va en el informe copiado)
+    var head = es.length ? es.length + ' errores guardados aquí (los más nuevos arriba). Versión ' + Diag.build + '.' : 'No hay errores guardados.';
+    U.wrap(c, head, 800, 17).slice(0, 2).forEach(function (l, k) { G.txt(c, l, 480, 80 + k * 22, 13, '#b4a8c8', 'center'); });
+    for (i = 0; i < es.length && i < 4; i++) {
+      var e = es[i], y = 122 + i * 62;
+      c.fillStyle = 'rgba(20,12,32,0.7)'; c.fillRect(40, y, 880, 56);
+      G.txt(c, (e.n > 1 ? 'x' + e.n + '  ' : '') + e.msg.slice(0, 80), 52, y + 16, 13, '#ffd2c8', 'left');
+      G.txt(c, (e.src ? e.src + ':' + e.line + '  ' : '') + e.kind + '  ' + e.at.slice(0, 19).replace('T', ' ') + '  ' + (e.ctx && e.ctx.state || ''), 52, y + 39, 12, '#9a8fb0', 'left');
     }
-    if (es.length > 5) G.txt(c, '... y ' + (es.length - 5) + ' más (van en el informe copiado)', 480, 352, 12, '#9a8fb0', 'center');
+    if (es.length > 4) G.txt(c, '... y ' + (es.length - 4) + ' más (van en el informe copiado)', 480, 372, 12, '#9a8fb0', 'center');
     U.button(c, ER.copy, 'COPIAR INFORME', { size: 18, off: !es.length, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     U.button(c, ER.clear, 'VACIAR', { size: 18, off: !es.length, color: '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
-    if (st.errMsg) G.txt(c, st.errMsg, 480, 430, 13, '#9dffb4', 'center');
-    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+    if (st.errMsg) G.txt(c, st.errMsg, 480, 462, 13, '#9dffb4', 'center');
+    U.button(c, ER.back || CB.back, 'ATRÁS', { size: 20 });
   }
   // ---- Privacidad (T-F1-01): dar / retirar el permiso de analítica, ver qué se envía, ids de sesión, borrar datos locales y política. track.js / track_ui.js
-  var PV = { tog: { x: 150, y: 96, w: 660, h: 52 }, view: { x: 150, y: 156, w: 320, h: 48 }, pol: { x: 490, y: 156, w: 320, h: 48 }, wipe: { x: 150, y: 210, w: 320, h: 48 }, ids: { x: 490, y: 210, w: 320, h: 48 } };
+  var PV = { back: { x: 330, y: 470, w: 300, h: 66 }, tog: { x: 110, y: 112, w: 740, h: 66 }, view: { x: 110, y: 184, w: 366, h: 66 }, pol: { x: 484, y: 184, w: 366, h: 66 }, wipe: { x: 110, y: 256, w: 366, h: 66 }, ids: { x: 484, y: 256, w: 366, h: 66 } };   // T-F1-08 fase 3: 66 de alto
   function updPriv() {
     var T = G.Track, ts = T.state();
     if (onR(PV.tog) && ts.available) { T.consent(ts.consent !== true, 'ajustes'); st.privMsg = ts.consent === true ? 'Permiso retirado: no se enviará nada más y la cola se vació.' : 'Permiso dado. Gracias.'; G.sfx('card_select', { vol: 0.5 }); }
@@ -928,90 +960,105 @@
     if (onR(PV.pol)) G.TrackUI.openPolicy();
     if (onR(PV.wipe)) { if (confirm === 'wipe') { T.wipe(); confirm = ''; st.privMsg = 'Datos de analítica borrados de este dispositivo.'; } else { confirm = 'wipe'; confirmT = 4000; st.privMsg = 'Pulsa otra vez para borrar los datos de analítica de este dispositivo.'; } }
     if (onR(PV.ids) && ts.sessions.length) { var tx = ts.sessions.join('\n'); try { navigator.clipboard.writeText(tx).then(function () { st.privMsg = 'Ids copiados: pégalos en el correo de la política.'; }, function () { st.privMsg = 'No se pudo copiar.'; }); } catch (e) { st.privMsg = 'No se pudo copiar.'; } }
-    if (onR(CB.back)) cur = 'settings';
+    if (onR(PV.back)) cur = 'settings';
     return false;
   }
   function drawPriv(c) {
     var T = G.Track, ts = T.state(); bg(c, 'PRIVACIDAD');
     var info = !ts.available ? 'No disponible en este dispositivo o sesión: no se envía nada.' : ts.consent === true ? (ts.adapter === 'none' ? 'Permiso dado, pero el envío no está activo en esta versión: no sale nada.' : 'Envío de estadísticas: ACTIVADO (sin datos que te identifiquen directamente).') : ts.consent === false ? 'Envío de estadísticas: DESACTIVADO. No sale nada de tu dispositivo.' : 'Aún no has elegido. Mientras tanto no sale nada.';
-    G.txt(c, info, 480, 76, 13, '#b4a8c8', 'center');
-    U.button(c, PV.tog, ts.consent === true ? 'Retirar mi permiso de estadísticas' : 'Dar permiso (tengo 18 años o más)', { size: 17, off: !ts.available, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
-    U.button(c, PV.view, st.privView ? 'Ocultar lo que se envía' : 'Ver qué se envía', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, PV.pol, 'Política de privacidad', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, PV.wipe, confirm === 'wipe' ? 'SEGURO? TOCA DE NUEVO' : 'Borrar datos de analítica', { size: 14, color: confirm === 'wipe' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
-    U.button(c, PV.ids, 'Copiar ids de mis sesiones', { size: 14, off: !ts.sessions.length, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    var i, y = 286;
+    U.wrap(c, info, 800, 17).slice(0, 2).forEach(function (l, k) { G.txt(c, l, 480, 80 + k * 22, 13, '#b4a8c8', 'center'); });
+    U.button(c, PV.tog, ts.consent === true ? 'Retirar mi permiso de estadísticas' : 'Dar permiso (tengo 18 años o más)', { size: 18, off: !ts.available, color: '#3a2f48', hot: '#5a4a70', border: '#ffd27a' });
+    U.button(c, PV.view, st.privView ? 'Ocultar lo que se envía' : 'Ver qué se envía', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, PV.pol, 'Política de privacidad', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    U.button(c, PV.wipe, confirm === 'wipe' ? 'SEGURO? TOCA DE NUEVO' : 'Borrar datos de analítica', { size: 17, color: confirm === 'wipe' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });
+    U.button(c, PV.ids, 'Copiar ids de sesiones', { size: 17, off: !ts.sessions.length, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    var i, y = 340;   // lista (4 filas de 22)
     if (st.privView) {
-      var ev = T.recent(9); G.txt(c, ev.length ? 'Últimos eventos en cola (solo en este dispositivo):' : 'No hay eventos en cola.', 150, y, 12, '#9a8fb0', 'left');
-      for (i = 0; i < ev.length; i++) G.txt(c, ev[i].e + '  ' + JSON.stringify(ev[i].p).slice(0, 78), 150, y + 18 + i * 16, 12, '#d4c8e8', 'left');
+      var ev = T.recent(4); G.txt(c, ev.length ? 'Últimos eventos en cola (solo en este dispositivo):' : 'No hay eventos en cola.', 110, y, 12, '#9a8fb0', 'left');
+      for (i = 0; i < ev.length; i++) G.txt(c, (ev[i].e + '  ' + JSON.stringify(ev[i].p)).slice(0, 72), 110, y + 22 + i * 22, 12, '#d4c8e8', 'left');
     } else {
-      G.txt(c, ts.sessions.length ? 'Ids de tus últimas sesiones (solo guardados aquí; sirven para ejercer tus derechos):' : 'Sin ids de sesión guardados.', 150, y, 12, '#9a8fb0', 'left');
-      for (i = 0; i < ts.sessions.length; i++) G.txt(c, ts.sessions[i], 150 + (i % 2) * 330, y + 18 + Math.floor(i / 2) * 16, 12, '#d4c8e8', 'left');
+      G.txt(c, ts.sessions.length ? 'Ids de tus últimas sesiones (solo guardados aquí):' : 'Sin ids de sesión guardados.', 110, y, 12, '#9a8fb0', 'left');
+      for (i = 0; i < ts.sessions.length && i < 6; i++) G.txt(c, ts.sessions[i], 110 + (i % 2) * 380, y + 22 + Math.floor(i / 2) * 22, 12, '#d4c8e8', 'left');
     }
-    if (st.privMsg) G.txt(c, st.privMsg, 480, 426, 13, '#9dffb4', 'center');
-    U.button(c, CB.back, 'ATRÁS', { size: 20 });
+    if (st.privMsg) G.txt(c, st.privMsg, 480, 448, 13, '#9dffb4', 'center');
+    U.button(c, PV.back, 'ATRÁS', { size: 20 });
   }
   var SET = [['master', 'Volumen general'], ['music', 'Música'], ['sfx', 'Efectos']];
-  function setRect(i, plus) { return { x: plus ? 700 : 560, y: 64 + i * 56, w: 60, h: 48 }; }
-  var SB = {   // rejilla de 2 columnas (todos >= 48 px de alto para el dedo)
-    shake: { x: 150, y: 226, w: 320, h: 48 }, iso: { x: 490, y: 226, w: 320, h: 48 },
-    qual: { x: 150, y: 278, w: 320, h: 48 }, fs: { x: 490, y: 278, w: 320, h: 48 },
-    mute: { x: 150, y: 330, w: 320, h: 48 }, inst: { x: 490, y: 330, w: 320, h: 48 },
-    exp: { x: 150, y: 382, w: 320, h: 48 }, imp: { x: 490, y: 382, w: 320, h: 48 },
-    soft: { x: 150, y: 434, w: 320, h: 48 }, lightstorm: { x: 490, y: 434, w: 320, h: 48 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
-    priv: { x: 14, y: 64, w: 172, h: 48 }, man: { x: 770, y: 64, w: 170, h: 48 }, err: { x: 770, y: 120, w: 170, h: 48 }, bak: { x: 770, y: 176, w: 170, h: 48 }, back: { x: 150, y: 488, w: 320, h: 48 }, cine: { x: 490, y: 488, w: 320, h: 48 }
+  // T-F1-08 fase 3: dos páginas (pestañas arriba) para que todo quepa con letra 17 y botones de 66 de alto
+  function setRect(i, plus) { return { x: plus ? 700 : 520, y: 80 + i * 72, w: 80, h: 66 }; }
+  var STAB = [{ x: 210, y: 0, w: 260, h: 66 }, { x: 478, y: 0, w: 260, h: 66 }];
+  var SB = {   // página 0: sonido e imagen; página 1: partida y datos (rejilla de 2 columnas de 320x66)
+    mute: { p: 0, x: 150, y: 298, w: 320, h: 66 }, qual: { p: 0, x: 490, y: 298, w: 320, h: 66 },
+    fs: { p: 0, x: 150, y: 370, w: 320, h: 66 }, iso: { p: 0, x: 490, y: 370, w: 320, h: 66 },
+    shake: { p: 0, x: 150, y: 442, w: 320, h: 66 }, cine: { p: 0, x: 490, y: 442, w: 320, h: 66 },
+    soft: { p: 1, x: 150, y: 80, w: 320, h: 66 }, lightstorm: { p: 1, x: 490, y: 80, w: 320, h: 66 },   // P3 accesibilidad (Tundra): "Hielo suave" y "Ventisca ligera"
+    inst: { p: 1, x: 150, y: 152, w: 320, h: 66 }, bak: { p: 1, x: 490, y: 152, w: 320, h: 66 },
+    exp: { p: 1, x: 150, y: 224, w: 320, h: 66 }, imp: { p: 1, x: 490, y: 224, w: 320, h: 66 },
+    priv: { p: 1, x: 150, y: 296, w: 320, h: 66 }, err: { p: 1, x: 490, y: 296, w: 320, h: 66 },
+    man: { x: 826, y: 80, w: 120, h: 66 }, back: { x: 14, y: 442, w: 120, h: 66 }
   };
+  P.setRects = function () { return { tabs: STAB, sb: SB, vol: [0, 1, 2].map(function (i) { return [setRect(i, 0), setRect(i, 1)]; }) }; };   // pruebas
+  P.setTab = function (n) { st.setTab = n; };
+  function sOn(r) { return (r.p == null || r.p === (st.setTab || 0)) && onR(r); }
   function updSettings() {
-    var S = SV();
+    var S = SV(), pg = st.setTab || 0;
     if (!S.settings) S.settings = (function () { try { return Assets.getVolume(); } catch (e) { return { master: 0.8, music: 0.6, sfx: 0.8 }; } })();
-    for (var i = 0; i < 3; i++) for (var p = 0; p < 2; p++) if (onR(setRect(i, p))) {
+    for (var t = 0; t < 2; t++) if (onR(STAB[t]) && pg !== t) { st.setTab = t; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (inp.hit('KeyQ') || inp.hit('KeyE') || inp.swipe) { st.setTab = pg ? 0 : 1; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (pg === 0) for (var i = 0; i < 3; i++) for (var p = 0; p < 2; p++) if (onR(setRect(i, p))) {
       var k = SET[i][0]; S.settings[k] = G.clamp(Math.round((S.settings[k] + (p ? 0.1 : -0.1)) * 10) / 10, 0, 1);
       G.Save.save(); G.Aldea.applySettings(); G.sfx('card_select', { vol: 0.5 });
     }
-    if (onR(SB.shake)) { S.settings.shake = S.settings.shake ? 0 : 1; G.shakeMul = S.settings.shake ? 1 / 3 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    if (onR(SB.iso)) { G.Proj.toggle(); G.sfx('card_select', { vol: 0.5 }); }   // vista inclinada tipo Hades (se guarda en settings.view)
-    if (onR(SB.qual)) { G.Sys.cycleQuality(); G.sfx('card_select', { vol: 0.5 }); }
-    if (onR(SB.fs)) G.Sys.toggleFullscreen();
-    if (onR(SB.mute)) G.Sys.toggleMute();
-    if (onR(SB.inst)) G.PWA.install();
-    if (onR(SB.exp)) G.PWA.exportSave();
-    if (onR(SB.imp)) G.PWA.importSave();
-    if (onR(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    if (onR(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
-    if (onR(SB.cine)) { cur = 'cine'; }
-    if (onR(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
-    if (onR(SB.priv)) { cur = 'privacy'; st.privMsg = ''; st.privView = false; }
-    if (onR(SB.bak)) G.PWA.backups();   // T-F1-11: copias de seguridad y restaurar
-    if (onR(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
-    if (onR(SB.back)) { cur = 'menu'; }
+    if (sOn(SB.shake)) { S.settings.shake = S.settings.shake ? 0 : 1; G.shakeMul = S.settings.shake ? 1 / 3 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (sOn(SB.iso)) { G.Proj.toggle(); G.sfx('card_select', { vol: 0.5 }); }   // vista inclinada tipo Hades (se guarda en settings.view)
+    if (sOn(SB.qual)) { G.Sys.cycleQuality(); G.sfx('card_select', { vol: 0.5 }); }
+    if (sOn(SB.fs)) G.Sys.toggleFullscreen();
+    if (sOn(SB.mute)) G.Sys.toggleMute();
+    if (sOn(SB.inst)) G.PWA.install();
+    if (sOn(SB.exp)) G.PWA.exportSave();
+    if (sOn(SB.imp)) G.PWA.importSave();
+    if (sOn(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (sOn(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (sOn(SB.cine)) { cur = 'cine'; }
+    if (sOn(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
+    if (sOn(SB.priv)) { cur = 'privacy'; st.privMsg = ''; st.privView = false; }
+    if (sOn(SB.bak)) G.PWA.backups();   // T-F1-11: copias de seguridad y restaurar
+    if (sOn(SB.man)) { st.manBack = 'settings'; P.open('manual'); return false; }
+    if (sOn(SB.back)) { cur = 'menu'; }
     return false;
   }
   function drawSettings(c) {
-    var S = SV(); if (!S.settings) S.settings = (function () { try { return Assets.getVolume(); } catch (e) { return { master: 0.8, music: 0.6, sfx: 0.8 }; } })();
+    var S = SV(), pg = st.setTab || 0; if (!S.settings) S.settings = (function () { try { return Assets.getVolume(); } catch (e) { return { master: 0.8, music: 0.6, sfx: 0.8 }; } })();
     bg(c, 'AJUSTES');
-    SET.forEach(function (it, i) {
-      G.txt(c, it[1], 200, 64 + i * 56 + 24, 20, '#ffd27a', 'left');
-      U.button(c, setRect(i, 0), '-', { size: 26 });
-      G.txt(c, Math.round(S.settings[it[0]] * 100) + '%', 660, 64 + i * 56 + 24, 20, '#fff', 'center');
-      U.button(c, setRect(i, 1), '+', { size: 26 });
-    });
+    ['SONIDO E IMAGEN', 'PARTIDA Y DATOS'].forEach(function (t, i) { U.button(c, STAB[i], t, { size: 18, color: pg === i ? '#6a4a2a' : '#2c2438', hot: '#4a3a66', border: pg === i ? '#ffd27a' : '#6a5a86' }); });
     var on = '#2a6aa8', off = '#2c2438', Sy = G.Sys;
-    U.button(c, SB.shake, 'Reducir sacudidas: ' + (S.settings.shake ? 'SÍ' : 'NO'), { size: 14, color: S.settings.shake ? on : off });
-    U.button(c, SB.iso, 'Vista inclinada: ' + (G.Proj.iso ? 'SÍ' : 'NO'), { size: 14, color: G.Proj.iso ? on : off });
-    U.button(c, SB.qual, 'Gráficos: ' + Sy.qualityLabel(), { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, SB.fs, Sy.isFullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa', { size: 14, off: !Sy.fsSupported(), color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: Sy.fsSupported() ? null : 'no disponible aquí' });
-    U.button(c, SB.mute, Sy.muted ? 'Silencio: SÍ' : 'Silencio: NO', { size: 14, color: Sy.muted ? '#7a3a3a' : off });
-    U.button(c, SB.inst, Sy.standalone() ? 'App instalada' : 'Instalar app', { size: 14, off: Sy.standalone(), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
-    U.button(c, SB.exp, 'Exportar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, SB.imp, 'Importar guardado', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 14, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
-    U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 14, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
-    U.button(c, SB.priv, 'Privacidad', { size: 14, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Track && G.Track.state().consent === true ? 'permiso: SÍ' : 'permiso: NO' });
+    if (pg === 0) {
+      SET.forEach(function (it, i) {
+        var r = setRect(i, 0);
+        G.txt(c, it[1], 150, r.y + 33, 20, '#ffd27a', 'left');
+        U.button(c, r, '-', { size: 28 });
+        G.txt(c, Math.round(S.settings[it[0]] * 100) + '%', 650, r.y + 33, 20, '#fff', 'center');
+        U.button(c, setRect(i, 1), '+', { size: 28 });
+      });
+      U.button(c, SB.mute, Sy.muted ? 'Silencio: SÍ' : 'Silencio: NO', { size: 17, color: Sy.muted ? '#7a3a3a' : off });
+      U.button(c, SB.qual, 'Gráficos: ' + Sy.qualityLabel(), { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+      U.button(c, SB.fs, Sy.isFullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa', { size: 17, off: !Sy.fsSupported(), color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: Sy.fsSupported() ? null : 'no disponible aquí' });
+      U.button(c, SB.iso, 'Vista inclinada: ' + (G.Proj.iso ? 'SÍ' : 'NO'), { size: 17, color: G.Proj.iso ? on : off });
+      U.button(c, SB.shake, 'Reducir sacudidas: ' + (S.settings.shake ? 'SÍ' : 'NO'), { size: 17, color: S.settings.shake ? on : off });
+      U.button(c, SB.cine, 'CINEMÁTICAS', { size: 18, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+    } else {
+      U.button(c, SB.soft, 'Hielo suave: ' + (S.settings.softIce ? 'SÍ' : 'NO'), { size: 17, color: S.settings.softIce ? on : off, sub: 'Tundra: derrape más corto' });
+      U.button(c, SB.lightstorm, 'Ventisca ligera: ' + (S.settings.lightStorm ? 'SÍ' : 'NO'), { size: 17, color: S.settings.lightStorm ? on : off, sub: 'Tundra: +80 px de visión' });
+      U.button(c, SB.inst, Sy.standalone() ? 'App instalada' : 'Instalar app', { size: 17, off: Sy.standalone(), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+      var Sv = G.Save; U.button(c, SB.bak, 'Copias de seguridad', { size: 17, color: Sv.recovered ? '#7a4a2a' : '#4a3a66', hot: '#6a5a86', border: Sv.recovered ? '#ffd27a' : '#8a7aa6', sub: Sv.recovered ? 'se recuperó una copia' : null });
+      U.button(c, SB.exp, 'Exportar guardado', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+      U.button(c, SB.imp, 'Importar guardado', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
+      U.button(c, SB.priv, 'Privacidad', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Track && G.Track.state().consent === true ? 'permiso: SÍ' : 'permiso: NO' });
+      U.button(c, SB.err, 'Informe de errores', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
+      if (!G.Sys.isTouch()) G.txt(c, 'Q / E: cambiar de página', 480, 400, 12, '#9a8fb0', 'center');
+    }
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
-    U.button(c, SB.err, 'Informe de errores', { size: 13, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
-    var Sv = G.Save; U.button(c, SB.bak, 'Copias', { size: 13, color: Sv.recovered ? '#7a4a2a' : '#4a3a66', hot: '#6a5a86', border: Sv.recovered ? '#ffd27a' : '#8a7aa6', sub: Sv.recovered ? 'se recuperó una copia' : 'de seguridad' });
-    U.button(c, SB.back, 'ATRÁS', { size: 20 });
-    U.button(c, SB.cine, 'CINEMÁTICAS', { size: 16, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
-    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 530, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');
+    U.button(c, SB.back, 'ATRÁS', { size: 18 });
+    G.txt(c, Math.round(Sy.fps) + ' fps  -  render x' + (G.rs || 1).toFixed(2) + (G.Save.ok ? '' : '  -  ¡el navegador NO guarda! exporta tu progreso'), 480, 527, 12, G.Save.ok ? '#b4a8c8' : '#ff8a8a', 'center');
   }
 })();

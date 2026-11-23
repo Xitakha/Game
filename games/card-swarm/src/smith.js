@@ -1,4 +1,4 @@
-/* smith.js - Panel del taller de Carapa (la Armera): EQUIPO / FABRICAR / SETS / PEDIDOS. Canvas 960x540 (móvil 844x390: escala 0,72, tiles >= 100 px lógicos = 72 px reales, botones de 50 px).
+/* smith.js - Panel del taller de Carapa (la Armera): EQUIPO / FABRICAR / SETS / PEDIDOS. Columna de 960x540 (alto lógico 540 = 390 px reales a 844x390: escala 0,72; tiles >= 100 px lógicos = 72 px reales, botones de 50 px; pendiente de letra 17, T-F1-08).
    Interfaz como tree.js / panels.js: G.Smith.open(), update(dt) -> true si hay que cerrar, draw(c). Teclas: Q/E o deslizar = pestaña, 1-4 = slot, flechas = pieza, Enter = equipar / fabricar, R = reforzar. */
 (function () {
   'use strict';
@@ -6,7 +6,7 @@
   var TABS = ['EQUIPO', 'FABRICAR', 'SETS', 'PEDIDOS'], SLOT_LET = ['Y', 'P', 'G', 'T'];
   var ui = { tab: 0, slot: 1, sel: 0, msg: '', msgT: 0, scroll: 0, ro: false, tn: 1 };
   var VIS = 6;
-  var R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
+  var R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
   function tabR(i) { return { x: 14 + i * 134, y: 58, w: 128, h: 46 }; }
   function tileR(i) { return { x: 14 + (i % 2) * 112, y: 114 + Math.floor(i / 2) * 108, w: 106, h: 100 }; }
   function rowR(k) { return { x: 250, y: 114 + (k - ui.scroll) * 62, w: 318, h: 58 }; }
@@ -251,6 +251,7 @@
   }
   S.draw = function (c) {
     var m = A.get();
+    if (G.MIN_OLD) G.minFont = G.MIN_OLD;   // T-F1-08 fase 3: la Herrería aún no está rehecha para 17 (también desde la pausa)
     c.fillStyle = '#08040e'; c.fillRect(0, 0, G.W, G.H);
     G.txt(c, ui.ro ? 'EQUIPO (solo lectura)' : 'TALLER DE CARAPA', 14, 24, ui.ro ? 20 : 24, '#6ac8d8', 'left');
     U.part(c, 'brasa', 340, 24, 10); G.txt(c, 'Brasas ' + SV().brasas, 356, 24, 15, '#ff9a3c', 'left');

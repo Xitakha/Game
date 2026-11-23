@@ -766,7 +766,7 @@
   };
 
   // ------------------------------------------------------------- Botones táctiles / ratón: zona del pulgar derecho (el joystick flotante solo nace en x < 480)
-  // 844x390 (canvas 960x540 con escala 0,72): radio 38 = 55 px CSS. Arco en la esquina inferior derecha; AUTO a la izquierda del arco; pausa / silencio están arriba a la izquierda.
+  // Clásico (?wide=0, 960x540, escala 0,72 a 844x390): radio 38 = 55 px CSS, pausa / silencio arriba a la izquierda. Pantalla ancha (por defecto, T-F1-08): ver F.layout.
   var BTN = [{ x: 906, y: 486, r: 38 }, { x: 826, y: 496, r: 38 }, { x: 892, y: 404, r: 38 }, { x: 810, y: 414, r: 38 }], AUTO = { x: 700, y: 488, w: 88, h: 38 };
   F.BTN = BTN; F.AUTO = AUTO;
   // T-F1-08 fase 2: con la pantalla ancha el arco y AUTO se anclan a la esquina inferior derecha segura (R, B): radio 40, zona de toque 48, AUTO 100x66 (>= 44 px reales a 740x360).
@@ -870,26 +870,26 @@
       if (s.st) { c.strokeStyle = r.color; c.lineWidth = 4; c.beginPath(); c.arc(b.x, b.y, b.r + 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * (s.st.t / s.st.dur)); c.stroke(); }
       if (s.readyT > 0) { c.strokeStyle = 'rgba(255,233,160,' + s.readyT / 700 + ')'; c.lineWidth = 3; c.beginPath(); c.arc(b.x, b.y, b.r + 4 + (700 - s.readyT) / 700 * 16, 0, 6.283); c.stroke(); }
       if (s.cd > 0) G.txt(c, (s.cd >= 10000 ? Math.ceil(s.cd / 1000) : (s.cd / 1000).toFixed(1)), b.x, b.y + 2, 20, '#fff', 'center');
-      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, wide ? 14 : 12, ready ? '#ffe9a0' : '#d8cfe8', 'center');
+      G.txt(c, r.short + (s.lvl > 1 ? ' II' : ''), b.x, b.y + b.r - 11, wide ? 15 : 12, ready ? '#ffe9a0' : '#d8cfe8', 'center');
       if (!touch) { c.fillStyle = '#0c0814'; c.fillRect(b.x - b.r + 4, b.y - b.r + 4, 24, 20); G.txt(c, KEYL[i] === '_' ? 'ESP' : KEYL[i], b.x - b.r + 16, b.y - b.r + 14, 12, '#ffd27a', 'center'); }
       c.restore();
     }
     var a = AUTO; c.save(); c.fillStyle = F.auto ? '#2a8a4a' : 'rgba(10,6,18,0.8)'; c.fillRect(a.x, a.y, a.w, a.h); c.strokeStyle = F.auto ? '#9dffb4' : '#6a5a86'; c.lineWidth = 2; c.strokeRect(a.x + 1, a.y + 1, a.w - 2, a.h - 2);
-    if (wide && !touch) { G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO'), a.x + a.w / 2, a.y + a.h / 2 - 9, 16, '#fff', 'center'); G.txt(c, '(F)', a.x + a.w / 2, a.y + a.h / 2 + 13, 14, '#d8cfe8', 'center'); }
+    if (wide && !touch) { G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO'), a.x + a.w / 2, a.y + a.h / 2 - 9, 16, '#fff', 'center'); G.txt(c, '(F)', a.x + a.w / 2, a.y + a.h / 2 + 13, 15, '#d8cfe8', 'center'); }
     else G.txt(c, 'AUTO ' + (F.auto ? 'SI' : 'NO') + (touch ? '' : ' (F)'), a.x + a.w / 2, a.y + a.h / 2, wide ? 16 : 12, '#fff', 'center');
     c.restore();
   };
-  F.chipRects = function () { var out = []; for (var i = 0; i < NS; i++) out.push({ x: 8 + i * 84, y: 8, w: 80, h: 34 }); return out; };
-  F.drawChips = function (c) {   // pantalla de oferta: panel PODERES arriba a la derecha (4 slots)
+  // T-F1-08 fase 3: los 4 huecos de PODERES van abajo a la derecha de la pantalla de oferta (bajo REROLL / OMITIR), con letra 17 en dos líneas (nombre / nivel).
+  // Antes iban arriba a la izquierda y pisaban el título "¡NIVEL n! ELIGE UNA CARTA" (que solo se apartaba según los poderes ocupados, no los 4 huecos).
+  F.chipRects = function () { var out = []; for (var i = 0; i < NS; i++) out.push({ x: 520 + i * 107, y: 468, w: 103, h: 50 }); return out; };
+  F.drawChips = function (c) {   // pantalla de oferta (columna de 960)
     var p = G.player, rc = F.chipRects();
-    var any = p.actives.some(Boolean);   // sin ningún poder no se pintan ni el rótulo ni los huecos 'libre' (pisaban el título de la oferta)
-    if (any) G.txt(c, 'PODERES', 8, 51, 12, '#9a8fb0', 'left');
+    if (!p.actives.some(Boolean)) return;   // sin ningún poder no se pintan los huecos
     for (var i = 0; i < NS; i++) {
       var s = p.actives[i], q = rc[i];
-      if (!any) break;
-      c.save(); c.fillStyle = 'rgba(12,8,20,0.7)'; c.fillRect(q.x, q.y, q.w, q.h); c.strokeStyle = s ? RBY[s.id].color : 'rgba(160,140,190,0.35)'; c.lineWidth = 2; c.strokeRect(q.x + 1, q.y + 1, q.w - 2, q.h - 2);
-      if (s) { G.FusionArt.icon(c, s.id, q.x + 17, q.y + 17, 11); G.txt(c, RBY[s.id].short, q.x + 55, q.y + 12, 12, '#fff', 'center'); G.txt(c, 'Nv' + s.lvl, q.x + 55, q.y + 25, 11, '#ffd24a', 'center'); }
-      else if (any) G.txt(c, 'libre', q.x + q.w / 2, q.y + q.h / 2, 12, 'rgba(180,160,210,0.5)', 'center');
+      c.save(); c.fillStyle = 'rgba(12,8,20,0.8)'; c.fillRect(q.x, q.y, q.w, q.h); c.strokeStyle = s ? RBY[s.id].color : 'rgba(160,140,190,0.35)'; c.lineWidth = 2; c.strokeRect(q.x + 1, q.y + 1, q.w - 2, q.h - 2);
+      if (s) { G.FusionArt.icon(c, s.id, q.x + 14, q.y + 37, 9); G.txt(c, RBY[s.id].short, q.x + q.w / 2, q.y + 14, 17, '#fff', 'center'); G.txt(c, 'Nv' + s.lvl, q.x + q.w / 2 + 8, q.y + 36, 17, '#ffd24a', 'center'); }
+      else G.txt(c, 'libre', q.x + q.w / 2, q.y + q.h / 2, 17, 'rgba(180,160,210,0.5)', 'center');
       c.restore();
     }
   };

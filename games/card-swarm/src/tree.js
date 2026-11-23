@@ -414,20 +414,25 @@
   };
 
   // ------------------------------------------------------------- UI
-  var ui = { tab: 'fire', sel: 'F1', msg: '', msgT: 0, confirm: '', confirmT: 0, flash: null, flashT: 0, fade: 0 };
-  var R_CLOSE = { x: 896, y: 2, w: 60, h: 50 };
-  var R_TAB = function (i) { return { x: 8 + i * 134, y: 44, w: 128, h: 48 }; };
-  var R_RESET = { x: 590, y: 4, w: 156, h: 38 };
-  var DET = { x: 644, y: 100, w: 306, h: 432 };
-  var R_BUY = { x: 654, y: 470, w: 286, h: 52 };
-  var R_CH = [{ x: 654, y: 470, w: 140, h: 52 }, { x: 800, y: 470, w: 140, h: 52 }];
-  var R_UNDO = { x: 754, y: 416, w: 186, h: 48 };
-  var NX = 72, NY = 138, SX = 100, SY = 65, NR = 28;
-  function pos(n) { return n.px != null ? { x: n.px, y: n.py } : { x: NX + n.col * SX, y: NY + n.row * SY }; }
+  // T-F1-08 fase 3: la forja va en 2 vistas ("paginada") para letra 17 y botones de 66: MAPA (el árbol a todo el ancho; tocar un nodo lo elige y la barra de
+  // abajo resume) y DETALLE (descripción, mejoras A / B, trofeos, coste y FORJAR / DESHACER). ui.view = 'map' | 'det'.
+  var ui = { tab: 'fire', sel: 'F1', msg: '', msgT: 0, confirm: '', confirmT: 0, flash: null, flashT: 0, fade: 0, view: 'map' };
+  var R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
+  var R_TAB = function (i) { return { x: 8 + i * 134, y: 68, w: 128, h: 58 }; };
+  var R_RESET = { x: 656, y: 0, w: 226, h: 62 };
+  var DET = { x: 40, y: 68, w: 880, h: 400 };
+  var R_BUY = { x: 620, y: 470, w: 300, h: 66 };
+  var R_CH = [{ x: 470, y: 470, w: 222, h: 66 }, { x: 698, y: 470, w: 222, h: 66 }];
+  var R_UNDO = { x: 256, y: 470, w: 206, h: 66 };
+  var R_BACK = { x: 40, y: 470, w: 206, h: 66 };
+  var NX = 80, NY = 168, SX = 198, SY = 60, NR = 22;
+  function pos(n) { return n.px != null ? { x: Math.round(40 + n.px * 1.4), y: Math.round(NY + (n.py - 138) * SY / 65) } : { x: NX + n.col * SX, y: NY + n.row * SY }; }   // (px / py: coordenadas del diseño de 2 columnas; se estiran al ancho)
+  T.view = function (v) { if (v) ui.view = v; return ui.view; };
+  T.rects = function () { return { tab: R_TAB, reset: R_RESET, buy: R_BUY, ch: R_CH, undo: R_UNDO, back: R_BACK, pos: function (id) { return pos(BY[id]); } }; };   // pruebas
   function say(t) { ui.msg = t; ui.msgT = 3200; }
   function tabNodes() { return NODES.filter(function (n) { return n.tree === ui.tab; }); }
 
-  T.open = function (tab) { ui.tab = tab || ui.tab; ui.msg = ''; ui.msgT = 0; ui.confirm = ''; fixSel(); };
+  T.open = function (tab) { ui.tab = tab || ui.tab; ui.msg = ''; ui.msgT = 0; ui.confirm = ''; ui.view = 'map'; fixSel(); };
   function fixSel() {
     if (!BY[ui.sel] || BY[ui.sel].tree !== ui.tab) { var tn = tabNodes(); ui.sel = (tn.filter(function (n) { return n.type !== 'root'; })[0] || tn[0]).id; }
   }
@@ -464,6 +469,14 @@
   T.update = function (dt) {
     var m = inp.mouse, click = inp.hit('Mouse0'), i;
     if (ui.msgT > 0) ui.msgT -= dt; if (ui.flashT > 0) ui.flashT -= dt; if (ui.confirmT > 0) ui.confirmT -= dt; else ui.confirm = '';
+    if (ui.view === 'det') {   // vista DETALLE
+      if (inp.hit('Escape') || (click && (U.inR(R_BACK, m) || U.inR(R_CLOSE, m)))) { ui.view = 'map'; G.sfx('flip', { vol: 0.3 }); return false; }
+      var nd = BY[ui.sel], pl = T.undoPlan(ui.sel);
+      if (nd.type === 'M') { if (inp.hit('KeyF') || (click && U.inR(R_CH[0], m))) doBuy('A'); else if (inp.hit('KeyG') || (click && U.inR(R_CH[1], m))) doBuy('B'); }
+      else if (inp.hit('KeyF') || (click && U.inR(R_BUY, m))) doBuy('1');
+      if ((inp.hit('KeyU') || (click && U.inR(R_UNDO, m))) && T.owned(nd.id)) tryConfirm('u' + ui.sel, pl);
+      return false;
+    }
     if (inp.hit('Escape') || (click && U.inR(R_CLOSE, m))) return true;
     var NT = T.TABS.length;
     for (i = 0; i < NT; i++) if (inp.hit('Digit' + (i + 1)) || (click && U.inR(R_TAB(i), m))) { setTab(T.TABS[i].id); }
@@ -481,13 +494,11 @@
     var plan = T.undoPlan(ui.sel), tplan = T.treePlan(ui.tab);
     if (inp.hit('KeyU')) tryConfirm('u' + ui.sel, plan);
     if (inp.hit('KeyR')) tryConfirm('t' + ui.tab, tplan);
+    if (inp.hit('Enter', 'Space')) { ui.view = 'det'; G.sfx('flip', { vol: 0.4 }); return false; }
     if (click) {
       if (U.inR(R_RESET, m)) { tryConfirm('t' + ui.tab, tplan); return false; }
       var tn = tabNodes();
-      for (i = 0; i < tn.length; i++) { var p = pos(tn[i]); if (Math.hypot(m.x - p.x, m.y - p.y) <= NR + 4) { ui.sel = tn[i].id; G.sfx('flip', { vol: 0.4 }); return false; } }
-      if (n.type === 'M') { if (U.inR(R_CH[0], m)) doBuy('A'); else if (U.inR(R_CH[1], m)) doBuy('B'); }
-      else if (U.inR(R_BUY, m)) doBuy('1');
-      if (U.inR(R_UNDO, m) && T.owned(n.id)) tryConfirm('u' + ui.sel, plan);
+      for (i = 0; i < tn.length; i++) { var p = pos(tn[i]); if (Math.hypot(m.x - p.x, m.y - p.y) <= NR + 12) { ui.sel = tn[i].id; ui.view = 'det'; G.sfx('flip', { vol: 0.4 }); return false; } }   // tocar un nodo abre su detalle
     }
     return false;
   };
@@ -513,7 +524,7 @@
     if (!items.length) { G.txt(c, 'Sin coste', x, y, 12, '#9a8fb0', 'left'); return true; }
     var ok = true;
     for (i = 0; i < items.length; i++) {
-      var it = items[i], cx = x + (i % 4) * 70, cy = y + Math.floor(i / 4) * 26, good = it.have >= it.need;
+      var it = items[i], cx = x + (i % 4) * (G.minFont > 12 ? 106 : 70), cy = y + Math.floor(i / 4) * 26, good = it.have >= it.need;   // T-F1-08: con letra 17, 106 por elemento
       if (!good) ok = false;
       if (it.k === 'pf') pfIcon(c, cx + 10, cy, 9); else U.part(c, it.k, cx + 10, cy, 10);
       G.txt(c, (it.have >= 1000 ? Math.floor(it.have / 1000) + 'k' : it.have) + '/' + it.need, cx + 22, cy + 1, 11, good ? '#9dffb4' : '#ff8a8a', 'left');
@@ -534,7 +545,7 @@
         if (n.icon === 'II' || n.icon === 'III' || n.icon === '3') G.txt(c, n.icon, p.x, p.y + 1, n.icon.length > 1 ? 16 : 22, owned ? '#1a1024' : '#fff', 'center');
         else G.Cards.glyph(c, n.icon, p.x, p.y + (n.type === 'M' ? 2 : 0), n.type === 'M' ? 11 : 15, ik);
         c.restore(); }
-      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
+      if (!owned) { var cc0 = T.cost(n); if (cc0.pf) { pfIcon(c, p.x + NR + 8, p.y - 8, 12, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc0.pf), p.x + NR + 8, p.y - 7, 12, '#fff', 'center'); } }
       return;   // la etiqueta con el nombre se dibuja después de todos los nodos (T.draw) para que ningún marco la tape
     }
     c.save(); c.translate(p.x, p.y);
@@ -562,7 +573,7 @@
     c.restore();
     if (st === 'excluded') { c.strokeStyle = '#ff6a6a'; c.lineWidth = 3; c.beginPath(); c.moveTo(p.x - 20, p.y - 20); c.lineTo(p.x + 20, p.y + 20); c.stroke(); }
     // coste en PF (chapa dorada) y estrella de nivel
-    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + 32, p.y - 6, 10, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + 32, p.y - 5, 12, '#fff', 'center'); } }
+    if (!owned) { var cc = T.cost(n); if (cc.pf) { pfIcon(c, p.x + NR + 8, p.y - 8, 12, dim ? '#6a5a3a' : '#ffd24a'); G.txt(c, String(cc.pf), p.x + NR + 8, p.y - 7, 12, '#fff', 'center'); } }
     G.txtBg(c, n.name.length > 13 ? n.name.slice(0, 12) + '.' : n.name, p.x, p.y + NR + 7, 12, dim ? '#a89cc0' : '#e8dff8', 'center');
   }
 
@@ -570,32 +581,29 @@
     var S = SV(), m = inp.mouse, t = Date.now() / 1000, i;
     c.fillStyle = '#08040e'; c.fillRect(0, 0, G.W, G.H);
     // cabecera
-    G.txt(c, 'FORJA DE GRUM', 14, 20, 24, '#ffd27a', 'left'); G.txt(c, 'Herrero de armas', 14, 42, 12, '#c8a070', 'left');
+    G.txt(c, 'FORJA DE GRUM', 14, 22, 24, '#ffd27a', 'left'); G.txt(c, 'Herrero de armas', 14, 48, 12, '#c8a070', 'left');
     pfIcon(c, 262, 22, 11); G.txt(c, 'PF libres ' + T.pfFree(), 280, 22, 16, T.pfFree() > 0 ? '#ffd24a' : '#9a8fb0', 'left');
-    G.txt(c, T.pfEarned() + '/' + L.PF_CAP + ' ganados', 280, 40, 12, '#b4a8c8', 'left');
-    U.part(c, 'brasa', 430, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 446, 22, 16, '#ff9a3c', 'left');
-    var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];
-    // fila de partes (compacta)
-    pk.forEach(function (k, j) { var x = 14 + j * 52; U.part(c, k, x + 7, 100, 7); G.txt(c, String(S.parts[k] || 0), x + 18, 101, 11, (S.parts[k] || 0) ? '#fff' : '#6a5f78', 'left'); });
-    U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
+    G.txt(c, T.pfEarned() + '/' + L.PF_CAP + ' ganados', 280, 48, 12, '#b4a8c8', 'left');
+    U.part(c, 'brasa', 460, 22, 10); G.txt(c, 'Brasas ' + S.brasas, 476, 22, 16, '#ff9a3c', 'left');
+    U.button(c, R_CLOSE, 'X', { size: 22, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
+    var nodes = tabNodes(), n = BY[ui.sel];
+    if (ui.view === 'det') { drawDetail(c, n, m); if (ui.msgT > 0 && ui.msg) drawMsg(c); return; }
     var ART = !!(window.Assets && Assets.drawTreeNode), now = Date.now();
     for (i = 0; i < T.TABS.length; i++) {
       var tb = T.TABS[i], r = R_TAB(i), on = tb.id === ui.tab, av = T.availableIn(tb.id), done = tb.id !== 'trunk' && T.complete(tb.id), pu = tb.id === 'trunk' ? 0 : T.pfIn(tb.id);
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h);
       c.strokeStyle = on ? tb.color : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-      if (ART && Assets.drawTreeTab) Assets.drawTreeTab(c, r.x, r.y, tb.id === 'trunk' ? 'neutral' : tb.id, { sel: on, dim: !on, t: now, badge: av || 0 });
+      if (ART && Assets.drawTreeTab) Assets.drawTreeTab(c, r.x, r.y + 5, tb.id === 'trunk' ? 'neutral' : tb.id, { sel: on, dim: !on, t: now, badge: av || 0 });
       else { if (av > 0) { c.fillStyle = '#7dff9a'; c.beginPath(); c.arc(r.x + r.w - 10, r.y + 10, 8, 0, 6.283); c.fill(); G.txt(c, String(av), r.x + r.w - 10, r.y + 11, 10, '#102014', 'center', 'rgba(0,0,0,0)'); } }
       var tx = ART ? r.x + 54 : r.x + r.w / 2 + 4, al = ART ? 'left' : 'center';
-      G.txt(c, tb.name, tx, r.y + 16, 13, on ? tb.color : '#8a7f96', al);
-      G.txt(c, done ? 'COMPLETO' : tb.id === 'trunk' ? 'Rangos' : pu + ' PF', ART ? tx : r.x + r.w / 2, r.y + 32, 10, done ? '#ffd24a' : '#7a6f88', al);
-      G.txt(c, String(i + 1), r.x + r.w - 9, r.y + r.h - 9, 9, '#5a4f68', 'center');
+      G.txt(c, tb.name, tx, r.y + 18, 13, on ? tb.color : '#8a7f96', al);
+      G.txt(c, done ? 'HECHO' : tb.id === 'trunk' ? 'Rangos' : pu + ' PF', ART ? tx : r.x + r.w / 2, r.y + 41, 10, done ? '#ffd24a' : '#8a7f96', al);
     }
-    // mensaje
-    if (ui.msgT > 0 && ui.msg) G.txt(c, ui.msg, 320, 508, 12, '#ffe9a0', 'center');
-    var nodes = tabNodes(), n = BY[ui.sel];
+    var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];   // fila de partes
+    pk.forEach(function (k, j) { var x = 14 + j * 104; U.part(c, k, x + 8, 142, 8); G.txt(c, String(S.parts[k] || 0), x + 20, 143, 11, (S.parts[k] || 0) ? '#fff' : '#8a7f96', 'left'); });
     // reespecializar árbol
     var tp = T.treePlan(ui.tab);
-    U.button(c, R_RESET, ui.confirm === 't' + ui.tab ? 'SEGURO? OTRA VEZ' : 'REESPECIALIZAR', { size: 12, off: !tp, color: '#3a2f48', hot: '#6a3a8a', border: '#8a6a8a',
+    U.button(c, R_RESET, ui.confirm === 't' + ui.tab ? 'SEGURO? OTRA VEZ' : 'REESPECIALIZAR', { size: 17, off: !tp, color: '#3a2f48', hot: '#6a3a8a', border: '#8a6a8a',
       sub: tp ? (S.respecFree ? 'primera vez GRATIS' : L.RESPEC.tree + ' Brasas') : 'nada que deshacer' });
     // aristas (con Assets.drawTreeLink si existe el arte del árbol)
     nodes.forEach(function (nd) {
@@ -616,76 +624,80 @@
       }
     });
     if (ui.tab === 'trunk') {
-      G.txt(c, 'CARTAS', NX, NY + 3 * SY - 6, 11, '#9a8fb0', 'center'); G.txt(c, 'NEUTRAS', NX, NY + 3 * SY + 8, 11, '#9a8fb0', 'center');
-      G.txt(c, 'RUTA  -  refuerzos por bioma, sin PF; se abren con el trofeo del jefe', 14, 394, 11, '#c8b8e8', 'left');
-      G.txt(c, 'TUNDRA', 138, 411, 10, '#6ac8ff', 'center'); G.txt(c, 'PANAL', 418, 411, 10, '#ffe45a', 'center'); G.txt(c, 'CRÁTER', 604, 411, 10, '#ff9a3c', 'center');
+      G.txt(c, 'CARTAS NEUTRAS', NX + 90, NY + 3 * SY, 11, '#9a8fb0', 'center');
+      var ry = pos({ px: 0, py: 442 }).y;
+      G.txt(c, 'RUTA: refuerzos por bioma, sin PF; se abren con el trofeo del jefe', 14, ry - 38, 11, '#c8b8e8', 'left');
     }
     nodes.forEach(function (nd) { drawNodeShape(c, nd, T.status(nd), pos(nd), nd.id === ui.sel, t); });
     if (ART) nodes.forEach(function (nd) {
-      var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded', col = dm ? '#7a6f8a' : '#e8dff8';
-      if (nd.ruta) { var wl = U.wrap(c, nd.name, 84, 10); wl.slice(0, 2).forEach(function (l, k) { G.txtBg(c, l, q.x, q.y + NR + 9 + k * 15, 12, col, 'center'); }); return; }
-      G.txtBg(c, nd.name.length > 13 ? nd.name.slice(0, 12) + '.' : nd.name, q.x, q.y + NR + 9, 12, col, 'center');
+      var q = pos(nd), dm = T.status(nd) === 'locked' || T.status(nd) === 'excluded', col = dm ? '#a89cc0' : '#e8dff8';
+      var mx = nd.ruta ? 11 : 13; G.txtBg(c, nd.name.length > mx ? nd.name.slice(0, mx - 1) + '.' : nd.name, q.x, q.y + NR + 8, 12, col, 'center');
     });
     if (ui.flashT > 0 && BY[ui.flash]) {
       var fp = pos(BY[ui.flash]), u = 1 - ui.flashT / 800;
       if (ART && Assets.drawTreeBurst) Assets.drawTreeBurst(c, fp.x, fp.y, u, (G.TAGS[BY[ui.flash].tag] || G.TAGS.neutral).color);
       else { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,224,120,' + (1 - u) + ')'; c.lineWidth = 5; c.beginPath(); c.arc(fp.x, fp.y, NR + u * 40, 0, 6.283); c.stroke(); c.restore(); }
     }
-    // selección
     if (!ART) { var sp = pos(n); c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.setLineDash([4, 4]); c.lineDashOffset = -t * 20; c.beginPath(); c.arc(sp.x, sp.y, NR + 8, 0, 6.283); c.stroke(); c.setLineDash([]); }
-    drawDetail(c, n, m);
-    G.txt(c, G.Sys.isTouch() ? 'Toca un nodo para verlo  -  desliza para cambiar de árbol  -  X para salir' : 'Flechas: mover  F/G: forjar  U: deshacer  R: respec.  Q/E o 1-7: pestaña  Esc: salir', 14, 526, 10, '#6f6480', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: mover  Enter: detalle  F/G: forjar  U: deshacer  R: respec.  Q/E o 1-7: árbol', 14, 530, 10, '#8a7f96', 'left');
+    if (ui.msgT > 0 && ui.msg) drawMsg(c);
   };
+  function drawMsg(c) {   // aviso encima de todo, con placa (2 líneas de 17 como máximo)
+    var ls = U.wrap(c, ui.msg, 840, 17).slice(0, 2), h = ls.length * 22 + 12;
+    c.fillStyle = 'rgba(8,4,14,0.94)'; c.fillRect(50, 400 - h, 860, h); c.strokeStyle = '#ffd27a'; c.lineWidth = 2; c.strokeRect(51, 401 - h, 858, h - 2);
+    ls.forEach(function (l, i) { G.txt(c, l, 480, 400 - h + 17 + i * 22, 17, '#ffe9a0', 'center'); });
+  }
 
   function drawDetail(c, n, m) {
-    var S = SV(), st = T.status(n), tag = G.TAGS[n.tag] || G.TAGS.neutral, i, y;
+    var S = SV(), st = T.status(n), tag = G.TAGS[n.tag] || G.TAGS.neutral, i, y, X = DET.x + 18, W2 = DET.w - 36;
     U.panel(c, DET.x, DET.y, DET.w, DET.h, { border: tag.color });
-    G.txt(c, n.name, DET.x + 14, DET.y + 22, 18, '#ffd27a', 'left');
-    G.txt(c, typeName(n) + (n.tier ? '  -  ' + n.tier : '') + '  -  ' + (n.tree === 'trunk' ? 'TRONCO' : tag.name), DET.x + 14, DET.y + 44, 11, tag.color, 'left');
+    G.txt(c, n.name, X, DET.y + 26, 22, '#ffd27a', 'left');
+    G.txt(c, typeName(n) + (n.tier ? '  -  ' + n.tier : '') + '  -  ' + (n.tree === 'trunk' ? 'TRONCO' : tag.name), X, DET.y + 52, 11, tag.color, 'left');
     var stTxt = st === 'owned' ? (n.type === 'root' ? 'INICIAL' : 'COMPRADO' + (n.type === 'M' ? ': ' + n.ch[T.choice(n.id)].name : '') + (S.nodes[n.id] && S.nodes[n.id].free ? ' (heredado)' : '')) :
       st === 'avail' ? 'DISPONIBLE' : T.reason(n);
-    G.txt(c, stTxt, DET.x + 14, DET.y + 64, 12, st === 'owned' ? '#9dffb4' : st === 'avail' ? '#ffe9a0' : '#ff8a8a', 'left');
-    var lines = U.wrap(c, n.desc, DET.w - 28, 12); y = DET.y + 88;
-    for (i = 0; i < lines.length && i < 6; i++) G.txt(c, lines[i], DET.x + 14, y + i * 16, 12, '#d8cfe8', 'left');
-    y += Math.min(lines.length, 6) * 16 + 8;
-    if (n.type === 'M') {
+    G.txt(c, stTxt, X + W2, DET.y + 52, 12, st === 'owned' ? '#9dffb4' : st === 'avail' ? '#ffe9a0' : '#ff8a8a', 'right');
+    var lines = U.wrap(c, n.desc, W2, 17); y = DET.y + 82;
+    for (i = 0; i < lines.length && i < 3; i++) G.txt(c, lines[i], X, y + i * 22, 12, '#d8cfe8', 'left');
+    y += Math.min(lines.length, 3) * 22 + 6;
+    if (n.type === 'M') {   // mejoras A / B en dos columnas
       ['A', 'B'].forEach(function (k, j) {
-        var ch = n.ch[k], picked = T.choice(n.id) === k;
-        G.txt(c, k + ' - ' + ch.name + (picked ? '  (elegida)' : ''), DET.x + 14, y, 12, picked ? '#9dffb4' : '#ffe9a0', 'left');
-        var ls = U.wrap(c, ch.desc, DET.w - 28, 12);
-        for (var q = 0; q < ls.length && q < 3; q++) G.txt(c, ls[q], DET.x + 14, y + 18 + q * 16, 12, '#c8bedc', 'left');
-        y += 22 + Math.min(ls.length, 3) * 16 + 4;
+        var ch = n.ch[k], picked = T.choice(n.id) === k, cx = X + j * (W2 / 2 + 6), yy = y;
+        G.txt(c, k + ' - ' + ch.name + (picked ? '  (elegida)' : ''), cx, yy, 12, picked ? '#9dffb4' : '#ffe9a0', 'left');
+        U.wrap(c, ch.desc, W2 / 2 - 14, 17).slice(0, 4).forEach(function (l, q) { G.txt(c, l, cx, yy + 24 + q * 22, 12, '#c8bedc', 'left'); });
       });
+      y += 24 + 4 * 22 + 4;
     }
-    if (n.type === 'root') return;
+    if (n.type === 'root') { U.button(c, R_BACK, 'VOLVER', { size: 20, sub: G.hint('Esc', null) }); return; }
+    var by = DET.y + DET.h - 70;   // fila inferior del panel: trofeos (izquierda) y coste (derecha)
     if (n.trophies) {   // P7: trofeos necesarios (iluminados si ya los tienes)
-      G.txt(c, 'TROFEOS  ' + T.trophiesHave(n) + '/' + n.trophies.length, DET.x + 14, 330, 11, '#9a8fb0', 'left');
+      G.txt(c, 'TROFEOS  ' + T.trophiesHave(n) + '/' + n.trophies.length, X, by, 11, '#9a8fb0', 'left');
       n.trophies.forEach(function (k, j) {
-        var tr = G.Boss.TROPHY[k], have = (S.trophiesEver[k] || 0) > 0, tx = DET.x + 14 + j * 46;
-        try { c.save(); c.globalAlpha = have ? 1 : 0.3; c.drawImage(Assets.sprite(tr.spr, 0), tx, 340, 40, 40); c.restore(); } catch (e0) { c.restore(); }
-        if (n.trophies.length === 1) G.txt(c, tr.name + (have ? '' : '  (aún no lo tienes)'), tx + 50, 360, 11, have ? '#9dffb4' : '#ff8a8a', 'left');
+        var tr = G.Boss.TROPHY[k], have = (S.trophiesEver[k] || 0) > 0, tx = X + j * 46;
+        try { c.save(); c.globalAlpha = have ? 1 : 0.3; c.drawImage(Assets.sprite(tr.spr, 0), tx, by + 12, 40, 40); c.restore(); } catch (e0) { c.restore(); }
+        if (n.trophies.length === 1) G.txt(c, tr.name + (have ? '' : '  (aún no lo tienes)'), tx + 50, by + 32, 11, have ? '#9dffb4' : '#ff8a8a', 'left');
       });
     }
-    var cost = T.cost(n);
+    var cost = T.cost(n), cx0 = X + W2 / 2;
     if (st !== 'owned') {
-      G.txt(c, 'COSTE', DET.x + 14, 392, 11, '#9a8fb0', 'left');
-      costRow(c, cost, DET.x + 12, 410);
+      G.txt(c, 'COSTE', cx0, by, 11, '#9a8fb0', 'left');
+      costRow(c, cost, cx0, by + 30);
     } else {
       var plan = T.undoPlan(n.id);
-      G.txt(c, plan ? 'Deshacer: +' + plan.pf + ' PF, 50 % de partes' : 'No se puede deshacer', DET.x + 14, 392, 11, '#9a8fb0', 'left');
-      G.txt(c, plan ? (plan.brasas ? plan.brasas + ' Brasas' : 'GRATIS (primera vez)') + (plan.ids.length > 1 ? '  (+' + (plan.ids.length - 1) + ' dependientes)' : '') : '', DET.x + 14, 410, 11, '#ff9a3c', 'left');
-      U.button(c, R_UNDO, ui.confirm === 'u' + n.id ? 'SEGURO? OTRA VEZ' : 'DESHACER [U]', { size: 13, off: !plan, color: '#3a2f48', hot: '#6a3a8a', border: '#8a6a8a' });
+      G.txt(c, plan ? 'Deshacer: +' + plan.pf + ' PF, 50 % de partes' : 'No se puede deshacer', cx0, by, 11, '#9a8fb0', 'left');
+      if (plan) G.txt(c, (plan.brasas ? plan.brasas + ' Brasas' : 'GRATIS (primera vez)') + (plan.ids.length > 1 ? '  (+' + (plan.ids.length - 1) + ' dependientes)' : ''), cx0, by + 24, 11, '#ff9a3c', 'left');
+      U.button(c, R_UNDO, ui.confirm === 'u' + n.id ? 'SEGURO? OTRA VEZ' : 'DESHACER', { size: 17, off: !plan, color: '#3a2f48', hot: '#6a3a8a', border: '#8a6a8a', sub: G.hint('[U]', null) });
     }
+    U.button(c, R_BACK, 'VOLVER', { size: 20, sub: G.hint('Esc', null) });
     var why = st === 'avail' ? T.afford(n) : '';
     var can = st === 'avail' && !why;
     if (n.type === 'M') {
       ['A', 'B'].forEach(function (k, j) {
-        U.button(c, R_CH[j], 'ELEGIR ' + k, { size: 15, off: st !== 'avail' || !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: n.ch[k].name + G.hint(j ? ' [G]' : ' [F]', '') });
+        U.button(c, R_CH[j], 'ELEGIR ' + k, { size: 18, off: st !== 'avail' || !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: n.ch[k].name + G.hint(j ? ' [G]' : ' [F]', '') });
       });
     } else if (st === 'owned') {
       /* nada */
     } else {
-      U.button(c, R_BUY, st === 'avail' ? (n.type === 'C' ? 'FORJAR' : 'COMPRAR') : 'BLOQUEADO', { size: 18, off: !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: why || (st === 'avail' ? G.hint('[F]', '') : '') });
+      U.button(c, R_BUY, st === 'avail' ? (n.type === 'C' ? 'FORJAR' : 'COMPRAR') : 'BLOQUEADO', { size: 20, off: !can, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: why || (st === 'avail' ? G.hint('[F]', '') : '') });
     }
   }
 })();

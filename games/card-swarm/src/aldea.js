@@ -1,6 +1,6 @@
 /* aldea.js - (Fase 2b: reacciones de los NPC al volver, ladridos contextuales, marcas "!" de Vesper/Grum/Lanudo/Castaña, noche tras rachas de derrotas, diálogos que
    cambian con los jefes vencidos, Lanudo con consejos y logros, cocina de Castaña.) Rescoldo: la aldea caminable que sustituye a la Base como pantalla principal (G.state === 'aldea').
-   Mapa fijo 960x540 (el canvas ya escala a cualquier pantalla), Marlo se mueve con WASD/flechas o joystick táctil, interacción E/Enter o botón
+   Mapa jugable fijo 960x540 (con la pantalla ancha, T-F1-08, se centra y las franjas laterales llevan decorado: Assets.drawVillageSides; el HUD se ancla a los bordes), Marlo se mueve con WASD/flechas o joystick táctil, interacción E/Enter o botón
    HABLAR (96 px) a menos de 56 px, viaje rápido al Portal (Tab / botón), colisiones con rectángulos y límites. NPCs con burbujas (dialog.js) y paneles
    (panels.js: Vesper, Rufo, Portal, Ulalume/colección, menú; tree.js: la forja de Grum). Arte: Assets.drawVillage / VILLAGE (assets_village.js) con
    fallback de rectángulos si no existe. Datos de posición de VILLAGE si están; si no, FALLBACK. */
@@ -308,7 +308,11 @@
   }
 
   // ------------------------------------------------------------- Botones de pantalla
-  var R_TALK = { x: 850, y: 430, w: 96, h: 96 }, R_PORTAL = { x: 12, y: 482, w: 100, h: 48 }, R_MENU = { x: 896, y: 4, w: 58, h: 50 };
+  var R_TALK = { x: 850, y: 430, w: 96, h: 96 }, R_PORTAL = { x: 12, y: 462, w: 120, h: 66 }, R_MENU = { x: 882, y: 6, w: 66, h: 66 };
+  // T-F1-08 fase 3: botones de la aldea de 66 (44 px reales a 740x360) anclados a los bordes seguros del LIENZO (con la pantalla ancha la aldea se pinta a todo
+  // el ancho: ver Assets.drawVillageSides). Coordenadas de la columna (G.colAnchor); se recolocan en cada paso y dibujo.
+  function layoutHud() { var ca = G.colAnchor(); R_MENU.x = ca.R - 66; R_MENU.y = Math.max(4, ca.T - 6); R_PORTAL.x = ca.L; R_PORTAL.y = ca.B - 66; R_TALK.x = ca.R - 96; R_TALK.y = ca.B - 96; return ca; }
+  A.hudRects = function () { layoutHud(); return { menu: R_MENU, portal: R_PORTAL, talk: R_TALK }; };   // pruebas
 
   A.update = function (dt) {
     time += dt;
@@ -328,7 +332,7 @@
       return;
     }
     // modo caminar
-    syncOrder(); if (!sceneDone && !G.Save.data.flags.smithMet && G.Armor.smithOn() && !fade) { startScene(); return; }
+    layoutHud(); syncOrder(); if (!sceneDone && !G.Save.data.flags.smithMet && G.Armor.smithOn() && !fade) { startScene(); return; }
     var pc = npcPos('carapa'); if (NPC_ORDER.indexOf('carapa') >= 0 && Math.hypot(pc.x - M.x, pc.y - M.y) < 170 && time - (A._amb || -9999) > 1800) { A._amb = time; if (G.Armor) G.Armor.snd('amb'); }
     move(dt);
     updateBarks();
@@ -528,9 +532,9 @@
     if (mode === 'walk' || D.active()) drawButtons(c, tg);
     D.draw(c);
     if (mode === 'panel') G.Panels.draw(c);
-    if (toastT > 0 && toast && mode !== 'panel') { c.save(); c.globalAlpha = Math.min(1, toastT / 400); G.txt(c, toast, G.W / 2, 74, 14, '#ffe9a0', 'center'); c.restore(); }
+    if (toastT > 0 && toast && mode !== 'panel') { c.save(); c.globalAlpha = Math.min(1, toastT / 400); G.txt(c, toast, G.W / 2, 86, 14, '#ffe9a0', 'center'); c.restore(); }
     if (dawnT > 0) { dawnT -= 16; var da = Math.min(1, dawnT / 600, (4200 - dawnT) / 600); c.save(); c.globalAlpha = Math.max(0, da); G.txt(c, 'AMANECE EN RESCOLDO', G.W / 2, 120, 34, '#fff0c8', 'center', '#2a0a04'); c.restore(); }
-    if (fade) { var u = fade.t / fade.dur, a = u < 0.5 ? u * 2 : (1 - u) * 2; c.fillStyle = 'rgba(7,5,12,' + Math.min(1, a) + ')'; c.fillRect(0, 0, G.W, G.H); }
+    if (fade) { var u = fade.t / fade.dur, a = u < 0.5 ? u * 2 : (1 - u) * 2; c.fillStyle = 'rgba(7,5,12,' + Math.min(1, a) + ')'; c.fillRect(-G.colOX, 0, G.colW || G.W, G.H); }   // todo el lienzo (también las franjas laterales)
   };
 
   function drawMarks(c, now, tg) {
@@ -562,23 +566,36 @@
   }
 
   function drawTopHud(c) {
-    var S = G.Save.data, T = G.Tree, Q = G.Quests;
-    c.fillStyle = 'rgba(10,6,18,0.62)'; c.fillRect(6, 6, 330, 44);
+    var S = G.Save.data, T = G.Tree, Q = G.Quests, ca = layoutHud(), x0 = ca.L, y1 = ca.T + 8, y2 = ca.T + 31;   // T-F1-08 fase 3: letra 17, posiciones medidas
     var fg = G.Fte && G.Fte.engaged(), showPF = !fg || G.Fte.npcVisible('grum'), showQ = !fg || G.Fte.npcVisible('vesper');   // T-F1-02: solo los recursos de los NPC presentes
-    U.part(c, 'brasa', 22, 20, 8); G.txt(c, 'Brasas ' + S.brasas, 36, 20, 13, '#ff9a3c', 'left');
-    if (showPF) { T.pfIcon(c, 158, 20, 8); G.txt(c, 'PF ' + T.pfFree(), 172, 20, 13, T.pfFree() ? '#ffd24a' : '#9a8fb0', 'left'); }
-    G.txt(c, 'Salidas ' + S.runs, showPF ? 238 : 158, 20, 12, '#9a8fb0', 'left');
-    var q = Q.statusLine();
-    if (showQ) G.txt(c, q ? 'Encargo: ' + q : 'Sin encargo (habla con Vesper)', 14, 39, 12, q && Q.isReady() ? '#9dffb4' : '#d8cfe8', 'left');
+    c.font = 'bold ' + G.fs(13) + 'px "Courier New", monospace';
+    var tB = 'Brasas ' + S.brasas, tP = 'PF ' + T.pfFree(), tS = 'Salidas ' + S.runs, q = Q.statusLine(), tQ = showQ ? (q ? 'Encargo: ' + q : 'Sin encargo (habla con Vesper)') : '';
+    var xP = x0 + 24 + c.measureText(tB).width + 14, xS = showPF ? xP + 24 + c.measureText(tP).width + 14 : xP, w1 = xS + c.measureText(tS).width - x0;
+    var maxW = ca.R - 66 * 3 - 30 - x0;   // no pisa silencio / pantalla completa / menú
+    if (tQ && c.measureText(tQ).width > maxW) { while (tQ.length > 8 && c.measureText(tQ + '...').width > maxW) tQ = tQ.slice(0, -1); tQ += '...'; }
+    var bw = Math.max(w1, tQ ? c.measureText(tQ).width : 0) + 16;
+    c.fillStyle = 'rgba(10,6,18,0.62)'; c.fillRect(x0 - 6, ca.T - 6, bw, showQ ? 54 : 30);
+    U.part(c, 'brasa', x0 + 8, y1, 8); G.txt(c, tB, x0 + 22, y1, 13, '#ff9a3c', 'left');
+    if (showPF) { T.pfIcon(c, xP, y1, 8); G.txt(c, tP, xP + 14, y1, 13, T.pfFree() ? '#ffd24a' : '#9a8fb0', 'left'); }
+    G.txt(c, tS, xS, y1, 12, '#9a8fb0', 'left');
+    if (tQ) G.txt(c, tQ, x0 + 2, y2, 12, q && Q.isReady() ? '#9dffb4' : '#d8cfe8', 'left');
     var h = U.inR(R_MENU, inp.mouse);
     c.fillStyle = h ? '#4a3a66' : 'rgba(10,6,18,0.72)'; c.fillRect(R_MENU.x, R_MENU.y, R_MENU.w, R_MENU.h); c.strokeStyle = '#8a7aa6'; c.lineWidth = 3; c.strokeRect(R_MENU.x + 1.5, R_MENU.y + 1.5, R_MENU.w - 3, R_MENU.h - 3);
-    c.fillStyle = '#fff'; for (var i = 0; i < 3; i++) c.fillRect(R_MENU.x + 17, R_MENU.y + 14 + i * 9, 24, 4);
+    c.fillStyle = '#fff'; for (var i = 0; i < 3; i++) c.fillRect(R_MENU.x + 19, R_MENU.y + 21 + i * 10, 28, 4);
   }
 
   function drawButtons(c, tg) {
-    U.button(c, R_PORTAL, 'PORTAL', { size: 14, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.Sys.isTouch() ? null : 'Tab' });
-    if (tg && !D.active()) U.button(c, R_TALK, tg.id === 'portal' ? 'PORTAL' : 'HABLAR', { size: 17, sub: G.Sys.isTouch() ? null : '[E]' });
+    layoutHud();
+    U.button(c, R_PORTAL, 'PORTAL', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.Sys.isTouch() ? null : 'Tab' });
+    if (tg && !D.active()) U.button(c, R_TALK, tg.id === 'portal' ? 'PORTAL' : 'HABLAR', { size: 18, sub: G.Sys.isTouch() ? null : '[E]' });
   }
+  // T-F1-08: con la pantalla ancha (G.OX > 0) la aldea se ve a todo el ancho: franjas laterales con decorado propio (assets_village.js). En los paneles,
+  // franjas como antes (borde estirado + velo: main.js sideFill). Lienzo en coordenadas de lienzo (fuera de G.column). Devuelve true si las ha pintado.
+  A.drawSides = function (c) {
+    if (!G.OX || mode === 'panel' || !(window.Assets && Assets.drawVillageSides)) return false;
+    try { Assets.drawVillageSides(c, Date.now(), { time: A.timeMode }, G.OX, G.W); } catch (e) { return false; }
+    return true;
+  };
 
   // Zona del joystick táctil: mitad izquierda, solo en modo caminar sin diálogo
   A.joyOK = function () { return G.state === 'aldea' && mode === 'walk' && !D.active() && !fade; };

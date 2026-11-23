@@ -920,6 +920,44 @@
     ctx.restore();
   }
 
+  // T-F1-08 (pantalla ancha): la aldea se pinta a TODO el ancho del lienzo. El mapa jugable sigue siendo de 960x540 (colisiones y caminar igual);
+  // las franjas laterales (de 0 a 120 lógicos por lado) prolongan cielo, suelo, luz y viñeta EN ESPEJO respecto al borde del mapa (sin costura) y llevan
+  // decorado propio (árboles, farolas, valla...). Las farolas y la antorcha van en la posición espejo de las del borde, así coinciden con los huecos de luz
+  // del sombreado nocturno reflejado. ctx en coordenadas de LIENZO; ox = desplazamiento de la columna de 960; W = ancho del lienzo. Se dibuja ANTES de la aldea.
+  var SIDE = {
+    l: [{ spr: 'vil_tree2', x: -84, y: 296, anim: 'sway' }, { spr: 'vil_tree1', x: -150, y: 300, anim: 'sway' }, { spr: 'vil_bush', x: -44, y: 336 }, { spr: 'vil_crate', x: -104, y: 372 }, { spr: 'vil_barrel', x: -70, y: 382 },
+      { spr: 'vil_lantern', x: -60, y: 420 }, { spr: 'vil_hay', x: -112, y: 462 }, { spr: 'vil_tree1', x: -96, y: 604, anim: 'sway' }],
+    r: [{ spr: 'vil_tree0', x: 1036, y: 294, anim: 'sway' }, { spr: 'vil_tree2', x: 1112, y: 300, anim: 'sway' }, { spr: 'vil_bush', x: 1006, y: 338 }, { spr: 'vil_torch', x: 976, y: 352, anim: 'fire' },
+      { spr: 'vil_barrel', x: 1078, y: 386 }, { spr: 'vil_lantern', x: 986, y: 440 }, { spr: 'vil_crate', x: 1104, y: 450 }, { spr: 'vil_hay', x: 1046, y: 466 }, { spr: 'vil_tree0', x: 1070, y: 604, anim: 'sway' }]
+  };
+  for (var sf = 1; sf <= 4; sf++) { SIDE.l.push({ spr: 'vil_fence', x: 34 - sf * 56, y: 512 }); SIDE.r.push({ spr: 'vil_fence', x: 34 + (16 + sf) * 56, y: 512 }); }
+  SIDE.l.sort(function (a, b) { return a.y - b.y; }); SIDE.r.sort(function (a, b) { return a.y - b.y; });
+  A.drawVillageSides = function (ctx, t, opts, ox, W) {
+    if (!(ox > 0)) return;
+    opts = opts || {}; t = t || 0;
+    var tm = A.villageTime(opts.time == null ? 'ocaso' : opts.time), k0 = tm < 0.5 ? 0 : 1, kk = tm < 0.5 ? tm * 2 : (tm - 0.5) * 2, T = tintAt(tm);
+    [true, false].forEach(function (left) {
+      ctx.save(); ctx.beginPath(); if (left) ctx.rect(0, 0, ox, 540); else ctx.rect(ox + 960, 0, W - ox - 960, 540); ctx.clip();
+      ctx.translate(ox, 0);
+      var mirror = function () { if (left) ctx.scale(-1, 1); else { ctx.translate(1920, 0); ctx.scale(-1, 1); } };
+      ctx.save(); mirror(); ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(A.sprite('vil_sky', k0), 0, 0);
+      if (kk > 0.01) { ctx.globalAlpha = kk; ctx.drawImage(A.sprite('vil_sky', k0 + 1), 0, 0); ctx.globalAlpha = 1; }
+      ctx.drawImage(A.sprite('vil_ground', 0), 0, 0);
+      ctx.restore();
+      ctx.imageSmoothingEnabled = false;
+      (left ? SIDE.l : SIDE.r).forEach(function (p) {
+        var fr = p.anim ? A.animFrame(p.spr, p.anim, t + (Math.abs(p.x) * 7 % 900)) : A.sprite(p.spr, 0);
+        ctx.drawImage(fr, Math.round(p.x - fr.width / 2), Math.round(p.y - fr.height));
+      });
+      if (opts.light !== false) {
+        if (T[3] > 0.01 && SHADE) { ctx.save(); mirror(); ctx.imageSmoothingEnabled = true; ctx.drawImage(SHADE, 0, 0, 960, 540); ctx.restore(); }   // sombreado del fotograma anterior (mismo tinte, huecos de luz en espejo)
+        if (opts.vignette !== false) { var vg = ctx.createRadialGradient(480, 280, 250, 480, 270, 620); vg.addColorStop(0, 'rgba(20,6,36,0)'); vg.addColorStop(1, 'rgba(20,6,36,0.5)'); ctx.fillStyle = vg; ctx.fillRect(left ? -ox : 960, 0, left ? ox : W - ox - 960, 540); }
+      }
+      ctx.restore();
+    });
+  };
+
   A.drawVillage = function (ctx, t, opts) {
     opts = opts || {}; t = t || 0;
     var tm = A.villageTime(opts.time == null ? 'ocaso' : opts.time), i;
