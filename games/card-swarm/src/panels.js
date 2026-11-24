@@ -1,4 +1,4 @@
-/* panels.js - Paneles de la aldea (columna de 960x540 centrada en el lienzo ancho; T-F1-08: letra 17 y botones de 66 en los rehechos, ver P.minFor): Tablón de Vesper (ofertas rotativas), Mercader Rufo (trueque / vender / comprar),
+/* panels.js - Paneles de la aldea (columna de 960x540 centrada en el lienzo ancho; T-F1-08: letra 17 y botones de 66 en todos, ver P.minFor): Tablón de Vesper (ofertas rotativas), Mercader Rufo (trueque / vender / comprar),
    Portal (mano al salir, anclas, duración, encargo, plato, SALIR), Archivo de Ulalume (colección con filtros por etiqueta, 3 loadouts, anclas con vista previa de combos),
    cocina de Tía Castaña (G.Cook: 1 plato por expedición), logros de Lanudo, Menú y Ajustes.
    La forja de Grum vive en tree.js (P.open('forge') la abre). Interfaz: P.open(nombre), P.update(dt) -> true si hay que cerrar, P.draw(c). */
@@ -80,11 +80,9 @@
     if (cur === 'privacy') return updPriv();
     return true;
   };
-  // T-F1-08 fase 3: letra mínima por panel. Rehechos para 17 (G.MIN_UI = 11 px reales a 740x360): menú, ajustes y sus subpantallas, Portal, Archivo y Forja.
-  // Pendientes de rehacer (siguen con su maquetación de 960 de siempre): Rufo y Manual a 15 (G.MIN_DENSE, 10 px reales); Tablón / Cacería de Vesper, Cocina,
-  // Logros y Herrería a 12 (G.MIN_OLD, como antes de la fase 3).
-  var MINF = { rufo: 'MIN_DENSE', manual: 'MIN_DENSE', vesper: 'MIN_OLD', cook: 'MIN_OLD', logros: 'MIN_OLD', armor: 'MIN_OLD' };
-  P.minFor = function (name) { return G[MINF[name || cur]] || G.MIN_UI; };
+  // T-F1-08 fase 3: letra mínima por panel. Todos rehechos para 17 (G.MIN_UI = 11 px reales a 740x360): menú, ajustes y sus subpantallas, Portal, Archivo,
+  // Forja y, después, Rufo, Manual, Tablón / Cacería de Vesper, Cocina, Logros y Herrería (paginados donde no cabía). Se deja la función para las pruebas.
+  P.minFor = function () { return G.MIN_UI; };
   P.draw = function (c) {
     var mf = G.minFont; G.minFont = P.minFor(cur);
     try { drawCur(c); } finally { G.minFont = mf; }
@@ -111,8 +109,12 @@
 
   // ============================================================= VESPER
   // Filas: el encargo activo (si ya rotó fuera del Tablón) + 3 ofertas rotativas (Quests.board). Teclas 1-4.
-  function qRect(i) { return { x: 20, y: 64 + i * 108, w: 920, h: 100 }; }
-  function qBtn(i) { var r = qRect(i); return { x: r.x + r.w - 196, y: r.y + 22, w: 178, h: 56 }; }
+  // T-F1-08: letra 17 y botones de 66. Pestañas (TABLÓN / CACERÍA / DIARIO) en la fila del título; el Tablón va en páginas de 2 encargos (st.vp)
+  // y la Cacería en 3 páginas (st.hpg: BESTIA, DETALLE, RECOMPENSA Y PRÁCTICA) con CAZAR y PRACTICAR siempre a la vista abajo.
+  var QPER = 2;
+  function qRect(k) { return { x: 14, y: 76 + k * 156, w: 932, h: 150 }; }   // k = puesto en la página
+  function qBtn(k) { var r = qRect(k); return { x: r.x + r.w - 216, y: r.y + r.h - 76, w: 200, h: 66 }; }
+  function qPages() { return Math.max(1, Math.ceil(G.Quests.board().length / QPER)); }
   var TIERC = { 1: '#7dff9a', 2: '#ffd24a', 3: '#ff7a5a' };
   function qAction(i) {
     var Q = G.Quests, d = Q.board()[i], act = Q.active(); if (!d) return;
@@ -124,6 +126,21 @@
     } else if (act) say('Ya tienes un encargo activo. Entrégalo o abandónalo.');
     else { Q.accept(d.id); say(d.target ? 'Encargo aceptado: ' + d.label + ' aparece antes y más a menudo.' : 'Encargo aceptado: ' + d.name + '.'); G.sfx('card_select', { vol: 0.7 }); }
   }
+  // ---- paginador común de los paneles rehechos (fila inferior, a la izquierda): ANTERIOR  n/m  SIGUIENTE
+  var R_PGP = { x: 14, y: 468, w: 150, h: 66 }, R_PGN = { x: 250, y: 468, w: 150, h: 66 };
+  function pagerDraw(c, pg, n) {
+    if (n < 2) return;
+    U.button(c, R_PGP, 'ANTERIOR', { size: 17, off: pg <= 0, color: '#3a2f48', hot: '#5a4a76', border: '#8a7aa6' });
+    U.button(c, R_PGN, 'SIGUIENTE', { size: 17, off: pg >= n - 1, color: '#3a2f48', hot: '#5a4a76', border: '#8a7aa6' });
+    G.txt(c, (pg + 1) + '/' + n, 207, 501, 17, '#c8c0d8', 'center');
+  }
+  function pagerUpd(pg, n) {
+    if (n < 2) return 0;
+    if ((onR(R_PGP) || inp.hit('PageUp')) && pg > 0) { pg--; G.sfx('flip', { vol: 0.4 }); }
+    if ((onR(R_PGN) || inp.hit('PageDown')) && pg < n - 1) { pg++; G.sfx('flip', { vol: 0.4 }); }
+    return G.clamp(pg, 0, n - 1);
+  }
+  function tw(c, s, size) { c.font = 'bold ' + G.fs(size) + 'px "Courier New", monospace'; return c.measureText(s).width; }   // ancho real (con la letra mínima)
   // ---- CACERÍA (J3, DESIGN 4.2): encargo de Vesper por jefe y Peligro desbloqueado; PRACTICAR = sin riesgo ni recompensas, con HP x0,5
   function huntAvail(id) { return (SV().bossKills[id] || 0) > 0 || (id === 'cenizar' && G.Save.craterOpen()); }   // Cenizar: práctica y cacería desde que se abre el Cráter
   P.huntAvailable = function () { return G.Save.BOSSES.some(huntAvail); };
@@ -132,23 +149,27 @@
     if (!huntAvail(B[st.hb])) { var f = B.filter(huntAvail)[0]; st.hb = f ? B.indexOf(f) : 0; }
     st.hp = G.clamp(st.hp || 1, 1, G.Save.pelMax(B[st.hb])); st.hph = Math.min(st.hph, phN());
   }
-  function tabRect(i) { return { x: 150 + i * 138, y: 2, w: 130, h: 48 }; }
-  function hbRect(i) { return { x: 20 + i * 152, y: 56, w: 144, h: 52 }; }
-  function hpRect(i) { return { x: 20 + i * 64, y: 116, w: 58, h: 38 }; }
-  var R_HUNT = { x: 648, y: 168, w: 280, h: 62 }, R_PRAC = { x: 648, y: 396, w: 280, h: 56 };
+  function tabRect(i) { return { x: 112 + i * 164, y: 0, w: 160, h: 66 }; }
+  function hbRect(i) { return { x: 14 + (i % 3) * 312, y: 108 + Math.floor(i / 3) * 72, w: 304, h: 66 }; }
+  function hpRect(i) { return { x: 14 + i * 74, y: 284, w: 66, h: 66 }; }
+  var R_HUNT = { x: 686, y: 468, w: 260, h: 66 }, R_PRAC = { x: 416, y: 468, w: 256, h: 66 }, HPAGES = 3;
   function phN() { return G.Boss.DEFS[G.Save.BOSSES[st.hb || 0]].phases.length; }   // P4: Yarlak tiene 4 fases (Practicar elige la inicial)
-  function phRect(i) { return phN() > 4 ? { x: 648 + i * 41, y: 338, w: 39, h: 48 } : phN() > 3 ? { x: 648 + i * 71, y: 338, w: 68, h: 48 } : { x: 648 + i * 94, y: 338, w: 90, h: 48 }; }
+  function phRect(i) { var w = phN() > 4 ? 66 : 120; return { x: 14 + i * (w + 8), y: 242, w: w, h: 66 }; }
+  P.vesperRects = function () { return { tab: tabRect, q: qRect, qBtn: qBtn, prev: R_PGP, next: R_PGN, hb: hbRect, hp: hpRect, ph: phRect, hunt: R_HUNT, prac: R_PRAC }; };   // pruebas
+  P.vesperPage = function (n) { st.vp = n; };
+  P.huntPage = function (n) { st.hpg = n; };
   function startHunt(practice) {
     var id = G.Save.BOSSES[st.hb]; if (!huntAvail(id)) return;
     G.launchReq = { mode: practice ? 'practice' : 'hunt', boss: id, peligro: practice ? 1 : st.hp, phase: practice ? st.hph : 0 };
     G.practiceHand = null; G.Base.launch();
   }
   function updHunt() {
-    var B = G.Save.BOSSES, i;
-    for (i = 0; i < B.length; i++) if (onR(hbRect(i))) { if (huntAvail(B[i])) { st.hb = i; huntFix(); G.sfx('flip', { vol: 0.4 }); } else say('Aún no has derrotado a ' + G.Boss.DEFS[B[i]].name + ': véncelo en una expedición.'); }
+    var B = G.Save.BOSSES, i, hp = st.hpg || 0;
+    st.hpg = hp = pagerUpd(hp, HPAGES);
+    if (hp === 0) for (i = 0; i < B.length; i++) if (onR(hbRect(i))) { if (huntAvail(B[i])) { st.hb = i; huntFix(); G.sfx('flip', { vol: 0.4 }); } else say('Aún no has derrotado a ' + G.Boss.DEFS[B[i]].name + ': véncelo en una expedición.'); }
     var id = B[st.hb];
-    for (i = 0; i < 5; i++) if (onR(hpRect(i))) { if (i + 1 <= G.Save.pelMax(id)) { st.hp = i + 1; G.sfx('flip', { vol: 0.4 }); } else say('Peligro ' + G.Boss.ROMAN[i + 1] + ' bloqueado: véncelo antes en ' + G.Boss.ROMAN[i] + '.'); }
-    for (i = 0; i < phN(); i++) if (onR(phRect(i))) { st.hph = i + 1; G.sfx('flip', { vol: 0.4 }); }
+    if (hp === 0) for (i = 0; i < 5; i++) if (onR(hpRect(i))) { if (i + 1 <= G.Save.pelMax(id)) { st.hp = i + 1; G.sfx('flip', { vol: 0.4 }); } else say('Peligro ' + G.Boss.ROMAN[i + 1] + ' bloqueado: véncelo antes en ' + G.Boss.ROMAN[i] + '.'); }
+    if (hp === 2) for (i = 0; i < phN(); i++) if (onR(phRect(i))) { st.hph = i + 1; G.sfx('flip', { vol: 0.4 }); }
     if (onR(R_HUNT) || inp.hit('KeyF')) startHunt(false);
     if (onR(R_PRAC) || inp.hit('KeyP')) startHunt(true);
     if (inp.hit('KeyQ')) { st.hp = Math.max(1, st.hp - 1); } if (inp.hit('KeyE')) { st.hp = Math.min(G.Save.pelMax(id), st.hp + 1); }
@@ -156,85 +177,99 @@
   }
   var TAGC = { fire: '#ff7a2a', steel: '#b8c0cc', poison: '#7be34a', ice: '#6ac8ff', lightning: '#ffe45a', blood: '#d02048' };
   function drawHunt(c) {
-    var B = G.Save.BOSSES, S = SV(), Q = G.Quests, i;
-    G.txt(c, '"Hay una bestia que merece la pena. ¿Vamos?"', 720, 135, 12, '#ffd0a0', 'center');
-    for (i = 0; i < B.length; i++) {
-      var D0 = G.Boss.DEFS[B[i]], av = huntAvail(B[i]);
-      U.button(c, hbRect(i), av ? D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase() : '? ' + D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase(), { size: 15, off: !av, color: st.hb === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.hb === i ? '#bfeaff' : '#6a5a80', sub: av ? 'Peligro hasta ' + G.Boss.ROMAN[G.Save.pelMax(B[i])] : 'vence al jefe 1 vez' });
-    }
+    var B = G.Save.BOSSES, S = SV(), Q = G.Quests, i, hp = st.hpg || 0;
     var id = B[st.hb], D = G.Boss.DEFS[id], av2 = huntAvail(id), PD = G.Boss.PELIGRO[st.hp], pmax = G.Save.pelMax(id);
-    G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO'), 345, 135, 11, '#9a8fb0', 'left');
-    for (i = 0; i < 5; i++) { var op = i + 1 <= pmax; U.button(c, hpRect(i), op ? G.Boss.ROMAN[i + 1] : '?', { size: 15, off: !op, color: st.hp === i + 1 ? '#a8801a' : '#2c2438', hot: '#d8a82a', border: st.hp === i + 1 ? '#ffffff' : '#6a5a80' }); }
-    if (!av2) { G.txt(c, 'Derrota a este jefe en una expedición para desbloquear su cacería.', 20, 190, 14, '#ff9a8a', 'left'); return; }
-    U.panel(c, 20, 162, 612, 336, { border: '#6a4a30' });
-    G.txt(c, D.name.toUpperCase(), 36, 184, 20, '#ffd27a', 'left');
-    G.txt(c, D.title + '   -   Peligro ' + G.Boss.ROMAN[st.hp] + ': HP x' + PD.hp.toFixed(2).replace('.', ',') + ' x0,75 (cacería), daño +' + Math.round((PD.dmg - 1) * 100) + ' %', 36, 206, 12, '#c8b8e8', 'left');
-    G.txt(c, 'Duración ' + L.dur(SV().len).name + ' (' + SV().len + ' min, la del Portal): HP jefe x' + (G.Boss.durMul(SV().len) * L.dur(SV().len).bossHp).toFixed(2).replace('.', ',') + ', PF x' + String(L.dur(SV().len).pf).replace('.', ','), 36, 220, 11, '#9dffb4', 'left');
-    G.txt(c, 'DEBILIDADES', 36, 236, 11, '#9a8fb0', 'left');
-    var x = 36;
-    var WV = (G.Boss.weakView && G.Boss.weakView(id)) || { weak: D.weak, resist: D.resist };
-    WV.weak.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, TAGC[w.tag] || '#9dffb4', 'left'); x += (t.length + 6) * 8.2 + 14; });
-    WV.resist.forEach(function (w) { var t = Q.TAGN[w.tag] || w.tag; G.txt(c, t + ' x' + w.mul, x, 250, 12, '#8a8a98', 'left'); x += (t.length + 6) * 8.2 + 14; });
-    G.txt(c, 'PARTES ROMPIBLES  (cada una suelta su trofeo' + (PD.troph > 1 ? ' x2' : '') + ')', 36, 276, 11, '#9a8fb0', 'left');
-    Object.keys(D.parts).forEach(function (k, j) {
-      var np6 = Object.keys(D.parts).length > 3, pd = D.parts[k], tr = G.Boss.TROPHY[pd.trophy], y = np6 ? 292 + j * 16 : 298 + j * 24;
-      try { c.drawImage(Assets.sprite(G.hasSpr(tr.spr) ? tr.spr : 'trophy_pastor_horn', 0), 36, y - (np6 ? 7 : 10), np6 ? 14 : 20, np6 ? 14 : 20); } catch (e0) { /* sin icono */ }
-      G.txt(c, pd.name + '  ->  ' + tr.name + '  (' + (pd.pct * 100).toFixed(pd.pct * 100 % 1 ? 1 : 0).replace('.', ',') + ' % de la vida' + (pd.phase ? ', fase ' + G.Boss.ROMAN[pd.phase] : '') + ')', np6 ? 58 : 64, y, np6 ? 11 : 12, '#ffe9a0', 'left');
-    });
-    var bmin = Math.round(D.brasas * PD.brasas), bmax = Math.round((D.brasas + D.brasasPart * 3) * PD.brasas), pw = (S.pelWins[id] || {})[st.hp] || 0, hr = (S.hunts[id] || {})[st.hp] || { wins: 0, tries: 0, best: 0 }, pr = S.practice[id] || { tries: 0, wins: 0 };
-    G.txt(c, 'RECOMPENSA', 36, 380, 11, '#9a8fb0', 'left');
-    G.txt(c, bmin + '-' + bmax + ' Brasas, trofeos de las partes rotas, partes del jefe x' + PD.gmul.toFixed(2).replace('.', ','), 36, 398, 12, '#ffe9a0', 'left');
-    G.txt(c, 'PF: ' + (pw > 0 ? 'ya cobrados en este Peligro (sin farmeo)' : '+' + Math.round((D.pf + PD.pfx) * L.dur(SV().len).pf) + ' la primera vez') + '   -   sin Esencia segura, sin hordas', 36, 416, 12, pw > 0 ? '#9a8fb0' : '#ffd24a', 'left');
-    G.txt(c, 'Cacería en Peligro ' + G.Boss.ROMAN[st.hp] + ': ' + hr.wins + ' victorias / ' + hr.tries + ' intentos' + (hr.best ? '   mejor ' + G.fmtTime(hr.best * 1000) : ''), 36, 444, 12, '#9dffb4', 'left');
-    G.txt(c, 'Práctica: ' + pr.wins + ' victorias / ' + pr.tries + ' intentos', 36, 462, 12, '#9dffb4', 'left');
-    G.txt(c, 'Preparación: 6 ofertas de carta seguidas; luego entra la bestia.', 36, 484, 11, '#c8b8e8', 'left');
-    U.panel(c, 640, 162, 296, 336, { border: '#4a3a66' });
-    U.button(c, R_HUNT, 'CAZAR', { size: 26, sub: 'F  -  Peligro ' + G.Boss.ROMAN[st.hp], color: '#c4601c' });
-    G.txt(c, 'Sin hordas: solo la bestia y sus adds,', 650, 252, 11, '#d8cfe8', 'left');
-    G.txt(c, 'más 3 gusanos de limpieza cada 25 s.', 650, 267, 11, '#d8cfe8', 'left');
-    G.txt(c, 'PRACTICAR  (sin riesgo, HP x0,5, sin Peligro)', 650, 318, 11, '#9dffb4', 'left');
-    for (i = 0; i < phN(); i++) U.button(c, phRect(i), phN() > 4 ? 'F' + (i + 1) : 'FASE ' + G.Boss.ROMAN[i + 1], { size: phN() > 4 ? 12 : 13, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
-    G.txt(c, 'Empieza en la fase elegida. Reinicio rápido con R.', 650, 396 - 6, 10, '#9a8fb0', 'left');
-    U.button(c, R_PRAC, 'PRACTICAR', { size: 20, sub: 'P  -  fase ' + G.Boss.ROMAN[st.hph] + ', intento ' + (pr.tries + 1), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    if (!av2) hp = 0;
+    if (hp === 0) {   // ---- BESTIA: jefe, Peligro y reglas de la cacería
+      G.txt(c, '"Hay una bestia que merece la pena. ¿Vamos?"', 14, 90, 17, '#ffd0a0', 'left');
+      for (i = 0; i < B.length; i++) {
+        var D0 = G.Boss.DEFS[B[i]], av = huntAvail(B[i]);
+        U.button(c, hbRect(i), av ? D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase() : '? ' + D0.name.replace(/^El |^La |, .*$/g, '').split(' ')[0].toUpperCase(), { size: 17, off: !av, color: st.hb === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.hb === i ? '#bfeaff' : '#6a5a80', sub: av ? 'Peligro hasta ' + G.Boss.ROMAN[G.Save.pelMax(B[i])] : 'vence al jefe 1 vez' });
+      }
+      if (!av2) { U.wrap(c, 'Derrota a este jefe en una expedición para desbloquear su cacería.', 920, 17).forEach(function (l, k) { G.txt(c, l, 14, 276 + k * 22, 17, '#ff9a8a', 'left'); }); return; }
+      G.txt(c, G.hint('PELIGRO  (Q/E)', 'PELIGRO'), 14, 268, 17, '#9a8fb0', 'left');
+      for (i = 0; i < 5; i++) { var op = i + 1 <= pmax; U.button(c, hpRect(i), op ? G.Boss.ROMAN[i + 1] : '?', { size: 17, off: !op, color: st.hp === i + 1 ? '#a8801a' : '#2c2438', hot: '#d8a82a', border: st.hp === i + 1 ? '#ffffff' : '#6a5a80' }); }
+      var py = 296;
+      U.wrap(c, 'Peligro ' + G.Boss.ROMAN[st.hp] + ': HP x' + PD.hp.toFixed(2).replace('.', ',') + ' x0,75 (cacería), daño +' + Math.round((PD.dmg - 1) * 100) + ' %', 540, 17).forEach(function (l) { G.txt(c, l, 400, py, 17, '#c8b8e8', 'left'); py += 22; });
+      U.wrap(c, 'Duración ' + L.dur(SV().len).name + ' (' + SV().len + ' min, la del Portal): HP jefe x' + (G.Boss.durMul(SV().len) * L.dur(SV().len).bossHp).toFixed(2).replace('.', ',') + ', PF x' + String(L.dur(SV().len).pf).replace('.', ','), 540, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 400, py, 17, '#9dffb4', 'left'); py += 22; });
+      G.txt(c, 'Sin hordas: solo la bestia y sus adds,', 14, 390, 17, '#d8cfe8', 'left');
+      G.txt(c, 'más 3 gusanos de limpieza cada 25 s.', 14, 412, 17, '#d8cfe8', 'left');
+      G.txt(c, 'Preparación: 6 ofertas de carta seguidas; luego entra la bestia.', 14, 440, 17, '#c8b8e8', 'left');
+    } else if (hp === 1) {   // ---- DETALLE: debilidades y partes rompibles
+      G.txt(c, D.name.toUpperCase(), 14, 92, 20, '#ffd27a', 'left');
+      G.txt(c, D.title, 14, 118, 17, '#c8b8e8', 'left');
+      G.txt(c, 'DEBILIDADES', 14, 150, 17, '#9a8fb0', 'left');
+      var x = 14;
+      var WV = (G.Boss.weakView && G.Boss.weakView(id)) || { weak: D.weak, resist: D.resist };
+      WV.weak.forEach(function (w) { var t = (Q.TAGN[w.tag] || w.tag) + ' x' + w.mul; G.txt(c, t, x, 174, 17, TAGC[w.tag] || '#9dffb4', 'left'); x += tw(c, t, 17) + 24; });
+      WV.resist.forEach(function (w) { var t = (Q.TAGN[w.tag] || w.tag) + ' x' + w.mul; G.txt(c, t, x, 174, 17, '#8a8a98', 'left'); x += tw(c, t, 17) + 24; });
+      G.txt(c, 'PARTES ROMPIBLES  (cada una suelta su trofeo' + (PD.troph > 1 ? ' x2' : '') + ')', 14, 206, 17, '#9a8fb0', 'left');
+      Object.keys(D.parts).forEach(function (k, j) {
+        var pd = D.parts[k], tr = G.Boss.TROPHY[pd.trophy], y = 232 + j * 26;
+        try { c.drawImage(Assets.sprite(G.hasSpr(tr.spr) ? tr.spr : 'trophy_pastor_horn', 0), 14, y - 11, 22, 22); } catch (e0) { /* sin icono */ }
+        G.txt(c, pd.name + '  ->  ' + tr.name + '  (' + (pd.pct * 100).toFixed(pd.pct * 100 % 1 ? 1 : 0).replace('.', ',') + ' % de la vida' + (pd.phase ? ', fase ' + G.Boss.ROMAN[pd.phase] : '') + ')', 46, y, 17, '#ffe9a0', 'left');
+      });
+    } else {   // ---- RECOMPENSA Y PRÁCTICA
+      var bmin = Math.round(D.brasas * PD.brasas), bmax = Math.round((D.brasas + D.brasasPart * 3) * PD.brasas), pw = (S.pelWins[id] || {})[st.hp] || 0, hr = (S.hunts[id] || {})[st.hp] || { wins: 0, tries: 0, best: 0 }, pr = S.practice[id] || { tries: 0, wins: 0 };
+      var vE = !G.Res || G.Res.visible('esencia');   // T-F1-07: sin nombrar la Esencia antes de presentarla
+      G.txt(c, 'RECOMPENSA', 14, 90, 17, '#9a8fb0', 'left');
+      G.txt(c, bmin + '-' + bmax + ' Brasas, trofeos de las partes rotas, partes del jefe x' + PD.gmul.toFixed(2).replace('.', ','), 14, 114, 17, '#ffe9a0', 'left');
+      G.txt(c, 'PF: ' + (pw > 0 ? 'ya cobrados en este Peligro (sin farmeo)' : '+' + Math.round((D.pf + PD.pfx) * L.dur(SV().len).pf) + ' la primera vez') + (vE ? '   -   sin Esencia segura, sin hordas' : '   -   sin hordas'), 14, 136, 17, pw > 0 ? '#9a8fb0' : '#ffd24a', 'left');
+      G.txt(c, 'Cacería en Peligro ' + G.Boss.ROMAN[st.hp] + ': ' + hr.wins + ' victorias / ' + hr.tries + ' intentos' + (hr.best ? '   mejor ' + G.fmtTime(hr.best * 1000) : ''), 14, 164, 17, '#9dffb4', 'left');
+      G.txt(c, 'Práctica: ' + pr.wins + ' victorias / ' + pr.tries + ' intentos', 14, 186, 17, '#9dffb4', 'left');
+      G.txt(c, 'PRACTICAR  (sin riesgo, HP x0,5, sin Peligro)', 14, 222, 17, '#9dffb4', 'left');
+      for (i = 0; i < phN(); i++) U.button(c, phRect(i), phN() > 4 ? 'F' + (i + 1) : 'FASE ' + G.Boss.ROMAN[i + 1], { size: 17, color: st.hph === i + 1 ? '#2a8a4a' : '#2c2438', hot: '#3aba66', border: '#9dffb4' });
+      G.txt(c, 'Empieza en la fase elegida. Reinicio rápido con R.', 14, 332, 17, '#9a8fb0', 'left');
+    }
+    pagerDraw(c, hp, HPAGES);
+    U.button(c, R_PRAC, 'PRACTICAR', { size: 20, sub: 'P  -  fase ' + G.Boss.ROMAN[st.hph] + ', intento ' + ((S.practice[id] || { tries: 0 }).tries + 1), color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+    U.button(c, R_HUNT, 'CAZAR', { size: 22, sub: 'F  -  Peligro ' + G.Boss.ROMAN[st.hp], color: '#c4601c' });
   }
   function updVesper() {
     for (var ti = 0; ti < 2; ti++) if (onR(tabRect(ti))) { st.vt = ti; huntFix(); G.sfx('flip', { vol: 0.4 }); }
     if (G.Obj && G.Obj.isOpen() && onR(tabRect(2))) { P.open('diario'); G.sfx('flip', { vol: 0.4 }); return false; }   // v10: objetivos diarios
     if (st.vt === 1) return updHunt();
-    var n = G.Quests.board().length;
-    for (var i = 0; i < n; i++) if (inp.hit('Digit' + (i + 1)) || onR(qBtn(i))) qAction(i);
+    var n = G.Quests.board().length, pg;
+    st.vp = pg = pagerUpd(Math.min(st.vp || 0, qPages() - 1), qPages());
+    for (var i = 0; i < n; i++) if (inp.hit('Digit' + (i + 1)) || (Math.floor(i / QPER) === pg && onR(qBtn(i % QPER)))) qAction(i);
     return false;
   }
   function drawVesper(c) {
-    var Q = G.Quests, act = Q.active(), list = Q.board();
-    bg(c, 'VESPER'); header(c, 560); G.Tree.pfIcon(c, 720, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 738, 24, 16, '#ffd24a', 'left');
-    ['TABLÓN', 'CACERÍA'].forEach(function (t, i) { U.button(c, tabRect(i), t, { size: 15, color: st.vt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.vt === i ? '#bfeaff' : '#6a5a80', sub: i === 1 && !P.huntAvailable() ? 'vence a un jefe' : null }); });
-    if (G.Obj && G.Obj.isOpen()) U.button(c, tabRect(2), G.Obj.t('tab'), { size: 15, color: '#2c2438', hot: '#3a8ad0', border: G.Obj.unseen() ? '#ffd24a' : '#6a5a80' });
+    var Q = G.Quests, act = Q.active(), list = Q.board(), np = qPages(), pg = Math.min(st.vp || 0, np - 1);
+    bg(c, 'VESPER'); header(c, 612); G.Tree.pfIcon(c, 776, 24, 10); G.txt(c, 'PF ' + G.Tree.pfFree(), 794, 24, 17, '#ffd24a', 'left');
+    ['TABLÓN', 'CACERÍA'].forEach(function (t, i) { U.button(c, tabRect(i), t, { size: 17, color: st.vt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.vt === i ? '#bfeaff' : '#6a5a80', sub: i === 1 && !P.huntAvailable() ? 'vence a un jefe' : null }); });
+    if (G.Obj && G.Obj.isOpen()) U.button(c, tabRect(2), G.Obj.t('tab'), { size: 17, color: '#2c2438', hot: '#3a8ad0', border: G.Obj.unseen() ? '#ffd24a' : '#6a5a80' });
     if (st.vt === 1) { drawHunt(c); return; }
     list.forEach(function (d, i) {
-      var r = qRect(i), b = qBtn(i), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
+      if (Math.floor(i / QPER) !== pg) return;
+      var k = i % QPER, r = qRect(k), b = qBtn(k), isA = act && act.id === d.id, ready = isA && Q.isReady(), prog = Q.progress(d.id), offered = Q.offers().indexOf(d) >= 0;
       U.panel(c, r.x, r.y, r.w, r.h, { border: ready ? '#7dff9a' : isA ? '#ffd24a' : '#4a3a66' });
-      G.txt(c, G.hint('[' + (i + 1) + '] ', '') + d.name, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
-      var tx = r.x + 24 + Math.min(430, d.name.length * 11.6 + 40);
-      G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 12, TIERC[d.tier], 'left');
-      if (d.tutorial) G.txt(c, 'TUTORIAL', tx + 80, r.y + 20, 12, '#9dffb4', 'left');
-      if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx + (d.tutorial ? 170 : 80), r.y + 20, 12, '#b4a8c8', 'left');
-      var dl = U.wrap(c, d.desc, 700, 12);   // P7: las descripciones largas (Tundra, Panal, Cráter y varias anteriores) se salían por debajo del botón: 2 líneas de 11 px
-      dl.slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 16, r.y + 40 + k * 16, 12, '#d8cfe8', 'left'); });
-      G.txt(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), r.x + 16, r.y + 76, 12, '#ffe9a0', 'left');
-      var bw = 480; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, r.y + 86, bw, 8);
-      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, r.y + 86, bw * G.clamp(prog / d.goal, 0, 1), 9);
-      G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 28, r.y + 90, 12, '#d8cfe8', 'left');
+      var nm = G.hint('[' + (i + 1) + '] ', '') + d.name, tx = r.x + 16 + tw(c, nm, 18) + 20;
+      G.txt(c, nm, r.x + 16, r.y + 20, 18, '#ffd27a', 'left');
+      G.txt(c, Q.tierName(d.tier), tx, r.y + 20, 17, TIERC[d.tier], 'left'); tx += tw(c, Q.tierName(d.tier), 17) + 16;
+      if (d.tutorial) { G.txt(c, 'TUTORIAL', tx, r.y + 20, 17, '#9dffb4', 'left'); tx += tw(c, 'TUTORIAL', 17) + 16; }
+      if (isA && !offered) G.txt(c, 'ACTIVO (ya rotó del Tablón)', tx, r.y + 20, 17, '#b4a8c8', 'left');
+      var yy = r.y + 44;
+      U.wrap(c, d.desc, 690, 17).slice(0, 2).forEach(function (ln) { G.txt(c, ln, r.x + 16, yy, 17, '#d8cfe8', 'left'); yy += 22; });
+      U.wrap(c, 'Recompensa: ' + Q.rewardText(d) + (Q.times(d.id) ? '   (hecho ' + Q.times(d.id) + 'x: partes y Brasas a la mitad)' : ''), 690, 17).slice(0, 2).forEach(function (ln) { G.txt(c, ln, r.x + 16, yy, 17, '#ffe9a0', 'left'); yy += 22; });
+      var bw = 360; c.fillStyle = '#1a1226'; c.fillRect(r.x + 16, yy - 4, bw, 8);
+      c.fillStyle = ready ? '#7dff9a' : '#ff9a3c'; c.fillRect(r.x + 16, yy - 4, bw * G.clamp(prog / d.goal, 0, 1), 9);
+      G.txt(c, isA ? Q.progText(d) : 'no activo', r.x + bw + 30, yy, 17, '#d8cfe8', 'left');
       var label = ready ? 'ENTREGAR' : isA ? (confirm === 'q' + i ? 'SEGURO?' : 'ABANDONAR') : 'ACEPTAR';
-      U.button(c, b, label, { size: 16, off: !isA && !!act, color: ready ? '#2a8a4a' : isA ? '#7a3a3a' : '#c4601c', hot: ready ? '#3aba66' : '#ff9a3c' });
+      U.button(c, b, label, { size: 18, off: !isA && !!act, color: ready ? '#2a8a4a' : isA ? '#7a3a3a' : '#c4601c', hot: ready ? '#3aba66' : '#ff9a3c' });
     });
-    U.wrap(c, 'El Tablón cambia cada día y tras cada expedición. Un encargo a la vez; el progreso se conserva. El enemigo objetivo pesa x2,5 y entra antes (máx. 2:30).', 920, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 20, 502 + k * 16, 12, '#b4a8c8', 'left'); });
+    U.wrap(c, 'El Tablón cambia cada día y tras cada expedición. Un encargo a la vez; el progreso se conserva. El enemigo objetivo pesa x2,5 y entra antes (máx. 2:30).', 920, 17).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, 14, 406 + k * 22, 17, '#b4a8c8', 'left'); });
+    pagerDraw(c, pg, np);
   }
 
   // ============================================================= RUFO
+  // T-F1-08: letra 17 y botones de 66. Pestañas en la fila del título; casillas de parte de 110x92 (nombre, icono y cantidad, nota abajo).
   var RT = ['TRUEQUE', 'VENDER', 'COMPRAR'];
-  function rtTab(i) { return { x: 14 + i * 156, y: 50, w: 148, h: 44 }; }
-  function tile(i, y) { return { x: 14 + i * 117, y: y, w: 110, h: 72 }; }
+  var TY = { give: 130, get: 260, sell: 112, buy: 376 };   // fila de casillas de cada vista
+  function rtTab(i) { return { x: 268 + i * 146, y: 0, w: 142, h: 66 }; }
+  function tile(i, y) { return { x: 14 + i * 117, y: y, w: 110, h: 92 }; }
+  P.rufoTab = function (n) { st.rt = n; };
+  P.rufoRects = function () { return { tab: rtTab, tile: tile, ty: TY, trade: R_TRADE, qty: R_QTY, item: itemBtn }; };   // pruebas
   function giveN(id) { return id === 'thread' ? L.TRADE.hebraRatio : L.TRADE.ratio; }
   function doTrade() {
     var S = SV(), n = giveN(st.give);
@@ -265,9 +300,9 @@
     }
     G.Save.save(); G.sfx('pickup', { vol: 0.6 });
   }
-  var R_TRADE = { x: 250, y: 380, w: 460, h: 60 }, R_QTY = { x: 14, y: 400, w: 220, h: 48 };
-  var R_ITEM = function (i) { return { x: 14, y: 112 + i * 74, w: 920, h: 68 }; };
-  function itemBtn(i) { var r = R_ITEM(i); return { x: r.x + r.w - 190, y: r.y + 7, w: 176, h: 54 }; }
+  var R_TRADE = { x: 250, y: 372, w: 460, h: 66 }, R_QTY = { x: 14, y: 224, w: 260, h: 66 };
+  var R_ITEM = function (i) { return { x: 14, y: 106 + i * 80, w: 932, h: 74 }; };
+  function itemBtn(i) { var r = R_ITEM(i); return { x: r.x + r.w - 206, y: r.y + 4, w: 196, h: 66 }; }
   function updRufo() {
     var i, cm = common(), m = inp.mouse;
     for (i = 0; i < 3; i++) if (onR(rtTab(i))) { st.rt = i; G.sfx('flip', { vol: 0.4 }); }
@@ -275,15 +310,15 @@
     if (inp.hit('KeyE')) st.rt = (st.rt + 1) % 3;
     if (st.rt === 0) {
       for (i = 0; i < cm.length; i++) {
-        if (onR(tile(i, 150))) { st.give = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
-        else if (onR(tile(i, 272))) { st.get = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
+        if (onR(tile(i, TY.give))) { st.give = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
+        else if (onR(tile(i, TY.get))) { st.get = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
       }
       if (onR(R_TRADE) || inp.hit('KeyF')) doTrade();
     } else if (st.rt === 1) {
-      for (i = 0; i < cm.length; i++) if (onR(tile(i, 150))) doSell(cm[i].id);
+      for (i = 0; i < cm.length; i++) if (onR(tile(i, TY.sell))) doSell(cm[i].id);
       if (onR(R_QTY)) { st.qty = st.qty === 1 ? 5 : st.qty === 5 ? 0 : 1; G.sfx('flip', { vol: 0.4 }); }
     } else {
-      for (i = 0; i < cm.length; i++) if (onR(tile(i, 352))) { st.buy = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
+      for (i = 0; i < cm.length; i++) if (onR(tile(i, TY.buy))) { st.buy = cm[i].id; G.sfx('flip', { vol: 0.4 }); }
       var kinds = ['tonic', 'magnet', 'part'];
       for (i = 0; i < 3; i++) if (onR(itemBtn(i))) doBuy(kinds[i]);
     }
@@ -294,46 +329,42 @@
     var n = SV().parts[p.id] || 0;
     c.fillStyle = sel ? '#3a2a5a' : '#1a1226'; c.fillRect(r.x, r.y, r.w, r.h);
     c.strokeStyle = sel ? '#ffe9a0' : '#4a3a66'; c.lineWidth = sel ? 4 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-    U.part(c, p.id, r.x + 24, r.y + 28, 14);
-    G.txt(c, p.short, r.x + 46, r.y + 20, 12, '#d8cfe8', 'left'); G.txt(c, 'x' + n, r.x + 46, r.y + 40, 17, n ? '#fff' : '#6a5f78', 'left');
-    if (extra) G.txt(c, extra, r.x + r.w / 2, r.y + r.h - 9, 11, '#ffe9a0', 'center');
+    G.txt(c, p.short, r.x + r.w / 2, r.y + 16, 17, '#d8cfe8', 'center');
+    U.part(c, p.id, r.x + 24, r.y + 45, 13); G.txt(c, 'x' + n, r.x + 44, r.y + 46, 17, n ? '#fff' : '#6a5f78', 'left');
+    if (extra) G.txt(c, extra, r.x + r.w / 2, r.y + 74, 17, '#ffe9a0', 'center');
   }
   function drawRufo(c) {
     var S = SV(), cm = common(), i;
-    bg(c, 'MERCADER  -  Rufo'); header(c, 560);
-    for (i = 0; i < 3; i++) {
-      var tb = rtTab(i), on = st.rt === i;
-      c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(tb.x, tb.y, tb.w, tb.h); c.strokeStyle = on ? '#ffd27a' : '#3a2f48'; c.lineWidth = on ? 4 : 2; c.strokeRect(tb.x + 1, tb.y + 1, tb.w - 2, tb.h - 2);
-      G.txt(c, RT[i], tb.x + tb.w / 2, tb.y + tb.h / 2, 15, on ? '#ffd27a' : '#8a7f96', 'center');
-    }
+    bg(c, 'MERCADER  -  Rufo'); header(c, 718);
+    for (i = 0; i < 3; i++) U.button(c, rtTab(i), RT[i], { size: 17, color: st.rt === i ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.rt === i ? '#bfeaff' : '#6a5a80' });
     if (st.rt === 0) {
       var left = L.TRADE.cupo - (S.shop.trade || 0), n = giveN(st.give);
-      G.txt(c, 'Cupo de trueques esta salida: ' + left + ' de ' + L.TRADE.cupo + '   (se reinicia al volver de una expedición)', 14, 121, 12, left ? '#9dffb4' : '#ff8a8a', 'left');
-      G.txt(c, 'ENTREGAS  (3 por 1; la Hebra, 6 por 1)', 14, 140, 12, '#9a8fb0', 'left');
-      cm.forEach(function (p, k) { partTile(c, p, tile(k, 150), p.id === st.give, p.id === 'thread' ? '6 por 1' : '3 por 1'); });
-      G.txt(c, 'RECIBES 1 DE...', 14, 264, 12, '#9a8fb0', 'left');
-      cm.forEach(function (p, k) { partTile(c, p, tile(k, 272), p.id === st.get, ''); });
+      G.txt(c, 'Cupo de trueques esta salida: ' + left + ' de ' + L.TRADE.cupo + '   (se reinicia al volver de una expedición)', 14, 90, 17, left ? '#9dffb4' : '#ff8a8a', 'left');
+      G.txt(c, 'ENTREGAS  (3 por 1; la Hebra, 6 por 1)', 14, 116, 17, '#9a8fb0', 'left');
+      cm.forEach(function (p, k) { partTile(c, p, tile(k, TY.give), p.id === st.give, p.id === 'thread' ? '6 por 1' : '3 por 1'); });
+      G.txt(c, 'RECIBES 1 DE...', 14, 246, 17, '#9a8fb0', 'left');
+      cm.forEach(function (p, k) { partTile(c, p, tile(k, TY.get), p.id === st.get, ''); });
       var ok = st.give !== st.get && left > 0 && (S.parts[st.give] || 0) >= n;
       U.button(c, R_TRADE, 'TRUEQUE: ' + n + ' ' + L.part(st.give).short + ' > 1 ' + L.part(st.get).short, { size: 17, off: !ok, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4', sub: G.hint('[F]  -  las raras no se truecan', 'las raras no se truecan') });
     } else if (st.rt === 1) {
-      G.txt(c, 'Toca una parte para venderla (' + L.SELL + ' Brasas; Hebra ' + L.SELL_THREAD + '). Las raras no se venden.', 14, 130, 12, '#9a8fb0', 'left');
-      cm.forEach(function (p, k) { partTile(c, p, tile(k, 150), false, '+' + (p.id === 'thread' ? L.SELL_THREAD : L.SELL) + ' c/u'); });
-      U.button(c, R_QTY, 'CANTIDAD: ' + (st.qty === 0 ? 'TODAS' : st.qty), { size: 15, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
+      G.txt(c, 'Toca una parte para venderla (' + L.SELL + ' Brasas; Hebra ' + L.SELL_THREAD + '). Las raras no se venden.', 14, 92, 17, '#9a8fb0', 'left');
+      cm.forEach(function (p, k) { partTile(c, p, tile(k, TY.sell), false, '+' + (p.id === 'thread' ? L.SELL_THREAD : L.SELL) + ' c/u'); });
+      U.button(c, R_QTY, 'CANTIDAD: ' + (st.qty === 0 ? 'TODAS' : st.qty), { size: 17, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     } else {
-      G.txt(c, 'Tienda: una vez por expedición cada artículo.', 14, 124, 12, '#9a8fb0', 'left');
+      G.txt(c, 'Tienda: una vez por expedición cada artículo.', 14, 90, 17, '#9a8fb0', 'left');
       var items = [
         ['Tónico de ceniza', 'Empiezas la próxima expedición con +40 de Ceniza.', L.BUY.tonic, S.shop.tonic ? 'COMPRADO' : null],
         ['Imán de bolsillo', 'Radio del imán x1,5 en la próxima expedición.', L.BUY.magnet, S.shop.magnet ? 'COMPRADO' : null],
         ['Parte común (' + L.part(st.buy).short + ')', 'Elige la parte abajo. Cupo ' + (S.shop.part || 0) + '/' + L.BUY.partCupo + ' esta salida.', L.BUY.part, (S.shop.part || 0) >= L.BUY.partCupo ? 'AGOTADO' : null]];
       items.forEach(function (it, k) {
         var r = R_ITEM(k); U.panel(c, r.x, r.y, r.w, r.h);
-        G.txt(c, it[0], r.x + 16, r.y + 22, 17, '#ffd27a', 'left'); G.txt(c, it[1], r.x + 16, r.y + 47, 12, '#d8cfe8', 'left');
-        U.button(c, itemBtn(k), it[3] || 'COMPRAR', { size: 15, off: !!it[3] || S.brasas < it[2], sub: it[2] + ' Brasas' });
+        G.txt(c, it[0], r.x + 16, r.y + 22, 17, '#ffd27a', 'left'); G.txt(c, it[1], r.x + 16, r.y + 50, 17, '#d8cfe8', 'left');
+        U.button(c, itemBtn(k), it[3] || 'COMPRAR', { size: 17, off: !!it[3] || S.brasas < it[2], sub: it[2] + ' Brasas' });
       });
-      G.txt(c, 'PARTE A COMPRAR', 14, 338, 12, '#9a8fb0', 'left');
-      cm.forEach(function (p, k) { partTile(c, p, tile(k, 352), p.id === st.buy, ''); });
+      G.txt(c, 'PARTE A COMPRAR', 14, 362, 17, '#9a8fb0', 'left');
+      cm.forEach(function (p, k) { partTile(c, p, tile(k, TY.buy), p.id === st.buy, ''); });
     }
-    if (!G.Sys.isTouch()) G.txt(c, 'Q/E: pestaña  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
+    if (!G.Sys.isTouch()) G.txt(c, 'Q/E: pestaña  -  Esc: volver', 14, 526, 17, '#b4a8c8', 'left');
   }
 
   // ============================================================= PORTAL
@@ -815,13 +846,20 @@
     c.save(); c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(462, G.H - 34, 148, 22); c.strokeStyle = '#d0708a'; c.lineWidth = 2; c.strokeRect(463, G.H - 33, 146, 20);   // FUSION: a la derecha de la mano
     U.part(c, d.icon, 476, G.H - 23, 7); G.txt(c, d.name.length > 16 ? d.short : d.name, 490, G.H - 22, 10, '#ffe9f0', 'left'); c.restore();
   };
-  function dRow(i) { return { x: 14, y: 70 + i * 63, w: 932, h: 57 }; }
-  function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 168, y: r.y + 4, w: 156, h: 48 }; }
-  function dPage() { return Cook.DISHES.filter(function (d) { return (d.page || 0) === (st.cpage || 0); }); }
-  function cpRect(i) { return { x: 690 + i * 100, y: 6, w: 96, h: 40 }; }
+  // T-F1-08: letra 17 y botones de 66. Pestañas (COMUNES / DE BIOMA) en la fila del título; 3 platos por página (st.cpg) con el paginador abajo.
+  var DPER = 3;
+  function dRow(i) { return { x: 14, y: 104 + i * 112, w: 932, h: 104 }; }
+  function dBtn(i) { var r = dRow(i); return { x: r.x + r.w - 176, y: r.y + 19, w: 164, h: 66 }; }
+  function dAll() { return Cook.DISHES.filter(function (d) { return (d.page || 0) === (st.cpage || 0); }); }
+  function dPages() { return Math.max(1, Math.ceil(dAll().length / DPER)); }
+  function dPage() { var p = Math.min(st.cpg || 0, dPages() - 1); return dAll().slice(p * DPER, p * DPER + DPER); }
+  function cpRect(i) { return { x: 344 + i * 164, y: 0, w: 160, h: 66 }; }
+  P.cookPage = function (t, n) { st.cpage = t; st.cpg = n || 0; };
+  P.cookRects = function () { return { tab: cpRect, row: dRow, btn: dBtn, prev: R_PGP, next: R_PGN }; };   // pruebas
   function updCook() {
-    for (var t = 0; t < 2; t++) if (onR(cpRect(t))) { st.cpage = t; G.sfx('flip', { vol: 0.4 }); }
-    if (inp.hit('KeyQ') || inp.hit('KeyE')) { st.cpage = st.cpage ? 0 : 1; G.sfx('flip', { vol: 0.4 }); }
+    for (var t = 0; t < 2; t++) if (onR(cpRect(t))) { st.cpage = t; st.cpg = 0; G.sfx('flip', { vol: 0.4 }); }
+    if (inp.hit('KeyQ') || inp.hit('KeyE')) { st.cpage = st.cpage ? 0 : 1; st.cpg = 0; G.sfx('flip', { vol: 0.4 }); }
+    st.cpg = pagerUpd(Math.min(st.cpg || 0, dPages() - 1), dPages());
     var pg = dPage();
     for (var i = 0; i < pg.length; i++) if (onR(dBtn(i)) || inp.hit('Digit' + (i + 1))) {
       var r = Cook.cook(pg[i].id); say(r.msg); if (r.ok) { G.sfx('card_select', { vol: 0.8 }); try { G.Snd.play('fuse'); } catch (e) { /* audio */ } if (G.Aldea.onCooked) G.Aldea.onCooked(); } else G.sfx('discard', { vol: 0.5 });
@@ -830,33 +868,45 @@
   }
   function drawCook(c) {
     var S = SV(), cur = Cook.pending(), pg = dPage();
-    bg(c, 'COCINA  -  Tía Castaña'); header(c, 440);
+    bg(c, 'COCINA  -  Tía Castaña'); header(c, 680);
     Cook.PAGES.forEach(function (p, t) {
       var anyOk = Cook.DISHES.some(function (d) { return (d.page || 0) === t && Cook.afford(d) && Cook.can(); });
-      U.button(c, cpRect(t), p.name, { size: 13, color: (st.cpage || 0) === t ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: (st.cpage || 0) === t ? '#bfeaff' : '#6a5a80', sub: anyOk ? 'hay platos' : null });
+      U.button(c, cpRect(t), p.name, { size: 17, color: (st.cpage || 0) === t ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: (st.cpage || 0) === t ? '#bfeaff' : '#6a5a80', sub: anyOk ? 'hay platos' : null });
     });
-    G.txt(c, cur ? 'Preparado: ' + cur.name : S.shop.dish ? 'Hoy ya comiste. Vuelve tras otra expedición.' : 'Un plato por expedición. Se come solo al salir.', 14, 56, 12, cur ? '#9dffb4' : '#9a8fb0', 'left');
+    G.txt(c, cur ? 'Preparado: ' + cur.name : S.shop.dish ? 'Hoy ya comiste. Vuelve tras otra expedición.' : 'Un plato por expedición. Se come solo al salir.', 14, 88, 17, cur ? '#9dffb4' : '#9a8fb0', 'left');
     pg.forEach(function (d, i) {
       var r = dRow(i), ok = Cook.afford(d), isCur = cur && cur.id === d.id, lk = !Cook.unlocked(d);
       U.panel(c, r.x, r.y, r.w, r.h, { border: isCur ? '#7dff9a' : ok ? '#8a6a4a' : '#3a2f48' });
-      U.part(c, d.icon, r.x + 28, r.y + 29, 14);
-      G.txt(c, G.hint('[' + (i + 1) + '] ', '') + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 12, 16, lk ? '#a89cc0' : '#ffd27a', 'left');
-      U.wrap(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, 490, 12).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, r.x + 58, r.y + 31 + k * 16, 12, lk ? '#ff9a8a' : '#d8cfe8', 'left'); });
-      var x = r.x + 560, k;
-      for (k in d.parts) { var have = S.parts[k] || 0; U.part(c, k, x + 8, r.y + 28, 9); G.txt(c, have + '/' + d.parts[k], x + 22, r.y + 29, 12, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 74; }
-      U.part(c, 'brasa', x + 8, r.y + 28, 9); G.txt(c, S.brasas + '/' + d.brasas, x + 22, r.y + 29, 12, S.brasas >= d.brasas ? '#9dffb4' : '#ff8a8a', 'left');
-      U.button(c, dBtn(i), isCur ? 'LISTO' : lk ? 'CERRADA' : 'COCINAR', { size: 15, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
+      U.part(c, d.icon, r.x + 28, r.y + 30, 14);
+      G.txt(c, G.hint('[' + (i + 1) + '] ', '') + (lk ? '? ' : '') + d.name, r.x + 58, r.y + 20, 17, lk ? '#a89cc0' : '#ffd27a', 'left');
+      var x = r.x + 58, k, s1;   // ingredientes (lo que tienes / lo que pide)
+      for (k in d.parts) { var have = S.parts[k] || 0; s1 = have + '/' + d.parts[k]; U.part(c, k, x + 8, r.y + 45, 9); G.txt(c, s1, x + 22, r.y + 46, 17, have >= d.parts[k] ? '#9dffb4' : '#ff8a8a', 'left'); x += 22 + tw(c, s1, 17) + 18; }
+      U.part(c, 'brasa', x + 8, r.y + 45, 9); G.txt(c, S.brasas + '/' + d.brasas, x + 22, r.y + 46, 17, S.brasas >= d.brasas ? '#9dffb4' : '#ff8a8a', 'left');
+      U.wrap(c, lk ? 'Receta cerrada: vence a ' + d.needName + '.' : d.desc, 680, 17).slice(0, 2).forEach(function (ln, q) { G.txt(c, ln, r.x + 58, r.y + 72 + q * 22, 17, lk ? '#ff9a8a' : '#d8cfe8', 'left'); });
+      U.button(c, dBtn(i), isCur ? 'LISTO' : lk ? 'CERRADA' : 'COCINAR', { size: 17, off: !Cook.can() || !ok || isCur, color: '#2a8a4a', hot: '#3aba66', border: '#9dffb4' });
     });
-    if (!G.Sys.isTouch()) G.txt(c, '1-' + pg.length + ': cocinar  -  Q / E: cambiar de página  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
+    pagerDraw(c, Math.min(st.cpg || 0, dPages() - 1), dPages());
+    if (!G.Sys.isTouch()) G.txt(c, '1-' + pg.length + ': cocinar  -  Q / E: cambiar de página  -  Esc: volver', 14, 450, 17, '#b4a8c8', 'left');
   }
 
   // ============================================================= LOGROS (Abuelo Lanudo)
-  // P7: con 24 logros la lista ya no cabe (11 filas visibles): se desplaza con las flechas, los botones ANTERIORES / SIGUIENTES o al elegir una fila fuera de pantalla
-  var LROWS = 11;
-  function lRow(i) { return { x: 14, y: 64 + (i - (st.lscroll || 0)) * 40, w: 560, h: 36 }; }
+  // P7: con 24 logros la lista ya no cabe: se desplaza con las flechas, los botones ANTERIORES / SIGUIENTES o al elegir una fila fuera de pantalla
+  // T-F1-08: letra 17; filas de 66 (5 por página) a la izquierda, ficha a la derecha y ANTERIORES / SIGUIENTES de 66 abajo.
+  var LROWS = 5;
+  function lRow(i) { return { x: 14, y: 76 + (i - (st.lscroll || 0)) * 72, w: 586, h: 66 }; }
   function lVis(i) { var k = i - (st.lscroll || 0); return k >= 0 && k < LROWS; }
-  var R_LUP = { x: 590, y: 374, w: 172, h: 46 }, R_LDN = { x: 774, y: 374, w: 172, h: 46 };
+  var R_LUP = { x: 14, y: 468, w: 200, h: 66 }, R_LDN = { x: 400, y: 468, w: 200, h: 66 };
+  P.logrosRects = function () { return { row: lRow, up: R_LUP, dn: R_LDN }; };   // pruebas
+  P.logrosScroll = function (n) { st.lscroll = n; st.lsel = n; lFix(); };   // pruebas
   function lFix() { var n = G.Ach.DEFS.length; st.lsel = G.clamp(st.lsel || 0, 0, n - 1); st.lscroll = G.clamp(st.lscroll || 0, 0, Math.max(0, n - LROWS)); if (st.lsel < st.lscroll) st.lscroll = st.lsel; if (st.lsel >= st.lscroll + LROWS) st.lscroll = st.lsel - LROWS + 1; }
+  // T-F1-07: los textos de un logro no nombran un recurso que G.Res aún no enseña (cuentas del flujo nuevo). Insignias, trofeos o PF ocultos: el nombre
+  // pasa a "???" y la descripción / el recuerdo a "Lo conocerás más adelante"; la Esencia oculta pasa a "parte rara" (G.Res.fix, como en el reto y los encargos).
+  var ACH_RX = { insignias: /[Ii]nsignia/, trofeos: /[Tt]rofeo/, pf: /\bPF\b|[Pp]untos? de [Ff]orja/ };
+  function achHidden(t) { var R = G.Res; if (!R) return false; for (var k in ACH_RX) if (ACH_RX[k].test(t) && !R.visible(k)) return true; return false; }
+  function achFix(t) { var R = G.Res; if (!R || R.visible('esencia')) return t; return R.fix(t).replace(/\b(una|otra) Esencia\b/g, '$1 ' + R.t('res.rareAsPart').replace(/^1 /, '')); }
+  function achText(t, alt) { return achHidden(t) ? alt : achFix(t); }
+  P.achText = function (a) { return { name: achText(a.name, '???'), desc: achText(a.desc, G.Res ? G.Res.t('res.soon') : ''), lore: achText(a.lore, G.Res ? G.Res.t('res.soon') : '') }; };   // pruebas
+  function fitTxt(c, t, w, size) { if (tw(c, t, size) <= w) return t; while (t.length > 4 && tw(c, t + '.', size) > w) t = t.slice(0, -1); return t.replace(/[\s.,;:]+$/, '') + '.'; }
   function updLogros() {
     var n = G.Ach.DEFS.length, i;
     if (inp.hit('ArrowDown', 'KeyS')) st.lsel = Math.min(n - 1, (st.lsel || 0) + 1);
@@ -869,26 +919,29 @@
   }
   function drawLogros(c) {
     var A = G.Ach, S = SV(), sel = A.DEFS[st.lsel || 0]; lFix();
-    bg(c, 'MEMORIAS  -  Abuelo Lanudo'); G.txt(c, A.count() + '/' + A.DEFS.length + ' logros', 400, 24, 14, '#ffd24a', 'left');
+    bg(c, 'MEMORIAS  -  Abuelo Lanudo'); G.txt(c, A.count() + '/' + A.DEFS.length + ' logros', 400, 24, 17, '#ffd24a', 'left');
     A.DEFS.forEach(function (a, i) {
       if (!lVis(i)) return;
-      var r = lRow(i), got = !!S.ach[a.id], on = i === (st.lsel || 0);
+      var r = lRow(i), got = !!S.ach[a.id], on = i === (st.lsel || 0), tx = P.achText(a);
       c.fillStyle = on ? '#2a1d3a' : '#150f20'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = got ? '#ffd24a' : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-      c.fillStyle = got ? '#ffd24a' : '#3a2f48'; c.beginPath(); c.arc(r.x + 20, r.y + 18, 9, 0, 6.283); c.fill();
-      if (got) G.txt(c, 'v', r.x + 20, r.y + 19, 12, '#3a2410', 'center', 'rgba(0,0,0,0)');
-      G.txt(c, a.name, r.x + 40, r.y + 11, 13, got ? '#fff' : '#a89cc0', 'left'); G.txt(c, a.desc.length > 66 ? a.desc.slice(0, 65) + '.' : a.desc, r.x + 40, r.y + 28, 12, got ? '#d4c8e8' : '#a89cc0', 'left');
+      c.fillStyle = got ? '#ffd24a' : '#3a2f48'; c.beginPath(); c.arc(r.x + 22, r.y + 33, 12, 0, 6.283); c.fill();
+      if (got) G.txt(c, 'v', r.x + 22, r.y + 34, 17, '#3a2410', 'center', 'rgba(0,0,0,0)');
+      G.txt(c, fitTxt(c, tx.name, r.w - 56, 17), r.x + 44, r.y + 21, 17, got ? '#fff' : '#a89cc0', 'left');
+      G.txt(c, fitTxt(c, tx.desc, r.w - 56, 17), r.x + 44, r.y + 46, 17, got ? '#d4c8e8' : '#a89cc0', 'left');
     });
-    U.panel(c, 590, 64, 356, 300, { border: '#b8a878' });
+    U.panel(c, 612, 76, 334, 384, { border: '#b8a878' });
     if (sel) {
-      G.txt(c, sel.name, 604, 84, 16, '#ffd27a', 'left');
-      var got2 = !!S.ach[sel.id], ls = U.wrap(c, got2 ? '"' + sel.lore + '"' : 'Aún no lo has conseguido. ' + sel.desc, 330, 12);
-      for (var k = 0; k < ls.length && k < 10; k++) G.txt(c, ls[k], 604, 114 + k * 17, 12, got2 ? '#e8dcb0' : '#8a7f96', 'left');
+      var st2 = P.achText(sel), got2 = !!S.ach[sel.id], y = 100;
+      U.wrap(c, st2.name, 306, 20).slice(0, 2).forEach(function (l) { G.txt(c, l, 626, y, 20, '#ffd27a', 'left'); y += 26; });
+      y += 6;
+      var ls = U.wrap(c, got2 ? '"' + st2.lore + '"' : 'Aún no lo has conseguido. ' + st2.desc, 306, 17);
+      for (var k = 0; k < ls.length && y < 452; k++, y += 22) G.txt(c, ls[k], 626, y, 17, got2 ? '#e8dcb0' : '#8a7f96', 'left');
     }
     var n = A.DEFS.length, sc = st.lscroll || 0;
-    U.button(c, R_LUP, 'ANTERIORES', { size: 13, off: sc <= 0, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
-    U.button(c, R_LDN, 'SIGUIENTES', { size: 13, off: sc >= n - LROWS, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
-    G.txt(c, (sc + 1) + '-' + Math.min(n, sc + LROWS) + ' de ' + n, 768, 438, 12, '#b4a8c8', 'center');
-    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: elegir  -  Esc: volver', 14, 526, 12, '#b4a8c8', 'left');
+    U.button(c, R_LUP, 'ANTERIORES', { size: 17, off: sc <= 0, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
+    U.button(c, R_LDN, 'SIGUIENTES', { size: 17, off: sc >= n - LROWS, color: '#2c2438', hot: '#3a3050', border: '#8a7aa6' });
+    G.txt(c, (sc + 1) + '-' + Math.min(n, sc + LROWS) + ' de ' + n, 307, 501, 17, '#b4a8c8', 'center');
+    if (!G.Sys.isTouch()) G.txt(c, 'Flechas: elegir  -  Esc: volver', 626, 501, 17, '#b4a8c8', 'left');
   }
 
   // ============================================================= MENÚ y AJUSTES

@@ -1,9 +1,11 @@
 // COPIA del bot esquivador del original (tools/card-swarm-clasico-boss-bot/bot.js, sin tocar) + AUTO de poderes para la Fusión.
 // Bot esquivador (se inyecta en la página). Lee las telegrafías vía G.Boss.hazards() + zonas + proyectiles, igual que un jugador las ve.
 // opts: { react: ms (reacción humana), every: ms (decisión), horizon: ms, mistakes: prob (0-1), godUntilBoss: bool, tag: string }
+// Opciones para kit_bot.js (reproducible): rng: función de azar sembrada (en vez de Math.random), onlyBoss: solo mueve mientras hay jefe (fuera de la pelea no toca la entrada),
+//   noCards: no instala su elección de cartas (la hace quien lo llama, por tick).
 window.installBot = function (opts) {
   opts = Object.assign({ inattn: 0, hp0: 100, react: 250, every: 100, horizon: 1600, mistakes: 0.1, godUntilBoss: true, dist: 250 }, opts || {});
-  var seen = new Map(), simT = 0, lastDec = -1e9, dir = { x: 0, y: 0 }, rng = Math.random;
+  var seen = new Map(), simT = 0, lastDec = -1e9, dir = { x: 0, y: 0 }, rng = opts.rng || Math.random;
   var st = window.__bot = { dmgBoss: 0, firstBossT: null, log: [], minHp: 100, sampleT: 0, ticks: 0, deaths: 0, hurtsBy: {} };
   if (opts.godUntilBoss) G.god = true;
   var origUpd = G.Player.update;
@@ -105,6 +107,7 @@ window.installBot = function (opts) {
   G.Player.update = function (p, dt) {
     simT += dt;
     var inp = G.input;
+    if (opts.onlyBoss && !(G.Boss.e && !G.Boss.e.dead)) { origUpd.call(G.Player, p, dt); return; }
     if (G.state === 'play') {
       if (simT - lastDec >= opts.every) { lastDec = simT; try { decide(); } catch (err) { st.err = String(err.stack || err); } }
       inp.joy = { active: true, id: 1, ox: 0, oy: 0, x: dir.x, y: dir.y };
@@ -117,7 +120,7 @@ window.installBot = function (opts) {
     origUpd.call(G.Player, p, dt);
   };
   // elección de cartas: fusiona si puede; si no, ataques nuevos; si no, omite
-  setInterval(function () {
+  if (!opts.noCards) setInterval(function () {
     if (G.state !== 'cards' || !G.Cards.off) return;
     var O = G.Cards.off, C = G.Cards, i, best = -1, bs = -1;
     if (O.replacing) { var slot = 0, ww = 1e9; G.player.hand.forEach(function (s, k) { if (s) { var w = s.lvl * 10 + (C.def(s.id).type === 'attack' ? 5 : 0); if (w < ww) { ww = w; slot = k; } } }); C.replace(slot); return; }
