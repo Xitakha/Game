@@ -162,7 +162,7 @@
       if (ex >= 0) { p.actives[ex].lvl = 2; var L2 = r.lv[1]; p.actives[ex].cdMax = L2.cd; p.actives[ex].cd = Math.min(p.actives[ex].cd, 2000); lvlUp = true; }
       else {
         var at = replaceIdx != null ? replaceIdx : free;
-        if (replaceIdx != null) { p.ash += P.replaceAsh; fx.num(p.x, p.y - 30, '+' + P.replaceAsh + ' Ceniza', '#ff9a3c'); snd('fx_replace', 0); }
+        if (replaceIdx != null) { p.ash += P.replaceAsh; if (!G.Res || G.Res.visible('ceniza')) fx.num(p.x, p.y - 30, '+' + P.replaceAsh + ' Ceniza', '#ff9a3c'); snd('fx_replace', 0); }
         p.actives[at] = newSlot(r, 1);
       }
       try { G.Save.data.combosSeen[r.id] = 1; G.Save.save(); } catch (e0) { /* sin guardado */ }
@@ -176,7 +176,7 @@
       if (done) done();
     }
     if (activeOf(r.id) < 0 && p.actives.indexOf(null) < 0) {   // 4 poderes ya: hay que elegir cuál reemplazar (con confirmación)
-      var btns = p.actives.map(function (a, i) { return { label: 'REEMPLAZAR ' + RBY[a.id].name.toUpperCase() + ' Nv' + a.lvl + '   (+' + P.replaceAsh + ' Ceniza)', col: '#8a2030', fn: function () { finish(i); } }; });
+      var btns = p.actives.map(function (a, i) { return { label: 'REEMPLAZAR ' + RBY[a.id].name.toUpperCase() + ' Nv' + a.lvl + (!G.Res || G.Res.visible('ceniza') ? '   (+' + P.replaceAsh + ' Ceniza)' : ''), col: '#8a2030', fn: function () { finish(i); } }; });
       btns.push({ label: 'CANCELAR (no se consume nada)', col: '#3a2f48', fn: function () { snd('fx_btn_cancel', 0); } });
       C.modal('YA TIENES 4 PODERES', 'Para crear ' + r.name + ' hay que sustituir uno. Esto no se puede deshacer.', btns);
       return;

@@ -22,7 +22,7 @@
     mile3: 'Primer farolillo junto a la hoguera', mile7: 'Segundo farolillo y título "Vecino de Rescoldo"', mile14: 'Guirnalda de farolillos entre las casas', mile21: 'Chispas doradas en la hoguera', mile28: 'Hoguera mayor', got: 'conseguido', woodTxt: 'Leña: {0}/2  (+1 cada 5 días jugados)',
     rerolled: 'Objetivo cambiado.', rerollNo: 'El cambio gratis de hoy ya está usado.'
   };
-  function t(k) { var s = O.TXT[k] != null ? O.TXT[k] : k, a = arguments; return s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); }
+  function t(k) { var s = O.TXT[k] != null ? O.TXT[k] : k, a = arguments; s = s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); return G.Res ? G.Res.fix(s) : s; }   // T-F1-07: "1 Esencia" = "1 parte rara" hasta el Rango III
   O.t = t;
 
   // ------------------------------------------------------------- Catálogos (2.2, 2.3). ev: contador del informe de la salida; kind sum (se suma en el día / semana) o max (mejor de una salida)
@@ -70,12 +70,12 @@
     if (o.d === 2) return { brasas: 12, parts: { thread: 2, feather: 2 }, rare: 0 };
     p.thread = 3; p[c[k]] = 3; return { brasas: 18, parts: p, rare: 0 };
   };
-  O.rewardText = function (o, day) { var r = O.reward(o, day), L = G.Loot; return '+' + r.brasas + ' Brasas' + Object.keys(r.parts).map(function (k) { return ', ' + r.parts[k] + ' ' + L.part(k).short; }).join('') + (r.rare ? ', 1 Esencia' : ''); };
+  O.rewardText = function (o, day) { var r = O.reward(o, day), L = G.Loot; return '+' + r.brasas + ' Brasas' + Object.keys(r.parts).map(function (k) { return ', ' + r.parts[k] + ' ' + L.part(k).short; }).join('') + (r.rare ? ', ' + (G.Res ? G.Res.fix('1 Esencia') : '1 Esencia') : ''); };
 
   function SV() { return G.Save.data; }
   function DD() { return SV().daily; }
   function Dl() { return G.Daily; }
-  O.isOpen = function () { return O.ON && (SV().runs || 0) >= O.OPEN_RUNS; };
+  O.isOpen = function () { return O.ON && (SV().runs || 0) >= O.OPEN_RUNS && (!G.Res || G.Res.objOpen()); };   // T-F1-07 (SPEC 3.6): en el flujo nuevo, el Diario llega con Vesper
   function avail(o) {
     if (o.need === 'reto') return Dl().isOpen();
     if (o.need === 'pel2') return G.Save.BOSSES.some(function (b) { return G.Save.pelMax(b) >= 2; });

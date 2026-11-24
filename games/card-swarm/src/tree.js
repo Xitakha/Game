@@ -232,8 +232,9 @@
     G.Save.save();
     if (got) L.run.pf = (L.run.pf || 0) + got;
     try {
+      if (G.Res && !G.Res.visible('pf')) { G.Hud.banner(G.Res.t('res.guardDown'), 1800, '#ffd24a'); return; }   // T-F1-07: el PF se gana en silencio hasta que llega Grum
       G.fx.num(e.x, e.y - 40, got ? '+' + got + ' PF' : 'Fragmento de PF ' + (+(S.pf.frag || 0).toFixed(1)) + '/' + L.PF_SOURCES.miniFrag, '#ffd24a', true);
-      G.Hud.banner(got ? '+' + got + ' PUNTO' + (got > 1 ? 'S' : '') + ' DE FORJA' : 'FRAGMENTO DE PUNTO DE FORJA ' + (+(S.pf.frag || 0).toFixed(1)) + '/' + L.PF_SOURCES.miniFrag, 1800, '#ffd24a');
+      G.Hud.banner(got ? '+' + got + ' PUNTO' + (got > 1 ? 'S' : '') + ' DE FORJA' : 'FRAGMENTO DE PUNTO DE FORJA ' + (+(S.pf.frag || 0).toFixed(1)) + '/' + L.PF_SOURCES.miniFrag, 1800, '#ffd24a', null, 'pf');
     } catch (x) { /* fx */ }
   };
 
@@ -268,6 +269,7 @@
       var names = (n.req.all || n.req.any).map(function (i) { return BY[i].name; });
       return 'Requiere ' + names.join(n.req.all ? ' y ' : ' o ') + '.';
     }
+    var rl = G.Res && G.Res.buyLock(n); if (rl) return rl + '.';   // T-F1-07: "Ceniza viva" espera a que la Ceniza se presente
     if (!trophyOK(n)) return n.trophies.length > 1 ? 'Requiere los ' + n.trophies.length + ' trofeos de Cenizar (' + T.trophiesHave(n) + '/' + n.trophies.length + ').' : 'Requiere el trofeo: ' + T.trophyNames(n)[0] + '.';
     if (!tierOK(n)) return 'Requiere ' + (n.tier === 'T2' ? 'Rango de forja II (Tronco)' : 'Rango de forja III (Tronco)') + '.';
     return '';
@@ -280,7 +282,7 @@
   T.status = function (n) {
     if (T.owned(n.id)) return 'owned';
     if (n.xor && T.owned(n.xor)) return 'excluded';
-    if (!reqOK(n) || !tierOK(n) || !trophyOK(n)) return 'locked';
+    if (!reqOK(n) || !tierOK(n) || !trophyOK(n) || (G.Res && G.Res.buyLock(n))) return 'locked';
     return 'avail';
   };
   // ¿Se puede pagar? Devuelve '' si sí, o el texto de lo que falta
@@ -333,6 +335,8 @@
       if (m > S.mile) { S.mile = m; if (T.addPF(1)) msg += '  -  Maestría de oficio: +1 PF'; }
     }
     T.sync(); G.Save.save();
+    var ef = G.Res && G.Res.first('esencia');   // T-F1-07: el Rango III presenta la Esencia rara (con lo que ya guardabas)
+    if (ef) return { ok: true, msg: ef.join('  '), card: n.card, res: 'esencia' };
     return { ok: true, msg: n.type === 'C' ? '¡Forjada: ' + msg + '!' : '¡Forjado: ' + msg + '!', card: n.card };
   };
 
@@ -438,6 +442,7 @@
   }
   function setTab(t) { if (t === ui.tab) return; ui.tab = t; ui.confirm = ''; fixSel(); G.sfx('flip', { vol: 0.4 }); }
   T.setTab = setTab; T.selectNode = function (id) { if (BY[id]) { ui.tab = BY[id].tree; ui.sel = id; } };
+  T.showDetail = function (id) { if (BY[id]) { ui.tab = BY[id].tree; ui.sel = id; ui.view = 'det'; } };   // pruebas: abre el detalle de un nodo
 
   function moveSel(dx, dy) {
     var cur = BY[ui.sel], p = pos(cur), best = null, bd = 1e9;
@@ -599,7 +604,8 @@
       G.txt(c, tb.name, tx, r.y + 18, 13, on ? tb.color : '#8a7f96', al);
       G.txt(c, done ? 'HECHO' : tb.id === 'trunk' ? 'Rangos' : pu + ' PF', ART ? tx : r.x + r.w / 2, r.y + 41, 10, done ? '#ffd24a' : '#8a7f96', al);
     }
-    var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static', 'rare'];   // fila de partes
+    var pk = ['thread', 'feather', 'spine', 'fang', 'plate', 'wick', 'frost', 'static'];   // fila de partes (la Esencia, solo cuando ya se ha presentado: T-F1-07)
+    if (!G.Res || G.Res.visible('esencia')) pk.push('rare');
     pk.forEach(function (k, j) { var x = 14 + j * 104; U.part(c, k, x + 8, 142, 8); G.txt(c, String(S.parts[k] || 0), x + 20, 143, 11, (S.parts[k] || 0) ? '#fff' : '#8a7f96', 'left'); });
     // reespecializar árbol
     var tp = T.treePlan(ui.tab);
@@ -626,7 +632,7 @@
     if (ui.tab === 'trunk') {
       G.txt(c, 'CARTAS NEUTRAS', NX + 90, NY + 3 * SY, 11, '#9a8fb0', 'center');
       var ry = pos({ px: 0, py: 442 }).y;
-      G.txt(c, 'RUTA: refuerzos por bioma, sin PF; se abren con el trofeo del jefe', 14, ry - 38, 11, '#c8b8e8', 'left');
+      G.txt(c, !G.Res || G.Res.visible('trofeos') ? 'RUTA: refuerzos por bioma, sin PF; se abren con el trofeo del jefe' : 'RUTA: refuerzos por bioma, sin PF; se abren tras vencer a Yarlak', 14, ry - 38, 11, '#c8b8e8', 'left');
     }
     nodes.forEach(function (nd) { drawNodeShape(c, nd, T.status(nd), pos(nd), nd.id === ui.sel, t); });
     if (ART) nodes.forEach(function (nd) {
@@ -669,7 +675,7 @@
     }
     if (n.type === 'root') { U.button(c, R_BACK, 'VOLVER', { size: 20, sub: G.hint('Esc', null) }); return; }
     var by = DET.y + DET.h - 70;   // fila inferior del panel: trofeos (izquierda) y coste (derecha)
-    if (n.trophies) {   // P7: trofeos necesarios (iluminados si ya los tienes)
+    if (n.trophies && (!G.Res || G.Res.visible('trofeos'))) {   // P7: trofeos necesarios (iluminados si ya los tienes)
       G.txt(c, 'TROFEOS  ' + T.trophiesHave(n) + '/' + n.trophies.length, X, by, 11, '#9a8fb0', 'left');
       n.trophies.forEach(function (k, j) {
         var tr = G.Boss.TROPHY[k], have = (S.trophiesEver[k] || 0) > 0, tx = X + j * 46;
@@ -680,7 +686,8 @@
     var cost = T.cost(n), cx0 = X + W2 / 2;
     if (st !== 'owned') {
       G.txt(c, 'COSTE', cx0, by, 11, '#9a8fb0', 'left');
-      costRow(c, cost, cx0, by + 30);
+      var lk = G.Res && G.Res.nodeLock(n);   // T-F1-07: nodos que piden un recurso aún no presentado: el porqué en lugar del coste
+      if (lk) G.txt(c, lk, cx0, by + 30, 17, '#ffb08a', 'left'); else costRow(c, cost, cx0, by + 30);
     } else {
       var plan = T.undoPlan(n.id);
       G.txt(c, plan ? 'Deshacer: +' + plan.pf + ' PF, 50 % de partes' : 'No se puede deshacer', cx0, by, 11, '#9a8fb0', 'left');

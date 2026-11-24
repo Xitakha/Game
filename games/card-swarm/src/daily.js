@@ -38,7 +38,7 @@
     sub: '{0}  ·  {1}  ·  Peligro {2}', kitLine: '{0}  ·  {1} y {2}  ·  Ancla: {3}', mut_sincambio_msg: 'Sin cambios: hoy no se puede cambiar la oferta.',
     hist: 'ÚLTIMOS RETOS', notReached: 'sin llegar al jefe', kitNew: 'NUEVO'
   };
-  Dl.t = function (k) { var s = Dl.TXT[k] != null ? Dl.TXT[k] : k, a = arguments; return s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); };
+  Dl.t = function (k) { var s = Dl.TXT[k] != null ? Dl.TXT[k] : k, a = arguments; s = s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); return G.Res ? G.Res.fix(s) : s; };   // T-F1-07: "1 Esencia" = "1 parte rara" hasta el Rango III
   Dl.MEDAL_K = ['medal0', 'medal1', 'medal2', 'medal3'];
   Dl.medalName = function (m) { return Dl.t(Dl.MEDAL_K[m] || 'medal0'); };
   Dl.fmtN = function (n) { n = Math.round(n || 0); var s = String(Math.abs(n)), out = ''; while (s.length > 3) { out = '.' + s.slice(-3) + out; s = s.slice(0, -3); } return (n < 0 ? '-' : '') + s + out; };
@@ -133,7 +133,7 @@
   function K() { return G.Kit; }
 
   // ------------------------------------------------------------- Estado
-  Dl.isOpen = function () { return Dl.ON && (SV().runs || 0) >= Dl.OPEN_RUNS; };
+  Dl.isOpen = function () { return Dl.ON && (SV().runs || 0) >= Dl.OPEN_RUNS && (!G.Res || G.Res.retoOpen()); };   // T-F1-07 (SPEC 3.6): en el flujo nuevo, 3 salidas contadas (>= 60 s) o un jefe vencido
   var TESTRE = null;
   Dl.isTest = function () {   // ?dev=1 con cualquier parámetro cerrado (o today / kit): intento PRUEBA
     if (Dl.forceOfficial || !Dev.on) return false;
