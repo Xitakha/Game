@@ -1003,6 +1003,7 @@
     inst: { p: 1, x: 150, y: 152, w: 320, h: 66 }, bak: { p: 1, x: 490, y: 152, w: 320, h: 66 },
     exp: { p: 1, x: 150, y: 224, w: 320, h: 66 }, imp: { p: 1, x: 490, y: 224, w: 320, h: 66 },
     priv: { p: 1, x: 150, y: 296, w: 320, h: 66 }, err: { p: 1, x: 490, y: 296, w: 320, h: 66 },
+    vibe: { p: 1, x: 150, y: 368, w: 320, h: 66 },
     man: { x: 826, y: 80, w: 120, h: 66 }, back: { x: 14, y: 442, w: 120, h: 66 }
   };
   P.setRects = function () { return { tabs: STAB, sb: SB, vol: [0, 1, 2].map(function (i) { return [setRect(i, 0), setRect(i, 1)]; }) }; };   // pruebas
@@ -1027,6 +1028,7 @@
     if (sOn(SB.imp)) G.PWA.importSave();
     if (sOn(SB.soft)) { S.settings.softIce = S.settings.softIce ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
     if (sOn(SB.lightstorm)) { S.settings.lightStorm = S.settings.lightStorm ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); }
+    if (sOn(SB.vibe) && G.fx.vibeSupported()) { S.settings.vibe = G.fx.vibeOn() ? 0 : 1; G.Save.save(); G.sfx('card_select', { vol: 0.5 }); G.fx.vibe('fuse'); }
     if (sOn(SB.cine)) { cur = 'cine'; }
     if (sOn(SB.err)) { cur = 'errlog'; st.errMsg = ''; }
     if (sOn(SB.priv)) { cur = 'privacy'; st.privMsg = ''; st.privView = false; }
@@ -1063,7 +1065,8 @@
       U.button(c, SB.imp, 'Importar guardado', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
       U.button(c, SB.priv, 'Privacidad', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: G.Track && G.Track.state().consent === true ? 'permiso: SÍ' : 'permiso: NO' });
       U.button(c, SB.err, 'Informe de errores', { size: 17, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6', sub: window.Diag && Diag.count() ? Diag.count() + ' guardados' : 'sin errores' });
-      if (!G.Sys.isTouch()) G.txt(c, 'Q / E: cambiar de página', 480, 400, 12, '#9a8fb0', 'center');
+      if (G.fx.vibeSupported()) U.button(c, SB.vibe, 'Vibración: ' + (G.fx.vibeOn() ? 'SÍ' : 'NO'), { size: 17, color: G.fx.vibeOn() ? on : off, sub: 'Golpe, fusión y jefe' });
+      if (!G.Sys.isTouch()) G.txt(c, 'Q / E: cambiar de página', 480, 456, 12, '#9a8fb0', 'center');
     }
     U.button(c, SB.man, 'MANUAL', { size: 18, color: '#6a4a2a', hot: '#9a6a3a', border: '#ffd27a' });
     U.button(c, SB.back, 'ATRÁS', { size: 18 });

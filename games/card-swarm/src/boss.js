@@ -262,7 +262,7 @@
     pe.dead = true; e.broken[pe.key] = true; e.partsBroken.push(pe.key);
     fx.part('fx_part_break', pe.x, pe.y, 0, 0, 420, { anim: true, sc: 1, add: true });
     fx.burst(pe.x, pe.y, 12, '#ffd27a', 240, 600, 4, { add: true }); fx.ember(pe.x, pe.y, 6, 14);
-    fx.hit(80); fx.shake(6, 200); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 }); if (D.h && D.h.partStinger) D.h.partStinger(e, pe); else S.stinger('part', e);
+    fx.hit(80); fx.shake(6, 200); fx.vibe('part'); fx.pulse(0.2, '#ffd27a'); sfx('boss_roar', { pitch: 1.7, vol: 0.55 }); sfx('hit_heavy', { pitch: 0.8 }); if (D.h && D.h.partStinger) D.h.partStinger(e, pe); else S.stinger('part', e);
     G.Hud.banner('¡' + pd.name.toUpperCase() + (pd.fem ? ' ROTA!' : ' ROTO!'), 1500, '#ffd27a');
     // corazón + trofeo (cuenta como Esencia)
     G.Combat.dropGem(pe.x, pe.y, 'heart', B.player.heal);

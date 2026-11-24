@@ -59,7 +59,7 @@
     }
     p.hp -= dmg; p.hurtT = o.soft ? 250 : B.player.invuln + (AR ? AR.ims() : 0);
     if (eng) AR.onHit(p, o.soft);
-    if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; if (G.Tundra.on) G.Tundra.hurtKb(p); G.fx.shake(7, 200); G.fx.hit(40); }   // Tundra: retroceso x1,6 en hielo con tope (B.1.2)
+    if (!o.soft) { p.kx = Math.cos(a) * B.player.kb * k; p.ky = Math.sin(a) * B.player.kb * k; if (G.Tundra.on) G.Tundra.hurtKb(p); G.fx.shake(7, 200); G.fx.hit(40); G.fx.vibe('hurt'); }   // Tundra: retroceso x1,6 en hielo con tope (B.1.2)
     else G.fx.shake(2, 80);
     G.fx.num(p.x, p.y - 18, Math.round(dmg), '#ff5a5a', true);
     G.fx.spark(p.x, p.y, o.soft ? 2 : 6, a);

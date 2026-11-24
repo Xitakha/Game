@@ -170,7 +170,7 @@
       C.recalc(false);
       if (P.fuseHeal > 0 && !p.dead) G.Player.heal(p, P.fuseHeal, 'fusion');
       G.Hud.banner('¡FUSIÓN! ' + r.name + (lvlUp ? ' Nv2' : ''), 2400, '#ffd24a', { a: r.a, b: r.b, name: '¡' + r.name.toUpperCase() + '!', desc: r.desc });
-      sfxFallback(r, 'fuse', 'fx_fusion'); snd('fuse', 0);
+      sfxFallback(r, 'fuse', 'fx_fusion'); snd('fuse', 0); fx.vibe('fuse'); fx.pulse(0.18, G.TAGS[r.a].color);
       fx.ring(p.x, p.y, 10, 120, 500, G.TAGS[r.a].color, 6); fx.ring(p.x, p.y, 6, 90, 400, G.TAGS[r.b].color, 4);
       fx.burst(p.x, p.y, 24, G.TAGS[r.a].color, 260, 600, 4, { add: true }); fx.burst(p.x, p.y, 24, G.TAGS[r.b].color, 200, 600, 4, { add: true });
       if (done) done();

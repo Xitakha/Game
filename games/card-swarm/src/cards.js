@@ -178,7 +178,7 @@
     if (res.fused) {
       var s = C.slotOf(id);
       G.Hud.banner('¡REFUERZO! ' + d.name + ' Nv' + s.lvl, 1600, '#ffd24a');
-      G.Snd.play('fuse'); G.fx.ring(p.x, p.y, 8, 70, 400, '#ffd24a', 5); G.fx.burst(p.x, p.y, 18, '#ffd24a', 200, 600, 4, { add: true });
+      G.Snd.play('fuse'); G.fx.vibe('fuse'); G.fx.pulse(0.15, '#ffd24a'); G.fx.ring(p.x, p.y, 8, 70, 400, '#ffd24a', 5); G.fx.burst(p.x, p.y, 18, '#ffd24a', 200, 600, 4, { add: true });
     } else { G.sfx('card_select', { vol: 0.6 }); }
     close();
   }
