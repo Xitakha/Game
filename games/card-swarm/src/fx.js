@@ -4,7 +4,7 @@
   var G = window.G;
   var fx = G.fx = { hitstop: 0, shakeAmp: 0, shakeT: 0, shakeMax: 1, parts: [], nums: [], rings: [], corpses: [], cps: [], bolts: [], slashes: [], _tint: new Map() };
 
-  fx.clear = function () { fx.hitstop = 0; fx.shakeT = 0; fx.parts.length = 0; fx.nums.length = 0; fx.rings.length = 0; fx.corpses.length = 0; fx.cps.length = 0; fx.bolts.length = 0; fx.slashes.length = 0; };
+  fx.clear = function () { fx.hitstop = 0; fx.pulseA = 0; fx.shakeT = 0; fx.parts.length = 0; fx.nums.length = 0; fx.rings.length = 0; fx.corpses.length = 0; fx.cps.length = 0; fx.bolts.length = 0; fx.slashes.length = 0; };
 
   // Hit-stop: congela la simulación unos ms
   fx.hit = function (ms) { if (ms > fx.hitstop) fx.hitstop = ms; };
@@ -14,6 +14,25 @@
     amp = Math.min(12, amp * (G.shakeMul != null ? G.shakeMul : 1));   // tope 12 px; G.shakeMul = 1/3 para la opción de accesibilidad "reducir sacudidas"
     var cur = fx.shakeT > 0 ? fx.shakeAmp * (fx.shakeT / fx.shakeMax) : 0;
     if (amp >= cur) { fx.shakeAmp = amp; fx.shakeT = ms; fx.shakeMax = ms; }
+  };
+  // T-F1-09: vibración corta opcional y destello de pantalla. Ambos respetan "Reducir destellos" (G.Cine.cfg().calm); no usan G.rng ni tocan la simulación.
+  function calmOn() { try { return !!(G.Cine && G.Cine.cfg && G.Cine.cfg().calm); } catch (e) { return false; } }
+  fx.vibeSupported = function () { try { return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'; } catch (e) { return false; } };
+  // Ajuste settings.vibe: 1 / 0 explícito; sin valor = encendido salvo con "Reducir destellos"
+  fx.vibeOn = function () {
+    var s = G.Save && G.Save.data && G.Save.data.settings, v = s && s.vibe;
+    return fx.vibeSupported() && (v == null ? !calmOn() : !!v);
+  };
+  var VIBE = { hurt: 30, fuse: [25, 40, 35], part: [45, 30, 70] }, vibeAt = 0;
+  fx.vibe = function (kind) {
+    if (!fx.vibeOn()) return false;
+    var now = Date.now(); if (kind === 'hurt' && now - vibeAt < 250) return false; if (kind === 'hurt') vibeAt = now;
+    try { return navigator.vibrate(VIBE[kind] || 30) !== false; } catch (e) { return false; }
+  };
+  fx.pulseA = 0; fx.pulseColor = '#fff2b0';
+  fx.pulse = function (a, color) {   // destello suave de pantalla (<= 25 %; con "Reducir destellos" casi nada)
+    a = Math.min(0.25, a || 0.2); if (calmOn()) a = Math.min(a * 0.3, 0.06);
+    if (a > fx.pulseA) { fx.pulseA = a; fx.pulseColor = color || '#fff2b0'; }
   };
   fx.offset = function () {
     if (fx.shakeT <= 0) return { x: 0, y: 0 };
@@ -132,7 +151,7 @@
   };
 
   fx.update = function (dt) {
-    fx.updateShake(dt);
+    fx.updateShake(dt); if (fx.pulseA > 0) fx.pulseA = Math.max(0, fx.pulseA - dt / 1500);
     var s = dt / 1000, i, p;
     for (i = fx.parts.length - 1; i >= 0; i--) {
       p = fx.parts[i]; p.life -= dt;
@@ -163,6 +182,7 @@
 
   fx.draw = function (c) {
     var i, p, u;
+    if (fx.pulseA > 0.002) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = fx.pulseA; c.fillStyle = fx.pulseColor; c.fillRect(0, 0, c.canvas.width, c.canvas.height); c.restore(); }
     for (i = 0; i < fx.rings.length; i++) {
       p = fx.rings[i]; u = p.t / p.max;
       c.save(); c.globalAlpha = 1 - u; c.strokeStyle = p.color; c.lineWidth = p.w * (1 - u * 0.6);

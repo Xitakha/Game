@@ -385,7 +385,9 @@
     if (g.kind === 'xp') {
       p.xp += g.v * m.xpMul * B.xpGem() * (G.Armor ? G.Armor.xpMul() : 1);
       var need = B.xpNeed(p.level);
+      var lv0 = p.level;
       while (p.xp >= need) { p.xp -= need; p.level++; G.pendingLevels++; need = B.xpNeed(p.level); }
+      if (p.level > lv0) { G.fx.ring(p.x, p.y, 8, 80, 450, '#7ad8ff', 5); G.fx.burst(p.x, p.y, 14, '#7ad8ff', 200, 500, 3, { add: true }); G.fx.pulse(0.12, '#bfeaff'); G.sfx('levelup', { vol: 0.5 }); }   // T-F1-09: destello y sonido al subir de nivel (la pausa es la ventana de cartas)
       G.Snd.play('gem', 1);
     } else if (g.kind === 'part') {
       G.Loot.collect(g.part, g.trophy); G.Snd.play('gem', 1.8);

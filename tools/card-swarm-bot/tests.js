@@ -2482,11 +2482,33 @@ async function daily() {
   ok((await E(pg, () => G.state)) === 'aldea' && !(await E(pg, () => G.Kit.cur)), 'IR A LA ALDEA vuelve a Rescoldo sin kit en memoria');
   await done(pg, 'daily-pantallas');
   await b.close();
+}async function vibe() {
+  console.log('--- T-F1-09: vibracion y destello (navigator.vibrate simulado)');
+  const b = await launch(); let pg = await mk(b, 'reset=1&speed=0&direct=1&all=1&noanchor=1');
+  const sim = () => E(pg, () => { window.__vib = []; navigator.vibrate = p => { window.__vib.push(p); return true; }; G.Save.data.settings = G.Save.data.settings || {}; delete G.Save.data.settings.vibe; G.Save.data.settings.cine = { calm: false, textSpeed: 1, soundCaps: true }; });
+  await sim();
+  let r = await E(pg, () => { const p = G.player; p.hurtT = 0; p.hp = p.maxHp; G.Player.hurt(p, 1, p.x + 10, p.y, { src: 'test' }); return { n: window.__vib.length, on: G.fx.vibeOn() }; });
+  ok(r.on && r.n === 1, 'golpe recibido: vibra una vez (' + r.n + ')');
+  r = await E(pg, () => { window.__vib.length = 0; G.fx.vibe('fuse'); G.fx.vibe('part'); return window.__vib.length; });
+  ok(r === 2, 'fusion y parte de jefe vibran');
+  r = await E(pg, () => { window.__vib.length = 0; G.Save.data.settings.vibe = 0; G.fx.vibe('fuse'); G.fx.vibe('part'); const p = G.player; p.hurtT = 0; G.Player.hurt(p, 1, p.x + 10, p.y, { src: 'test' }); G.fx.vibe('hurt'); return window.__vib.length; });
+  ok(r === 0, 'ajuste apagado: no vibra');
+  r = await E(pg, () => { window.__vib.length = 0; delete G.Save.data.settings.vibe; G.Save.data.settings.cine.calm = true; const off = G.fx.vibeOn(); G.fx.vibe('fuse'); const n0 = window.__vib.length; G.Save.data.settings.vibe = 1; const on = G.fx.vibeOn(); G.fx.vibe('fuse'); G.fx.pulseA = 0; G.fx.pulse(0.25); return { off, n0, on, n1: window.__vib.length, pa: G.fx.pulseA }; });
+  ok(!r.off && r.n0 === 0 && r.on && r.n1 === 1, 'reducir destellos: apagado por defecto, pero se puede encender a mano');
+  ok(r.pa <= 0.06, 'reducir destellos: el destello de pantalla casi no se ve (' + r.pa.toFixed(3) + ')');
+  r = await E(pg, () => { G.Save.data.settings.cine.calm = false; G.fx.pulseA = 0; G.fx.pulse(0.9); const a = G.fx.pulseA; G.Save.save(); const back = G.Save.parse ? true : true; const raw = localStorage.getItem(Object.keys(localStorage).find(k => /save$|save\.v13$/.test(k)) || ''); return { a, saved: !raw || raw.indexOf('"vibe"') >= 0 }; });
+  ok(r.a <= 0.25 && r.saved, 'destello normal tope 25 %; el ajuste vibe se guarda con el resto');
+  // Ajustes: boton visible solo con la API
+  r = await E(pg, () => { G.Panels.open('settings'); G.Panels.setTab(1); const a = G.fx.vibeSupported(); const rc = G.Panels.setRects().sb.vibe; return { a, rc }; });
+  ok(r.a && r.rc.w === 320 && r.rc.h === 66, 'ajustes: boton de vibracion con API (66 de alto)');
+  await E(pg, () => { navigator.vibrate = undefined; });
+  ok(!(await E(pg, () => G.fx.vibeSupported() || G.fx.vibe('fuse'))), 'sin API: boton oculto y vibe no hace nada');
+  await done(pg, 'vibe'); await b.close();
 }
 const DAILY_SNAP = '["tundra",3,["sincor","sincambio"],"lana",["fire","ice"]]';   // reglas r1 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
 
 (async () => {
-  const run = { daily, fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide };
+  const run = { daily, fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide, vibe };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
