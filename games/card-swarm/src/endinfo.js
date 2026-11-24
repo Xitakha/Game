@@ -44,8 +44,8 @@
     }
     var qa = Q.active && Q.active();
     if (qa && Q.progress(qa.id) < qa.goal) add('quest', 'Encargo: ' + qa.label + ' ' + Q.progress(qa.id) + '/' + qa.goal, 'Objetivo: ' + qa.label + ' ' + Q.progress(qa.id) + '/' + qa.goal, Q.progress(qa.id) / qa.goal);
-    var nr = T.nearest && T.nearest();
-    if (nr && nr.miss.length <= 2) { var m0 = nr.miss[0]; add('forja', 'Forja: ' + nr.name + ', faltan ' + m0.n + ' ' + m0.label, 'Objetivo: forja ' + nr.name, null); }
+    var nr = T.nearest && T.nearest();   // T-F1-07: el objetivo de forja llega con Grum (y el PF)
+    if (nr && nr.miss.length <= 2 && (!G.Res || G.Res.visible('pf'))) { var m0 = nr.miss[0]; add('forja', 'Forja: ' + nr.name + ', faltan ' + m0.n + ' ' + m0.label, 'Objetivo: forja ' + nr.name, null); }
     if (won && !out.some(function (g) { return g.id === 'peligro'; }) && G.Save.pelMax(bid) < 5 && (S.bossKills[bid] || 0) > 0) { var np = G.Save.pelMax(bid) + 1; add('peligro', 'Vence ' + (bid === 'pastor' ? 'al Pastor' : 'a ' + bn) + ' en Peligro ' + G.Boss.ROMAN[np], 'Objetivo: vence ' + (bid === 'pastor' ? 'al Pastor' : 'a ' + bn) + ' en Peligro ' + G.Boss.ROMAN[np], null); }
     // respaldo (siempre hay al menos un objetivo)
     var bt0 = (S.stats.best || {})[key];

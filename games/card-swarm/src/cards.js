@@ -227,19 +227,22 @@
   C.discard = function (slot) {
     var h = hand(); if (!h[slot]) return;
     h[slot] = null; G.player.ash += 10; G.Snd.play('discard'); C.recalc(false);
-    G.fx.num(G.player.x, G.player.y - 30, '+10 Ceniza', '#ff9a3c');
-    msg('Carta descartada: +10 Ceniza.');
+    if (ashV()) { G.fx.num(G.player.x, G.player.y - 30, '+10 Ceniza', '#ff9a3c'); msg('Carta descartada: +10 Ceniza.'); } else msg('Carta descartada.');   // T-F1-07: la Ceniza se suma igual
     if (C.off.replacing) { var id = C.off.replacing; C.off.replacing = null; finish(C.add(id), id); }
   };
   // Omitir: sin penalización, +B.skipAsh Ceniza. Solo en subidas de nivel (la elección inicial es obligatoria). close() consume 1 subida pendiente.
   C.skip = function () {
     var O = C.off; if (!O || O.mode !== 'level') return;
     G.player.ash += G.B.skipAsh; G.Snd.play('discard');
-    G.fx.num(G.player.x, G.player.y - 30, '+' + G.B.skipAsh + ' Ceniza', '#ff9a3c');
+    if (ashV()) G.fx.num(G.player.x, G.player.y - 30, '+' + G.B.skipAsh + ' Ceniza', '#ff9a3c');
     close();
   };
+  // T-F1-07: ¿se enseña la Ceniza? Sin ella (salidas 1-3 del flujo nuevo) no hay contador ni REROLL; descartar y omitir la suman igual
+  function ashV() { return !G.Res || G.Res.visible('ceniza'); }
+  C.ashVisible = ashV;
   C.reroll = function () {
     var O = C.off, cost = C.rerollCost(), p = G.player;
+    if (!ashV()) return;
     if (G.daily && G.daily.noReroll) { msg(G.Daily.t('mut_sincambio_msg')); return; }   // v10: mutador del reto 'Sin cambios'
     if (p.ash < cost) { msg('Ceniza insuficiente (' + cost + ').'); return; }
     p.ash -= cost; O.rerolls++; O.cards = C.makeOffer(O.mode); O.rt = 0; O.replacing = null; G.Snd.play('reroll');
@@ -273,6 +276,8 @@
   C.fuseRect = { x: 520, y: 326, w: 424, h: 66 };   // FUSION: fusionar dos cartas de la mano (si hay receta)
   C.rerollRect = { x: 520, y: 398, w: 208, h: 66 };
   C.skipRect = { x: 736, y: 398, w: 208, h: 66 };
+  var SKIP_WIDE = { x: 520, y: 398, w: 424, h: 66 };   // T-F1-07: sin REROLL (Ceniza aún no presentada), OMITIR ocupa la fila entera
+  function skipR() { return ashV() ? C.skipRect : SKIP_WIDE; }
   C.discardRect = { x: 16, y: 456, w: 474, h: 62 };   // táctil: activa el modo descartar y se toca la carta de la mano
   function U_btn(c, r, label, col, border, size) { c.fillStyle = col; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = border; c.lineWidth = 3; c.strokeRect(r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3); G.txt(c, label, r.x + r.w / 2, r.y + r.h / 2, size, '#fff', 'center'); }
   function inR(r, m) { return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }
@@ -299,8 +304,8 @@
       if (O.discardMode && inp.hit('Mouse0') && inR(C.slotRect(i, true), m)) { if (G.player.hand[i]) { O.discardMode = false; C.discard(i); } return; }
     }
     if (O.discardMode && inp.hit('Mouse0')) { O.discardMode = false; return; }   // tocar en otro sitio cancela
-    if (O.mode === 'level' && (inp.hit('Digit4', 'Numpad4', 'Space') || (inp.hit('Mouse0') && inR(C.skipRect, m)))) { C.skip(); return; }
-    if (inp.hit('KeyR') || (inp.hit('Mouse0') && inR(C.rerollRect, m))) { C.reroll(); return; }
+    if (O.mode === 'level' && (inp.hit('Digit4', 'Numpad4', 'Space') || (inp.hit('Mouse0') && inR(skipR(), m)))) { C.skip(); return; }
+    if (ashV() && (inp.hit('KeyR') || (inp.hit('Mouse0') && inR(C.rerollRect, m)))) { C.reroll(); return; }
     for (i = 0; i < O.cards.length; i++) {
       if (!shift && inp.hit('Digit' + (i + 1), 'Numpad' + (i + 1))) { C.pick(i); return; }
       if (inp.hit('Mouse0') && inR(C.offerRect(i), m)) { C.pick(i); return; }
@@ -522,7 +527,8 @@
     // mano debajo (izquierda) y Ceniza (derecha) en la misma fila de rótulos
     var h = hand();
     G.txt(c, 'TU MANO', 16, 336, 17, '#9a8fb0', 'left');
-    G.txt(c, 'Ceniza: ' + p.ash, 944, 336, 17, '#ff9a3c', 'right');
+    var vA = ashV(); if (vA && G.Res) G.Res.mark('ceniza');
+    if (vA) G.txt(c, 'Ceniza: ' + p.ash, 944, 336, 17, '#ff9a3c', 'right');
     for (i = 0; i < SLOTS; i++) {
       var sr = C.slotRect(i, true);
       if (h[i]) {
@@ -533,21 +539,24 @@
     C.drawComboLines(c, true);
     var tch = G.Sys.isTouch(), U = G.UI;
     // reroll y omitir (dos líneas: acción / Ceniza)
-    var rr = C.rerollRect, cost = C.rerollCost(), can = p.ash >= cost, rh = inR(rr, m);
-    c.fillStyle = can ? (rh ? '#d97a2a' : '#a85a1a') : '#3a2f3d'; c.fillRect(rr.x, rr.y, rr.w, rr.h);
-    c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x + 1.5, rr.y + 1.5, rr.w - 3, rr.h - 3);
-    G.txt(c, tch ? 'REROLL' : 'REROLL (R)', rr.x + rr.w / 2, rr.y + 21, 18, can ? '#fff' : '#9a8fa0', 'center');
-    G.txt(c, cost + ' Ceniza', rr.x + rr.w / 2, rr.y + 45, 17, can ? '#ffe9a0' : '#9a8fa0', 'center');
+    if (vA) {
+      var rr = C.rerollRect, cost = C.rerollCost(), can = p.ash >= cost, rh = inR(rr, m);
+      c.fillStyle = can ? (rh ? '#d97a2a' : '#a85a1a') : '#3a2f3d'; c.fillRect(rr.x, rr.y, rr.w, rr.h);
+      c.strokeStyle = can ? '#ffd27a' : '#6a5a70'; c.lineWidth = 3; c.strokeRect(rr.x + 1.5, rr.y + 1.5, rr.w - 3, rr.h - 3);
+      G.txt(c, tch ? 'REROLL' : 'REROLL (R)', rr.x + rr.w / 2, rr.y + 21, 18, can ? '#fff' : '#9a8fa0', 'center');
+      G.txt(c, cost + ' Ceniza', rr.x + rr.w / 2, rr.y + 45, 17, can ? '#ffe9a0' : '#9a8fa0', 'center');
+    }
     var dr = C.discardRect, dOn = !!O.discardMode;
     c.fillStyle = dOn ? '#a02030' : '#3a2f48'; c.fillRect(dr.x, dr.y, dr.w, dr.h); c.strokeStyle = dOn ? '#ff8a8a' : '#8a6a8a'; c.lineWidth = 3; c.strokeRect(dr.x + 1.5, dr.y + 1.5, dr.w - 3, dr.h - 3);
     if (dOn) G.txt(c, 'TOCA LA CARTA QUE QUIERES DESCARTAR', dr.x + dr.w / 2, dr.y + dr.h / 2, 17, '#fff', 'center');
+    else if (!vA) G.txt(c, tch ? 'DESCARTAR UNA CARTA DE LA MANO' : 'DESCARTAR (Shift+1..5 / clic dcho.)', dr.x + dr.w / 2, dr.y + dr.h / 2, 17, '#fff', 'center');
     else { G.txt(c, tch ? 'DESCARTAR UNA CARTA DE LA MANO' : 'DESCARTAR (Shift+1..5 / clic dcho.)', dr.x + dr.w / 2, dr.y + 20, 17, '#fff', 'center'); G.txt(c, '+10 Ceniza', dr.x + dr.w / 2, dr.y + 42, 17, '#ffe9a0', 'center'); }
     if (O.mode === 'level') {
-      var sk = C.skipRect, sh = inR(sk, m);
+      var sk = skipR(), sh = inR(sk, m);
       c.fillStyle = sh ? '#4a6a4a' : '#324a38'; c.fillRect(sk.x, sk.y, sk.w, sk.h);
       c.strokeStyle = '#9be59b'; c.lineWidth = 3; c.strokeRect(sk.x + 1.5, sk.y + 1.5, sk.w - 3, sk.h - 3);
-      G.txt(c, tch ? 'OMITIR' : 'OMITIR (4/Esp.)', sk.x + sk.w / 2, sk.y + 21, 18, '#fff', 'center');
-      G.txt(c, '+' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + 45, 17, '#ffe9a0', 'center');
+      G.txt(c, tch ? 'OMITIR' : 'OMITIR (4/Esp.)', sk.x + sk.w / 2, vA ? sk.y + 21 : sk.y + sk.h / 2, 18, '#fff', 'center');
+      if (vA) G.txt(c, '+' + G.B.skipAsh + ' Ceniza', sk.x + sk.w / 2, sk.y + 45, 17, '#ffe9a0', 'center');
     }
     // FUSION: botón de fusionar la mano, huecos de poderes y ventana de elección
     var fp = G.Fusion.handPairs();
@@ -556,7 +565,8 @@
     // ayuda
     if (O.msgT > 0 && O.msg) G.txt(c, O.msg, G.W / 2, 530, 17, O.replacing ? '#ff8a8a' : '#ffd27a', 'center');
     else if (G.Fte && G.Fte.pickHint(O)) G.txt(c, G.Fte.pickHint(O), G.W / 2, 530, 17, '#ffe9a0', 'center');   // T-F1-02: aviso 'pick' de la 1.ª oferta
-    else G.txt(c, tch ? 'Toca una carta para elegirla' : '1 / 2 / 3 o clic: elegir     R: reroll', G.W / 2, 530, 17, '#d8cfe8', 'center');
+    else if (vA && G.Res && G.Res.offerHint(O)) G.txt(c, G.Res.offerHint(O), G.W / 2, 530, 17, '#ffe9a0', 'center');   // T-F1-07: la 1.ª oferta con la Ceniza ya visible la presenta
+    else G.txt(c, tch ? 'Toca una carta para elegirla' : (vA ? '1 / 2 / 3 o clic: elegir     R: reroll' : '1 / 2 / 3 o clic: elegir'), G.W / 2, 530, 17, '#d8cfe8', 'center');
     if (O.modal) {
       var M = O.modal, n = M.buttons.length, br = modalRect(n), sl = modalSub();
       c.fillStyle = 'rgba(4,2,8,0.78)'; c.fillRect(0, 0, G.W, G.H);

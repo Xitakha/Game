@@ -4,7 +4,7 @@
   var G = window.G, B = G.B, H = G.Hud = {};
   var bn = { text: '', t: 0, max: 1, color: '#fff', combo: null };
 
-  H.banner = function (text, ms, color, combo) { bn.text = text; bn.t = ms; bn.max = ms; bn.color = color || '#fff'; bn.combo = combo || null; };
+  H.banner = function (text, ms, color, combo, res) { bn.text = text; bn.t = ms; bn.max = ms; bn.color = color || '#fff'; bn.combo = combo || null; bn.res = res || null; };   // res: recurso que nombra (registro de T-F1-07)
 
   H.update = function (dt) {
     if (bn.t > 0) bn.t -= dt;
@@ -22,6 +22,7 @@
 
   function drawBanner(c) {
     if (bn.t <= 0) return;
+    if (bn.res && G.Res) G.Res.mark(bn.res);
     var e = 1 - bn.t / bn.max, u = bn.t / bn.max;
     var a = u < 0.25 ? u / 0.25 : 1, pop = 1 + 0.6 * Math.max(0, 1 - e * 7);
     c.save(); c.globalAlpha = Math.max(0, Math.min(1, a));
@@ -90,9 +91,10 @@
   }
   // T-F1-08: línea de duración y botín (en combate solo con el ancho clásico; con la pantalla ancha va en la pausa)
   function durLine() {
-    var DU = G.Loot.dur();   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR)
-    return DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : '');
+    var DU = G.Loot.dur(), R = G.Res, vPF = !R || R.visible('pf'), vE = !R || R.visible('esencia');   // duración elegida y multiplicadores aplicados (tabla G.Loot.DUR); T-F1-07: solo los recursos ya presentados
+    return DU.name.toUpperCase() + ' ' + DU.min + ' min  -  botín x' + String(DU.parts).replace('.', ',') + (DU.pf !== 1 && vPF ? '  PF x' + String(DU.pf).replace('.', ',') : '') + (DU.rare !== 1 && vE ? '  Esencia x' + String(DU.rare).replace('.', ',') : '') + (DU.bossHp !== 1 ? '  jefe +' + Math.round((G.Boss.durMul() * DU.bossHp - 1) * 100) + ' % HP' : '');
   }
+  function rv(id) { var R = G.Res; if (!R) return true; var v = R.visible(id); if (v) R.mark(id); return v; }   // T-F1-07: ¿se dibuja este recurso? (y lo anota en el registro)
   // T-F1-08 fase 2: ancho de media barra de jefe / guardián visible (para que la columna derecha no la pise)
   function bossBarHalf() {
     var e = G.Boss.e; if (e && !e.dead && !e.dying && G.Boss.active) return 320;
@@ -121,11 +123,14 @@
     if (G.W < 1100 || (half && CX + half + 10 > cx - 112)) { cx = R; y = Math.max(T + 64 + 18, half ? 116 : 0); }   // apilada: bajo los botones (y bajo las marcas de la barra del jefe, hasta y ~104)
     colLeft = cx === R ? R - 136 : cx - 112;   // borde izquierdo de lo que hay arriba a la derecha (botones o columna): la ayuda central no lo pisa
     G.txt(c, 'Bajas ' + G.kills, cx, y, 16, '#fff', 'right');
-    c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(cx - 100, y + 16); c.lineTo(cx - 95, y + 22); c.lineTo(cx - 100, y + 28); c.lineTo(cx - 105, y + 22); c.closePath(); c.fill();
-    G.txt(c, 'Ceniza ' + p.ash, cx, y + 22, 16, '#ff9a3c', 'right');
-    G.UI.part(c, 'thread', cx - 105, y + 44, 7); G.txt(c, 'Partes ' + LR.total, cx, y + 44, 16, '#e8dcb0', 'right');
-    var ny = y + 66;
-    if (LR.rare) { G.UI.part(c, 'rare', cx - 105, ny, 7); G.txt(c, 'Rara x' + LR.rare, cx, ny, 16, '#e0a8ff', 'right'); ny += 22; }
+    var py = y + 22;   // T-F1-07: sin Ceniza visible (salidas 1-3 del flujo nuevo) las Partes suben a su hueco
+    if (rv('ceniza')) {
+      c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(cx - 100, y + 16); c.lineTo(cx - 95, y + 22); c.lineTo(cx - 100, y + 28); c.lineTo(cx - 105, y + 22); c.closePath(); c.fill();
+      G.txt(c, 'Ceniza ' + p.ash, cx, y + 22, 16, '#ff9a3c', 'right'); py += 22;
+    }
+    rv('partes'); G.UI.part(c, 'thread', cx - 105, py, 7); G.txt(c, 'Partes ' + LR.total, cx, py, 16, '#e8dcb0', 'right');
+    var ny = py + 22;
+    if (LR.rare && rv('esencia')) { G.UI.part(c, 'rare', cx - 105, ny, 7); G.txt(c, 'Rara x' + LR.rare, cx, ny, 16, '#e0a8ff', 'right'); ny += 22; }
     var qt = G.Quests.hudText();
     if (qt) {
       var qy = cx === R ? ny + 4 : Math.max(T + 80, ny - 22 + 4), tgt = G.Quests.target();   // bajo la columna (o bajo los botones, a la derecha)
@@ -167,16 +172,19 @@
     }
     // kills, ceniza
     G.txt(c, 'Bajas ' + G.kills, G.W - 16, 18, 15, '#fff', 'right');
-    c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();
-    G.txt(c, 'Ceniza ' + p.ash, G.W - 16, 44, 15, '#ff9a3c', 'right');
+    var vA = rv('ceniza'), y0 = vA ? 0 : -24;   // T-F1-07: sin Ceniza visible, Partes (y lo de debajo) suben una fila
+    if (vA) {
+      c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(G.W - 100, 38); c.lineTo(G.W - 95, 44); c.lineTo(G.W - 100, 50); c.lineTo(G.W - 105, 44); c.closePath(); c.fill();
+      G.txt(c, 'Ceniza ' + p.ash, G.W - 16, 44, 15, '#ff9a3c', 'right');
+    }
     // contador de partes recogidas en la expedición
-    var LR = G.Loot.run;
-    G.UI.part(c, 'thread', G.W - 105, 68, 7); G.txt(c, 'Partes ' + LR.total, G.W - 16, 68, 15, '#e8dcb0', 'right');
-    if (LR.rare) { G.UI.part(c, 'rare', G.W - 105, 88, 7); G.txt(c, 'Rara x' + LR.rare, G.W - 16, 88, 13, '#e0a8ff', 'right'); }
+    var LR = G.Loot.run, vR = LR.rare && rv('esencia');
+    rv('partes'); G.UI.part(c, 'thread', G.W - 105, 68 + y0, 7); G.txt(c, 'Partes ' + LR.total, G.W - 16, 68 + y0, 15, '#e8dcb0', 'right');
+    if (vR) { G.UI.part(c, 'rare', G.W - 105, 88 + y0, 7); G.txt(c, 'Rara x' + LR.rare, G.W - 16, 88 + y0, 13, '#e0a8ff', 'right'); }
     drawCombosList(c);
     var qt = G.Quests.hudText();
     if (qt) {
-      var qy = LR.rare ? 108 : 88, tgt = G.Quests.target();
+      var qy = (vR ? 108 : 88) + y0, tgt = G.Quests.target();
       G.txt(c, 'Encargo', G.W - 16, qy, 11, '#9a8fb0', 'right');
       G.txt(c, qt, G.W - 16, qy + 17, 14, tgt ? '#ffe9a0' : '#9dffb4', 'right');
     }

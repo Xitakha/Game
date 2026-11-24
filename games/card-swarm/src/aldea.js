@@ -64,6 +64,7 @@
     M.x = st.x; M.y = st.y; M.booted = true; M.moving = false;
     var S = G.Save.data, nAv = G.Tree.availableCount();
     var arr = G.Fte && G.Fte.arrival(); if (arr) flash(arr);   // T-F1-02: la llegada del NPC nuevo es el primer aviso
+    var ef = G.Res && G.Res.first('esencia'); if (ef) ef.forEach(flash);   // T-F1-07: la Esencia se presenta al volver con Yarlak vencido (o con el Rango III ya comprado)
     if (fromRun) {
       // luz: Día tras ganar, Ocaso tras perder, Noche con 3 derrotas seguidas o cada 5 expediciones (doc A.7)
       A.timeMode = (S.runs > 0 && S.runs % 5 === 0) || (S.lossStreak || 0) >= 3 ? 'noche' : G.won ? 'dia' : 'ocaso';
@@ -165,19 +166,20 @@
   function lanudoTips() {
     var S = G.Save.data, k = S.bossKills, Q = G.Quests, T = G.Tree, out = [], C = G.Cards;
     if (!S.runs) out.push('Sal al Portal, chaval. Las cartas atacan solas: tú esquiva y recoge las gemas, y no corras en línea recta.');
-    if (!k.pastor) out.push('El Pastor tiene tres partes: cuernos, cayado y vellón. Rómpelas y caen trofeos. Le duelen el Fuego y el Acero; el Veneno le resbala.');
+    var RV = function (id) { return !G.Res || G.Res.visible(id); };   // T-F1-07: los consejos no nombran recursos aún sin presentar
+    if (!k.pastor) out.push('El Pastor tiene tres partes: cuernos, cayado y vellón. ' + (RV('trofeos') ? 'Rómpelas y caen trofeos.' : 'Rómpelas y suelta más botín.') + ' Le duelen el Fuego y el Acero; el Veneno le resbala.');
     else if (!k.karceron) out.push('Con el Pastor vencido se abre la Cripta. Karceron es un coloso casi inmóvil: Hielo y Rayo lo parten; el Fuego y el Veneno apenas le hacen cosquillas.');
     else if (!k.letea) out.push('Letea muda la sangre a media pelea: primero le duele la Sangre y luego el Veneno. Cuidado, el Hielo se le resbala.');
     if (k.letea && !k.yarlak) out.push('Con Letea vencida se abre la Tundra: hielo que resbala, ventisca y un Frío que sube. Yarlak, el mamut, odia el Fuego y el Rayo. Quédate cerca de las hogueras.');
     if (S.bossKills.melaria && !S.bossKills.cenizar && k.pastor && k.karceron && k.letea && k.yarlak && k.melaria) out.push('Con los cinco caídos se abre el Cráter del Hogar Quemado en el Portal: allí arde Cenizar, el Incendio Primero. Siete fases, sin checkpoints. Cada Reliquia que rompas acorta su Rosario final.');
     if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
-    try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
+    if (RV('insignias')) try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
       if ((S.insigniasEver || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
     }); } catch (eI) { /* sin minijefes */ }
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });
     if (unseen.length) { var cb = unseen[(S.flags.tip_combo || 0) % unseen.length]; S.flags.tip_combo = (S.flags.tip_combo || 0) + 1; out.push('¿Has probado ' + G.TAGS[cb.a].name + ' con ' + G.TAGS[cb.b].name + '? Dicen que da ' + cb.name + ': ' + cb.desc); }
-    if (T.pfFree() > 0) out.push('Tienes ' + T.pfFree() + ' punto' + (T.pfFree() > 1 ? 's' : '') + ' de forja sin gastar. Grum se aburre.');
+    if (T.pfFree() > 0 && RV('pf')) out.push('Tienes ' + T.pfFree() + ' punto' + (T.pfFree() > 1 ? 's' : '') + ' de forja sin gastar. Grum se aburre.');
     if (S.brasas >= 700) out.push('Guardas muchas Brasas. Un nodo de nivel 2 cuesta 300; sin gastarlas no calientan nada.');
     if (!Q.active()) out.push('Vesper siempre tiene algún bicho pendiente. Con un encargo activo, ese enemigo sale antes y más a menudo.');
     if ((S.lossStreak || 0) >= 2) out.push('Caer también es aprender. Cambia las anclas, o llévate un plato de Castaña.');
@@ -241,7 +243,8 @@
   function startScene() {
     var S = G.Save.data, it = ints().filter(function (i) { return i.id === 'carapa'; })[0]; if (!it) return;
     sceneDone = true; var had = !!S.flags.smithGift, w = who(it, '#3a7a86'); w.voice = true;
-    D.say(w, ['Soy Carapa. Cosí mi primer yelmo a los siete años.', 'Llegué con la caravana. Vi cómo vencías al Pastor.', 'Grum afila lo que pega. Yo coso lo que aguanta.', had ? 'Ya te dejé ropa: tus piezas de Aldeano y algún peto.' : 'Toma el set de Aldeano, de regalo. Todo se mide.'], [{ label: 'Gracias', fn: function () {} }], function () { });
+    var RS = G.Res, rl = RS ? (RS.first('trofeos') || []).concat(RS.first('insignias') || []) : [];   // T-F1-07: Carapa presenta trofeos e insignias (con lo que ya traes)
+    D.say(w, ['Soy Carapa. Cosí mi primer yelmo a los siete años.', 'Llegué con la caravana. Vi cómo vencías al Pastor.', 'Grum afila lo que pega. Yo coso lo que aguanta.'].concat(rl, [had ? 'Ya te dejé ropa: tus piezas de Aldeano y algún peto.' : 'Toma el set de Aldeano, de regalo. Todo se mide.']), [{ label: 'Gracias', fn: function () {} }], function () { });
     S.flags.smithMet = 1; G.Armor.gift(); G.Save.save(); flash('Carapa abre su taller (habla con ella).');
   }
   function talk(it) {
@@ -256,7 +259,8 @@
     if (it.id === 'grum') {
       var first = !flag('grum'), noPF = G.Tree.pfFree() <= 0 && G.Tree.availableCount() === 0, nAv = G.Tree.availableCount();
       var line = first ? 'El hierro recuerda. Elige bien qué camino le enseñas.' : nAv > 0 ? 'Tengo ' + nAv + ' mejora' + (nAv > 1 ? 's' : '') + ' lista' + (nAv > 1 ? 's' : '') + ' para ti. Trae el hierro.' : noPF ? 'Sin chispa de forja no hay trabajo. Cumple encargos.' : 'Trae partes. Yo hago el resto.';
-      D.say(w, [line], [{ label: 'Forjar', fn: function () { forgedVisit = false; openPanel('forge'); } }, ch, bye]);
+      var pfl = (G.Res && G.Res.first('pf')) || [];   // T-F1-07: Grum presenta el Punto de Forja (y los que ya traías) en la primera charla
+      D.say(w, pfl.concat([line]), [{ label: 'Forjar', fn: function () { forgedVisit = false; openPanel('forge'); } }, ch, bye]);
     } else if (it.id === 'vesper') {
       var firstV = !flag('vesper'), act = Q.active(), lines;
       if (Q.isReady()) {
@@ -273,7 +277,8 @@
       D.say(w, lines, vopts.concat([ch, bye]));
     } else if (it.id === 'rufo') {
       var left = L.TRADE.cupo - (S.shop.trade || 0), line2 = left <= 0 ? 'Hoy no me caben más trastos. Vuelve tras otra salida.' : (S.brasas < 6 && totalParts() === 0) ? 'El cariño no paga, mapache.' : '¿Cambiamos? Tres por una, sin preguntas.';
-      D.say(w, [line2], [{ label: 'Comerciar', fn: function () { openPanel('rufo'); } }, ch, bye]);
+      var rfl = (G.Res && G.Res.first('ceniza', 'rufo')) || [];   // T-F1-07: Rufo presenta la Ceniza la primera vez
+      D.say(w, rfl.concat([line2]), [{ label: 'Comerciar', fn: function () { openPanel('rufo'); } }, ch, bye]);
     } else if (it.id === 'ulalume') {
       var lo = S.loadouts.filter(Boolean).length;
       D.say(w, [lo ? 'Tus mazos duermen en mis estantes. ¿Los despertamos?' : 'Tus cartas susurran. ¿Las ordenamos?'], [{ label: 'Cartas', fn: function () { openPanel('archive'); } }, ch, bye]);
@@ -583,6 +588,7 @@
     if (tQ && c.measureText(tQ).width > maxW) { while (tQ.length > 8 && c.measureText(tQ + '...').width > maxW) tQ = tQ.slice(0, -1); tQ += '...'; }
     var bw = Math.max(w1, tQ ? c.measureText(tQ).width : 0) + 16;
     c.fillStyle = 'rgba(10,6,18,0.62)'; c.fillRect(x0 - 6, ca.T - 6, bw, showQ ? 54 : 30);
+    if (G.Res) { G.Res.mark('brasas'); if (showPF) G.Res.mark('pf'); }   // registro de T-F1-07 (la barra ya seguía a los NPC presentes)
     U.part(c, 'brasa', x0 + 8, y1, 8); G.txt(c, tB, x0 + 22, y1, 13, '#ff9a3c', 'left');
     if (showPF) { T.pfIcon(c, xP, y1, 8); G.txt(c, tP, xP + 14, y1, 13, T.pfFree() ? '#ffd24a' : '#9a8fb0', 'left'); }
     G.txt(c, tS, xS, y1, 12, '#9a8fb0', 'left');

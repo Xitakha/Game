@@ -1,6 +1,6 @@
 # SPEC T-F1-07: presentar la economía por pasos (pasos 1 y 4; diseño de los pasos 2 y 3)
 
-Autor: `balance-designer`. Fecha: 2026-11-24. Estado: **solo diseño, sin código**. Falta la revisión de presentación de `ux-designer` (posiciones y tamaños) y, para el paso 4, la decisión del dueño.
+Autor: `balance-designer`. Fecha: 2026-11-24. Estado: **pasos 1-3 implementados** (`src/res.js`, grupo de pruebas `res`; decisiones del dueño en la sección 11: sí a quitar el REROLL hasta la salida 4, sí a "vencer a un jefe lo enseña todo", ventana hasta el fin de la salida 3, F2 solo estudiada en 8.1). Estado original: solo diseño, sin código. Falta la revisión de presentación de `ux-designer` (posiciones y tamaños) y, para el paso 4, la decisión del dueño.
 Tarea del plan: `studio/docs/PLAN-MAESTRO.md`, T-F1-07. Depende de T-F1-02 (`studio/docs/SPEC-T-F1-02-04.md`, ya implementada en `src/fte.js`).
 
 Notación: **[C]** leído del código (con archivo y línea), **[M]** medido con bot en esta sesión, **[I]** inferido, **[P]** propuesta.
@@ -216,6 +216,7 @@ Las tablas van en `G.Res.TXT` con el mismo formato que `G.Daily.TXT` (`t('clave'
 - **Flag de reversión**: `G.B.resSteps` (por defecto `true`). Con `?dev=1&res=0` se pone a `false` al cargar (mismo patrón que `?fte=0`, `src/fte.js:11`). Con `false`, `visible()` devuelve siempre `true` y `first()` devuelve `null`: todo como hoy, incluidos el REROLL y los textos de siempre. `?fte=0` también lo apaga (sin aldea por pasos, los disparadores no tienen sentido).
 - **Cuentas existentes**: las `legacy` de T-F1-02 (`runs > 0` o `introSeen` al cargar) lo ven todo. Una cuenta nueva que llega a `step: 'done'` (salida 4) sigue con los disparadores de Esencia, trofeos e Insignias: no dependen del calendario.
 - **`sw.js`**: añadir `src/res.js` al precache (el grupo `iso` lo comprueba).
+- **Notas de la implementación** (programador, 2026-11-24): `G.Res.on()` pide además `step !== ''` (cuentas que nunca entraron por la intro del flujo nuevo: bots, `?direct=1`, `?cine=0`, lo ven todo, igual que T-F1-02 no las engancha; si no, se quedarían con 0 salidas contadas para siempre). "Ceniza viva" cuenta como bloqueado (`G.Tree.status`) mientras la Ceniza no se ve, así que tampoco entra en "mejoras listas". Las fugas de 3.6 se aplican: Diario con Vesper (`G.Obj.isOpen`) y reto con 3 salidas contadas o un jefe vencido (`G.Daily.isOpen`), solo en cuentas del flujo nuevo. "1 Esencia" -> "1 parte rara" pasa por `G.Res.fix` en los textos de `G.Daily.t`, `G.Obj.t`, `G.Obj.rewardText` y `G.Quests.rewardText`.
 
 ---
 
@@ -256,6 +257,30 @@ Pruebas existentes que hay que actualizar:
 | F1 | **Ceniza dentro de Brasas** (una sola moneda: en la expedición se recogen Brasas; REROLL las gasta del botín de esa salida) | Un nombre menos; resuelve la Ceniza del criterio sin quitar el REROLL; tema coherente | Cambia la economía: la Ceniza al final de una salida (600-1.900 [M]) frente a sus Brasas (~140-240 [M]); habría que reescalar, y cada REROLL pasaría a costar progreso de la meta. Toca Tónico, "Ceniza viva", Alforja, mutadores del reto y encargos | Cambia una decisión: hoy el REROLL es gratis para la meta; con la fusión, es un intercambio poder ahora / forja después. Puede ser más profundo o simplemente castigar | Alto: recalibrar con bots (economía v5) y revisar todas las cartas con Ceniza | No ahora. Solo si el dueño quiere el REROLL desde la salida 1 y no acepta 4 recursos |
 | F4 | PF dentro de Brasas | Un nombre menos | Los PF son la barrera de habilidad (se ganan venciendo guardianes, jefes y encargos, con tope de 24, `src/loot.js:129`); las Brasas se ganan por tiempo. Fusionarlos deja comprar poder solo con repetir salidas | Mucha: el árbol dejaría de premiar el reto | Medio-alto | **No** |
 | F5 | Trofeos dentro de Esencia | Ya suman 1 Esencia | Las piezas piden trofeos concretos (Cuerno, Vellón, Cayado) | Toda la recolección por parte rota | — | **No** |
+
+### 8.1 Estudio de F2: Insignias dentro de Trofeos (solo diseño; decisión del dueño, sin implementar)
+
+Decisión del dueño (2026-11-24): F2 solo se estudia. Este apartado resume qué haría falta para decidir después. No cambia ninguna cifra de balance.
+
+**Qué cambia para el jugador.** Un solo nombre de recurso, "Trofeos", con dos familias: *trofeos de jefe* (los de hoy: Cuerno, Cayado, Vellón...) y *trofeos de guardián* (las 10 Insignias de hoy, con sus nombres propios: "Insignia de Cuerno" pasaría a "Trofeo de guardián: Cuerno del Carnero", o se conserva el nombre propio y solo cambia la familia). Los recuentos pasan de 7 a 6 recursos en el Archivo y en la tabla de la sección 3.2. Carapa sigue pidiendo lo mismo: cada pieza pide su trofeo concreto; el Talismán, los 2 trofeos de guardián de su bioma.
+
+**Guardado.** Hoy hay cuatro campos: `trophies` / `trophiesEver` (saldo / acumulado de jefe) e `insignias` / `insigniasEver` (saldo / acumulado de guardián, más `brasa_primera`). Dos opciones:
+- **A (recomendada): sin tocar el guardado.** Los cuatro campos se quedan; solo cambia la presentación (textos, Archivo, avisos). Cero migración, cero riesgo para `_sum` y las copias. Es la vía si F2 es solo de nombre.
+- B: fusionar en `trophies` con prefijo (`g:carnero`). Exige subir la versión (v13 -> v14), copia `swarmhand.fusion.save.v13`, migración de saldo y acumulado, y reescribir `armor.js:132-164` (`A.have`, `A.haveAny`, gasto por `kind`), logros (`quests.js:305-326`, `armor.js:255`), Ruta (`tree.js` `trophiesHave`) y el Archivo. No aporta nada al jugador frente a A.
+
+**Migración (solo con B).** `trophies[k] += 0` para los de jefe; `trophies['g:' + mid] = insignias[mid]` y lo mismo con `*Ever`; `brasa_primera` se queda como insignia de jefe final (título). Prueba: guardados v9-v13 con insignias y trofeos dan el mismo `A.readyCount()`, los mismos logros y la misma Ruta antes y después.
+
+**Textos que cambian (con A o B).**
+- Aviso de combate `INSIGNIA: <nombre> (¡NUEVA!)` (`src/minis.js:321`) -> `TROFEO DE GUARDIÁN: <nombre>`.
+- Archivo: "INSIGNIAS x/10" (`src/panels.js`, pestaña COLECCIÓN) y la fila `res.insignias.*` de RECURSOS (se funde con `res.trofeos.*`: "Romper partes de un jefe o derribar guardianes." / "Armadura y talismanes de Carapa, nodos de Ruta.").
+- Logros: "Cazador de guardianes", "Coleccionista de insignias", "Colección completa", "Colgante completo", "Cazador de insignias" (descripciones y lore).
+- Carapa: requisitos del Talismán (`src/smith.js:129-130`, `:223`) y la línea `res.insignias.first` (se funde con `res.trofeos.first`).
+- Lanudo: la historia de cada Insignia (`src/aldea.js`, `told_ins_*`).
+- Manual y textos de diseño (`DESIGN-v6-minijefes.md`).
+
+**Pruebas.** Grupo `res`: la regex de Insignias desaparece y la de Trofeos cubre las dos familias; `armor` y `armor2`: mismos costes; `save2`: solo con B.
+
+**Coste.** Con A, pequeño (S): unas 15 cadenas y una fila menos en el Archivo. Con B, M (migración y pruebas). Recomendación: A, cuando el dueño lo decida.
 
 ---
 

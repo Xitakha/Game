@@ -294,7 +294,7 @@
     if (first == null) first = Q.times(d.id) === 0;
     var mul = first ? 1 : Q.REPEAT_MUL, rp = {};
     for (var k in d.rewardParts) rp[k] = Math.max(1, Math.round(d.rewardParts[k] * mul));
-    return Object.keys(rp).map(function (p) { return rp[p] + ' ' + G.Loot.part(p).short; }).join(' + ') + (d.rare && first ? ' + 1 Esencia' : '') + ' + ' + Math.round(d.brasas * mul) + ' Brasas' + ((first ? d.pf : d.pfRepeat) ? ' + ' + (first ? d.pf : d.pfRepeat) + ' PF' : '');
+    return Object.keys(rp).map(function (p) { return rp[p] + ' ' + G.Loot.part(p).short; }).join(' + ') + (d.rare && first ? ' + ' + (G.Res ? G.Res.fix('1 Esencia') : '1 Esencia') : '') + ' + ' + Math.round(d.brasas * mul) + ' Brasas' + ((first ? d.pf : d.pfRepeat) ? ' + ' + (first ? d.pf : d.pfRepeat) + ' PF' : '');
   };
   Q.tierName = function (t) { return t === 1 ? 'FÁCIL' : t === 2 ? 'MEDIO' : 'DIFÍCIL'; };
   Q.totalDone = function () { var n = 0, d = G.Save.data.quest.done; for (var k in d) n += d[k]; return n; };

@@ -595,6 +595,7 @@
 
   function draw() {
     var rs = G.rs || 1;
+    if (G.Res) G.Res.frame();   // T-F1-07: registro de recursos dibujados (un conjunto por fotograma; lo leen las pruebas)
     G.minFont = (G.state === 'aldea' || G.state === 'gameover' || G.state === 'cards' ) ? G.MIN_UI : 0;
     ctx.setTransform(rs, 0, 0, rs, 0, 0);   // el lienzo puede tener más píxeles que 960x540 (móvil / pantallas HiDPI): se dibuja siempre en coordenadas lógicas
     ctx.imageSmoothingEnabled = false;

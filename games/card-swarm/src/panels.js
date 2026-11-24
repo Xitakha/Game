@@ -29,7 +29,7 @@
     ls.forEach(function (l, i) { G.txt(c, l, 480, y0 + 17 + i * 22, 17, '#ffe9a0', 'center'); });
   }
   function header(c, x) {
-    var S = SV(); U.part(c, 'brasa', x, 24, 10); G.txt(c, 'Brasas ' + S.brasas, x + 16, 24, 16, '#ff9a3c', 'left');
+    var S = SV(); if (G.Res) G.Res.mark('brasas'); U.part(c, 'brasa', x, 24, 10); G.txt(c, 'Brasas ' + S.brasas, x + 16, 24, 16, '#ff9a3c', 'left');
   }
 
   P.open = function (name) {
@@ -462,8 +462,10 @@
       G.txt(c, 'DURACIÓN  (riesgo / recompensa)', 14, 84, 13, '#b4a8c8', 'left');
       LENS.forEach(function (n, k) { var on = S.len === n, D = L.DUR[n]; U.button(c, lenRect(k), D.name, { size: 18, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80', sub: n + ' min' }); });
       var pc = function (v) { return (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + ' %'; }, hpRel = G.Boss.durMul(dd.min) * dd.bossHp, yy = 104;
-      U.wrap(c, dd.name + ': ' + dd.tag, 440, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 500, yy, 13, '#ffe9a0', 'left'); yy += 22; });
-      G.txt(c, 'Botín x' + fx(dd.parts) + '  PF x' + fx(dd.pf) + '  Esencia x' + fx(dd.rare), 500, yy, 13, '#9dffb4', 'left'); yy += 22;
+      var RS = G.Res, vPF = !RS || RS.visible('pf'), vE = !RS || RS.visible('esencia');   // T-F1-07: solo los recursos ya presentados
+      U.wrap(c, dd.name + ': ' + (dd.id === 'rapida' && !vPF ? RS.t('res.rapidaTag') : dd.tag), 440, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 500, yy, 13, '#ffe9a0', 'left'); yy += 22; });
+      if (RS) { if (vPF) RS.mark('pf'); if (vE) RS.mark('esencia'); }
+      G.txt(c, 'Botín x' + fx(dd.parts) + (vPF ? '  PF x' + fx(dd.pf) : '') + (vE ? '  Esencia x' + fx(dd.rare) : ''), 500, yy, 13, '#9dffb4', 'left'); yy += 22;
       G.txt(c, 'Jefe a ' + G.fmtTime(dd.min * 60000 * 7.5 / 9) + '  HP ' + pc(hpRel) + '  daño ' + pc(dd.bossDmg), 500, yy, 13, '#ffb08a', 'left');
       if (showQ) {
         U.panel(c, 14, 196, 932, 84);
@@ -540,7 +542,7 @@
   var CELL = { w: 84, h: 86, gx: 86, gy: 90, x0: 14, y0: 132, cols: 7 };
   function cellRect(i) { return { x: CELL.x0 + (i % CELL.cols) * CELL.gx, y: CELL.y0 + Math.floor(i / CELL.cols) * CELL.gy, w: CELL.w, h: CELL.h }; }
   function chipRect(i) { return { x: 14 + i * 74, y: 76, w: 70, h: 48 }; }
-  function atabRect(i) { return { x: 404 + i * 240, y: 0, w: 232, h: 66 }; }
+  function atabRect(i) { return { x: 160 + i * 242, y: 0, w: 236, h: 66 }; }   // T-F1-07: 3 pestañas (COLECCIÓN, ANCLAS, RECURSOS) entre el título y la X
   var R_ANC = { x: 626, y: 362, w: 312, h: 66 };
   var LOX = 500, LOW = 436;
   function loRect(i) { return { x: LOX, y: 116 + i * 136, w: LOW, h: 128 }; }
@@ -610,8 +612,9 @@
   }
   function updArchive() {
     var list = archList(), i, S = SV(), at = st.atab || 0;
-    for (i = 0; i < 2; i++) if (onR(atabRect(i)) && at !== i) { st.atab = i; G.sfx('flip', { vol: 0.4 }); return false; }
-    if (inp.swipe) { st.atab = at ? 0 : 1; G.sfx('flip', { vol: 0.4 }); return false; }
+    for (i = 0; i < 3; i++) if (onR(atabRect(i)) && at !== i) { st.atab = i; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (inp.swipe) { st.atab = (at + 1) % 3; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (at === 2) return false;   // RECURSOS: solo lectura
     if (at === 1) {
       for (i = 0; i < G.B.anchorSlots; i++) if (onR(handRect2(i)) && S.anchors[i]) { S.anchors.splice(i, 1); G.Save.save(); }
       for (i = 0; i < 3; i++) {
@@ -644,7 +647,8 @@
     var list = archList(), S = SV(), i, d = list[Math.min(st.csel, list.length - 1)] || list[0], id = d.id, rank = G.Save.rank(id), tc = G.TAGS[d.tag].color, at = st.atab || 0;
     var owned = G.Cards.defs.filter(function (q) { return q.id && L.unlocked(q.id); }).length;
     bg(c, 'ARCHIVO');
-    ['COLECCIÓN ' + owned + '/' + G.Cards.defs.length, 'ANCLAS ' + S.anchors.length + '/' + G.B.anchorSlots + ' Y LOADOUTS'].forEach(function (t, k) { U.button(c, atabRect(k), t, { size: 17, color: at === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: at === k ? '#bfeaff' : '#6a5a80' }); });
+    ['COLECCIÓN ' + owned + '/' + G.Cards.defs.length, 'ANCLAS ' + S.anchors.length + '/' + G.B.anchorSlots + ' Y LOADOUTS', G.Res ? G.Res.t('res.tab') : 'RECURSOS'].forEach(function (t, k) { U.button(c, atabRect(k), t, { size: 17, color: at === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: at === k ? '#bfeaff' : '#6a5a80' }); });
+    if (at === 2) { drawArchRes(c); return; }
     if (!G.Sys.isTouch()) G.txt(c, at ? '1-3 elegir  Z guardar  X aplicar  N nombre  -  Esc: volver' : 'Flechas: elegir  -  E: fijar  -  Q / Tab: filtro  -  Esc: volver', 14, 528, 12, '#b4a8c8', 'left');
     if (at === 1) { drawArchAnchors(c, S, d); return; }
     for (i = 0; i < FILTERS.length; i++) {
@@ -680,6 +684,34 @@
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 468, 26, 26); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
   }
+  // T-F1-07: página RECURSOS del Archivo. Los 7 recursos siempre (con o sin la presentación por pasos), con su saldo real; los aún no presentados llevan "Lo conocerás más adelante".
+  // Una fila de 66 por recurso: nombre y saldo / cómo se consigue / para qué sirve (letra 17, interlineado 21,5).
+  function resIcon(c, id, x, y) {
+    try {
+      if (id === 'ceniza') { c.fillStyle = '#ff9a3c'; c.beginPath(); c.moveTo(x, y - 9); c.lineTo(x + 7, y); c.lineTo(x, y + 9); c.lineTo(x - 7, y); c.closePath(); c.fill(); }
+      else if (id === 'brasas') U.part(c, 'brasa', x, y, 10);
+      else if (id === 'partes') U.part(c, 'thread', x, y, 10);
+      else if (id === 'esencia') U.part(c, 'rare', x, y, 10);
+      else if (id === 'pf') G.Tree.pfIcon(c, x, y, 10);
+      else if (id === 'trofeos') c.drawImage(Assets.sprite('trophy_pastor_horn', 0), x - 12, y - 12, 24, 24);
+      else if (id === 'insignias') c.drawImage(Assets.sprite('trophy_mini_carnero', 0), x - 12, y - 12, 24, 24);
+    } catch (e) { /* sin icono */ }
+  }
+  function drawArchRes(c) {
+    var rows = G.Res ? G.Res.rows() : [], RH = 66;
+    rows.forEach(function (r, i) {
+      var y0 = 76 + i * RH;
+      if (i % 2) { c.fillStyle = 'rgba(255,255,255,0.04)'; c.fillRect(8, y0 - 2, 944, RH); }
+      resIcon(c, r.id, 28, y0 + 11);
+      G.txt(c, r.name, 50, y0 + 11, 17, r.soon ? '#c8b8e8' : '#ffd27a', 'left');
+      c.font = 'bold ' + G.fs(17) + 'px "Courier New", monospace';
+      G.txt(c, r.haveTxt, 50 + c.measureText(r.name).width + 24, y0 + 11, 17, r.have ? '#ffe9a0' : '#b4a8c8', 'left');
+      if (r.soon) G.txt(c, G.Res.t('res.soon'), 946, y0 + 11, 17, '#ffb08a', 'right');
+      G.txt(c, r.how, 50, y0 + 32.5, 17, '#d8cfe8', 'left');
+      G.txt(c, r.use, 50, y0 + 54, 17, '#9dffb4', 'left');
+    });
+  }
+  P.resRows = function () { return G.Res ? G.Res.rows() : []; };   // pruebas
   // Página ANCLAS del Archivo: mano al salir, sinergias y loadouts
   function drawArchAnchors(c, S, d) {
     var i;
@@ -877,7 +909,7 @@
   function drawMenu(c) {
     var S = SV();
     bg(c, 'MENÚ');
-    G.txt(c, 'Expediciones ' + S.runs + '   Victorias ' + S.wins + (S.pity > 0 ? '   Rara +' + (S.pity * 100).toFixed(1) + '%' : ''), 480, 76, 13, '#9a8fb0', 'center');
+    G.txt(c, 'Expediciones ' + S.runs + '   Victorias ' + S.wins + (S.pity > 0 && (!G.Res || G.Res.visible('esencia')) ? '   Rara +' + (S.pity * 100).toFixed(1) + '%' : ''), 480, 76, 13, '#9a8fb0', 'center');
     U.button(c, MB(0), 'COLECCIÓN', { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     U.button(c, MB(1), 'AJUSTES', { size: 20, color: '#4a3a66', hot: '#6a5a86', border: '#8a7aa6' });
     U.button(c, MB(2), confirm === 'del' ? 'SEGURO? TOCA DE NUEVO' : 'BORRAR PROGRESO', { size: 18, color: confirm === 'del' ? '#a02030' : '#3a2f48', hot: '#c03040', border: '#8a6a8a' });

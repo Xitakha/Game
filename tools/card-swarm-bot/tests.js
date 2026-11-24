@@ -1,6 +1,6 @@
 // PRUEBAS de Swarm Hand (games/card-swarm). Uso:
 //   python3 tools/serve.py card-swarm 8811 &      (cierra el servidor por PID, nunca pkill -f)
-//   node tools/card-swarm-bot/tests.js [all|daily|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|wide] [base=http://localhost:8811]
+//   node tools/card-swarm-bot/tests.js [all|daily|save2|dev|diag|track|seed|diff|cine|iso|flow|powers|ui|village|touch|boss|balance|armor|text|manual|fte|end|res|wide|vibe] [base=http://localhost:8811]
 //   WIDE=0 node tools/card-swarm-bot/tests.js <grupo> ...   corre el grupo con el lienzo clásico de 960 (?wide=0; la pantalla ancha es el valor por defecto desde la fase 4 de la SPEC T-F1-08)
 // Chromium de /opt/pw-browsers (sin playwright install). Vista 844x390 táctil. Cada partida debe terminar con 0 errores de consola.
 const { launch: pwLaunch } = require('../lib/browser.js');
@@ -1262,7 +1262,7 @@ async function text() {
   await E(pg, () => { G.step(); G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa'); await done(pg, 'texto-pausa');
   pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
   // T-F1-08 fase 3: cada panel con su letra mínima (17 los rehechos; 15 / 12 los densos aún pendientes, G.Panels.minFor) y las páginas nuevas (Portal, Archivo, Forja, Ajustes)
-  const PAGES = { portal: [null, 'G.Panels.portalTab(2)', 'G.Panels.portalTab(1)'], archive: [null, 'G.Panels.archTab(1)'], forge: [null, "G.Tree.view('det')", "G.Tree.setTab('trunk')"], settings: [null, 'G.Panels.setTab(1)'] };
+  const PAGES = { portal: [null, 'G.Panels.portalTab(2)', 'G.Panels.portalTab(1)'], archive: [null, 'G.Panels.archTab(1)', 'G.Panels.archTab(2)'], forge: [null, "G.Tree.view('det')", "G.Tree.setTab('trunk')"], settings: [null, 'G.Panels.setTab(1)'] };
   for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor', 'cine', 'errlog', 'privacy']) for (const pgx of PAGES[pn] || [null]) {
     const mn = await E(pg, ([n, x]) => { G.Aldea.open(false); G.Aldea.openPanel(n); if (n === 'cine' || n === 'errlog' || n === 'privacy') G.Panels.open(n); if (x) new Function(x)(); return G.Panels.minFor(n); }, [pn, pgx]); await sleep(pg, 150); await report(pg, 'panel ' + pn + (pgx ? ' ' + pgx.replace(/^G\.\w+\./, '') : '') + ' (mín. ' + mn + ')', mn - 0.5); }
   // T-F0-06: más pantallas con pistas posibles (aldea con NPC cerca, oferta de cartas, tutorial de la partida, Herrería en cada pestaña)
@@ -1997,7 +1997,7 @@ async function end() {
   pg = await mk(b, 'reset=1&cine=0&speed=0&seed=3');
   await startFirst(pg); await fStep(pg, 30); await E(pg, () => { G.runT = G.time = 70000; G.player.hp = 0; G.player.dead = true; G.finish(false); });
   d = await txt(pg); const bx = d.boxes.filter(x => x.k === 'button').map(x => x.label);
-  ok(has(d, /PRIMERA EXPEDICIÓN/) && bx.includes('OTRA EXPEDICIÓN') && bx.includes('VOLVER A RESCOLDO') && has(d, /Las Brasas sirven para forjar en Rescoldo/) && !has(d, /Esencia|PF|nodos/), 'primera expedición: variante con VOLVER A RESCOLDO y sin jerga (' + bx.join(',') + ')');
+  ok(has(d, /PRIMERA EXPEDICIÓN/) && bx.includes('OTRA EXPEDICIÓN') && bx.includes('VOLVER A RESCOLDO') && has(d, /^Cada bicho deja algo/) && has(d, /^Las Brasas son el calor/) && !has(d, /Esencia|PF|nodos/), 'primera expedición: variante con VOLVER A RESCOLDO, las líneas res.partes.first y res.brasas.first y sin jerga (' + bx.join(',') + ')');
   ok(TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(d).length, 'primera expedición: sin problemas de texto'); await done(pg, 'end-primera');
   // 7. práctica
   pg = await mk(b, 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0');
@@ -2482,7 +2482,195 @@ async function daily() {
   ok((await E(pg, () => G.state)) === 'aldea' && !(await E(pg, () => G.Kit.cur)), 'IR A LA ALDEA vuelve a Rescoldo sin kit en memoria');
   await done(pg, 'daily-pantallas');
   await b.close();
-}async function vibe() {
+}
+// ---------------------------------------------------------------- T-F1-07: economía presentada por pasos (src/res.js, studio/docs/SPEC-T-F1-07.md, sección 7)
+// Cada comprobación cuenta los recursos de dos formas: el registro G.Res.shown() y una regex por recurso sobre TC.snap.
+const RES_RX = { ceniza: /Ceniza/, brasas: /Brasas/, partes: /\b[Pp]artes?\b|Hebra|Pluma|Púa|Colmillo|Placa|Mecha|Escarcha|Jirón/, esencia: /Esencia|Rara x/, pf: /\bPF\b|punto.? de forja/i, trofeos: /[Tt]rofeo/, insignias: /[Ii]nsignia/ };
+const resRx = d => Object.keys(RES_RX).filter(k => d.texts.some(t => RES_RX[k].test(t.s))).sort();
+async function resSnap(pg, frames = 2) { const d = await TC.snap(pg, frames); const reg = await E(pg, () => G.Res.shown()); return { d, rx: resRx(d), reg, has: re => d.texts.some(t => re.test(t.s)) }; }
+const sub = (a, allow) => a.every(x => allow.includes(x));
+const resLoot = pg => E(pg, () => {   // guardián abatido (PF), Esencia, parte de jefe rota (trofeo) e insignia
+  const p = G.player, mid = G.Minis.ALL[0];
+  G.Tree.onElite('mini_bulwark', { x: p.x, y: p.y, mini: true, slot: 1 });
+  G.Loot.collect('rare'); G.Loot.run.boss = { id: 'pastor', parts: ['cuernos'], won: false }; G.Loot.collect('rare', 'horn');
+  G.Minis.collectInsignia({ ins: G.Minis.D[mid].ins.id, mid: mid });
+});
+const resOffer = pg => E(pg, () => { G.player.level = Math.max(2, G.player.level + 1); G.pendingLevels = 1; for (let i = 0; i < 3 && G.state !== 'cards'; i++) G.step(); return G.state; });
+const resEnd = (pg, secs) => E(pg, s => { G.runT = G.time = s * 1000; G.player.hp = 0; G.player.dead = true; G.finish(false); }, secs || 70);
+const resDetail = pg => E(pg, () => { for (let i = 0; i < 45; i++) G.step(); G.input.mouse.x = 700; G.input.mouse.y = 150; G.input.pressed.Mouse0 = true; G.step(); return G.Base.endView(); });
+const resLaunch = pg => E(pg, () => { G.Dialog.close(); G.Panels.closeAll(); G.Aldea.setPanel(null); G.launchReq = null; G.Base.launch(); for (let i = 0; i < 30; i++) { if (G.state === 'cards') G.Cards.pick(0); G.step(); } return G.state; });
+const resSaid = pg => E(pg, () => { window.__said = []; if (!G.Dialog.__rw) { const o = G.Dialog.say; G.Dialog.say = function (w, t) { window.__said = window.__said.concat(t); return o.apply(this, arguments); }; G.Dialog.__rw = 1; } });
+async function res() {
+  console.log('--- res: economía presentada por pasos (T-F1-07): visibilidad de recursos por número de salidas');
+  const b = await launch(), union = new Set(), add = a => a.forEach(x => union.add(x));
+  const T = await (async () => { const pg = await mk(b, 'reset=1&direct=1&speed=0'); const t = await E(pg, () => G.Res.TXT); await pg.close(); await pg.ctx.close(); return t; })();
+  const rxOf = s => new RegExp('^' + s.slice(0, 18).replace(/[.*+?^${}()|[\]\\¿?¡!]/g, '\\$&'));
+  // 1. Salida 1 de una cuenta nueva: HUD, oferta y fin (principal y detalle) como mucho {Partes, Brasas}
+  let pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg); await fStep(pg, 30);
+  ok(await E(pg, () => G.Res.on() && !G.Res.visible('pf') && !G.Res.visible('ceniza') && G.Res.visible('partes')), 'cuenta nueva del flujo nuevo: G.Res activo; PF y Ceniza ocultos, Partes visibles');
+  await resLoot(pg); await fStep(pg, 2);
+  let s = await resSnap(pg, 1); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && s.has(/GUARDIÁN DERRIBADO/) && !s.has(/PUNTO DE FORJA|INSIGNIA|Rara x/), `salida 1, combate (guardián, Esencia, trofeo e insignia forzados): regex [${s.rx}] registro [${s.reg}], "¡GUARDIÁN DERRIBADO!" y sin PF / INSIGNIA / Rara x`);
+  ok((await resOffer(pg)) === 'cards', 'salida 1: subida de nivel -> oferta');
+  s = await resSnap(pg, 1); add(s.rx); add(s.reg);
+  const rr = await E(pg, () => { const a = G.player.ash, n = G.Cards.off.rerolls; G.Cards.reroll(); G.input.pressed.KeyR = true; G.step(); return a === G.player.ash && (!G.Cards.off || G.Cards.off.rerolls === n); });
+  ok(sub(s.rx, ['partes', 'brasas']) && !s.has(/REROLL/) && rr, `salida 1, oferta: sin contador de Ceniza ni REROLL (botón, tecla R y C.reroll no hacen nada); regex [${s.rx}]`);
+  ok(TC.analyze(s.d, { minSize: TC.MIN_MENU }).length === 0, 'oferta sin REROLL: sin problemas de texto');
+  await E(pg, () => G.Cards.closeOffer()); await resEnd(pg);
+  s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && s.has(rxOf(T['res.partes.first'])) && s.has(rxOf(T['res.brasas.first'])), `salida 1, fin: res.partes.first y res.brasas.first; regex [${s.rx}] registro [${s.reg}]`);
+  ok((await resDetail(pg)) === 'detail', 'salida 1: detalle del botín');
+  s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && !s.has(/Prob\. de Esencia|PF libres/), `salida 1, detalle: sin Esencia, trofeos ni PF (regex [${s.rx}] registro [${s.reg}])`);
+  const sm1 = await E(pg, () => ({ t: G.Loot.summary.total, rare: G.Loot.summary.rare, pf: G.Save.data.pf.earned, ins: Object.keys(G.Save.data.insignias).length, tr: G.Save.data.trophies.horn }));
+  ok(sm1.rare >= 2 && sm1.pf >= 2 && sm1.ins >= 1 && sm1.tr === 1, 'lo ganado en silencio se guarda igual: Esencia ' + sm1.rare + ', PF ' + sm1.pf + ', insignias ' + sm1.ins + ', trofeo ' + sm1.tr + ' (dentro de "+' + sm1.t + ' partes")');
+  // 2. Aldea tras la salida 1: barra y Portal (DESTINO y SALIDA) solo {Brasas}; Rápida = "Menos botín, jefe antes"
+  await E(pg, () => G.Base.open(true)); await sleep(pg, 100);
+  s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['brasas']) && sub(s.reg, ['brasas']) && !s.has(/DIARIO/), `aldea tras la salida 1: regex [${s.rx}] registro [${s.reg}] (sin el chip del Diario)`);
+  await E(pg, () => { G.Aldea.openPanel('portal'); G.Panels.portalTab(0); }); await sleep(pg, 100);
+  s = await resSnap(pg); add(s.rx); add(s.reg); const pd = s;
+  await E(pg, () => { G.Save.data.len = 7; G.Panels.portalTab(2); }); await sleep(pg, 100);
+  s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(sub(pd.rx, ['brasas']) && sub(s.rx, ['brasas']) && sub(s.reg, ['brasas']) && s.has(/Menos botín, jefe antes/) && !s.has(/\bPF\b|Esencia/), `Portal tras la salida 1 (DESTINO [${pd.rx}], SALIDA [${s.rx}]): sin PF ni Esencia; Rápida = "Menos botín, jefe antes"`);
+  await E(pg, () => { G.Save.data.len = 9; G.Panels.closeAll(); G.Aldea.setPanel(null); });
+  // 3. Salida 2: igual que la 1
+  ok((await resLaunch(pg)) === 'play' && (await fteState(pg)).runs === 1, 'salida 2 desde el Portal');
+  await resLoot(pg); await fStep(pg, 2); s = await resSnap(pg, 1); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && !s.has(/PUNTO DE FORJA|INSIGNIA|Rara x/), `salida 2, combate: regex [${s.rx}] registro [${s.reg}]`);
+  await resOffer(pg); s = await resSnap(pg, 1); add(s.rx);
+  ok(!s.has(/REROLL|Ceniza/), 'salida 2, oferta: sin REROLL ni Ceniza');
+  await E(pg, () => G.Cards.closeOffer()); await resEnd(pg); s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(sub(s.rx, ['partes', 'brasas', 'pf']) && sub(s.reg, ['partes', 'brasas', 'pf']), `salida 2, fin: [${s.rx}] (el PF ya puede aparecer: llega Grum)`);
+  // 4. Aldea tras la salida 2: PF en la barra, en Grum (res.pf.first y res.pf.stored con el saldo real, una vez) y en Vesper
+  await E(pg, () => G.Base.open(true)); await sleep(pg, 100); s = await resSnap(pg); add(s.rx); add(s.reg);
+  ok(s.rx.includes('pf') && s.reg.includes('pf') && sub(s.rx, ['brasas', 'pf']), `aldea tras la salida 2: PF en la barra (regex [${s.rx}] registro [${s.reg}])`);
+  await resSaid(pg); const pfFree = await E(pg, () => { G.Aldea.talk('grum'); return G.Tree.pfFree(); }); let said = await E(pg, () => window.__said);
+  const st1 = pfFree === 1 ? T['res.pf.stored1'] : T['res.pf.stored'].replace('{0}', pfFree);
+  ok(said[0] === T['res.pf.first'] && said[1] === st1 && /El hierro recuerda/.test(said[2] || ''), `Grum, 1.ª charla: res.pf.first + "${st1}" (PF libres ${pfFree}) y luego su línea`);
+  const tg = await TC.snap(pg, 2); ok(TC.analyze(tg, { minSize: TC.MIN_MENU }).length === 0, 'charla de Grum: sin problemas de texto');
+  await E(pg, () => { G.Dialog.close(); window.__said = []; G.Aldea.talk('grum'); }); said = await E(pg, () => window.__said);
+  ok(!said.includes(T['res.pf.first']), 'la 2.ª charla con Grum no repite la línea del PF');
+  await E(pg, () => { G.Dialog.close(); G.Aldea.openPanel('vesper'); }); await sleep(pg, 100); s = await resSnap(pg);
+  ok(s.rx.includes('pf'), 'Vesper (Tablón) enseña el PF tras la salida 2');
+  // 5. Salida 3 y su fin: {Partes, Brasas, PF}; el guardián ya da el aviso de PF; sigue sin REROLL
+  ok((await resLaunch(pg)) === 'play', 'salida 3');
+  await E(pg, () => { const p = G.player; G.Save.data.elites = {}; G.Tree.onElite('mini_bulwark', { x: p.x, y: p.y, mini: true, slot: 1 }); }); await fStep(pg, 2);
+  s = await resSnap(pg, 1); add(s.rx); add(s.reg);
+  ok(s.has(/PUNTO.? DE FORJA/) && sub(s.rx, ['partes', 'brasas', 'pf']) && s.reg.includes('pf'), `salida 3, combate: el guardián ya da "+1 PUNTO DE FORJA" (regex [${s.rx}])`);
+  await resOffer(pg); s = await resSnap(pg, 1); add(s.rx);
+  ok(!s.has(/REROLL|Ceniza/), 'salida 3, oferta: sigue sin REROLL');
+  await E(pg, () => G.Cards.closeOffer()); await resEnd(pg); s = await resSnap(pg); add(s.rx); add(s.reg);
+  await resDetail(pg); const s5 = await resSnap(pg); add(s5.rx); add(s5.reg);
+  ok(sub(s.rx, ['partes', 'brasas', 'pf']) && sub(s5.rx, ['partes', 'brasas', 'pf']), `salida 3, fin [${s.rx}] y detalle [${s5.rx}]: {Partes, Brasas, PF}`);
+  // 6. Criterio: la unión de lo mostrado en 1-5 tiene exactamente 3 recursos
+  const U3 = [...union].sort();
+  ok(U3.join() === 'brasas,partes,pf', 'CRITERIO: en las 3 primeras salidas se ven exactamente 3 recursos: ' + U3.join(', '));
+  // 7. Aldea tras la salida 3: Rufo presenta la Ceniza; en la salida 4 vuelve el REROLL y la 1.ª oferta lleva res.ceniza.first
+  await E(pg, () => G.Base.open(true)); await resSaid(pg); await E(pg, () => G.Aldea.talk('rufo')); said = await E(pg, () => window.__said);
+  ok(said[0] === T['res.ceniza.rufo'], 'Rufo, 1.ª charla tras la salida 3: res.ceniza.rufo');
+  ok((await resLaunch(pg)) === 'play', 'salida 4');
+  s = await resSnap(pg, 1); ok(s.rx.includes('ceniza') && s.reg.includes('ceniza'), 'salida 4: Ceniza en el HUD');
+  await resOffer(pg); s = await resSnap(pg, 1);
+  ok(s.has(/REROLL/) && s.has(/Ceniza: \d+/) && s.has(rxOf(T['res.ceniza.first'])), 'salida 4, 1.ª oferta: REROLL, contador de Ceniza y res.ceniza.first');
+  ok(await E(pg, () => { const n = G.Cards.off.rerolls; G.player.ash = 100; G.Cards.reroll(); return G.Cards.off.rerolls === n + 1; }), 'salida 4: el REROLL funciona');
+  await done(pg, 'res-salidas');
+  // 8. Esencia: oculta con R2; el Rango III la presenta con el saldo; los nodos T3 pasan de "Pide Rango de forja III" a su coste
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg);
+  let r = await E(pg, () => { const S = G.Save.data, f = S.flags.fte; f.runs = 4; f.step = 'done'; S.nodes.R2 = { c: '1' }; S.parts.rare = 3; S.parts.thread = 200; S.parts.feather = 80; S.parts.plate = 40; S.brasas = 2000;
+    const a = { v: G.Res.visible('esencia'), lk: G.Res.nodeLock(G.Tree.node('F8')) }; G.Aldea.open(false); G.Aldea.openPanel('forge'); G.Tree.showDetail('F8'); return a; });
+  const f7 = await E(pg, () => G.Tree.node('F8').tier);
+  s = await resSnap(pg); const ft = s;
+  ok(!r.v && r.lk === T['res.locked.esencia'] && s.has(/Pide Rango de forja III/), `con R2 la Esencia sigue oculta; nodo ${f7}: "${r.lk}" en lugar del coste`);
+  ok(TC.analyze(ft.d, { minSize: TC.MIN_MENU }).length === 0, 'Forja con "Pide Rango de forja III": sin problemas de texto');
+  r = await E(pg, () => { const o = G.Tree.buy('R3'); return { o, v: G.Res.visible('esencia'), lk: G.Res.nodeLock(G.Tree.node('F8')) }; });
+  ok(r.o.ok && r.o.res === 'esencia' && r.o.msg.indexOf(T['res.esencia.first']) === 0 && r.o.msg.indexOf(T['res.esencia.stored'].replace('{0}', 3)) > 0 && r.v && r.lk === null, 'comprar el Rango III: aviso res.esencia.first + "Guardabas 3 Esencias..." y desde ahí el nodo enseña su coste');
+  await done(pg, 'res-esencia');
+  // 9. Trofeos e Insignias: ocultos hasta vencer al Pastor; la escena de Carapa da las tres líneas con sus saldos; desde ahí, aviso INSIGNIA
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg);
+  r = await E(pg, () => { const S = G.Save.data, f = S.flags.fte; f.runs = 2; f.step = 'village'; S.trophies = { horn: 2, staff: 1 }; S.insignias = { [G.Minis.ALL[0]]: 1 }; return { t: G.Res.visible('trofeos'), i: G.Res.visible('insignias') }; });
+  ok(!r.t && !r.i, 'sin vencer al Pastor: trofeos e Insignias ocultos');
+  await resSaid(pg); await E(pg, () => { G.Save.data.bossKills.pastor = 1; G.Aldea.open(true); for (let i = 0; i < 5; i++) G.Aldea.update(16); });
+  said = await E(pg, () => window.__said);
+  ok(said.includes(T['res.trofeos.first']) && said.includes(T['res.trofeos.stored'].replace('{0}', 3)) && said.includes(T['res.insignias.first']) && said.indexOf(T['res.insignias.first']) < said.findIndex(x => /Toma el set de Aldeano|Ya te dejé ropa/.test(x)), 'escena de Carapa: trofeos (con "Traes 3 trofeos..."), insignias y luego el regalo');
+  const tc = await TC.snap(pg, 2); ok(TC.analyze(tc, { minSize: TC.MIN_MENU }).length === 0, 'escena de Carapa: sin problemas de texto');
+  await resLaunch(pg); await E(pg, () => { const mid = G.Minis.ALL[1]; G.Minis.collectInsignia({ ins: G.Minis.D[mid].ins.id, mid: mid }); }); await fStep(pg, 1);
+  s = await resSnap(pg, 1); ok(s.has(/^INSIGNIA: /) && s.reg.includes('insignias'), 'con Carapa abierta, recoger una insignia da el aviso "INSIGNIA: ..."');
+  await E(pg, () => { G.Loot.run.boss = { id: 'pastor', parts: ['cuernos'], won: false }; G.Loot.collect('rare', 'horn'); }); await resEnd(pg); await resDetail(pg); s = await resSnap(pg);
+  ok(s.reg.includes('trofeos') && s.has(/^\+1 Cuerno/), 'y el detalle del botín enseña la casilla del trofeo');
+  await done(pg, 'res-carapa');
+  // 10. Regla 5: vencer al Pastor en la salida 2 vuelve visibles PF, Ceniza, trofeos e Insignias (la Esencia no)
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg);
+  r = await E(pg, () => { const f = G.Save.data.flags.fte; f.runs = 1; f.step = 'village'; G.Save.data.bossKills.pastor = 1; const o = {}; G.Res.IDS.forEach(id => { o[id] = G.Res.visible(id); }); return o; });
+  ok(r.pf && r.ceniza && r.trofeos && r.insignias && !r.esencia, 'regla 5: un jefe vencido en la salida 2 abre PF, Ceniza, trofeos e Insignias; la Esencia sigue esperando al Rango III (' + JSON.stringify(r) + ')');
+  await done(pg, 'res-regla5');
+  // 11. Abandonar antes de 60 s no adelanta ningún recurso
+  pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg); await fStep(pg, 120); await E(pg, () => G.finish(false)); await sleep(pg, 100);
+  r = await E(pg, () => ({ runs: G.Fte.data().runs, pf: G.Res.visible('pf'), c: G.Res.visible('ceniza') }));
+  ok(r.runs === 0 && !r.pf && !r.c, 'abandonar antes de 60 s no adelanta recursos (salidas ' + r.runs + ')');
+  // 12. Archivo, pestaña RECURSOS: 7 filas siempre con el saldo real
+  const arch = async (label, prep) => {
+    const o = await E(pg, prep => { if (prep) new Function(prep)(); G.Dialog.close(); G.Aldea.open(false); G.Aldea.openPanel('archive'); G.Panels.archTab(2); const rows = G.Panels.resRows(), S = G.Save.data;
+      const okv = rows.length === 7 && rows.map(r => r.id).join() === 'ceniza,brasas,partes,esencia,pf,trofeos,insignias' && rows[1].have === S.brasas && rows[3].have === (S.parts.rare || 0) && rows[4].have === G.Tree.pfFree() && rows[0].have === null;
+      return { okv, soon: rows.filter(r => r.soon).map(r => r.id).join() }; }, prep || null);
+    await sleep(pg, 100); const d = await TC.snap(pg, 2);
+    const names = ['Ceniza', 'Brasas', 'Partes', 'Esencia rara', 'Puntos de Forja', 'Trofeos', 'Insignias'].filter(n => d.texts.some(t => t.s === n)).length;
+    ok(o.okv && names === 7, `Archivo RECURSOS (${label}): 7 filas con el saldo real; por presentar: ${o.soon || 'ninguno'}`);
+    return d;
+  };
+  let ad = await arch('cuenta nueva, 0 salidas');
+  ok(TC.analyze(ad, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(ad).length, 'Archivo RECURSOS: sin problemas de texto');
+  await arch('n = 1', "const f = G.Save.data.flags.fte; f.runs = 1; f.step = 'village'; G.Save.data.brasas = 321; G.Save.data.parts.rare = 2;");
+  await arch('n = 4', "const f = G.Save.data.flags.fte; f.runs = 4; f.step = 'done';");
+  await arch('legacy', "const f = G.Save.data.flags.fte; f.legacy = 1;");
+  await done(pg, 'res-archivo');
+  // 13. Economía intacta: misma semilla y mismas acciones con ?res=0 y sin él dan el mismo resumen y el mismo guardado (salvo flags.res)
+  const econ = async (extra) => {
+    const p2 = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=41' + extra); await startFirst(p2);
+    const o = await E(p2, () => {
+      for (let i = 0; i < 60 * 75; i++) { const p = G.player; G.input.joy = { active: true, id: 1, ox: 100, oy: 400, x: Math.cos(i / 90), y: Math.sin(i / 90) }; if (G.state === 'cards') { const O = G.Cards.off; if (O) { O.modal = null; if (O.mode === 'level') G.Cards.pick(0); else G.Cards.pick(0); } if (G.state === 'cards') G.state = 'play'; } p.hp = p.maxHp; G.step(); }
+      G.input.joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }; G.finish(false);
+      const sm = G.Loot.summary, d = JSON.parse(JSON.stringify(G.Save.data)); delete d.flags.res; if (d.stats) delete d.stats.playMs;
+      return { sm: JSON.stringify({ parts: sm.parts, total: sm.total, brasas: sm.brasas, pf: sm.pfGained, rare: sm.rare, kills: sm.kills }), save: JSON.stringify(d), on: G.Res.on() };
+    });
+    await done(p2, 'res-economia' + (extra || '-on')); return o;
+  };
+  const eOn = await econ(''), eOff = await econ('&res=0');
+  ok(eOn.on && !eOff.on && eOn.sm === eOff.sm, 'economía intacta: mismo resumen de botín con y sin ?res=0 (' + eOn.sm.slice(0, 90) + '...)');
+  ok(eOn.save === eOff.save, 'economía intacta: mismo Save.data al terminar (salvo flags.res y playMs)');
+  // 14. ?dev=1&res=0 y ?fte=0: todo visible desde la salida 1, REROLL incluido
+  for (const q of ['res=0', 'fte=0']) {
+    const p3 = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3&' + q);
+    await E(p3, () => { if (G.TrackUI.isOpen()) G.TrackUI.choose(false); if (G.Fte.enabled()) G.Fte.launchFirst(); else G.startGame(); }); await fStep(p3, 30);
+    await resLoot(p3); await fStep(p3, 1);
+    let s3 = await resSnap(p3, 1); const hud = s3.rx;
+    await resOffer(p3); s3 = await resSnap(p3, 1);
+    ok(!(await E(p3, () => G.Res.on())) && hud.includes('ceniza') && (hud.includes('insignias') || hud.includes('pf')) && s3.has(/REROLL/) && s3.has(/Ceniza: \d+/), `?${q}: todo visible desde la salida 1 (HUD [${hud}]) y REROLL en la oferta`);
+    await done(p3, 'res-off-' + q);
+  }
+  // 15. Guardados v9-v12 con progreso: legacy, todo visible, ninguna línea de primera vez
+  for (const v of [9, 10, 11, 12]) {
+    const p4 = await mkV(b, 'track=log&cine=0&reset=1&speed=0');
+    await E(p4, v => { const d = JSON.parse(JSON.stringify(G.Save.data)); d.v = v; d.runs = 3; d.brasas = 120; d.parts = { rare: 2, thread: 5 }; delete d.flags.fte; delete d.flags.res; if (v < 12) delete d.cine; localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); }, v);
+    await p4.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&speed=0${WX}`); await sleep(p4, 700);
+    const o = await E(p4, () => { const all = G.Res.IDS.every(id => G.Res.visible(id)), fl = G.Res.first('pf') || G.Res.first('esencia') || G.Res.endLines(); return { on: G.Res.on(), all, fl, leg: G.Save.data.flags.fte.legacy }; });
+    ok(o.leg === 1 && !o.on && o.all && o.fl === null, `guardado v${v} con progreso: legacy, los 7 recursos visibles y ninguna línea de primera vez`);
+    await done(p4, 'res-legacy-v' + v);
+  }
+  // 16. Textos de las pantallas nuevas a 844x390 y 740x360 (fin de la salida 1, Grum, Carapa, Archivo RECURSOS, Forja con "Pide Rango de forja III")
+  for (const [w, h] of [[844, 390], [740, 360]]) {
+    const p5 = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3', w, h); await startFirst(p5); await fStep(p5, 20); await resEnd(p5);
+    const rep = async (name) => { const d = await TC.snap(p5, 2); const iss = TC.analyze(d, { minSize: TC.MIN_MENU }); ok(d.texts.length > 3 && iss.length === 0 && !kbdHints(d).length, `${w}x${h} ${name}: ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(i => i.msg).join(' | ') : '')); };
+    await rep('fin de la salida 1');
+    await E(p5, () => { const f = G.Save.data.flags.fte; f.runs = 2; f.step = 'village'; G.Save.data.pf.earned = 3; G.Base.open(true); G.Aldea.talk('grum'); }); await sleep(p5, 200); await rep('charla de Grum (res.pf.first)');
+    await E(p5, () => { G.Dialog.close(); G.Save.data.bossKills.pastor = 1; G.Save.data.trophies = { horn: 1 }; G.Aldea.open(true); for (let i = 0; i < 5; i++) G.Aldea.update(16); }); await sleep(p5, 200); await rep('escena de Carapa');
+    await E(p5, () => { G.Dialog.close(); G.Aldea.openPanel('archive'); G.Panels.archTab(2); }); await sleep(p5, 150); await rep('Archivo RECURSOS');
+    await E(p5, () => { G.Panels.closeAll(); G.Aldea.setPanel(null); G.Save.data.nodes.R2 = { c: '1' }; G.Aldea.openPanel('forge'); G.Tree.showDetail('F8'); }); await sleep(p5, 150); await rep('Forja, nodo T3 ("Pide Rango de forja III")');
+    await done(p5, 'res-textos-' + w);
+  }
+  await b.close();
+}
+async function vibe() {
   console.log('--- T-F1-09: vibracion y destello (navigator.vibrate simulado)');
   const b = await launch(); let pg = await mk(b, 'reset=1&speed=0&direct=1&all=1&noanchor=1');
   const sim = () => E(pg, () => { window.__vib = []; navigator.vibrate = p => { window.__vib.push(p); return true; }; G.Save.data.settings = G.Save.data.settings || {}; delete G.Save.data.settings.vibe; G.Save.data.settings.cine = { calm: false, textSpeed: 1, soundCaps: true }; });
@@ -2508,7 +2696,7 @@ async function daily() {
 const DAILY_SNAP = '["tundra",3,["sincor","sincambio"],"lana",["fire","ice"]]';   // reglas r1 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
 
 (async () => {
-  const run = { daily, fte, end, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide, vibe };
+  const run = { daily, fte, end, res, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide, vibe };
   if (mode === 'all') for (const k of Object.keys(run)) await run[k](); else await run[mode]();
   console.log(`\n${total - fails}/${total} OK`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

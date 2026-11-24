@@ -6,7 +6,8 @@
   var G = window.G, Bs = G.Base = {};
   var U = G.UI, inp = G.input;
   var END_RETRY = { x: 20, y: 456, w: 600, h: 68 }, END_BASE = { x: 636, y: 456, w: 304, h: 68 }, END_PANEL = { x: 490, y: 92, w: 450, h: 172 };   // T-F1-04: acción principal a la izquierda (al alcance del pulgar), secundaria a la derecha
-  var endS = { sm: null, t: 0, view: 'main', logged: false };
+  var endS = { sm: null, t: 0, view: 'main', logged: false, resSm: null, resL: null };
+  function rv(id) { var R = G.Res; if (!R) return true; var v = R.visible(id); if (v) R.mark(id); return v; }   // T-F1-07: ¿se dibuja este recurso? (y lo anota en el registro)
 
   Bs.launch = function () { G.sfx('card_select', { vol: 0.7 }); G.startGame(); if (G.Fte) G.Fte.nextFrom = null; };
   // Reintentar la misma salida: normal, cacería (misma bestia y Peligro) o práctica (misma mano; la fase de inicio puede cambiarse con 1-3)
@@ -123,32 +124,33 @@
     // ---- panel del botín
     U.panel(c, PN_X, PN_Y, PN_W, PN_H, { border: '#8a6a30' });
     G.txt(c, 'BOTÍN  (+' + sm.total + ' partes)', IN_X, 108, 18, '#ffd27a', 'left');
-    var L = G.Loot, shown = 0, GY = 140, nItems = L.PARTS.filter(function (P) { return sm.parts[P.id]; }).length + (bi ? bi.trophies.length : 0), GP = nItems > 9 ? 22 : 28, COLS = 3, CW = Math.floor(IN_W / COLS);   // T-F1-08 fase 3: siempre 3 columnas (con letra 17 no caben 4)
+    var vE = rv('esencia'), vT = bi && bi.trophies.length ? rv('trofeos') : false, vPF = rv('pf'); rv('partes'); rv('brasas');   // T-F1-07: sin Esencia ni trofeos visibles, sus unidades siguen en "+N partes" del título
+    var L = G.Loot, shown = 0, GY = 140, nItems = L.PARTS.filter(function (P) { return sm.parts[P.id] && (vE || !P.rare); }).length + (bi && vT ? bi.trophies.length : 0), GP = nItems > 9 ? 22 : 28, COLS = 3, CW = Math.floor(IN_W / COLS);   // T-F1-08 fase 3: siempre 3 columnas (con letra 17 no caben 4)
     L.PARTS.forEach(function (P) {
-      var n = sm.parts[P.id] || 0; if (!n) return;
+      var n = sm.parts[P.id] || 0; if (!n || (P.rare && !vE)) return;
       var col = shown % COLS, row = Math.floor(shown / COLS), x = IN_X + col * CW, y = GY + row * GP;
       U.part(c, P.id, x + 11, y, 11);
       G.txt(c, '+' + n, x + 27, y, 17, P.rare ? '#e0a8ff' : '#fff', 'left');
       G.txt(c, '(' + (S.parts[P.id] || 0) + ')', x + 64, y, 12, '#b4a8c8', 'left');
       shown++;
     });
-    if (bi && bi.trophies.length) bi.trophies.forEach(function (tk) {   // trofeos de jefe: cuentan como Esencia
+    if (bi && bi.trophies.length && vT) bi.trophies.forEach(function (tk) {   // trofeos de jefe: cuentan como Esencia
       var T = G.Boss.TROPHY[tk]; if (!T) return;
       var col2 = shown % COLS, row2 = Math.floor(shown / COLS), x2 = IN_X + col2 * CW, y2 = GY + row2 * GP;
       c.drawImage(Assets.sprite(T.spr, 0), x2, y2 - 12, 24, 24); G.txt(c, '+1 ' + T.name.split(' ')[0], x2 + 28, y2, 12, '#ffd27a', 'left');
       shown++;
     });
-    if (!shown) G.txt(c, 'Sin partes esta vez', IN_X, GY, 14, '#b4a8c8', 'left');
+    if (!shown && !sm.total) G.txt(c, 'Sin partes esta vez', IN_X, GY, 14, '#b4a8c8', 'left');
     var y = GY + Math.max(1, Math.ceil(shown / COLS)) * GP + 4;
     c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(IN_X, y - 12, IN_W, 1);
     U.part(c, 'brasa', IN_X + 10, y + 6, 10);
     G.txt(c, '+' + sm.brasas + ' Brasas', IN_X + 28, y + 6, 17, '#ff9a3c', 'left');
     G.txt(c, 'total ' + S.brasas, IN_X + IN_W, y + 6, 13, '#ffc890', 'right');
     y += 30;
-    var pfTxt = sm.pfGained ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '';
+    var pfTxt = sm.pfGained && vPF ? '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja' : '';
     var rows = [];
     if (bi) rows.push(['Jefe +' + bi.brasas + (bi.peligro > 1 ? ' (P' + G.Boss.ROMAN[bi.peligro] + ')' : '') + (bi.mode === 'hunt' ? '' : '   Expedición +' + (sm.brasas - bi.brasas)), '#e0b888']);
-    rows.push([sm.rare ? '¡Esencia rara conseguida!' : 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', sm.rare ? '#e0a8ff' : '#b4a8c8', pfTxt, '#ffd24a']);
+    rows.push([!vE ? '' : sm.rare ? '¡Esencia rara conseguida!' : 'Prob. de Esencia rara: ' + ((L.RARE_P + S.pity) * 100).toFixed(1) + '%', sm.rare ? '#e0a8ff' : '#b4a8c8', pfTxt, '#ffd24a']);
     if (bi && bi.unlocked) rows.push(['¡PELIGRO ' + G.Boss.ROMAN[bi.unlocked] + ' DESBLOQUEADO!', '#9dffb4']);
     y = infoRows(c, y, rows, 13, 18);
     // pie del panel: cartas nuevas (o recordatorio de PF) anclado abajo; lo opcional (armadura, encargo, duración) entra solo si queda sitio
@@ -157,13 +159,13 @@
     var lh2 = Math.round(G.fs(13) * 1.3);
     if (sm.quest) { var ql = U.wrap(c, 'Encargo: ' + sm.quest, IN_W, 13).slice(0, 2); while (ql.length && !free(ql.length * lh2)) ql.pop(); ql.forEach(function (ln) { G.txt(c, ln, IN_X, y, 13, '#ffe9a0', 'left'); y += lh2; }); }
     if (sm.dur) {
-      var dtx = 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : '');
+      var dtx = 'Duración ' + sm.dur.name + ' (' + sm.dur.min + ' min): partes y Brasas x' + String(sm.dur.parts).replace('.', ',') + (sm.dur.pf !== 1 && vPF ? ', PF x' + String(sm.dur.pf).replace('.', ',') : '') + (sm.dur.rare !== 1 && vE ? ', Esencia x' + String(sm.dur.rare).replace('.', ',') : '') + (sm.dur.bossHp !== 1 ? ', jefe +HP' : '');
       var dl = U.wrap(c, dtx, IN_W, 12).slice(0, 2); if (free(dl.length * lh2)) dl.forEach(function (ln) { G.txt(c, ln, IN_X, y, 12, '#b4a8c8', 'left'); y += lh2; });
     }
     if (sm.newCards.length) {
       var cy = bot - 62; G.txt(c, 'NUEVAS CARTAS YA FORJABLES', IN_X, cy - 14, 13, '#9dffb4', 'left');
       sm.newCards.slice(0, 6).forEach(function (id, k) { G.Cards.drawCard(c, { id: id, lvl: 0 }, IN_X + k * 68, cy, 62, 62, { nocd: true, glow: '#9dffb4', noName: G.minFont > 12 }); });   // T-F1-08: miniaturas sin nombre (la lista con nombres está en la pantalla principal)
-    } else G.txt(c, 'PF libres ' + G.Tree.pfFree() + '   -   nodos comprables ' + G.Tree.availableCount(), IN_X, bot - 6, 13, '#b4a8c8', 'left');
+    } else if (vPF) G.txt(c, 'PF libres ' + G.Tree.pfFree() + '   -   nodos comprables ' + G.Tree.availableCount(), IN_X, bot - 6, 13, '#b4a8c8', 'left');
     if (withBack) U.button(c, END_BASE, 'VOLVER', { size: 22, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.hint('B / Esc', null) });
     else drawEndButtons(c, S);
   }
@@ -217,10 +219,13 @@
     var hov = U.inR(END_PANEL, inp.mouse);
     U.panel(c, END_PANEL.x, END_PANEL.y, END_PANEL.w, END_PANEL.h, { border: hov ? '#ffd27a' : '#6a4a30' });
     G.txt(c, 'LO GANADO', 506, 108, 13, '#b4a8c8', 'left');
-    G.txt(c, '+' + sm.total + ' partes  ·  +' + sm.brasas + ' Brasas', 506, 134, 16, '#ffe9a0', 'left');
-    if (sm.first) G.txt(c, 'Las Brasas sirven para forjar en Rescoldo.', 506, 158, 14, '#d8cfe8', 'left');
-    else if (sm.pfGained) G.txt(c, '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja', 506, 158, 14, '#ffd24a', 'left');
-    if (sm.newCards && sm.newCards.length)   // T-F1-08 fase 3: en lista (las miniaturas no admiten el nombre a 17); las cartas se ven en el detalle
+    rv('partes'); rv('brasas'); G.txt(c, '+' + sm.total + ' partes  ·  +' + sm.brasas + ' Brasas', 506, 134, 16, '#ffe9a0', 'left');
+    if (endS.resSm !== sm) { endS.resSm = sm; endS.resL = sm.first && G.Res ? G.Res.endLines() : null; }   // T-F1-07: una línea por recurso en la 1.ª expedición (claves res.partes.first / res.brasas.first)
+    var fl = sm.first && endS.resL, ly = 156;
+    if (fl) fl.forEach(function (t, k) { ly = wrapLines(c, ly, t, 2, 17, k ? '#ffc890' : '#d8cfe8', 506, 424); });
+    else if (sm.first) G.txt(c, 'Las Brasas sirven para forjar en Rescoldo.', 506, 158, 14, '#d8cfe8', 'left');
+    else if (sm.pfGained && rv('pf')) G.txt(c, '+' + sm.pfGained + ' Punto' + (sm.pfGained > 1 ? 's' : '') + ' de Forja', 506, 158, 14, '#ffd24a', 'left');
+    if (sm.newCards && sm.newCards.length && !fl)   // T-F1-08 fase 3: en lista (las miniaturas no admiten el nombre a 17); las cartas se ven en el detalle
       wrapLines(c, 182, 'Cartas nuevas para forjar: ' + sm.newCards.map(function (id) { return G.Cards.def(id).short; }).join(', '), 2, 17, '#9dffb4', 506, 420);
     G.txt(c, 'Toca para ver el botín completo', 506, 246, 12, '#9dd8ff', 'left');
     G.txt(c, 'TU MANO', 490, 284, 13, '#b4a8c8', 'left');

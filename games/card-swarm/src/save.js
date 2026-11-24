@@ -155,6 +155,8 @@
       if (['', 'run1', 'village', 'done'].indexOf(ft.step) < 0) { bad.push('flags.fte.step'); ft.step = ''; }
       if (ft.priv != null && ft.priv !== 'on' && ft.priv !== 'off') { bad.push('flags.fte.priv'); delete ft.priv; }
     } else if (isObj(d.flags) && d.flags.fte != null) { bad.push('flags.fte'); delete d.flags.fte; }
+    if (isObj(d.flags) && isObj(d.flags.res)) { obj(d.flags.res, 'intro', 'flags.res.'); map(d.flags.res, 'intro', 0, 1, 'flags.res.'); }   // T-F1-07: líneas de primera vez ya dichas (flags.res.intro)
+    else if (isObj(d.flags) && d.flags.res != null) { bad.push('flags.res'); delete d.flags.res; }
     if (isObj(d.stats) && isObj(d.stats.best)) {   // T-F1-04: récord por bioma { t (s), bossPct (0-100), lvl, kills }
       for (var bb in d.stats.best) {
         var be = d.stats.best[bb];
@@ -479,6 +481,8 @@
     }
     if (typeof ft.step !== 'string') ft.step = ''; if (typeof ft.runs !== 'number') ft.runs = 0; if (typeof ft.ann !== 'number') ft.ann = 0;
     if (!ft.hints || typeof ft.hints !== 'object') ft.hints = {}; if (!ft.seen || typeof ft.seen !== 'object') ft.seen = {};
+    var fr = d.flags.res;   // T-F1-07: { v, intro } (lo crea G.Res al primer uso; aquí solo se normaliza si ya existe)
+    if (fr != null && (typeof fr !== 'object' || Array.isArray(fr))) delete d.flags.res; else if (fr && (!fr.intro || typeof fr.intro !== 'object' || Array.isArray(fr.intro))) fr.intro = {};
     if (!Array.isArray(d.loadouts)) d.loadouts = [null, null, null];
     while (d.loadouts.length < 3) d.loadouts.push(null);
     d.loadouts = d.loadouts.slice(0, 3).map(function (l) { return l && typeof l === 'object' && Array.isArray(l.anchors) ? l : null; });
