@@ -232,3 +232,7 @@ alquimia/asfodelo/P4/- #13 dia=20080 acomp=lightning+steel: plata t=450s pts=473
 alquimia/asfodelo/P4/- #14 dia=20081 acomp=fire+lightning: bronce t=450s pts=4472 jefe=17% min=0 blk=21% firma=16 errs=0
 alquimia/asfodelo/P4/- #15 dia=20091 acomp=lightning+fire: part t=300s pts=2507 jefe=0% min=0 blk=19% firma=8 errs=0
 alquimia/tundra/P4/- #0 dia=20005 acomp=ice+fire: ORO t=450s pts=8411 jefe=100% min=27 blk=27% firma=0 errs=0
+alquimia/tundra/P4/- #1 dia=20014 acomp=ice+fire: plata t=450s pts=6683 jefe=99% min=0 blk=27% firma=54 errs=0
+alquimia/tundra/P4/- #2 dia=20018 acomp=fire+lightning: plata t=450s pts=6029 jefe=70% min=0 blk=26% firma=14 errs=0
+alquimia/tundra/P4/- #3 dia=20021 acomp=ice+fire: plata t=450s pts=5826 jefe=62% min=0 blk=27% firma=39 errs=0
+alquimia/tundra/P4/- #4 dia=20034 acomp=lightning+fire: plata t=450s pts=5875 jefe=69% min=0 blk=27% firma=57 errs=0
