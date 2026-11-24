@@ -12,14 +12,17 @@
 (function () {
   'use strict';
   var G = window.G, M = G.Manual = {}, U = G.UI, inp = G.input, TAU = 6.283185;
-  var st = { open: false, from: null, tab: 0, filter: 'all', q: '', page: 0, sel: 0, demoT: 0, last: 0, paused: false, msg: '', modal: null };
+  var st = { open: false, from: null, tab: 0, filter: 'all', q: '', page: 0, sel: 0, demoT: 0, last: 0, paused: false, msg: '', modal: null, view: 0 };
   var T = { vw: 440, vh: 248, loop: 5 };
-  var VIEW = { x: 292, y: 58, w: 440, h: 248 }, SIDE = { x: 744, y: 58, w: 202, h: 248 }, R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
+  // T-F1-08: letra 17 (G.MIN_UI) y botones de 66. Fila del título: CARTAS / FUSIONES, ETIQUETA y BUSCAR; lista de 5 filas de 66 a la izquierda; a la derecha
+  // dos vistas de la entrada (st.view): FICHA (demo, datos y el principio del texto) y TEXTO (todo el texto a lo ancho). VER TEXTO / VER DEMO las cambia.
+  var VIEW = { x: 312, y: 76, w: 440, h: 248 }, SIDE = { x: 764, y: 76, w: 182, h: 248 }, R_CLOSE = { x: 890, y: 0, w: 66, h: 66 };
   var PER = 5, TAGS = ['fire', 'ice', 'lightning', 'poison', 'blood', 'steel'];
-  function tabR(i) { return { x: 14 + i * 136, y: 58, w: 130, h: 44 }; }
-  var R_FIL = { x: 14, y: 108, w: 266, h: 44 }, R_SRCH = { x: 14, y: 158, w: 266, h: 44 };
-  function rowR(i) { return { x: 14, y: 210 + i * 46, w: 266, h: 42 }; }
-  var R_PREV = { x: 14, y: 446, w: 80, h: 44 }, R_NEXT = { x: 200, y: 446, w: 80, h: 44 };
+  function tabR(i) { return { x: 160 + i * 154, y: 0, w: 150, h: 66 }; }
+  var R_FIL = { x: 468, y: 0, w: 172, h: 66 }, R_SRCH = { x: 644, y: 0, w: 242, h: 66 };
+  function rowR(i) { return { x: 14, y: 76 + i * 70, w: 286, h: 66 }; }
+  var R_PREV = { x: 14, y: 432, w: 100, h: 66 }, R_NEXT = { x: 200, y: 432, w: 100, h: 66 }, R_VIEW = { x: 726, y: 468, w: 220, h: 66 };
+  M.rects = function () { return { tab: tabR, fil: R_FIL, srch: R_SRCH, row: rowR, prev: R_PREV, next: R_NEXT, view: R_VIEW, demo: VIEW, close: R_CLOSE }; };   // pruebas
   var ALL = /[?&]manual=all/.test(Dev.search);
   function SV() { return G.Save.data; }
   function tagName(t) { return (G.TAGS[t] || { name: t }).name; }
@@ -100,7 +103,7 @@
 
   // ------------------------------------------------------------- Apertura / cierre
   M.open = function (from) {
-    st.open = true; st.from = from || null; st.demoT = 0; st.last = 0; st.msg = ''; st.modal = null; st.paused = calm(); st.sel = 0; st.page = 0;
+    st.open = true; st.from = from || null; st.demoT = 0; st.last = 0; st.msg = ''; st.modal = null; st.paused = calm(); st.sel = 0; st.page = 0; st.view = 0;
     if (st.q === undefined) st.q = '';
   };
   M.close = function () { st.open = false; if (st.modal) { try { st.modal.close(); } catch (e) { /* ya cerrado */ } st.modal = null; } };
@@ -108,7 +111,8 @@
   M.setQuery = function (q) { st.q = q || ''; st.page = 0; st.sel = 0; };
   M.setFilter = function (t) { st.filter = t; st.page = 0; st.sel = 0; };
   M.setTab = function (n) { st.tab = n; st.page = 0; st.sel = 0; };
-  M.state = function () { return { tab: st.tab, filter: st.filter, q: st.q, page: st.page, sel: st.sel, demoT: st.demoT, paused: st.paused, n: visible().length }; };
+  M.state = function () { return { tab: st.tab, filter: st.filter, q: st.q, page: st.page, sel: st.sel, demoT: st.demoT, paused: st.paused, n: visible().length, view: st.view }; };
+  M.setView = function (v) { st.view = v ? 1 : 0; };
   M.select = function (i) { var l = visible(); st.sel = G.clamp(i, 0, Math.max(0, l.length - 1)); st.page = Math.floor(st.sel / PER); st.demoT = 0; };
   function pages() { return Math.max(1, Math.ceil(visible().length / PER)); }
   function go(i) { var l = visible(); if (!l.length) return; M.select((i + l.length) % l.length); G.sfx('flip', { vol: 0.3 }); }
@@ -131,6 +135,7 @@
     if (inp.hit('KeyQ', 'KeyE', 'Tab')) { M.setTab(1 - st.tab); G.sfx('flip', { vol: 0.4 }); }
     if (inp.hit('KeyF')) { var fi = TAGS.indexOf(st.filter); M.setFilter(fi + 1 >= TAGS.length ? 'all' : TAGS[fi + 1]); }
     if (inp.hit('Space')) st.paused = !st.paused;
+    if (inp.hit('Enter')) st.view = 1 - st.view;
     if (!hit) return false;
     for (i = 0; i < 2; i++) if (U.inR(tabR(i), m)) { M.setTab(i); G.sfx('flip', { vol: 0.4 }); return false; }
     if (U.inR(R_FIL, m)) { var k = TAGS.indexOf(st.filter); M.setFilter(k + 1 >= TAGS.length ? 'all' : TAGS[k + 1]); G.sfx('flip', { vol: 0.4 }); return false; }
@@ -138,7 +143,9 @@
     if (U.inR(R_PREV, m)) { st.page = (st.page + pages() - 1) % pages(); st.sel = st.page * PER; st.demoT = 0; return false; }
     if (U.inR(R_NEXT, m)) { st.page = (st.page + 1) % pages(); st.sel = st.page * PER; st.demoT = 0; return false; }
     for (i = 0; i < PER; i++) { var idx = st.page * PER + i; if (idx < l.length && U.inR(rowR(i), m)) { st.sel = idx; st.demoT = 0; G.sfx('flip', { vol: 0.3 }); return false; } }
-    if (U.inR(VIEW, m)) st.paused = !st.paused;
+    var e0 = l[st.sel];
+    if (e0 && M.isKnown(e0) && U.inR(R_VIEW, m)) { st.view = 1 - st.view; G.sfx('flip', { vol: 0.4 }); return false; }
+    if (!st.view && U.inR(VIEW, m)) st.paused = !st.paused;
     return false;
   };
 
@@ -364,37 +371,62 @@
   };
 
   // ------------------------------------------------------------- Dibujo de la pantalla
+  var LIM = 528;   // borde inferior del texto de la vista actual
   function wrapLines(c, text, w, size, max) { var l = U.wrap(c, text, w, size); if (max && l.length > max) { l = l.slice(0, max); l[max - 1] = l[max - 1].replace(/\s*\S{0,3}$/, '') + '...'; } return l; }
   function para(c, y, label, text, col, size, max, x, w) {
-    x = x || 292; w = w || 654; size = size || 13;
-    var ls = wrapLines(c, (label ? label + ' ' : '') + text, w, size, max), lh = Math.round(size * 1.45);
-    if (ls.length && y + (ls.length - 1) * lh > 528) { var nk = Math.max(1, Math.floor((528 - y) / lh) + 1); if (nk < ls.length) { ls = ls.slice(0, nk); ls[nk - 1] = ls[nk - 1].replace(/\s*\S{0,3}$/, '') + '...'; } }   // T-F1-08: con letra 15 no se sale por abajo
+    x = x || 312; w = w || 634; size = size || 17;
+    var ls = wrapLines(c, (label ? label + ' ' : '') + text, w, size, max), lh = Math.round(G.fs(size) * 1.45);
+    if (ls.length && y + (ls.length - 1) * lh > LIM) { var nk = Math.max(1, Math.floor((LIM - y) / lh) + 1); if (nk < ls.length) { ls = ls.slice(0, nk); ls[nk - 1] = ls[nk - 1].replace(/\s*\S{0,3}$/, '') + '...'; } }   // no se sale por abajo
     ls.forEach(function (ln, i) { G.txt(c, ln, x, y + i * lh, size, col, 'left'); });
     return y + ls.length * lh;
   }
+  function tw(c, t, size) { c.font = 'bold ' + G.fs(size) + 'px "Courier New", monospace'; return c.measureText(t).width; }
+  function fitTxt(c, t, w, size) { if (tw(c, t, size) <= w) return t; while (t.length > 4 && tw(c, t + '.', size) > w) t = t.slice(0, -1); return t.replace(/[\s.,;:]+$/, '') + '.'; }
   function chip(c, tag, x, y) {
     c.fillStyle = tagCol(tag); c.beginPath(); c.arc(x, y, 7, 0, TAU); c.fill(); c.strokeStyle = '#0c0814'; c.lineWidth = 2; c.stroke();
   }
   function lockedView(c, e) {
     c.fillStyle = '#0c0814'; c.fillRect(VIEW.x, VIEW.y, VIEW.w, VIEW.h);
-    G.ManualArt.icon(c, 'lock', VIEW.x + VIEW.w / 2, VIEW.y + 100, 34);
-    G.txt(c, '???', VIEW.x + VIEW.w / 2, VIEW.y + 158, 30, '#a89cc0', 'center');
-    G.txt(c, e.k === 'fx' ? 'Aún no has creado esta fusión' : 'Aún no has desbloqueado esta carta', VIEW.x + VIEW.w / 2, VIEW.y + 198, 13, '#c8c0d8', 'center');
+    G.ManualArt.icon(c, 'lock', VIEW.x + VIEW.w / 2, VIEW.y + 96, 34);
+    G.txt(c, '???', VIEW.x + VIEW.w / 2, VIEW.y + 154, 30, '#a89cc0', 'center');
+    G.txt(c, e.k === 'fx' ? 'Aún no has creado esta fusión' : 'Aún no has desbloqueado esta carta', VIEW.x + VIEW.w / 2, VIEW.y + 198, 17, '#c8c0d8', 'center');
+  }
+  // texto completo de una entrada conocida desde y (vista TEXTO; la FICHA solo enseña el principio)
+  function bodyText(c, e, y) {
+    if (e.k === 'fx') {
+      var X = FX[e.id] || { n1: '', n2: '', tip: '' };
+      y = para(c, y, '', e.rec.desc, '#e8dff8', 17, 3); y += 3;
+      y = para(c, y, 'Nv1:', X.n1 + ' Recarga ' + fmt(e.rec.lv[0].cd / 1000) + ' s.', '#ffe9a0', 17, 4); y += 3;
+      y = para(c, y, 'Nv2:', X.n2 + (e.rec.lv[1].cd !== e.rec.lv[0].cd ? ' Recarga ' + fmt(e.rec.lv[1].cd / 1000) + ' s.' : ''), '#ffe9a0', 17, 3); y += 3;
+      para(c, y, 'Consejo:', X.tip, '#9dffb4', 17, 4);
+    } else {
+      var d = e.def, aux = d.type === 'attack' && d.kind !== 'proj';
+      y = para(c, y, '', d.desc, '#e8dff8', 17, 3); y += 3;
+      if (d.type === 'attack') {
+        var b = aux ? ['+10 %', '+17,5 %', '+25 %'] : ['+20 %', '+35 %', '+50 %'];
+        y = para(c, y, 'Niveles:', 'Nv1 ' + b[0] + ', Nv2 ' + b[1] + ', Nv3 ' + b[2] + ' de daño al básico. Dos cartas iguales = refuerzo de nivel. Efecto: ' + (INF[d.tag] || '') , '#ffe9a0', 17, 4); y += 3;
+        if (aux) y = para(c, y, 'Arma propia:', 'además dispara al ' + Math.round(G.Fusion.AUX.dmg * 100) + ' % de daño' + (d.cd ? ' cada ' + fmt(d.cd * G.Fusion.AUX.cd / 1000) + ' s' : '') + '.', '#ffe9a0', 17, 2);
+      } else y = para(c, y, 'Niveles:', 'Nv1 x1, Nv2 x1,5, Nv3 x2 del efecto indicado.', '#ffe9a0', 17, 2);
+      y += 3;
+      var combos = G.Fusion.recipes.filter(function (r) { return r.a === e.tag || r.b === e.tag; }).map(function (r) { var cs = SV().combosSeen || {}; return (ALL || cs[r.id]) ? r.name : '???'; });
+      if (combos.length && e.tag !== 'neutral') y = para(c, y, 'Se fusiona en:', combos.join(', ') + '.', '#bfeaff', 17, 2); y += 3;
+      para(c, y, 'Consejo:', TAGTIP[e.tag] || 'Carta neutral: sirve en cualquier build.', '#9dffb4', 17, 3);
+    }
   }
   M.draw = function (c) {
-    G.minFont = G.MIN_DENSE || G.MIN_UI;   // T-F1-08 fase 3: 15 (10 px reales a 740x360) hasta rehacer el Manual para 17
+    G.minFont = G.MIN_UI;   // T-F1-08: letra 17 (11 px reales a 740x360), también desde la pausa
     var l = visible(), now = performance.now(), dt = st.last ? Math.min(50, now - st.last) : 0; st.last = now;
     if (st.sel >= l.length) st.sel = Math.max(0, l.length - 1);
     var e = l[st.sel], known = e && M.isKnown(e), m = inp.mouse, i, cn = counts();
-    if (!st.paused && !st.modal) st.demoT += dt / 1000 * (calm() ? 0.6 : 1);
+    if (!known) st.view = 0;
+    if (!st.paused && !st.modal && !st.view) st.demoT += dt / 1000 * (calm() ? 0.6 : 1);
     var tt = st.demoT % T.loop;
     c.fillStyle = 'rgb(10,5,16)'; c.fillRect(0, 0, G.W, G.H);
-    G.ManualArt.icon(c, 'book', 26, 26, 14); G.txt(c, 'MANUAL', 52, 24, 24, '#ffd27a', 'left');
-    G.txt(c, 'Descubierto ' + cn.n + '/' + cn.t + (ALL ? '  (todo visible)' : ''), 200, 24, 13, '#b4a8c8', 'left');
-    U.button(c, R_CLOSE, 'X', { size: 20, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
-    ['CARTAS', 'FUSIONES'].forEach(function (n, k) { U.button(c, tabR(k), n, { size: 16, color: st.tab === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.tab === k ? '#bfeaff' : '#6a5a80' }); });
-    U.button(c, R_FIL, 'ETIQUETA: ' + (st.filter === 'all' ? 'TODAS' : tagName(st.filter).toUpperCase()), { size: 14, color: '#3a2f48', hot: '#5a4a76', border: st.filter === 'all' ? '#8a7aa6' : tagCol(st.filter) });
-    U.button(c, R_SRCH, 'BUSCAR: ' + (st.q ? st.q.slice(0, 14) : '(todo)'), { size: 14, color: '#3a2f48', hot: '#5a4a76', border: st.q ? '#ffd27a' : '#8a7aa6' });
+    G.ManualArt.icon(c, 'book', 26, 26, 14); G.txt(c, 'MANUAL', 52, 26, 24, '#ffd27a', 'left');
+    U.button(c, R_CLOSE, 'X', { size: 22, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
+    ['CARTAS', 'FUSIONES'].forEach(function (n, k) { U.button(c, tabR(k), n, { size: 17, color: st.tab === k ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: st.tab === k ? '#bfeaff' : '#6a5a80' }); });
+    U.button(c, R_FIL, 'ETIQUETA: ' + (st.filter === 'all' ? 'TODAS' : tagName(st.filter).toUpperCase()), { size: 17, color: '#3a2f48', hot: '#5a4a76', border: st.filter === 'all' ? '#8a7aa6' : tagCol(st.filter) });
+    U.button(c, R_SRCH, 'BUSCAR: ' + (st.q ? st.q.slice(0, 14) : '(todo)'), { size: 17, color: '#3a2f48', hot: '#5a4a76', border: st.q ? '#ffd27a' : '#8a7aa6' });
     // lista
     for (i = 0; i < PER; i++) {
       var idx = st.page * PER + i, r = rowR(i); if (idx >= l.length) break;
@@ -403,23 +435,30 @@
       c.strokeStyle = on ? '#ffe9a0' : kn ? tagCol(en.tag) : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       if (kn) { chip(c, en.tag, r.x + 18, r.y + r.h / 2); if (en.tag2) chip(c, en.tag2, r.x + 34, r.y + r.h / 2); }
       else G.ManualArt.icon(c, 'lock', r.x + 22, r.y + r.h / 2, 9);
-      var nm = kn ? en.name : '???', nx = r.x + (en.tag2 ? 50 : 36), nmax = r.x + r.w - (isNew(en) ? 54 : 6) - nx; c.font = 'bold ' + G.fs(14) + 'px "Courier New", monospace';
-      while (nm.length > 4 && c.measureText(nm).width > nmax) nm = nm.slice(0, -2) + '.';   // T-F1-08: el nombre no pisa la marca NUEVO
-      G.txt(c, nm, nx, r.y + r.h / 2, 14, kn ? '#fff' : '#a89cc0', 'left');
-      if (isNew(en)) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 48, r.y + 12, 44, 18); G.txt(c, 'NUEVO', r.x + r.w - 26, r.y + 21, 12, '#2a1a00', 'center'); }
+      var nx = r.x + (en.tag2 ? 50 : 36), nw = isNew(en);
+      G.txt(c, fitTxt(c, kn ? en.name : '???', r.x + r.w - (nw ? 68 : 8) - nx, 17), nx, r.y + r.h / 2, 17, kn ? '#fff' : '#a89cc0', 'left');   // el nombre no pisa la marca NUEVO
+      if (nw) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 64, r.y + 21, 60, 24); G.txt(c, 'NUEVO', r.x + r.w - 34, r.y + 33, 17, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
     }
-    if (!l.length) para(c, 232, '', 'Nada coincide con el filtro o la búsqueda (solo se busca en lo descubierto).', '#c8c0d8', 13, 5, 18, 256);
-    U.button(c, R_PREV, '', { size: 16, off: pages() < 2, color: '#3a2f48' }); G.ManualArt.icon(c, 'arrow', R_PREV.x + 40, R_PREV.y + 22, 10);
-    U.button(c, R_NEXT, '', { size: 16, off: pages() < 2, color: '#3a2f48' }); c.save(); c.translate(R_NEXT.x + 40, R_NEXT.y + 22); c.scale(-1, 1); G.ManualArt.icon(c, 'arrow', 0, 0, 10); c.restore();
-    G.txt(c, 'pág ' + (st.page + 1) + '/' + pages(), 147, 468, 13, '#c8c0d8', 'center');
+    LIM = 420;
+    if (!l.length) para(c, 98, '', 'Nada coincide con el filtro o la búsqueda (solo se busca en lo descubierto).', '#c8c0d8', 17, 8, 18, 280);
+    U.button(c, R_PREV, '', { size: 17, off: pages() < 2, color: '#3a2f48' }); G.ManualArt.icon(c, 'arrow', R_PREV.x + 50, R_PREV.y + 33, 12);
+    U.button(c, R_NEXT, '', { size: 17, off: pages() < 2, color: '#3a2f48' }); c.save(); c.translate(R_NEXT.x + 50, R_NEXT.y + 33); c.scale(-1, 1); G.ManualArt.icon(c, 'arrow', 0, 0, 12); c.restore();
+    G.txt(c, 'pág ' + (st.page + 1) + '/' + pages(), 157, 465, 17, '#c8c0d8', 'center');
+    G.txt(c, 'Descubierto ' + cn.n + '/' + cn.t + (ALL ? '  (todo visible)' : ''), 14, 518, 17, '#b4a8c8', 'left');
     if (!e) return;
-    // visor de la demo
+    if (known) U.button(c, R_VIEW, st.view ? 'VER DEMO' : 'VER TEXTO', { size: 18, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: G.hint('Enter', null) });
+    if (st.view) {   // ---- vista TEXTO: nombre y todo el texto a lo ancho
+      seenMark(e); LIM = 448;
+      G.txt(c, e.name, 312, 92, 20, '#ffd27a', 'left');
+      bodyText(c, e, 122);
+      return;
+    }
+    // ---- vista FICHA: visor de la demo, datos al lado y el principio del texto
     var cap = '';
     if (known) {
       c.save(); c.translate(VIEW.x, VIEW.y); cap = M.renderDemo(c, e, tt); c.restore();
-      c.fillStyle = 'rgba(8,4,14,0.72)'; c.fillRect(VIEW.x, VIEW.y + VIEW.h - 24, VIEW.w, 24); cap = cap.replace(/^[^:]*:\s*/, ''); G.txt(c, cap.charAt(0).toUpperCase() + cap.slice(1), VIEW.x + 8, VIEW.y + VIEW.h - 12, 12, '#ffe9a0', 'left');
-      G.ManualArt.icon(c, st.paused ? 'play' : 'pause', VIEW.x + VIEW.w - 16, VIEW.y + 16, 8);
-      if (st.paused && calm()) G.txt(c, 'Toca para animar (Reducir destellos activo)', VIEW.x + VIEW.w / 2, VIEW.y + 30, 12, '#ffe9a0', 'center');
+      G.ManualArt.icon(c, st.paused ? 'play' : 'pause', VIEW.x + VIEW.w - 18, VIEW.y + 18, 9);
+      if (st.paused && calm()) U.wrap(c, 'Toca para animar (Reducir destellos activo)', 400, 17).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, VIEW.x + VIEW.w / 2, VIEW.y + 30 + k * 22, 17, '#ffe9a0', 'center'); });
     } else lockedView(c, e);
     c.strokeStyle = known ? tagCol(e.tag) : '#3a2f48'; c.lineWidth = 3; c.strokeRect(VIEW.x - 1.5, VIEW.y - 1.5, VIEW.w + 3, VIEW.h + 3);
     // panel lateral
@@ -427,45 +466,28 @@
     var cx = SIDE.x + SIDE.w / 2;
     if (!known) { G.txt(c, '???', cx, SIDE.y + 110, 30, '#a89cc0', 'center'); }
     else if (e.k === 'card') {
-      G.Cards.drawCard(c, { id: e.id, lvl: 1 }, cx - 46, SIDE.y + 10, 92, 120, { nocd: true });
-      G.txt(c, tagName(e.tag).toUpperCase(), cx, SIDE.y + 146, 14, tagCol(e.tag), 'center');
-      G.txt(c, e.def.type === 'attack' ? 'INFUSIÓN' : 'PASIVA', cx, SIDE.y + 168, 13, '#e8dff8', 'center');
-      var rk = G.Save.rank ? G.Save.rank(e.id) : 0; G.txt(c, rk ? 'Rango ' + U.roman(rk) : 'Sin forjar', cx, SIDE.y + 190, 12, '#b4a8c8', 'center');
-      G.txt(c, 'Cd ' + (e.def.cd ? fmt(e.def.cd / 1000) + ' s' : '-'), cx, SIDE.y + 212, 12, '#b4a8c8', 'center');
+      G.Cards.drawCard(c, { id: e.id, lvl: 1 }, cx - 46, SIDE.y + 8, 92, 120, { nocd: true });
+      G.txt(c, tagName(e.tag).toUpperCase(), cx, SIDE.y + 146, 17, tagCol(e.tag), 'center');
+      G.txt(c, e.def.type === 'attack' ? 'INFUSIÓN' : 'PASIVA', cx, SIDE.y + 168, 17, '#e8dff8', 'center');
+      var rk = G.Save.rank ? G.Save.rank(e.id) : 0; G.txt(c, rk ? 'Rango ' + U.roman(rk) : 'Sin forjar', cx, SIDE.y + 190, 17, '#b4a8c8', 'center');
+      G.txt(c, 'Cd ' + (e.def.cd ? fmt(e.def.cd / 1000) + ' s' : '-'), cx, SIDE.y + 212, 17, '#b4a8c8', 'center');
     } else {
-      chip(c, e.tag, cx - 44, SIDE.y + 20); G.txt(c, '+', cx - 24, SIDE.y + 20, 16, '#fff', 'center'); chip(c, e.tag2, cx - 4, SIDE.y + 20);
-      G.txt(c, tagName(e.tag) + ' + ' + tagName(e.tag2), cx, SIDE.y + 44, 12, '#e8dff8', 'center');
-      try { G.FusionArt.icon(c, e.id, cx, SIDE.y + 104, 38); } catch (x0) { /* sin icono */ }
-      G.txt(c, e.rec.short, cx, SIDE.y + 160, 16, e.rec.color, 'center');
-      G.txt(c, 'Recarga ' + fmt(e.rec.lv[0].cd / 1000) + ' s' + (e.rec.lv[1].cd !== e.rec.lv[0].cd ? ' / ' + fmt(e.rec.lv[1].cd / 1000) + ' s' : ''), cx, SIDE.y + 186, 13, '#ffe9a0', 'center');
-      G.txt(c, 'Nv1 y Nv2 (re-fusiona)', cx, SIDE.y + 212, 12, '#b4a8c8', 'center');
+      chip(c, e.tag, cx - 44, SIDE.y + 18); G.txt(c, '+', cx - 24, SIDE.y + 18, 17, '#fff', 'center'); chip(c, e.tag2, cx - 4, SIDE.y + 18);
+      G.txt(c, fitTxt(c, tagName(e.tag) + ' + ' + tagName(e.tag2), SIDE.w - 12, 17), cx, SIDE.y + 42, 17, '#e8dff8', 'center');
+      try { G.FusionArt.icon(c, e.id, cx, SIDE.y + 90, 28); } catch (x0) { /* sin icono */ }
+      G.txt(c, e.rec.short, cx, SIDE.y + 138, 17, e.rec.color, 'center');
+      U.wrap(c, 'Recarga ' + fmt(e.rec.lv[0].cd / 1000) + ' s' + (e.rec.lv[1].cd !== e.rec.lv[0].cd ? ' / ' + fmt(e.rec.lv[1].cd / 1000) + ' s' : ''), SIDE.w - 12, 17).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, cx, SIDE.y + 162 + k * 22, 17, '#ffe9a0', 'center'); });
+      U.wrap(c, 'Nv1 y Nv2 (re-fusiona)', SIDE.w - 12, 17).slice(0, 2).forEach(function (ln, k) { G.txt(c, ln, cx, SIDE.y + 208 + k * 22, 17, '#b4a8c8', 'center'); });
     }
-    // texto
-    var y = 330;
-    G.txt(c, known ? e.name : '???', 292, y, 20, known ? '#ffd27a' : '#a89cc0', 'left'); y += 28;
+    // leyenda de la demo, nombre y principio del texto (el resto, en VER TEXTO)
+    var y = 346; LIM = 440;
+    if (known && cap) { cap = cap.replace(/^[^:]*:\s*/, ''); G.txt(c, fitTxt(c, cap.charAt(0).toUpperCase() + cap.slice(1), 634, 17), 312, y, 17, '#ffe9a0', 'left'); y += 28; }
+    G.txt(c, known ? e.name : '???', 312, y, 20, known ? '#ffd27a' : '#a89cc0', 'left'); y += 28;
     if (!known) {
-      para(c, y, '', e.k === 'fx' ? 'Descubre esta fusión juntando en la mano dos cartas de etiquetas distintas que tengan receta y fusionándolas durante una expedición.' : 'Esta carta se desbloquea en el árbol de la Forja de Grum (o en el Archivo de Ulalume cuando ya es tuya).', '#c8c0d8', 14, 4);
+      para(c, y, '', e.k === 'fx' ? 'Descubre esta fusión juntando en la mano dos cartas de etiquetas distintas que tengan receta y fusionándolas durante una expedición.' : 'Esta carta se desbloquea en el árbol de la Forja de Grum (o en el Archivo de Ulalume cuando ya es tuya).', '#c8c0d8', 17, 6, 312, 634);
       return;
     }
     seenMark(e);
-    if (e.k === 'fx') {
-      var X = FX[e.id] || { n1: '', n2: '', tip: '' };
-      y = para(c, y, '', e.rec.desc, '#e8dff8', 13, 2); y += 3;
-      y = para(c, y, 'Nv1:', X.n1 + ' Recarga ' + fmt(e.rec.lv[0].cd / 1000) + ' s.', '#ffe9a0', 13, 3); y += 3;
-      y = para(c, y, 'Nv2:', X.n2 + (e.rec.lv[1].cd !== e.rec.lv[0].cd ? ' Recarga ' + fmt(e.rec.lv[1].cd / 1000) + ' s.' : ''), '#ffe9a0', 13, 2); y += 3;
-      para(c, y, 'Consejo:', X.tip, '#9dffb4', 13, 3);
-    } else {
-      var d = e.def, aux = d.type === 'attack' && d.kind !== 'proj';
-      y = para(c, y, '', d.desc, '#e8dff8', 13, 3); y += 3;
-      if (d.type === 'attack') {
-        var b = aux ? ['+10 %', '+17,5 %', '+25 %'] : ['+20 %', '+35 %', '+50 %'];
-        y = para(c, y, 'Niveles:', 'Nv1 ' + b[0] + ', Nv2 ' + b[1] + ', Nv3 ' + b[2] + ' de daño al básico. Dos cartas iguales = refuerzo de nivel. Efecto: ' + (INF[d.tag] || '') , '#ffe9a0', 13, 3); y += 3;
-        if (aux) y = para(c, y, 'Arma propia:', 'además dispara al ' + Math.round(G.Fusion.AUX.dmg * 100) + ' % de daño' + (d.cd ? ' cada ' + fmt(d.cd * G.Fusion.AUX.cd / 1000) + ' s' : '') + '.', '#ffe9a0', 13, 2);
-      } else y = para(c, y, 'Niveles:', 'Nv1 x1, Nv2 x1,5, Nv3 x2 del efecto indicado.', '#ffe9a0', 13, 2);
-      y += 3;
-      var combos = G.Fusion.recipes.filter(function (r) { return r.a === e.tag || r.b === e.tag; }).map(function (r) { var cs = SV().combosSeen || {}; return (ALL || cs[r.id]) ? r.name : '???'; });
-      if (combos.length && e.tag !== 'neutral') y = para(c, y, 'Se fusiona en:', combos.join(', ') + '.', '#bfeaff', 13, 2); y += 3;
-      para(c, y, 'Consejo:', TAGTIP[e.tag] || 'Carta neutral: sirve en cualquier build.', '#9dffb4', 13, 2);
-    }
+    para(c, y, '', e.k === 'fx' ? e.rec.desc : e.def.desc, '#e8dff8', 17, 2, 312, 634);
   };
 })();

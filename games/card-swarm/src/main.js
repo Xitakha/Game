@@ -188,7 +188,7 @@
   }
   // Legibilidad (v: textos): en menús / aldea / fin de expedición / pausa (G.minFont > 0) ningún texto baja de G.minFont px lógicos (T-F1-08 fase 3: 17 = 11 px reales a 740x360; antes 12)
   // y los grises demasiado oscuros se aclaran hasta contraste >= 4,5:1 sobre el fondo oscuro de los paneles. En combate G.minFont = 0 (etiquetas del jefe y de enemigos intactas).
-  G.minFont = 0; G.MIN_UI = 17; G.MIN_DENSE = 15; G.MIN_OLD = 12;   // MIN_DENSE / MIN_OLD: paneles densos aún sin rehacer para 17 (T-F1-08 fase 3; ver G.Panels.minFor)
+  G.minFont = 0; G.MIN_UI = 17;   // T-F1-08 fase 3: letra mínima de menús, aldea y paneles (todos rehechos para 17; ver G.Panels.minFor)
   G.fs = function (size) { return size < G.minFont ? G.minFont : size; };
   var LIFT = {};
   function lumOf(r, g, b) { function f(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); } return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); }

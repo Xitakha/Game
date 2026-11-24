@@ -662,14 +662,14 @@
     var stTxt = st === 'owned' ? (n.type === 'root' ? 'INICIAL' : 'COMPRADO' + (n.type === 'M' ? ': ' + n.ch[T.choice(n.id)].name : '') + (S.nodes[n.id] && S.nodes[n.id].free ? ' (heredado)' : '')) :
       st === 'avail' ? 'DISPONIBLE' : T.reason(n);
     G.txt(c, stTxt, X + W2, DET.y + 52, 12, st === 'owned' ? '#9dffb4' : st === 'avail' ? '#ffe9a0' : '#ff8a8a', 'right');
-    var lines = U.wrap(c, n.desc, W2, 17); y = DET.y + 82;
+    var lines = U.wrap(c, G.Res ? G.Res.fix(n.desc) : n.desc, W2, 17); y = DET.y + 82;   // T-F1-07: "Exige 1 Esencia rara" = "1 parte rara" mientras la Esencia no se ve
     for (i = 0; i < lines.length && i < 3; i++) G.txt(c, lines[i], X, y + i * 22, 12, '#d8cfe8', 'left');
     y += Math.min(lines.length, 3) * 22 + 6;
     if (n.type === 'M') {   // mejoras A / B en dos columnas
       ['A', 'B'].forEach(function (k, j) {
         var ch = n.ch[k], picked = T.choice(n.id) === k, cx = X + j * (W2 / 2 + 6), yy = y;
         G.txt(c, k + ' - ' + ch.name + (picked ? '  (elegida)' : ''), cx, yy, 12, picked ? '#9dffb4' : '#ffe9a0', 'left');
-        U.wrap(c, ch.desc, W2 / 2 - 14, 17).slice(0, 4).forEach(function (l, q) { G.txt(c, l, cx, yy + 24 + q * 22, 12, '#c8bedc', 'left'); });
+        U.wrap(c, G.Res ? G.Res.fix(ch.desc) : ch.desc, W2 / 2 - 14, 17).slice(0, 4).forEach(function (l, q) { G.txt(c, l, cx, yy + 24 + q * 22, 12, '#c8bedc', 'left'); });
       });
       y += 24 + 4 * 22 + 4;
     }

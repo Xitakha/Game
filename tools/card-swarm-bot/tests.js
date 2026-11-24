@@ -510,33 +510,38 @@ async function armor() {
   await sleep(pg, 300);
   const base0 = await E(pg, () => ({ owned: Object.keys(G.Save.data.armor.owned).length, ever: G.Save.data.trophiesEver.horn, def: G.Armor.get().def }));
   ok(base0.owned === 4 && Math.abs(base0.def - 6) < 1e-9, 'set Aldeano regalado y equipado: DEF ' + base0.def);
-  await tap(pg, 14 + 134 + 64, 80);            // pestana FABRICAR
-  await tap(pg, 14 + 53, 164);                 // slot Yelmo
-  await tap(pg, 400, 144); await sleep(pg, 100);   // fila (Aldeano) -> seleccion
-  await tap(pg, 400, 206);                     // fila Esquila (2.a)
-  const sel = await E(pg, () => G.Smith.ui.sel); ok(sel === 1, 'toque en fila selecciona la pieza (sel=' + sel + ')');
-  await tap(pg, 784, 449);                     // FABRICAR
+  // T-F1-08: la Herrería va con letra 17; EQUIPO / FABRICAR en dos vistas (LISTA y DETALLE de la pieza tocada). Toques por G.Smith.rects()
+  const SR = async (k, i) => E(pg, ([k, i]) => { const r = G.Smith.rects()[k]; return typeof r === 'function' ? r(i) : r; }, [k, i]);
+  const tapR = async (k, i) => { const r = await SR(k, i); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); };
+  await tapR('tab', 1);                        // pestana FABRICAR
+  await tapR('tile', 0);                       // slot Yelmo
+  await tapR('row', 1); await sleep(pg, 100);  // fila Esquila (2.a) -> seleccion y detalle
+  const sel = await E(pg, () => [G.Smith.ui.sel, G.Smith.ui.det]); ok(sel[0] === 1 && sel[1], 'toque en fila selecciona la pieza y abre su detalle (sel=' + sel + ')');
+  await tapR('b1');                            // FABRICAR
   const cr = await E(pg, () => ({ own: G.Armor.owned('esq_helm'), tr: G.Save.data.trophies.horn, ever: G.Save.data.trophiesEver.horn, brasas: G.Save.data.brasas, plate: G.Save.data.parts.plate }));
   ok(cr.own && cr.tr === 3 && cr.ever === 4, 'fabricar Yelmo de cuernos gasta 1 trofeo (saldo 3) y trophiesEver sigue en 4');
   ok(cr.brasas === 4000 - 98 && cr.plate === 80 - 6, 'coste del Yelmo T1 (peso 0,7): 98 Brasas y 6 Placa (' + (4000 - cr.brasas) + ' / ' + (80 - cr.plate) + ')');
-  await tap(pg, 14 + 64, 80);                  // pestana EQUIPO
-  await tap(pg, 14 + 53, 164);
-  await tap(pg, 400, 206); await tap(pg, 400, 206);   // seleccionar y doble toque = equipar
-  ok(await E(pg, () => G.Save.data.armor.equipped[0]) === 'esq_helm', 'doble toque en la fila equipa la pieza');
-  await tap(pg, 784, 507);                     // REFORZAR +1
+  await tapR('tab', 0);                        // pestana EQUIPO (vuelve a la lista)
+  ok(await E(pg, () => G.Smith.ui.tab === 0 && !G.Smith.ui.det), 'cambiar de pestaña vuelve a la vista LISTA');
+  await tapR('tile', 0);
+  await tapR('row', 1); await tapR('b1');      // tocar la fila abre el detalle; EQUIPAR la equipa
+  ok(await E(pg, () => G.Save.data.armor.equipped[0]) === 'esq_helm', 'fila + EQUIPAR en el detalle equipa la pieza');
+  await tapR('b2');                            // REFORZAR +1
   ok(await E(pg, () => G.Armor.ref('esq_helm')) === 1, 'refuerzo +1 (parte, Brasas y trofeo gastados)');
   await E(pg, () => { G.Save.data.nodes.R2 = { c: '1' }; });
-  await tap(pg, 784, 507);
+  await tapR('b2');
   ok(await E(pg, () => G.Armor.ref('esq_helm')) === 2, 'refuerzo +2 con Rango de forja II y Peligro II vencido');
   const r3 = await E(pg, () => G.Armor.refReq(G.ArmorData.piece('esq_helm'), 3));
   ok(/Rango de forja III/.test(r3), 'refuerzo +3 bloqueado: ' + r3);
   const ruta = await E(pg, () => { const n = G.Tree.NODES.filter(x => x.id === 'RT1')[0]; return [G.Tree.trophiesHave({ trophies: ['horn', 'staff'] }), G.Save.data.trophiesEver.horn]; });
   ok(ruta[0] === 1 && ruta[1] === 4, 'Ruta / logros leen trophiesEver (no se gasta)');
-  for (let t = 2; t <= 3; t++) { await tap(pg, 14 + 134 * t + 64, 80); await sleep(pg, 120); }
-  await tap(pg, 14 + 134 * 3 + 64, 80); await sleep(pg, 100);
+  await tapR('back'); ok(await E(pg, () => !G.Smith.ui.det), 'VOLVER: del detalle a la lista');
+  for (let t = 2; t <= 3; t++) { await tapR('tab', t); await sleep(pg, 120); }
+  await tapR('tab', 3); await sleep(pg, 100);
   const ped = await E(pg, () => ({ tab: G.Smith.ui.tab, rdy: G.Armor.PED.filter(G.Armor.pedReady).map(d => d.id) }));
   ok(ped.tab === 3 && ped.rdy.includes('p1'), 'pestana PEDIDOS y pedido "Tomar medidas" listo: ' + ped.rdy);
-  await tap(pg, 14 + 932 - 80, 114 + 27); const claim = await E(pg, () => G.Save.data.armor.ped.p1); ok(claim === 1, 'cobrar un pedido');
+  await tapR('ped', 0); const claim = await E(pg, () => G.Save.data.armor.ped.p1); ok(claim === 1, 'cobrar un pedido');
+  await tapR('pnext'); ok(await E(pg, () => G.Smith.ui.pp === 1), 'PEDIDOS: 2.ª página (5 por página)');
   if (process.env.SHOT_ARM) await pg.screenshot({ path: process.env.SHOT_ARM, type: 'jpeg', quality: 40 });
   await tap(pg, 926, 27); await sleep(pg, 200);
   ok(await E(pg, () => G.Aldea.state().mode) === 'walk', 'X cierra el panel');
@@ -655,9 +660,11 @@ async function armor2() {
   await E(pg, () => { G.Dialog.close(); const S = G.Save.data; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; G.Aldea.openPanel('armor'); G.Smith.ui.slot = 3; G.Smith.ui.tab = 1; });
   await sleep(pg, 300);
   const nl = await E(pg, () => G.ArmorData.ofSlot(3).length); ok(nl === 12, 'slot Talisman: 12 piezas (7 sets + 5 minijefes) -> lista con scroll');
-  await tap(pg, 592, 202); const sc = await E(pg, () => G.Smith.ui.scroll); ok(sc === 1, 'boton de scroll de la lista (' + sc + ')');
-  await E(pg, () => { G.Smith.ui.tab = 2; G.Smith.ui.scroll = 0; }); await sleep(pg, 150);
-  await tap(pg, 600 + 84 * 2 + 39, 81); await tap(pg, 14 + 556 - 120 + 56, 114 + 8 + 27);   // +2 y PROBAR del 1.er set (Aldeano)
+  const SR2 = async (k, i) => E(pg, ([k, i]) => { const r = G.Smith.rects()[k]; return typeof r === 'function' ? r(i) : r; }, [k, i]);
+  const tapR2 = async (k, i) => { const r = await SR2(k, i); await tap(pg, r.x + r.w / 2, r.y + r.h / 2); };
+  await tapR2('dn'); const sc = await E(pg, () => G.Smith.ui.scroll); ok(sc === 1, 'boton de scroll de la lista (' + sc + ')');
+  await E(pg, () => { G.Smith.setTab(2); }); await sleep(pg, 150);
+  await tapR2('tn', 2); await tapR2('tryR', 0);   // +2 y PROBAR del 1.er set (Aldeano)
   const tr = await E(pg, () => ({ t: G.Armor.trial && G.Armor.trial.sid + ':' + G.Armor.trial.n, def: G.Armor.get().def }));
   ok(tr.t === 'aldeano:2' && Math.abs(tr.def - 6 * 1.3) < 1e-9, 'probar equipo: set Aldeano +2 en memoria sin gastar (' + tr.t + ', DEF ' + tr.def + ')');
   const tr2 = await E(pg, () => { G.Armor.trialView = false; G.Armor.dirty(); const d0 = G.Armor.get().def; G.mode = 'practice'; G.Armor.dirty(); const d1 = G.Armor.get().def; G.mode = 'run'; G.Armor.modeSet(); return [d0, d1, G.Armor.trial]; });
@@ -1234,6 +1241,36 @@ const KBD_RE = /^[BDR]\s{2}-\s{2}|\b(Tab|Enter|Esc|Espacio|Flechas|WASD|Q\s?\/\s
 const kbdHints = d => d.texts.map(t => t.s).filter(s => KBD_RE.test(s));
 const kbdOnly = async (pg, name) => { const kb = kbdHints(await TC.snap(pg, 2)); ok(kb.length === 0, `${name}: sin pistas de teclado en táctil` + (kb.length ? ' -> ' + kb.slice(0, 3).join(' | ') : '')); };
 
+// T-F1-08: páginas de los paneles que se rehicieron después de la fase 3 (antes con 15 / 12): todas a 17 lógicos y botones de 66
+const DENSE = {
+  vesper: ['G.Panels.vesperTab(0); G.Panels.vesperPage(0)', 'G.Panels.vesperTab(0); G.Panels.vesperPage(1)', 'G.Panels.vesperTab(1); G.Panels.huntPage(0)', 'G.Panels.vesperTab(1); G.Panels.huntPage(1)', 'G.Panels.vesperTab(1); G.Panels.huntPage(2)'],
+  rufo: ['G.Panels.rufoTab(0)', 'G.Panels.rufoTab(1)', 'G.Panels.rufoTab(2)'],
+  cook: ['G.Panels.cookPage(0, 0)', 'G.Panels.cookPage(0, 1)', 'G.Panels.cookPage(0, 2)', 'G.Panels.cookPage(1, 0)'],
+  logros: [null, 'G.Panels.logrosScroll(5)', 'G.Panels.logrosScroll(30)'],
+  armor: ['G.Smith.setTab(0)', 'G.Smith.setTab(1)', 'G.Smith.setTab(1); G.Smith.ui.slot = 0; G.Smith.ui.sel = 1; G.Smith.ui.det = true', 'G.Smith.setTab(0); G.Smith.ui.slot = 1; G.Smith.ui.det = true', 'G.Smith.setTab(2)', 'G.Smith.setTab(2); G.Smith.ui.scroll = 6', 'G.Smith.setTab(3)', 'G.Smith.setTab(3); G.Smith.ui.pp = 1'],
+  manual: ['G.Manual.setTab(0); G.Manual.select(9); G.Manual.setView(0)', 'G.Manual.setTab(0); G.Manual.select(9); G.Manual.setView(1)', 'G.Manual.setTab(1); G.Manual.select(12); G.Manual.setView(0)', 'G.Manual.setTab(1); G.Manual.select(12); G.Manual.setView(1)']
+};
+// Legibilidad de esos paneles a 844x390 y 740x360: letra >= 11 px reales, sin solapes ni desbordes, botones de 66 lógicos (>= 44 px reales) y 0 errores.
+// Con SHOT_PANELS=<carpeta> guarda una captura de cada página (antes / después del rehacer).
+async function denseLegibility(b) {
+  const dir = process.env.SHOT_PANELS; if (dir) fs.mkdirSync(dir, { recursive: true });
+  for (const [w, h] of [[844, 390], [740, 360]]) {
+    const pg = await mkV(b, 'reset=1&all=1&speed=0&smith=1&manual=all&give=all:40,brasas:900&pf=5', w, h);
+    await E(pg, () => { G.Dialog.close(); const S = G.Save.data; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; S.flags.smithMet = 1; ['first', 'win', 'pastor', 'insig3'].forEach(a => { S.ach[a] = 1; }); G.Quests.accept(G.Quests.board()[0].id); });
+    let bad = [], n = 0, small = [], kmin = 99;
+    for (const pn of Object.keys(DENSE)) for (const x of DENSE[pn]) {
+      await E(pg, ([n, x]) => { G.Aldea.open(false); G.Aldea.openPanel(n); if (x) new Function(x)(); }, [pn, x]); await sleep(pg, 150);
+      const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: TC.MIN_MENU, minReal: 11 }); n++; kmin = Math.min(kmin, d.k || 1);
+      iss.forEach(i => bad.push(pn + ': ' + i.msg));
+      d.boxes.filter(bx => bx.k === 'button' && (bx.y1 - bx.y0 < 65.5 || bx.x1 - bx.x0 < 65.5)).forEach(bx => small.push(pn + ' "' + bx.label + '" ' + Math.round(bx.x1 - bx.x0) + 'x' + Math.round(bx.y1 - bx.y0)));
+      if (dir) await pg.screenshot({ path: path.join(dir, `${w}x${h}_${pn}_${n}.jpg`), type: 'jpeg', quality: 55 });
+    }
+    ok(bad.length === 0, `legibilidad ${w}x${h}: ${n} páginas de Vesper, Rufo, Cocina, Logros, Herrería y Manual sin textos < 11 px reales (k ${kmin.toFixed(3)}), solapes ni desbordes` + (bad.length ? ' -> ' + bad.slice(0, 4).join(' | ') : ''));
+    ok(small.length === 0, `botones ${w}x${h}: todos de 66 lógicos o más (${Math.round(66 * kmin)} px reales)` + (small.length ? ' -> ' + [...new Set(small)].slice(0, 4).join(' | ') : ''));
+    await done(pg, 'legibilidad-' + w + 'x' + h);
+  }
+}
+
 // ---------------------------------------------------------------- Texto: pantallas de victoria de los 6 jefes y menús sin solapes ni desbordes
 async function text() {
   console.log('--- texto: victoria de los 6 jefes, derrota, pausa, Portal y paneles (844x390): sin solapes, desbordes ni fuentes < 11,5 px');
@@ -1261,15 +1298,21 @@ async function text() {
   pg = await mk(b, 'reset=1&direct=1&all=1&speed=0');
   await E(pg, () => { G.step(); G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa'); await done(pg, 'texto-pausa');
   pg = await mk(b, 'reset=1&all=1&speed=0&give=all:40,brasas:900&pf=5');
-  // T-F1-08 fase 3: cada panel con su letra mínima (17 los rehechos; 15 / 12 los densos aún pendientes, G.Panels.minFor) y las páginas nuevas (Portal, Archivo, Forja, Ajustes)
-  const PAGES = { portal: [null, 'G.Panels.portalTab(2)', 'G.Panels.portalTab(1)'], archive: [null, 'G.Panels.archTab(1)', 'G.Panels.archTab(2)'], forge: [null, "G.Tree.view('det')", "G.Tree.setTab('trunk')"], settings: [null, 'G.Panels.setTab(1)'] };
-  for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor', 'cine', 'errlog', 'privacy']) for (const pgx of PAGES[pn] || [null]) {
-    const mn = await E(pg, ([n, x]) => { G.Aldea.open(false); G.Aldea.openPanel(n); if (n === 'cine' || n === 'errlog' || n === 'privacy') G.Panels.open(n); if (x) new Function(x)(); return G.Panels.minFor(n); }, [pn, pgx]); await sleep(pg, 150); await report(pg, 'panel ' + pn + (pgx ? ' ' + pgx.replace(/^G\.\w+\./, '') : '') + ' (mín. ' + mn + ')', mn - 0.5); }
+  // T-F1-08 fase 3: todos los paneles con letra 17 (G.Panels.minFor = G.MIN_UI en todos) y sus páginas (Portal, Archivo, Forja, Ajustes, Tablón y Cacería de Vesper,
+  // Rufo, Cocina, Logros, Herrería y Manual)
+  await E(pg, () => { const S = G.Save.data; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 }; S.flags.smithMet = 1; ['first', 'win', 'pastor', 'insig3'].forEach(a => { S.ach[a] = 1; }); G.Quests.accept(G.Quests.board()[0].id); });
+  const PAGES = { portal: [null, 'G.Panels.portalTab(2)', 'G.Panels.portalTab(1)'], archive: [null, 'G.Panels.archTab(1)', 'G.Panels.archTab(2)'], forge: [null, "G.Tree.view('det')", "G.Tree.setTab('trunk')"], settings: [null, 'G.Panels.setTab(1)'],
+    vesper: DENSE.vesper, rufo: DENSE.rufo, cook: DENSE.cook, logros: DENSE.logros, armor: DENSE.armor, manual: DENSE.manual };
+  const mins = [];
+  for (const pn of ['portal', 'vesper', 'rufo', 'archive', 'cook', 'logros', 'menu', 'settings', 'forge', 'armor', 'manual', 'cine', 'errlog', 'privacy']) for (const pgx of PAGES[pn] || [null]) {
+    const mn = await E(pg, ([n, x]) => { G.Aldea.open(false); G.Aldea.openPanel(n); if (n === 'cine' || n === 'errlog' || n === 'privacy') G.Panels.open(n); if (x) new Function(x)(); return G.Panels.minFor(n); }, [pn, pgx]); mins.push(pn + ':' + mn); await sleep(pg, 150); await report(pg, 'panel ' + pn + (pgx ? ' ' + pgx.replace(/^G\.\w+\./, '') : '') + ' (mín. ' + mn + ')', mn - 0.5); }
+  ok(mins.every(x => /:17$/.test(x)) && (await E(pg, () => G.MIN_UI === 17 && G.MIN_DENSE === undefined && G.MIN_OLD === undefined)), 'G.Panels.minFor = 17 (G.MIN_UI) en todos los paneles; sin mínimos de 15 / 12' + (mins.every(x => /:17$/.test(x)) ? '' : ' -> ' + mins.filter(x => !/:17$/.test(x)).join(',')));
   // T-F0-06: más pantallas con pistas posibles (aldea con NPC cerca, oferta de cartas, tutorial de la partida, Herrería en cada pestaña)
   await E(pg, () => { G.Aldea.open(false); }); await sleep(pg, 200); await kbdOnly(pg, 'aldea');
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('armor'); }); await sleep(pg, 150);
   for (const tb of [0, 1]) { await E(pg, t => { if (G.Smith.setTab) G.Smith.setTab(t); }, tb); await sleep(pg, 100); await kbdOnly(pg, 'herreria pestaña ' + tb); }
   await done(pg, 'texto-paneles');
+  await denseLegibility(b);
   pg = await mk(b, 'reset=1&direct=1&all=1&god=1&speed=0&noanchor=1');
   await E(pg, () => { G.Save.data.anchors = []; G.startGame(); }); await sleep(pg, 500); await kbdOnly(pg, 'oferta de cartas');
   await E(pg, () => { G.Cards.skip(); }); await sleep(pg, 300); await E(pg, () => { for (let i = 0; i < 30; i++) G.step(); }); await kbdOnly(pg, 'partida (tutorial)');
@@ -1326,13 +1369,17 @@ async function manual() {
   await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('manual'); });
   await sleep(pg, 400);
   const st0 = await E(pg, () => G.Manual.state());
-  await tap(pg, 240, 468); await sleep(pg, 100);   // siguiente página
+  const MR = await E(pg, () => { const R = G.Manual.rects(); return { next: R.next, row2: R.row(2), fil: R.fil, view: R.view }; });   // T-F1-08: rectángulos de la maquetación de 17
+  await tap(pg, MR.next.x + MR.next.w / 2, MR.next.y + MR.next.h / 2); await sleep(pg, 100);   // siguiente página
   const st1 = await E(pg, () => G.Manual.state()); ok(st1.page === 1 && st1.sel === 5, `botón siguiente: página ${st0.page} -> ${st1.page}`);
-  await tap(pg, 100, 210 + 46 * 2 + 20); await sleep(pg, 100);
+  await tap(pg, MR.row2.x + 100, MR.row2.y + MR.row2.h / 2); await sleep(pg, 100);
   const st2 = await E(pg, () => G.Manual.state()); ok(st2.sel === 7, 'tocar una fila la selecciona (' + st2.sel + ')');
   await E(pg, () => { G.input.swipe = -1; }); await sleep(pg, 150);
   ok((await E(pg, () => G.Manual.state().sel)) === 8, 'deslizar a la izquierda = siguiente entrada');
-  await tap(pg, 100, 130); await sleep(pg, 100);
+  await tap(pg, MR.view.x + MR.view.w / 2, MR.view.y + MR.view.h / 2); await sleep(pg, 100);
+  const sv = await E(pg, () => G.Manual.state().view); await tap(pg, MR.view.x + MR.view.w / 2, MR.view.y + MR.view.h / 2); await sleep(pg, 100);
+  ok(sv === 1 && (await E(pg, () => G.Manual.state().view)) === 0, 'VER TEXTO / VER DEMO cambian la vista de la entrada');
+  await tap(pg, MR.fil.x + MR.fil.w / 2, MR.fil.y + MR.fil.h / 2); await sleep(pg, 100);
   const st3 = await E(pg, () => G.Manual.state()); ok(st3.filter === 'fire' && st3.n < st0.n, `filtro por etiqueta (un toque): ${st3.filter}, ${st3.n} entradas`);
   await tap(pg, 926, 27); await sleep(pg, 150);
   ok(await E(pg, () => G.Panels.current() === 'menu' || G.Panels.current() === null), 'la X cierra el Manual y vuelve al menú');
@@ -1349,12 +1396,13 @@ async function manual() {
   // 4. 'visto en el manual'
   const sn = await E(pg, () => { G.Save.data.manualSeen = {}; G.Aldea.open(false); G.Aldea.openPanel('manual'); G.Manual.setTab(1); G.Manual.select(0); return null; }); await sleep(pg, 300);
   ok((await E(pg, () => !!G.Save.data.manualSeen.vapor)), "abrir una entrada la marca 'vista' (manualSeen)");
-  // 5. texto sin solapes en 8 entradas (844x390 lógico 960x540)
-  for (const [tab, i] of [[0, 0], [0, 3], [0, 9], [0, 27], [1, 0], [1, 4], [1, 12], [1, 14]]) {
-    await E(pg, ([tab, i]) => { G.Manual.setFilter('all'); G.Manual.setQuery(''); G.Manual.setTab(tab); G.Manual.select(i); }, [tab, i]); await sleep(pg, 250);
-    const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: 14.5 });   // T-F1-08: el Manual sigue a 15 (pendiente de rehacer para 17)
-    ok(d.texts.length > 8 && iss.length === 0, `texto del Manual (${tab ? 'fusión' : 'carta'} ${i}): ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
+  // 5. texto sin solapes en 8 entradas (844x390 lógico 960x540), en las dos vistas (FICHA y TEXTO), con letra 17 (T-F1-08)
+  for (const [tab, i] of [[0, 0], [0, 3], [0, 9], [0, 27], [1, 0], [1, 4], [1, 12], [1, 14]]) for (const vw of [0, 1]) {
+    await E(pg, ([tab, i, vw]) => { G.Manual.setFilter('all'); G.Manual.setQuery(''); G.Manual.setTab(tab); G.Manual.select(i); G.Manual.setView(vw); }, [tab, i, vw]); await sleep(pg, 250);
+    const d = await TC.snap(pg, 2), iss = TC.analyze(d, { minSize: TC.MIN_MENU });
+    ok(d.texts.length > 8 && iss.length === 0, `texto del Manual (${tab ? 'fusión' : 'carta'} ${i}, ${vw ? 'TEXTO' : 'FICHA'}): ${d.texts.length} textos, ${iss.length} problemas` + (iss.length ? ' -> ' + iss.slice(0, 3).map(x => x.msg).join(' | ') : ''));
   }
+  await E(pg, () => G.Manual.setView(0));
   await done(pg, 'manual-demos');
   // 6. accesos: Ajustes, Menú y Pausa; Reducir destellos
   pg = await mk(b, 'reset=1&manual=all');
@@ -2533,6 +2581,18 @@ async function res() {
   await E(pg, () => { G.Save.data.len = 7; G.Panels.portalTab(2); }); await sleep(pg, 100);
   s = await resSnap(pg); add(s.rx); add(s.reg);
   ok(sub(pd.rx, ['brasas']) && sub(s.rx, ['brasas']) && sub(s.reg, ['brasas']) && s.has(/Menos botín, jefe antes/) && !s.has(/\bPF\b|Esencia/), `Portal tras la salida 1 (DESTINO [${pd.rx}], SALIDA [${s.rx}]): sin PF ni Esencia; Rápida = "Menos botín, jefe antes"`);
+  // T-F1-08 / T-F1-07: Logros de Lanudo (todas sus páginas) y Forja (nodo épico "Exige 1 Esencia rara") no nombran Insignias, trofeos, Esencia ni PF aún ocultos
+  { const hid = await E(pg, () => ['insignias', 'trofeos', 'esencia', 'pf'].filter(k => !G.Res.visible(k)));
+    const lg = []; let lgN = 0, ach = await E(pg, () => JSON.stringify(G.Save.data.ach));
+    for (let sc = 0; sc < 40; sc += 5) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel('logros'); G.Panels.logrosScroll(n); }, sc); await sleep(pg, 80); s = await resSnap(pg); lgN += s.d.texts.length; s.rx.filter(k => hid.includes(k)).forEach(k => lg.push(k)); }
+    const lgD = await E(pg, () => G.Ach.DEFS.map(a => G.Panels.achText(a)).filter(t => /[Ii]nsignia|[Tt]rofeo|Esencia|\bPF\b/.test(t.name + t.desc + t.lore)).length);
+    ok(hid.length === 4 && lg.length === 0 && lgD === 0 && lgN > 40 && ach === (await E(pg, () => JSON.stringify(G.Save.data.ach))), `Logros tras la salida 1 (ocultos: ${hid}): ninguna página ni ficha los nombra (${[...new Set(lg)]}); los logros conseguidos no cambian`);
+    await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('forge'); G.Tree.showDetail('F8'); }); await sleep(pg, 100); s = await resSnap(pg);
+    const fj = d => d.texts.map(t => t.s).join(' ');
+    ok(!s.has(/Esencia/) && /Exige 1 parte rara/.test(fj(s.d)) && TC.analyze(s.d, { minSize: TC.MIN_MENU }).length === 0, 'Forja, nodo épico sin la Esencia presentada: "Exige 1 parte rara" (G.Res.fix), sin nombrar la Esencia');
+    await E(pg, () => { G.Save.data.nodes.R3 = { c: '1' }; G.Aldea.open(false); G.Aldea.openPanel('forge'); G.Tree.showDetail('F8'); }); await sleep(pg, 100); s = await resSnap(pg);
+    ok(/Exige 1 Esencia rara/.test(fj(s.d)), 'con la Esencia ya presentada (Rango III) el nodo vuelve a decir "Exige 1 Esencia rara"');
+    await E(pg, () => { delete G.Save.data.nodes.R3; G.Panels.closeAll(); G.Aldea.setPanel(null); }); }
   await E(pg, () => { G.Save.data.len = 9; G.Panels.closeAll(); G.Aldea.setPanel(null); });
   // 3. Salida 2: igual que la 1
   ok((await resLaunch(pg)) === 'play' && (await fteState(pg)).runs === 1, 'salida 2 desde el Portal');
