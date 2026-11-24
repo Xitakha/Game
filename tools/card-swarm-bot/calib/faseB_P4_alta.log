@@ -1566,3 +1566,7 @@ ERR 38 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.h
 Call log:
 [2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
 
+ERR 38 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
+Call log:
+[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
+
