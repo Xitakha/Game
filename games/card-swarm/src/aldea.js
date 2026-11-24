@@ -174,7 +174,7 @@
     if (S.bossKills.melaria && !S.bossKills.cenizar && k.pastor && k.karceron && k.letea && k.yarlak && k.melaria) out.push('Con los cinco caídos se abre el Cráter del Hogar Quemado en el Portal: allí arde Cenizar, el Incendio Primero. Siete fases, sin checkpoints. Cada Reliquia que rompas acorta su Rosario final.');
     if (k.yarlak && !k.melaria) out.push('Con Yarlak vencido se abre el Panal: celdas de miel que frenan, humo y un enjambre. Melaria, la Reina, odia el Fuego y el Hielo; el Veneno no le hace nada. Sedar al enjambre con humo y apaga primero al Polinizador.');
     if (k.pastor && !k.letea && k.karceron) out.push('Si vas a por Letea, lleva Sangre para las dos primeras fases y cambia a Veneno en la tercera.');
-    if (RV('insignias')) try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada Insignia conseguida (una vez)
+    if (RV('trofeos')) try { G.Minis.ALL.forEach(function (mid) {   // P7: también las 2 del Panal. P4.5: Lanudo cuenta la historia de cada trofeo de guardián conseguido (una vez; F2: antes Insignias)
       if ((S.insigniasEver || {})[mid] && !S.flags['told_ins_' + mid]) { var dd = G.Minis.D[mid]; S.flags['told_ins_' + mid] = 1; out.unshift(dd.ins.name + '... ' + dd.lore); }
     }); } catch (eI) { /* sin minijefes */ }
     var unseen = C.combos.filter(function (cb) { return !(S.combosSeen || {})[cb.k]; });
@@ -243,7 +243,7 @@
   function startScene() {
     var S = G.Save.data, it = ints().filter(function (i) { return i.id === 'carapa'; })[0]; if (!it) return;
     sceneDone = true; var had = !!S.flags.smithGift, w = who(it, '#3a7a86'); w.voice = true;
-    var RS = G.Res, rl = RS ? (RS.first('trofeos') || []).concat(RS.first('insignias') || []) : [];   // T-F1-07: Carapa presenta trofeos e insignias (con lo que ya traes)
+    var RS = G.Res, rl = RS ? (RS.first('trofeos') || []).concat(RS.first('trofeos', 'insignias') || []) : [];   // T-F1-07 / F2: Carapa presenta los trofeos de jefe y los de guardián (con lo que ya traes)
     D.say(w, ['Soy Carapa. Cosí mi primer yelmo a los siete años.', 'Llegué con la caravana. Vi cómo vencías al Pastor.', 'Grum afila lo que pega. Yo coso lo que aguanta.'].concat(rl, [had ? 'Ya te dejé ropa: tus piezas de Aldeano y algún peto.' : 'Toma el set de Aldeano, de regalo. Todo se mide.']), [{ label: 'Gracias', fn: function () {} }], function () { });
     S.flags.smithMet = 1; G.Armor.gift(); G.Save.save(); flash('Carapa abre su taller (habla con ella).');
   }

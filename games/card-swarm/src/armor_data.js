@@ -41,7 +41,7 @@
   D.SET_ORDER = ['aldeano', 'esquila', 'carcelero', 'escama', 'glacial', 'jalea', 'brasa', 'mini'];
   D.FAM_NAME = { melee: 'cuerpo a cuerpo', ranged: 'proyectiles', blast: 'explosiones', big: 'élites y jefes' };
   D.TAG_NAME = { steel: 'Acero', fire: 'Fuego', poison: 'Veneno', ice: 'Hielo', blood: 'Sangre', lightning: 'Rayo', neutral: '' };
-  // slot: 0 Yelmo, 1 Peto, 2 Grebas, 3 Talismán. main / sec: partes (Loot.PARTS). tro: trofeo concreto del jefe (Yelmo, Peto, Grebas); el Talismán pide las 2 Insignias del bioma.
+  // slot: 0 Yelmo, 1 Peto, 2 Grebas, 3 Talismán. main / sec: partes (Loot.PARTS). tro: trofeo concreto del jefe (Yelmo, Peto, Grebas); el Talismán pide los 2 trofeos de guardián del bioma (antes Insignias).
   D.PIECES = [
     { id: 'ald_helm', set: 'aldeano', slot: 0, name: 'Gorro de lana', main: 'thread' },
     { id: 'ald_chest', set: 'aldeano', slot: 1, name: 'Chaleco acolchado', main: 'thread', sec: 'feather' },
@@ -71,7 +71,7 @@
     { id: 'bra_chest', set: 'brasa', slot: 1, name: 'Corazón de Brasa Primera', main: 'static', sec: 'wick', tro: ['cz_cora', 'cz_nuc'] },
     { id: 'bra_greaves', set: 'brasa', slot: 2, name: 'Pasos de ceniza', main: 'static', sec: 'feather', tro: ['cz_col', 'cz_cay'] },
     { id: 'bra_talis', set: 'brasa', slot: 3, name: 'Rescoldo', main: 'static', sec: 'rare' },
-    // Talismanes de minijefe (alternativas de utilidad, DEF x0,4): las 2 Insignias del bioma + 1 Esencia. tier = el del bioma; boss = el jefe del bioma (requisitos de refuerzo)
+    // Talismanes de minijefe (alternativas de utilidad, DEF x0,4): los 2 trofeos de guardián del bioma (antes Insignias) + 1 Esencia. tier = el del bioma; boss = el jefe del bioma (requisitos de refuerzo)
     { id: 'mn_bosque', set: 'mini', slot: 3, name: 'Colmillo de arrastre', main: 'thread', tier: 1, boss: 'pastor', mins: ['carnero', 'tejedora'], util: { k: 'magnet', v: 0.10 }, ut: '+10 % de radio del imán', bio: 'Bosque' },
     { id: 'mn_cripta', set: 'mini', slot: 3, name: 'Llave maestra', main: 'wick', tier: 2, boss: 'karceron', mins: ['alcaide', 'centinela'], util: { k: 'heart', v: 1 }, ut: '+1 HP por corazón recogido', bio: 'Cripta' },
     { id: 'mn_asfodelo', set: 'mini', slot: 3, name: 'Perla del río', main: 'spine', tier: 3, boss: 'letea', mins: ['hidra', 'planidera'], util: { k: 'xp', v: 0.10 }, ut: '+10 % de XP de gemas en el Asfódelo', bio: 'Asfódelo' },

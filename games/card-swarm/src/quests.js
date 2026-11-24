@@ -302,7 +302,7 @@
   // =============================================================== LOGROS (Abuelo Lanudo)
   // Cada logro desbloquea un recuerdo que Lanudo cuenta. Sin recompensa material (la economía no cambia).
   var A = G.Ach = {};
-  function insN(s) { return Object.keys(s.insigniasEver || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: las 10 Insignias de minijefe (8 + Avispón Real y Reina Joven)
+  function insN(s) { return Object.keys(s.insigniasEver || {}).filter(function (k) { return G.Minis.ALL.indexOf(k) >= 0; }).length; }   // P7: los 10 trofeos de guardián (antes Insignias; 8 + Avispón Real y Reina Joven)
   A.DEFS = [
     { id: 'first', name: 'Primera salida', desc: 'Termina tu primera expedición.', ok: function (s) { return s.runs >= 1; },
       lore: 'Tu primera salida... Yo volví de la mía sin la mitad del bigote. Tú pareces entero.' },
@@ -316,14 +316,15 @@
       lore: 'Letea se comía los recuerdos, ¿sabes? Por eso olvidé tantas cosas. Gracias por devolverme alguna.' },
     { id: 'yarlak', name: 'Fin del invierno', desc: 'Vence a Yarlak, el Coloso Gélido.', ok: function (s) { return (s.bossKills.yarlak || 0) > 0; },
       lore: 'Yarlak guardaba la última hoguera del norte. Si lo derribaste, el frío ya no tiene dueño. Abrígate igual.' },
-    // P7: las Insignias del Avispón Real y la Reina Joven (Panal) cuentan igual que las otras ocho. 3 y 8 de las 10 (ya concedidos no se quitan; quien tenía 7 + 1 del Panal ahora cumple 8);
-    // 'Colección completa' pide las 10. La Insignia 11 'Brasa Primera' (Cenizar) es de jefe final: va aparte, con su título.
-    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 Insignias de minijefe (de las 10).', ok: function (s) { return insN(s) >= 3; },
-      lore: 'Tres insignias de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
-    { id: 'insig8', name: 'Coleccionista de insignias', desc: 'Consigue 8 Insignias de minijefe (de las 10; +1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 8; }, give: { rare: 1 },
+    // P7: los trofeos de guardián (antes Insignias; F2 solo cambia el nombre, los ids insig* y S.insigniasEver se conservan) del Avispón Real y la Reina Joven (Panal) cuentan
+    // igual que los otros ocho. 3 y 8 de los 10 (ya concedidos no se quitan; quien tenía 7 + 1 del Panal ahora cumple 8); 'Colección completa' pide los 10.
+    // La 'Brasa Primera' (Cenizar, S.insignias.brasa_primera) es de jefe final: va aparte, con su título.
+    { id: 'insig3', name: 'Cazador de guardianes', desc: 'Consigue 3 trofeos de guardián (de los 10).', ok: function (s) { return insN(s) >= 3; },
+      lore: 'Tres trofeos de guardián... Yo colgaba cuernos en la pared, pero tú los llevas contigo. Eso sí que es cazar.' },
+    { id: 'insig8', name: 'Coleccionista de trofeos', desc: 'Consigue 8 trofeos de guardián (de los 10; +1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 8; }, give: { rare: 1 },
       lore: 'Ocho... Cada guardián tenía su historia y tú te las has quedado casi todas. Toma, una Esencia: me la guardaba para alguien así.' },
-    { id: 'insig10', name: 'Colección completa', desc: 'Consigue las 10 Insignias de minijefe, con las del Avispón Real y la Reina Joven (+1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 10; }, give: { rare: 1 },
-      lore: 'Diez insignias, hasta las de la colmena. Hasta los zánganos hablan de ti. Toma otra Esencia: ya no sé dónde guardarlas.' },
+    { id: 'insig10', name: 'Colección completa', desc: 'Consigue los 10 trofeos de guardián, con los del Avispón Real y la Reina Joven (+1 Esencia rara, una vez).', ok: function (s) { return insN(s) >= 10; }, give: { rare: 1 },
+      lore: 'Diez trofeos de guardián, hasta los de la colmena. Hasta los zánganos hablan de ti. Toma otra Esencia: ya no sé dónde guardarlas.' },
     { id: 'melaria', name: 'La reina destronada', desc: 'Vence a Melaria, la Reina Abeja.', ok: function (s) { return (s.bossKills.melaria || 0) > 0; },
       lore: 'Melaria se comió la jalea de todas sus hermanas. Tú te has comido su corona. Me parece justo.' },
     { id: 'cenizar', name: 'Apagafuegos', desc: 'Vence a Cenizar, el Incendio Primero (Asalto al Cráter).', ok: function (s) { return (s.bossKills.cenizar || 0) > 0; },
@@ -355,8 +356,8 @@
       lore: 'Un yelmo de aquí, un peto de allá... Carapa dice que pareces un retal. Con cariño, claro.' },
     { id: 'armseal', name: 'Sello de Peligro V', desc: 'Vence a un jefe en Peligro V con un set de 4 piezas (cosmético).', ok: function (s) { return !!(s.flags && s.flags.arm_seal); },
       lore: 'El Sello de Peligro V. Carapa lo cose en el pecho del peto: no da defensa, pero se nota.' },
-    { id: 'armcol', name: 'Colgante completo', desc: 'Fabrica los 5 talismanes de minijefe (10 Insignias).', ok: function (s) { return !!s.armor && ['mn_bosque', 'mn_cripta', 'mn_asfodelo', 'mn_tundra', 'mn_panal'].every(function (id) { return s.armor.owned[id] != null; }); },
-      lore: 'Cinco talismanes, diez insignias. Cuelgas más historias que yo en mi pared.' },
+    { id: 'armcol', name: 'Colgante completo', desc: 'Fabrica los 5 talismanes de minijefe (10 trofeos de guardián).', ok: function (s) { return !!s.armor && ['mn_bosque', 'mn_cripta', 'mn_asfodelo', 'mn_tundra', 'mn_panal'].every(function (id) { return s.armor.owned[id] != null; }); },
+      lore: 'Cinco talismanes, diez trofeos de guardián. Cuelgas más historias que yo en mi pared.' },
     { id: 'combos5', name: 'Alquimista', desc: 'Crea 5 fusiones distintas.', ok: function (s) { return Object.keys(s.combosSeen).length >= 5; },
       lore: 'Cinco mezclas distintas ya. Dos fuegos y un hielo hacen vapor, decía mi abuela. Y tenía razón.' },
     { id: 'combos12', name: 'Maestro de mezclas', desc: 'Crea 12 fusiones distintas.', ok: function (s) { return Object.keys(s.combosSeen).length >= 12; },

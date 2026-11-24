@@ -236,3 +236,152 @@ alquimia/tundra/P4/- #1 dia=20014 acomp=ice+fire: plata t=450s pts=6683 jefe=99%
 alquimia/tundra/P4/- #2 dia=20018 acomp=fire+lightning: plata t=450s pts=6029 jefe=70% min=0 blk=26% firma=14 errs=0
 alquimia/tundra/P4/- #3 dia=20021 acomp=ice+fire: plata t=450s pts=5826 jefe=62% min=0 blk=27% firma=39 errs=0
 alquimia/tundra/P4/- #4 dia=20034 acomp=lightning+fire: plata t=450s pts=5875 jefe=69% min=0 blk=27% firma=57 errs=0
+alquimia/tundra/P4/- #6 dia=20051 acomp=steel+fire: plata t=450s pts=6059 jefe=87% min=0 blk=27% firma=45 errs=0
+alquimia/tundra/P4/- #5 dia=20038 acomp=fire+steel: ORO t=450s pts=8142 jefe=100% min=3 blk=27% firma=69 errs=0
+alquimia/tundra/P4/- #7 dia=20052 acomp=ice+fire: ORO t=450s pts=9182 jefe=100% min=73 blk=27% firma=67 errs=0
+alquimia/tundra/P4/- #8 dia=20054 acomp=fire+ice: plata t=450s pts=6019 jefe=76% min=0 blk=27% firma=25 errs=0
+alquimia/tundra/P4/- #10 dia=20061 acomp=steel+fire: plata t=450s pts=5699 jefe=61% min=0 blk=27% firma=0 errs=0
+alquimia/tundra/P4/- #9 dia=20056 acomp=lightning+fire: plata t=450s pts=5882 jefe=69% min=0 blk=27% firma=63 errs=0
+alquimia/tundra/P4/- #11 dia=20062 acomp=ice+fire: ORO t=450s pts=9216 jefe=100% min=40 blk=27% firma=51 errs=0
+alquimia/tundra/P4/- #12 dia=20071 acomp=fire+lightning: plata t=450s pts=4835 jefe=32% min=0 blk=26% firma=21 errs=0
+alquimia/tundra/P4/- #13 dia=20072 acomp=ice+fire: plata t=450s pts=6610 jefe=97% min=0 blk=27% firma=28 errs=0
+alquimia/tundra/P4/- #14 dia=20076 acomp=ice+fire: plata t=450s pts=6397 jefe=89% min=0 blk=26% firma=72 errs=0
+alquimia/tundra/P4/- #15 dia=20077 acomp=fire+ice: plata t=450s pts=6322 jefe=79% min=0 blk=27% firma=58 errs=0
+alquimia/panal/P4/- #0 dia=20003 acomp=steel+fire: bronce t=450s pts=4880 jefe=42% min=0 blk=31% firma=24 errs=0
+alquimia/panal/P4/- #1 dia=20008 acomp=fire+steel: ORO t=450s pts=8432 jefe=100% min=43 blk=31% firma=32 errs=0
+alquimia/panal/P4/- #2 dia=20011 acomp=steel+fire: ORO t=450s pts=8539 jefe=100% min=15 blk=31% firma=28 errs=0
+alquimia/panal/P4/- #4 dia=20028 acomp=ice+fire: bronce t=450s pts=4426 jefe=21% min=0 blk=29% firma=32 errs=0
+alquimia/panal/P4/- #3 dia=20026 acomp=ice+fire: bronce t=450s pts=4926 jefe=36% min=0 blk=31% firma=86 errs=0
+alquimia/panal/P4/- #5 dia=20030 acomp=steel+fire: plata t=450s pts=5659 jefe=66% min=0 blk=31% firma=24 errs=0
+alquimia/panal/P4/- #7 dia=20041 acomp=steel+fire: bronce t=450s pts=4520 jefe=30% min=0 blk=31% firma=16 errs=0
+alquimia/panal/P4/- #6 dia=20036 acomp=ice+fire: bronce t=450s pts=4906 jefe=36% min=0 blk=31% firma=49 errs=0
+alquimia/panal/P4/- #8 dia=20044 acomp=lightning+fire: bronce t=450s pts=4602 jefe=31% min=0 blk=31% firma=39 errs=0
+alquimia/panal/P4/- #9 dia=20048 acomp=steel+fire: plata t=450s pts=6261 jefe=86% min=0 blk=31% firma=26 errs=0
+alquimia/panal/P4/- #10 dia=20049 acomp=lightning+fire: bronce t=450s pts=4624 jefe=29% min=0 blk=31% firma=29 errs=0
+alquimia/panal/P4/- #12 dia=20069 acomp=lightning+fire: plata t=450s pts=4848 jefe=32% min=0 blk=31% firma=40 errs=0
+alquimia/panal/P4/- #11 dia=20057 acomp=steel+fire: ORO t=450s pts=8477 jefe=100% min=18 blk=31% firma=40 errs=0
+alquimia/panal/P4/- #13 dia=20074 acomp=lightning+fire: plata t=450s pts=5568 jefe=58% min=0 blk=31% firma=38 errs=0
+hogar/bosque/P4/- #0 dia=20001 acomp=steel+blood: part t=399s pts=3578 jefe=0% min=0 blk=9% firma=23 errs=0
+alquimia/panal/P4/- #14 dia=20078 acomp=steel+fire: plata t=450s pts=6437 jefe=98% min=0 blk=31% firma=41 errs=0
+alquimia/panal/P4/- #15 dia=20079 acomp=ice+fire: plata t=450s pts=4947 jefe=18% min=0 blk=31% firma=13 errs=0
+hogar/bosque/P4/- #2 dia=20020 acomp=steel+lightning: part t=327s pts=2573 jefe=0% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #1 dia=20004 acomp=steel+poison: ORO t=450s pts=8211 jefe=100% min=17 blk=9% firma=40 errs=0
+hogar/bosque/P4/- #4 dia=20027 acomp=steel+blood: part t=412s pts=3648 jefe=0% min=0 blk=9% firma=25 errs=0
+hogar/bosque/P4/- #3 dia=20025 acomp=steel+lightning: plata t=450s pts=6446 jefe=88% min=0 blk=9% firma=51 errs=0
+hogar/bosque/P4/- #5 dia=20029 acomp=steel+poison: ORO t=450s pts=8374 jefe=100% min=25 blk=9% firma=36 errs=0
+hogar/bosque/P4/- #7 dia=20053 acomp=steel+poison: ORO t=450s pts=8947 jefe=100% min=27 blk=9% firma=24 errs=0
+hogar/bosque/P4/- #6 dia=20039 acomp=steel+lightning: plata t=450s pts=6629 jefe=95% min=0 blk=9% firma=61 errs=0
+hogar/bosque/P4/- #8 dia=20055 acomp=steel+blood: plata t=450s pts=6307 jefe=77% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #9 dia=20064 acomp=steel+lightning: plata t=450s pts=6437 jefe=96% min=0 blk=9% firma=17 errs=0
+hogar/bosque/P4/- #11 dia=20067 acomp=steel+blood: plata t=450s pts=6350 jefe=95% min=0 blk=9% firma=40 errs=0
+hogar/bosque/P4/- #10 dia=20065 acomp=steel+lightning: plata t=450s pts=6486 jefe=94% min=0 blk=9% firma=26 errs=0
+hogar/bosque/P4/- #12 dia=20075 acomp=steel+poison: part t=450s pts=3936 jefe=0% min=0 blk=9% firma=12 errs=0
+hogar/bosque/P4/- #13 dia=20086 acomp=steel+poison: plata t=450s pts=6413 jefe=95% min=0 blk=9% firma=22 errs=0
+hogar/bosque/P4/- #15 dia=20106 acomp=steel+poison: part t=363s pts=3293 jefe=0% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #14 dia=20092 acomp=steel+blood: plata t=450s pts=6426 jefe=87% min=0 blk=9% firma=44 errs=0
+hogar/cripta/P4/- #0 dia=20009 acomp=lightning+poison: plata t=450s pts=6174 jefe=75% min=0 blk=15% firma=0 errs=0
+hogar/cripta/P4/- #1 dia=20010 acomp=lightning+poison: plata t=450s pts=6182 jefe=82% min=0 blk=15% firma=44 errs=0
+hogar/cripta/P4/- #2 dia=20012 acomp=lightning+blood: ORO t=450s pts=8504 jefe=100% min=67 blk=15% firma=33 errs=0
+hogar/cripta/P4/- #3 dia=20017 acomp=lightning+poison: plata t=450s pts=5438 jefe=53% min=0 blk=15% firma=28 errs=0
+hogar/cripta/P4/- #4 dia=20019 acomp=lightning+blood: plata t=450s pts=5779 jefe=70% min=0 blk=15% firma=17 errs=0
+hogar/cripta/P4/- #5 dia=20022 acomp=lightning+steel: plata t=450s pts=6203 jefe=90% min=0 blk=15% firma=23 errs=0
+hogar/cripta/P4/- #6 dia=20024 acomp=lightning+blood: ORO t=450s pts=8192 jefe=100% min=15 blk=15% firma=44 errs=0
+hogar/cripta/P4/- #7 dia=20032 acomp=poison+lightning: plata t=450s pts=5093 jefe=52% min=0 blk=15% firma=22 errs=0
+hogar/cripta/P4/- #8 dia=20033 acomp=lightning+blood: plata t=450s pts=5197 jefe=55% min=0 blk=15% firma=33 errs=0
+hogar/cripta/P4/- #10 dia=20050 acomp=lightning+blood: plata t=450s pts=4776 jefe=31% min=0 blk=15% firma=30 errs=0
+hogar/cripta/P4/- #9 dia=20040 acomp=lightning+steel: ORO t=450s pts=8688 jefe=100% min=24 blk=15% firma=22 errs=0
+hogar/cripta/P4/- #11 dia=20060 acomp=steel+lightning: plata t=450s pts=5885 jefe=83% min=0 blk=15% firma=40 errs=0
+hogar/cripta/P4/- #12 dia=20088 acomp=lightning+steel: ORO t=450s pts=8800 jefe=100% min=85 blk=15% firma=43 errs=0
+hogar/cripta/P4/- #13 dia=20090 acomp=lightning+poison: plata t=450s pts=6046 jefe=84% min=0 blk=15% firma=18 errs=0
+hogar/cripta/P4/- #14 dia=20093 acomp=steel+lightning: plata t=450s pts=6298 jefe=95% min=0 blk=15% firma=39 errs=0
+hogar/cripta/P4/- #15 dia=20095 acomp=poison+lightning: ORO t=450s pts=8264 jefe=100% min=43 blk=15% firma=42 errs=0
+hogar/asfodelo/P4/- #0 dia=20002 acomp=poison+blood: bronce t=450s pts=4438 jefe=16% min=0 blk=20% firma=31 errs=0
+hogar/asfodelo/P4/- #1 dia=20006 acomp=steel+lightning: plata t=450s pts=4654 jefe=14% min=0 blk=21% firma=25 errs=0
+hogar/asfodelo/P4/- #2 dia=20007 acomp=blood+lightning: plata t=450s pts=4771 jefe=23% min=0 blk=22% firma=15 errs=0
+hogar/asfodelo/P4/- #3 dia=20013 acomp=lightning+poison: bronce t=450s pts=4344 jefe=9% min=0 blk=20% firma=0 errs=0
+hogar/asfodelo/P4/- #4 dia=20015 acomp=lightning+steel: bronce t=450s pts=4414 jefe=15% min=0 blk=21% firma=27 errs=0
+hogar/asfodelo/P4/- #5 dia=20023 acomp=lightning+blood: part t=392s pts=3626 jefe=0% min=0 blk=22% firma=28 errs=0
+hogar/asfodelo/P4/- #6 dia=20031 acomp=blood+lightning: bronce t=450s pts=4283 jefe=11% min=0 blk=21% firma=31 errs=0
+hogar/asfodelo/P4/- #7 dia=20042 acomp=lightning+steel: plata t=450s pts=4838 jefe=24% min=0 blk=20% firma=33 errs=0
+hogar/asfodelo/P4/- #8 dia=20043 acomp=poison+blood: bronce t=450s pts=4483 jefe=16% min=0 blk=21% firma=5 errs=0
+hogar/asfodelo/P4/- #9 dia=20045 acomp=poison+steel: bronce t=450s pts=4318 jefe=12% min=0 blk=21% firma=6 errs=0
+hogar/asfodelo/P4/- #10 dia=20047 acomp=steel+blood: plata t=450s pts=4746 jefe=19% min=0 blk=20% firma=0 errs=0
+hogar/asfodelo/P4/- #11 dia=20066 acomp=steel+poison: plata t=450s pts=4784 jefe=22% min=0 blk=21% firma=0 errs=0
+hogar/asfodelo/P4/- #12 dia=20070 acomp=lightning+steel: bronce t=450s pts=4371 jefe=12% min=0 blk=21% firma=27 errs=0
+hogar/asfodelo/P4/- #14 dia=20081 acomp=lightning+blood: plata t=450s pts=4880 jefe=24% min=0 blk=20% firma=35 errs=0
+hogar/asfodelo/P4/- #15 dia=20091 acomp=blood+lightning: plata t=450s pts=4898 jefe=22% min=0 blk=21% firma=34 errs=0
+hogar/asfodelo/P4/- #13 dia=20080 acomp=poison+steel: bronce t=450s pts=4478 jefe=17% min=0 blk=20% firma=13 errs=0
+hogar/tundra/P4/- #0 dia=20005 acomp=poison+lightning: ORO t=450s pts=8419 jefe=100% min=40 blk=22% firma=52 errs=0
+hogar/tundra/P4/- #2 dia=20034 acomp=blood+lightning: ORO t=450s pts=9482 jefe=100% min=100 blk=22% firma=61 errs=0
+hogar/tundra/P4/- #1 dia=20018 acomp=lightning+blood: plata t=450s pts=6264 jefe=74% min=0 blk=22% firma=0 errs=0
+hogar/tundra/P4/- #3 dia=20051 acomp=steel+lightning: plata t=450s pts=6390 jefe=75% min=0 blk=23% firma=0 errs=0
+hogar/tundra/P4/- #4 dia=20052 acomp=lightning+blood: plata t=450s pts=6486 jefe=91% min=0 blk=23% firma=47 errs=0
+hogar/tundra/P4/- #6 dia=20056 acomp=lightning+poison: plata t=450s pts=6536 jefe=91% min=0 blk=23% firma=61 errs=0
+hogar/tundra/P4/- #5 dia=20054 acomp=lightning+poison: ORO t=450s pts=8850 jefe=100% min=41 blk=22% firma=66 errs=0
+hogar/tundra/P4/- #7 dia=20062 acomp=lightning+blood: ORO t=450s pts=9094 jefe=100% min=83 blk=22% firma=55 errs=0
+hogar/tundra/P4/- #8 dia=20072 acomp=lightning+blood: plata t=450s pts=6278 jefe=72% min=0 blk=22% firma=62 errs=0
+hogar/tundra/P4/- #10 dia=20077 acomp=lightning+poison: ORO t=450s pts=8942 jefe=100% min=3 blk=22% firma=74 errs=0
+hogar/tundra/P4/- #11 dia=20084 acomp=lightning+steel: ORO t=450s pts=8826 jefe=100% min=72 blk=22% firma=55 errs=0
+hogar/tundra/P4/- #9 dia=20076 acomp=lightning+blood: ORO t=450s pts=9027 jefe=100% min=65 blk=23% firma=0 errs=0
+hogar/tundra/P4/- #12 dia=20085 acomp=lightning+blood: plata t=450s pts=6312 jefe=80% min=0 blk=22% firma=49 errs=0
+hogar/tundra/P4/- #13 dia=20089 acomp=lightning+poison: plata t=450s pts=6259 jefe=74% min=0 blk=22% firma=38 errs=0
+hogar/tundra/P4/- #14 dia=20103 acomp=steel+lightning: ORO t=450s pts=9056 jefe=100% min=90 blk=22% firma=45 errs=0
+hogar/tundra/P4/- #15 dia=20128 acomp=lightning+steel: plata t=450s pts=5834 jefe=62% min=0 blk=23% firma=58 errs=0
+hogar/panal/P4/- #0 dia=20011 acomp=steel+blood: ORO t=450s pts=8941 jefe=100% min=73 blk=26% firma=39 errs=0
+hogar/panal/P4/- #1 dia=20026 acomp=poison+steel: ORO t=450s pts=8811 jefe=100% min=93 blk=26% firma=42 errs=0
+hogar/panal/P4/- #2 dia=20036 acomp=poison+steel: plata t=450s pts=6182 jefe=74% min=0 blk=26% firma=49 errs=0
+hogar/panal/P4/- #3 dia=20044 acomp=blood+poison: ORO t=450s pts=8616 jefe=100% min=44 blk=26% firma=65 errs=0
+hogar/panal/P4/- #4 dia=20049 acomp=blood+poison: plata t=450s pts=6176 jefe=67% min=0 blk=26% firma=45 errs=0
+hogar/panal/P4/- #5 dia=20057 acomp=steel+lightning: plata t=450s pts=6445 jefe=100% min=0 blk=26% firma=20 errs=0
+hogar/panal/P4/- #6 dia=20069 acomp=blood+steel: plata t=450s pts=5357 jefe=59% min=0 blk=26% firma=33 errs=0
+hogar/panal/P4/- #7 dia=20074 acomp=blood+poison: bronce t=450s pts=4030 jefe=3% min=0 blk=26% firma=31 errs=0
+hogar/panal/P4/- #8 dia=20078 acomp=steel+lightning: ORO t=450s pts=8278 jefe=100% min=17 blk=26% firma=50 errs=0
+hogar/panal/P4/- #9 dia=20079 acomp=poison+lightning: plata t=450s pts=5394 jefe=41% min=0 blk=26% firma=47 errs=0
+hogar/panal/P4/- #10 dia=20082 acomp=blood+steel: ORO t=450s pts=8565 jefe=100% min=58 blk=26% firma=32 errs=0
+hogar/panal/P4/- #11 dia=20094 acomp=steel+lightning: ORO t=450s pts=8158 jefe=100% min=11 blk=26% firma=45 errs=0
+hogar/panal/P4/- #12 dia=20098 acomp=poison+blood: ORO t=450s pts=8238 jefe=100% min=8 blk=26% firma=42 errs=0
+hogar/panal/P4/- #13 dia=20102 acomp=blood+poison: ORO t=450s pts=9133 jefe=100% min=69 blk=26% firma=63 errs=0
+hogar/panal/P4/- #14 dia=20104 acomp=lightning+steel: ORO t=450s pts=9163 jefe=100% min=100 blk=26% firma=24 errs=0
+hogar/panal/P4/- #15 dia=20107 acomp=blood+lightning: plata t=450s pts=6091 jefe=92% min=0 blk=26% firma=36 errs=0
+--- 344 partidas en 1034 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+fragua/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/tundra/P4/- | 8 | 50 % (22-78) | 100 % | 100 % | 450 | 7646 | 27 | 0
+carmesi/panal/P4/- | 16 | 63 % (39-82) | 88 % | 100 % | 450 | 7705 | 45 | 0
+lana/bosque/P4/- | 16 | 6 % (1-28) | 38 % | 38 % | 429 | 4475 | 1 | 0
+lana/cripta/P4/- | 16 | 63 % (39-82) | 100 % | 100 % | 450 | 7594 | 30 | 0
+lana/asfodelo/P4/- | 16 | 13 % (3-36) | 75 % | 81 % | 450 | 5760 | 1 | 0
+lana/tundra/P4/- | 16 | 25 % (10-49) | 100 % | 100 % | 450 | 6615 | 11 | 0
+lana/panal/P4/- | 16 | 50 % (28-72) | 94 % | 100 % | 450 | 7076 | 26 | 0
+tempestad/bosque/P4/- | 16 | 6 % (1-28) | 44 % | 44 % | 420 | 4603 | 0 | 0
+tempestad/cripta/P4/- | 16 | 31 % (14-56) | 75 % | 100 % | 450 | 6313 | 12 | 0
+tempestad/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 81 % | 450 | 4520 | 0 | 0
+tempestad/tundra/P4/- | 16 | 13 % (3-36) | 88 % | 100 % | 450 | 6008 | 1 | 0
+tempestad/panal/P4/- | 16 | 19 % (7-43) | 94 % | 100 % | 450 | 6459 | 7 | 0
+alquimia/bosque/P4/- | 16 | 13 % (3-36) | 94 % | 94 % | 450 | 6155 | 1 | 0
+alquimia/cripta/P4/- | 16 | 19 % (7-43) | 81 % | 100 % | 450 | 6114 | 11 | 0
+alquimia/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 81 % | 450 | 4289 | 0 | 0
+alquimia/tundra/P4/- | 16 | 25 % (10-49) | 100 % | 100 % | 450 | 6699 | 9 | 0
+alquimia/panal/P4/- | 16 | 19 % (7-43) | 56 % | 100 % | 450 | 5753 | 5 | 0
+hogar/bosque/P4/- | 16 | 19 % (7-43) | 69 % | 69 % | 450 | 5878 | 4 | 0
+hogar/cripta/P4/- | 16 | 31 % (14-56) | 100 % | 100 % | 450 | 6595 | 15 | 0
+hogar/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 94 % | 450 | 4520 | 0 | 0
+hogar/tundra/P4/- | 16 | 50 % (28-72) | 100 % | 100 % | 450 | 7628 | 31 | 0
+hogar/panal/P4/- | 16 | 56 % (33-77) | 94 % | 100 % | 450 | 7349 | 30 | 0

@@ -1,0 +1,2425 @@
+{
+ "about": "Guardado v13 real hecho con el código de antes de F2 (commit dacc6d4): una salida jugada, 5 Insignias recogidas por G.Minis.collectInsignia, 1 trofeo del Pastor, el talismán mn_bosque fabricado (gasta 2 Insignias). raw = valor sellado de swarmhand.fusion.save; exp = texto SWARM1 de G.Save.exportText(); ref = valores de ese mismo código (costes de todas las piezas, piezas listas, logros, pedidos y saldos).",
+ "raw": "{\"v\":13,\"parts\":{\"thread\":192,\"rare\":2},\"brasas\":2916,\"cards\":{\"spark\":1,\"shard\":1,\"dart\":1,\"dagger\":1,\"fang\":1,\"hourglass\":1},\"anchors\":[\"spark\"],\"len\":9,\"runs\":1,\"wins\":1,\"pity\":0,\"firstBuildRuns\":null,\"pf\":{\"earned\":3},\"nodes\":{},\"ever\":{},\"mile\":0,\"respecFree\":1,\"elites\":{},\"insignias\":{\"carnero\":1,\"tejedora\":0,\"alcaide\":1,\"avispon\":1},\"quest\":{\"active\":null,\"prog\":{},\"done\":{}},\"shop\":{\"trade\":0,\"tonic\":0,\"magnet\":0,\"part\":0,\"dish\":0},\"pending\":{\"tonic\":0,\"magnet\":0,\"dish\":null},\"flags\":{\"fte\":{\"v\":1,\"step\":\"\",\"runs\":0,\"ann\":0,\"hints\":{},\"seen\":{}},\"arm_ins2\":1,\"smithMet\":1},\"trophiesEver\":{\"horn\":1},\"insigniasEver\":{\"carnero\":2,\"tejedora\":1,\"alcaide\":1,\"avispon\":1},\"stats\":{\"playMs\":1199.8999999999996,\"best\":{\"bosque\":{\"t\":29,\"bossPct\":0,\"lvl\":2,\"kills\":44}}},\"armor\":{\"owned\":{\"mn_bosque\":0},\"equipped\":[null,null,null,\"mn_bosque\"],\"seen\":{\"mini\":1},\"stats\":{\"blocked\":0,\"crafts\":1},\"ped\":{}},\"bossKills\":{\"pastor\":2},\"trophies\":{\"horn\":1},\"bossSeen\":{},\"biome\":\"bosque\",\"loadouts\":[null,null,null],\"ach\":{\"insig3\":1,\"first\":2,\"win\":2,\"pastor\":2,\"arm1\":2},\"combosSeen\":{},\"manualSeen\":{},\"cooked\":0,\"lossStreak\":0,\"peligro\":{\"pastor\":2,\"karceron\":1,\"letea\":1,\"yarlak\":1,\"melaria\":1,\"cenizar\":1},\"endingSeen\":false,\"cine\":{\"introSeen\":false,\"introVer\":1,\"entrySeen\":{},\"epilogueSeen\":false,\"creditsSeen\":false},\"portalSeen\":{\"bosque\":1},\"peligroSel\":{},\"pelWins\":{\"pastor\":{\"1\":1}},\"hunts\":{},\"practice\":{},\"daily\":{\"maxDay\":20781,\"claims\":{},\"reto\":{\"seenDay\":0,\"official\":null,\"live\":null,\"retry\":{\"day\":0,\"best\":0,\"medal\":0},\"extraDay\":0,\"hist\":[],\"best\":null,\"medals\":{\"part\":0,\"bronce\":0,\"plata\":0,\"oro\":0},\"firstSeen\":0,\"kit\":{\"seenWeek\":0}},\"obj\":{\"day\":0,\"list\":[],\"rerollDay\":0,\"yday\":[],\"week\":0,\"wlist\":[],\"wprev\":[],\"wpaid\":{\"brasas\":0,\"parts\":0,\"rare\":0,\"trim\":0},\"wdays\":{},\"wfuse\":{}},\"streak\":{\"n\":0,\"best\":0,\"last\":0,\"wood\":2,\"woodAcc\":0,\"miles\":{}}},\"settings\":{\"master\":0.8,\"sfx\":0.9,\"music\":0.45},\"_sum\":\"gcw9gj.1hp\"}",
+ "exp": "SWARM1:eyJ2IjoxMywicGFydHMiOnsidGhyZWFkIjoxOTIsInJhcmUiOjJ9LCJicmFzYXMiOjI5MTYsImNhcmRzIjp7InNwYXJrIjoxLCJzaGFyZCI6MSwiZGFydCI6MSwiZGFnZ2VyIjoxLCJmYW5nIjoxLCJob3VyZ2xhc3MiOjF9LCJhbmNob3JzIjpbInNwYXJrIl0sImxlbiI6OSwicnVucyI6MSwid2lucyI6MSwicGl0eSI6MCwiZmlyc3RCdWlsZFJ1bnMiOm51bGwsInBmIjp7ImVhcm5lZCI6M30sIm5vZGVzIjp7fSwiZXZlciI6e30sIm1pbGUiOjAsInJlc3BlY0ZyZWUiOjEsImVsaXRlcyI6e30sImluc2lnbmlhcyI6eyJjYXJuZXJvIjoxLCJ0ZWplZG9yYSI6MCwiYWxjYWlkZSI6MSwiYXZpc3BvbiI6MX0sInF1ZXN0Ijp7ImFjdGl2ZSI6bnVsbCwicHJvZyI6e30sImRvbmUiOnt9fSwic2hvcCI6eyJ0cmFkZSI6MCwidG9uaWMiOjAsIm1hZ25ldCI6MCwicGFydCI6MCwiZGlzaCI6MH0sInBlbmRpbmciOnsidG9uaWMiOjAsIm1hZ25ldCI6MCwiZGlzaCI6bnVsbH0sImZsYWdzIjp7ImZ0ZSI6eyJ2IjoxLCJzdGVwIjoiIiwicnVucyI6MCwiYW5uIjowLCJoaW50cyI6e30sInNlZW4iOnt9fSwiYXJtX2luczIiOjEsInNtaXRoTWV0IjoxLCJleHBBdCI6MX0sInRyb3BoaWVzRXZlciI6eyJob3JuIjoxfSwiaW5zaWduaWFzRXZlciI6eyJjYXJuZXJvIjoyLCJ0ZWplZG9yYSI6MSwiYWxjYWlkZSI6MSwiYXZpc3BvbiI6MX0sInN0YXRzIjp7InBsYXlNcyI6MTE5OS44OTk5OTk5OTk5OTk2LCJiZXN0Ijp7ImJvc3F1ZSI6eyJ0IjoyOSwiYm9zc1BjdCI6MCwibHZsIjoyLCJraWxscyI6NDR9fX0sImFybW9yIjp7Im93bmVkIjp7Im1uX2Jvc3F1ZSI6MH0sImVxdWlwcGVkIjpbbnVsbCxudWxsLG51bGwsIm1uX2Jvc3F1ZSJdLCJzZWVuIjp7Im1pbmkiOjF9LCJzdGF0cyI6eyJibG9ja2VkIjowLCJjcmFmdHMiOjF9LCJwZWQiOnt9fSwiYm9zc0tpbGxzIjp7InBhc3RvciI6Mn0sInRyb3BoaWVzIjp7Imhvcm4iOjF9LCJib3NzU2VlbiI6e30sImJpb21lIjoiYm9zcXVlIiwibG9hZG91dHMiOltudWxsLG51bGwsbnVsbF0sImFjaCI6eyJpbnNpZzMiOjEsImZpcnN0IjoyLCJ3aW4iOjIsInBhc3RvciI6MiwiYXJtMSI6Mn0sImNvbWJvc1NlZW4iOnt9LCJtYW51YWxTZWVuIjp7fSwiY29va2VkIjowLCJsb3NzU3RyZWFrIjowLCJwZWxpZ3JvIjp7InBhc3RvciI6Miwia2FyY2Vyb24iOjEsImxldGVhIjoxLCJ5YXJsYWsiOjEsIm1lbGFyaWEiOjEsImNlbml6YXIiOjF9LCJlbmRpbmdTZWVuIjpmYWxzZSwiY2luZSI6eyJpbnRyb1NlZW4iOmZhbHNlLCJpbnRyb1ZlciI6MSwiZW50cnlTZWVuIjp7fSwiZXBpbG9ndWVTZWVuIjpmYWxzZSwiY3JlZGl0c1NlZW4iOmZhbHNlfSwicG9ydGFsU2VlbiI6eyJib3NxdWUiOjF9LCJwZWxpZ3JvU2VsIjp7fSwicGVsV2lucyI6eyJwYXN0b3IiOnsiMSI6MX19LCJodW50cyI6e30sInByYWN0aWNlIjp7fSwiZGFpbHkiOnsibWF4RGF5IjoyMDc4MSwiY2xhaW1zIjp7fSwicmV0byI6eyJzZWVuRGF5IjowLCJvZmZpY2lhbCI6bnVsbCwibGl2ZSI6bnVsbCwicmV0cnkiOnsiZGF5IjowLCJiZXN0IjowLCJtZWRhbCI6MH0sImV4dHJhRGF5IjowLCJoaXN0IjpbXSwiYmVzdCI6bnVsbCwibWVkYWxzIjp7InBhcnQiOjAsImJyb25jZSI6MCwicGxhdGEiOjAsIm9ybyI6MH0sImZpcnN0U2VlbiI6MCwia2l0Ijp7InNlZW5XZWVrIjowfX0sIm9iaiI6eyJkYXkiOjAsImxpc3QiOltdLCJyZXJvbGxEYXkiOjAsInlkYXkiOltdLCJ3ZWVrIjowLCJ3bGlzdCI6W10sIndwcmV2IjpbXSwid3BhaWQiOnsiYnJhc2FzIjowLCJwYXJ0cyI6MCwicmFyZSI6MCwidHJpbSI6MH0sIndkYXlzIjp7fSwid2Z1c2UiOnt9fSwic3RyZWFrIjp7Im4iOjAsImJlc3QiOjAsImxhc3QiOjAsIndvb2QiOjIsIndvb2RBY2MiOjAsIm1pbGVzIjp7fX19LCJzZXR0aW5ncyI6eyJtYXN0ZXIiOjAuOCwic2Z4IjowLjksIm11c2ljIjowLjQ1fSwiX3N1bSI6Im56bGE3by4xaHoifQ==",
+ "ref": {
+  "costs": {
+   "ald_helm": [
+    {
+     "parts": {
+      "thread": 10
+     },
+     "brasas": 56,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 5
+     },
+     "brasas": 11,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 6
+     },
+     "brasas": 17,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 8
+     },
+     "brasas": 22,
+     "items": []
+    }
+   ],
+   "ald_chest": [
+    {
+     "parts": {
+      "thread": 14,
+      "feather": 4
+     },
+     "brasas": 80,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 7,
+      "feather": 2
+     },
+     "brasas": 16,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 9,
+      "feather": 3
+     },
+     "brasas": 24,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 12,
+      "feather": 4
+     },
+     "brasas": 32,
+     "items": []
+    }
+   ],
+   "ald_boots": [
+    {
+     "parts": {
+      "thread": 10
+     },
+     "brasas": 56,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 5
+     },
+     "brasas": 11,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 6
+     },
+     "brasas": 17,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 8
+     },
+     "brasas": 22,
+     "items": []
+    }
+   ],
+   "ald_amulet": [
+    {
+     "parts": {
+      "thread": 9
+     },
+     "brasas": 48,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 5
+     },
+     "brasas": 10,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 6
+     },
+     "brasas": 14,
+     "items": []
+    },
+    {
+     "parts": {
+      "thread": 7
+     },
+     "brasas": 19,
+     "items": []
+    }
+   ],
+   "esq_helm": [
+    {
+     "parts": {
+      "plate": 6
+     },
+     "brasas": 98,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 3
+     },
+     "brasas": 20,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 4
+     },
+     "brasas": 29,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 5,
+      "rare": 1
+     },
+     "brasas": 39,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esq_chest": [
+    {
+     "parts": {
+      "plate": 8,
+      "thread": 5
+     },
+     "brasas": 140,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "fleece"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 4,
+      "thread": 3
+     },
+     "brasas": 28,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 5,
+      "thread": 3
+     },
+     "brasas": 42,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 6,
+      "thread": 4,
+      "rare": 1
+     },
+     "brasas": 56,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esq_greaves": [
+    {
+     "parts": {
+      "plate": 6,
+      "feather": 4
+     },
+     "brasas": 98,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 3,
+      "feather": 2
+     },
+     "brasas": 20,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 4,
+      "feather": 3
+     },
+     "brasas": 29,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 5,
+      "feather": 3,
+      "rare": 1
+     },
+     "brasas": 39,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "horn",
+        "fleece",
+        "staff"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esq_talis": [
+    {
+     "parts": {
+      "plate": 5,
+      "fang": 3
+     },
+     "brasas": 84,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 3,
+      "fang": 2
+     },
+     "brasas": 17,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 3,
+      "fang": 2
+     },
+     "brasas": 25,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "plate": 4,
+      "fang": 3,
+      "rare": 1
+     },
+     "brasas": 34,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "car_helm": [
+    {
+     "parts": {
+      "wick": 12
+     },
+     "brasas": 154,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 6
+     },
+     "brasas": 31,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 7
+     },
+     "brasas": 46,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 9,
+      "rare": 1
+     },
+     "brasas": 62,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "car_chest": [
+    {
+     "parts": {
+      "wick": 16,
+      "plate": 7
+     },
+     "brasas": 220,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mace"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 8,
+      "plate": 4
+     },
+     "brasas": 44,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 10,
+      "plate": 5
+     },
+     "brasas": 66,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 13,
+      "plate": 6,
+      "rare": 1
+     },
+     "brasas": 88,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "car_greaves": [
+    {
+     "parts": {
+      "wick": 12,
+      "thread": 5
+     },
+     "brasas": 154,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 6,
+      "thread": 3
+     },
+     "brasas": 31,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 7,
+      "thread": 3
+     },
+     "brasas": 46,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 9,
+      "thread": 4,
+      "rare": 1
+     },
+     "brasas": 62,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "core",
+        "mace",
+        "shackle"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "car_talis": [
+    {
+     "parts": {
+      "wick": 10,
+      "static": 5
+     },
+     "brasas": 132,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 5,
+      "static": 3
+     },
+     "brasas": 26,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 6,
+      "static": 3
+     },
+     "brasas": 40,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 8,
+      "static": 4,
+      "rare": 1
+     },
+     "brasas": 53,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esc_helm": [
+    {
+     "parts": {
+      "spine": 16
+     },
+     "brasas": 224,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 8
+     },
+     "brasas": 45,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 10
+     },
+     "brasas": 67,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 13,
+      "rare": 1
+     },
+     "brasas": 90,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esc_chest": [
+    {
+     "parts": {
+      "spine": 22,
+      "frost": 9
+     },
+     "brasas": 320,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "acid"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 11,
+      "frost": 5
+     },
+     "brasas": 64,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 14,
+      "frost": 6
+     },
+     "brasas": 96,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 18,
+      "frost": 8,
+      "rare": 1
+     },
+     "brasas": 128,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esc_greaves": [
+    {
+     "parts": {
+      "spine": 16,
+      "feather": 7
+     },
+     "brasas": 224,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 8,
+      "feather": 4
+     },
+     "brasas": 45,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 10,
+      "feather": 4
+     },
+     "brasas": 67,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 13,
+      "feather": 6,
+      "rare": 1
+     },
+     "brasas": 90,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ice",
+        "acid",
+        "bolt"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "esc_talis": [
+    {
+     "parts": {
+      "spine": 14,
+      "static": 6
+     },
+     "brasas": 192,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 7,
+      "static": 3
+     },
+     "brasas": 38,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 8,
+      "static": 4
+     },
+     "brasas": 58,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 11,
+      "static": 5,
+      "rare": 1
+     },
+     "brasas": 77,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "gla_helm": [
+    {
+     "parts": {
+      "frost": 11,
+      "rare": 1
+     },
+     "brasas": 308,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 6
+     },
+     "brasas": 62,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 7
+     },
+     "brasas": 92,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 9,
+      "rare": 1
+     },
+     "brasas": 123,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "gla_chest": [
+    {
+     "parts": {
+      "frost": 15,
+      "plate": 12,
+      "rare": 1
+     },
+     "brasas": 440,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "yplate"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 8,
+      "plate": 6
+     },
+     "brasas": 88,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 9,
+      "plate": 8
+     },
+     "brasas": 132,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 12,
+      "plate": 10,
+      "rare": 1
+     },
+     "brasas": 176,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "gla_greaves": [
+    {
+     "parts": {
+      "frost": 11,
+      "thread": 9,
+      "rare": 1
+     },
+     "brasas": 308,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 6,
+      "thread": 5
+     },
+     "brasas": 62,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 7,
+      "thread": 6
+     },
+     "brasas": 92,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 9,
+      "thread": 7,
+      "rare": 1
+     },
+     "brasas": 123,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "ytusk",
+        "yplate",
+        "yheart"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "gla_talis": [
+    {
+     "parts": {
+      "frost": 9,
+      "fang": 8,
+      "rare": 1
+     },
+     "brasas": 264,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 5,
+      "fang": 4
+     },
+     "brasas": 53,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 6,
+      "fang": 5
+     },
+     "brasas": 79,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 8,
+      "fang": 6,
+      "rare": 1
+     },
+     "brasas": 106,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "jal_helm": [
+    {
+     "parts": {
+      "fang": 23,
+      "rare": 1
+     },
+     "brasas": 420,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 12
+     },
+     "brasas": 84,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 14
+     },
+     "brasas": 126,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 18,
+      "rare": 1
+     },
+     "brasas": 168,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "jal_chest": [
+    {
+     "parts": {
+      "fang": 32,
+      "feather": 16,
+      "rare": 1
+     },
+     "brasas": 600,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mwing"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 16,
+      "feather": 8
+     },
+     "brasas": 120,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 20,
+      "feather": 10
+     },
+     "brasas": 180,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 26,
+      "feather": 13,
+      "rare": 1
+     },
+     "brasas": 240,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "jal_greaves": [
+    {
+     "parts": {
+      "fang": 23,
+      "thread": 12,
+      "rare": 1
+     },
+     "brasas": 420,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 12,
+      "thread": 6
+     },
+     "brasas": 84,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 14,
+      "thread": 7
+     },
+     "brasas": 126,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 18,
+      "thread": 9,
+      "rare": 1
+     },
+     "brasas": 168,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "mjelly",
+        "mwing",
+        "msting"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "jal_talis": [
+    {
+     "parts": {
+      "fang": 20,
+      "frost": 10,
+      "rare": 1
+     },
+     "brasas": 360,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 10,
+      "frost": 5
+     },
+     "brasas": 72,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 12,
+      "frost": 6
+     },
+     "brasas": 108,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 16,
+      "frost": 8,
+      "rare": 1
+     },
+     "brasas": 144,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "bra_helm": [
+    {
+     "parts": {
+      "static": 28,
+      "rare": 2
+     },
+     "brasas": 560,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cor"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_ojo"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 14
+     },
+     "brasas": 112,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 17
+     },
+     "brasas": 168,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 22,
+      "rare": 1
+     },
+     "brasas": 224,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "bra_chest": [
+    {
+     "parts": {
+      "static": 39,
+      "wick": 20,
+      "rare": 2
+     },
+     "brasas": 800,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cora"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_nuc"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 20,
+      "wick": 10
+     },
+     "brasas": 160,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 24,
+      "wick": 12
+     },
+     "brasas": 240,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 32,
+      "wick": 16,
+      "rare": 1
+     },
+     "brasas": 320,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "bra_greaves": [
+    {
+     "parts": {
+      "static": 28,
+      "feather": 14,
+      "rare": 2
+     },
+     "brasas": 560,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_col"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 14,
+      "feather": 7
+     },
+     "brasas": 112,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 17,
+      "feather": 9
+     },
+     "brasas": 168,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 22,
+      "feather": 12,
+      "rare": 1
+     },
+     "brasas": 224,
+     "items": [
+      {
+       "kind": "tro",
+       "ids": [
+        "cz_cay",
+        "cz_nuc",
+        "cz_ojo",
+        "cz_col",
+        "cz_cor",
+        "cz_cora"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "bra_talis": [
+    {
+     "parts": {
+      "static": 24,
+      "rare": 2
+     },
+     "brasas": 480,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 12
+     },
+     "brasas": 96,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora",
+        "alcaide",
+        "centinela",
+        "hidra",
+        "planidera",
+        "yeti_mayor",
+        "ventisquero",
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 15
+     },
+     "brasas": 144,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora",
+        "alcaide",
+        "centinela",
+        "hidra",
+        "planidera",
+        "yeti_mayor",
+        "ventisquero",
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "static": 19,
+      "rare": 1
+     },
+     "brasas": 192,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora",
+        "alcaide",
+        "centinela",
+        "hidra",
+        "planidera",
+        "yeti_mayor",
+        "ventisquero",
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "mn_bosque": [
+    {
+     "parts": {
+      "thread": 8,
+      "rare": 1
+     },
+     "brasas": 84,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "thread": 4
+     },
+     "brasas": 17,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "thread": 5
+     },
+     "brasas": 25,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "thread": 6,
+      "rare": 1
+     },
+     "brasas": 34,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "carnero",
+        "tejedora"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "mn_cripta": [
+    {
+     "parts": {
+      "wick": 10,
+      "rare": 1
+     },
+     "brasas": 132,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 5
+     },
+     "brasas": 26,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 6
+     },
+     "brasas": 40,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "wick": 8,
+      "rare": 1
+     },
+     "brasas": 53,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "alcaide",
+        "centinela"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "mn_asfodelo": [
+    {
+     "parts": {
+      "spine": 14,
+      "rare": 1
+     },
+     "brasas": 192,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 7
+     },
+     "brasas": 38,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 8
+     },
+     "brasas": 58,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "spine": 11,
+      "rare": 1
+     },
+     "brasas": 77,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "hidra",
+        "planidera"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "mn_tundra": [
+    {
+     "parts": {
+      "frost": 9,
+      "rare": 1
+     },
+     "brasas": 264,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 5
+     },
+     "brasas": 53,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 6
+     },
+     "brasas": 79,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "frost": 8,
+      "rare": 1
+     },
+     "brasas": 106,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "yeti_mayor",
+        "ventisquero"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ],
+   "mn_panal": [
+    {
+     "parts": {
+      "fang": 20,
+      "rare": 1
+     },
+     "brasas": 360,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon"
+       ],
+       "n": 1
+      },
+      {
+       "kind": "ins",
+       "ids": [
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 10
+     },
+     "brasas": 72,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 12
+     },
+     "brasas": 108,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 1
+      }
+     ]
+    },
+    {
+     "parts": {
+      "fang": 16,
+      "rare": 1
+     },
+     "brasas": 144,
+     "items": [
+      {
+       "kind": "ins",
+       "ids": [
+        "avispon",
+        "reina_joven"
+       ],
+       "n": 2
+      }
+     ]
+    }
+   ]
+  },
+  "ready": 4,
+  "insCount": 4,
+  "achCount": 5,
+  "achOk": [
+   "first",
+   "win",
+   "pastor",
+   "insig3",
+   "arm1"
+  ],
+  "pedOk": [
+   "p1",
+   "p6"
+  ],
+  "haveIns": {
+   "carnero": 1,
+   "tejedora": 0,
+   "alcaide": 1,
+   "centinela": 0,
+   "hidra": 0,
+   "planidera": 0,
+   "yeti_mayor": 0,
+   "ventisquero": 0,
+   "avispon": 1,
+   "reina_joven": 0
+  },
+  "haveTro": {
+   "horn": 1
+  },
+  "costOK": {
+   "ald_helm": true,
+   "ald_chest": false,
+   "ald_boots": true,
+   "ald_amulet": true,
+   "esq_helm": false,
+   "esq_chest": false,
+   "esq_greaves": false,
+   "esq_talis": false,
+   "car_helm": false,
+   "car_chest": false,
+   "car_greaves": false,
+   "car_talis": false,
+   "esc_helm": false,
+   "esc_chest": false,
+   "esc_greaves": false,
+   "esc_talis": false,
+   "gla_helm": false,
+   "gla_chest": false,
+   "gla_greaves": false,
+   "gla_talis": false,
+   "jal_helm": false,
+   "jal_chest": false,
+   "jal_greaves": false,
+   "jal_talis": false,
+   "bra_helm": false,
+   "bra_chest": false,
+   "bra_greaves": false,
+   "bra_talis": false,
+   "mn_bosque": false,
+   "mn_cripta": false,
+   "mn_asfodelo": false,
+   "mn_tundra": false,
+   "mn_panal": false
+  }
+ }
+}

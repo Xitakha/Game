@@ -77,7 +77,42 @@ Cripta, Peligro III, sin mutadores, mismas semillas que la fase A (`calib/exp_cr
 
 Comparación por pares (misma semilla): +0 gana 18 partidas que la base pierde y pierde 20 que la base gana (sin diferencia); +0 y 6 PF, 16 frente a 31 (McNemar p ~ 0,04: baja unos 8 puntos). Medido: quitar el refuerzo (DEF 20,7 -> 18) no cambia nada; quitar 3 PF baja 8 puntos. La potencia del kit casi no mueve el resultado en la Cripta: el bot llega siempre al jefe y Karceron en Peligro III cae ante casi cualquier kit (todos los kits traen Hielo o Rayo, o los recibe por R6, y Karceron es débil a los dos). **Conclusión: con las palancas del kit no se puede llevar la Cripta del 83 % al 35 %** sin desmontar el kit (dejarlo con menos PF que el Bosque). La palanca que sí actúa sobre todos los kits a la vez es el **Peligro del día** (sección 5).
 
-## 5. Qué queda sin medir (a fecha de este corte)
+## 5. Fase B (Peligro IV) y reto diario real
+
+### 5.1 Peligro IV, sin mutadores (n=16 por celda, 640 partidas, `calib/faseB_P4_alta.csv`)
+
+Objetivo: 25 +-7.
+
+| kit \ bioma | Bosque | Cripta | Asfódelo | Tundra | Panal | total (n=80) |
+|---|---|---|---|---|---|---|
+| fragua | 12 | 25 | 19 | 75 | 62 | **39** (29-50) |
+| ventisca | 6 | 44 | 0 | 12 | 6 | **14** (8-23) |
+| pantano | 12 | 12 | 0 | 38 | 31 | 19 (12-29) |
+| carmesi | 25 | 75 | 0 | 38 | 62 | **40** (30-51) |
+| lana | 6 | 62 | 12 | 25 | 50 | 31 (22-42) |
+| tempestad | 6 | 31 | 0 | 12 | 19 | **14** (8-23) |
+| alquimia | 12 | 19 | 0 | 25 | 19 | **15** (9-24) |
+| hogar | 19 | 31 | 0 | 50 | 56 | 31 (22-42) |
+| **media** (n=128) | **12** (8-19) | **38** (30-46) | **4** (2-9) | **34** (27-43) | **38** (30-47) | **25** (22-29) |
+
+Con n=16 cada celda tiene un IC95 de unos +-20 puntos: solo leo medias por kit y por bioma. Medido: **Peligro IV es la palanca fuerte** (de III a IV la media cae de 55 % a 25 %; la Cripta, de 83 % a 38 %). El orden de los kits se mantiene: Fragua y Carmesí arriba, Ventisca, Tempestad y Alquimia abajo.
+
+### 5.2 Reto diario real con las reglas actuales (r1, k1): 200 días seguidos (días 20401-20600), ALTA (`DAILY=1`, `calib/reto_real_r1.csv`)
+
+Reglas tal cual: bioma, Peligro (35/45/20), mutadores, kit de la semana y baraja del día; cuenta con todo abierto.
+
+| | n | Oro | IC95 | Bronce+ | Plata+ |
+|---|---|---|---|---|---|
+| **todos los días** | 200 | **54 %** | 48-61 | 90 % | 86 % |
+| Peligro II | 68 | 65 % | 53-75 | 90 % | 90 % |
+| Peligro III | 97 | 53 % | 43-62 | 89 % | 85 % |
+| Peligro IV | 35 | 40 % | 26-56 | 94 % | 80 % |
+| Bosque / Asfódelo | 32 / 45 | 31 % / 29 % | | 66 % / 80 % | |
+| Cripta / Tundra / Panal | 51 / 47 / 25 | 80 % / 53 % / 80 % | | 100 % | |
+
+**Medido: con las reglas actuales el bot hábil saca Oro el 54 % de los días** (objetivo 25-35 %; el intervalo entero queda por encima). El reto diario, tal como está, no es el desafío que pide el diseño: el problema no es un kit, es el reparto de Peligro y la diferencia entre biomas.
+
+## 6. Qué queda sin medir (a fecha de este corte)
 
 - Fases B (Peligro II y IV), C (mutadores), D (combinaciones límite R1-R6) y calidades MEDIA / BAJA.
 - Reto diario real con las reglas del día (`DAILY=1`).
