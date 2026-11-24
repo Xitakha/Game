@@ -11,6 +11,7 @@
 //   Peligro ni mutadores; SEED= es el primer día y N días seguidos; KIT y BIOME se ignoran salvo KIT=auto, el de la semana).
 //   BOSSBOT=1 (por defecto): en la pelea con el jefe esquiva telegrafías con dodge_fusion.js (BREACT= ms de reacción, 250; BMIST= prob. de error, 0,1; azar sembrado);
 //   BOSSBOT=0: la misma repulsión de play_bot.js también contra el jefe.
+//   KITPOW=bioma=tier/ref/pf[,...] pisa G.Kit.POWER en memoria y KITNODES=kit=N1:A,N2,...[;kit2=...] la lista de nodos de un kit y KITDISH=kit=plato[,...] su plato (perillas de exploración; kits.js no cambia).
 //   REACT= ticks entre decisiones de movimiento (5 = bot hábil, 83 ms; 19 = bot torpe, lo que hace play_bot.js a speed=4 con su setInterval de 80 ms reales).
 // Salida: una línea por partida y un resumen por celda con victoria (Oro), Bronce (llega al jefe), Plata, intervalo de Wilson al 95 %, tiempo de muerte y puntuación.
 const { launch } = require('../lib/browser.js');
@@ -26,6 +27,9 @@ const KITS = list(env.KIT, ALLK, ['fragua']), BIOMES = list(env.BIOME, ALLB, ['b
 // ---- dentro de la página: reglas forzadas (kit, bioma, Peligro, mutadores) a partir del i-ésimo día con ese bioma; el resto (semilla, acompañamiento, neutrales) es el del día
 const SETUP = ([kit, biome, pel, muts, seed, idx, daily, boss]) => {
   const D = G.Daily, K = G.Kit, S = G.Save.data;
+  (boss.pow || '').split(',').filter(Boolean).forEach(x => { const [bi, v] = x.split('='), [t, rf, pf] = v.split('/').map(Number); K.POWER[bi] = { tier: t, ref: rf, pf: pf }; });   // KITPOW=cripta=2/0/9 (exploración; no toca kits.js)
+  (boss.dish || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).dish = v; });   // KITDISH=carmesi=te,hogar=pan
+  (boss.nodes || '').split(';').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).nodes = v.split(',').map(n => n.split(':')); });   // KITNODES=hogar=F1:A,H1:A,...
   S.runs = 3; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 };
   const ALL = { unlocked: ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'], kills: S.bossKills };
   let R = null;
@@ -114,7 +118,7 @@ const pc = x => Math.round(x * 100);
     pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     await pg.goto(`${base}/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=${Q}${EXTRA}`); await pg.waitForTimeout(400);
     if (BOSSBOT) await pg.addScriptTag({ content: DODGE });
-    const R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST }]);
+    const R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST, pow: env.KITPOW || '', nodes: env.KITNODES || '', dish: env.KITDISH || '' }]);
     let r = null; for (let k = 0; k < 40; k++) { r = await pg.evaluate(ADV, [3000, REACT]); if (r.st === 'gameover') break; }
     await pg.close(); await ctx.close();
     r = Object.assign(r, { R, errs: errs.length, idx }); res[ci].push(r);
@@ -124,7 +128,7 @@ const pc = x => Math.round(x * 100);
   }
   async function worker() { while (next < jobs.length) { const [ci, i] = jobs[next++]; try { await one(ci, i); } catch (e) { console.log('ERR', ci, i, e.message); } } }
   await Promise.all(Array.from({ length: Math.min(PAR, jobs.length) }, worker));
-  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
+  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
   console.log('celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores');
   cells.forEach((c, ci) => {
     const a = res[ci], n = a.length, w = a.filter(x => x.won).length, s2 = a.filter(x => x.medal >= 2).length, s1 = a.filter(x => x.medal >= 1).length, [lo, hi] = wilson(w, n);
