@@ -1,6 +1,8 @@
 # Calibración de los kits semanales y del reto diario (Swarm Hand)
 
-Autor: balance-designer. Estado: **en curso**. Fase A completa (1.920 partidas); fases B-D y exploración de palancas en marcha. Este documento se actualiza al cerrar cada lote.
+Autor: balance-designer. Estado: **cerrado** (fases A-D medidas con bot; fase E, humano, pendiente). Unas 6.800 partidas en total.
+
+Resumen: con las reglas r1 el bot hábil sacaba Oro el 54 % de los días (objetivo 25-35 %), con biomas del 29 % al 80 %. **Aplicado r2** (Peligro del día por bioma y fuera "Dos etiquetas", que facilita): **35 % (IC95 29-42) en los mismos 200 días**, con todos los biomas entre el 22 % y el 41 %. Las diferencias entre kits (unos 35 puntos) **no se resuelven** con palancas de potencia (medido) y quedan para el dueño (sección 8).
 Referencia de diseño: `games/card-swarm/DESIGN-v10-retencion.md`, 1.10.6 (plan) y 8.1 (lo que quedó sin calibrar).
 
 ## 1. Objetivos medibles
@@ -56,11 +58,11 @@ Llegar al jefe (Bronce o más): Bosque 66 %, Asfódelo 85 %, Cripta, Tundra y Pa
 2. **Hay kits dominantes y kits flojos**: la media por kit va del 37 % (Ventisca) y el 38 % (Alquimia) al 68-70 % (Carmesí, Hogar, Fragua). Son 33 puntos, con intervalos que no se solapan: no es ruido. El criterio de 1.10.6 (10 puntos) no se cumple.
 3. **Celdas fuera del criterio de salida (10-60 % en Peligro III)**: por debajo, Alquimia en Asfódelo (6 %), Ventisca en Bosque (10 %) y en Asfódelo (10 %); por encima, 20 de las 40 celdas (todas las de la Cripta, la mayoría de las de Tundra y Panal y Fragua en Asfódelo).
 
-## 4. Palancas y exploración (en curso)
+## 4. Palancas y exploración
 
 Orden de 1.10.6: (1) tramo de PF y potencia por bioma (`G.Kit.POWER`), (2) nodos del último tramo de cada kit, (3) refuerzo de la armadura nivelada, (4) pesos de los mutadores. No se toca ningún número de combate.
 
-Plan:
+Plan inicial (resultado en 4.1-4.2b y 5.4):
 - Biomas demasiado fáciles (Cripta, Tundra, Panal): **bajar la potencia del kit** (refuerzo +1 -> +0 y, si no basta, menos PF). Esto sube la dificultad: cumple la regla del estudio.
 - Kits dominantes (Fragua, Carmesí, Hogar): quitar o cambiar el nodo más fuerte de sus tramos.
 - Kits flojos en celdas concretas (Ventisca en Bosque y Asfódelo, Alquimia en Asfódelo): aquí cualquier cambio **baja la dificultad en esas celdas**. Solo se propone si la medición lo justifica (criterio "ningún kit inútil", piso del 10 %) y queda marcado como decisión del dueño.
@@ -162,7 +164,7 @@ Objetivo: 45 +-7. Media 65 % (62-69). Por bioma: Bosque 40, Cripta 90, Asfódelo
 
 Medido: de II a III el bot pierde solo 10 puntos y de III a IV, 30. En II y III el reto es unos 20 puntos más fácil que la meta; en IV está en la meta. Los biomas no son comparables con el mismo Peligro: la Cripta en IV (38 %) vale lo que el Bosque o el Asfódelo en III (34-38 %).
 
-### 5.2 Reto diario real con las reglas actuales (r1, k1): 200 días seguidos (días 20401-20600), ALTA (`DAILY=1`, `calib/reto_real_r1.csv`)
+### 5.2 Reto diario real con las reglas r1 (antes del cambio; k1): 200 días seguidos (días 20401-20600), ALTA (`DAILY=1`, `calib/reto_real_r1.csv`)
 
 Reglas tal cual: bioma, Peligro (35/45/20), mutadores, kit de la semana y baraja del día; cuenta con todo abierto.
 
@@ -181,43 +183,128 @@ Reglas tal cual: bioma, Peligro (35/45/20), mutadores, kit de la semana y baraja
 
 Con las celdas de las fases A y B (kit x bioma x Peligro, sin mutadores) se predice el Oro de cada uno de los 200 días medidos: **54,7 % esperado sin mutadores frente a 54,5 % real con ellos**. El modelo acierta el total (valida que las fases A-B describen el reto) y dice que **los mutadores del día, en conjunto, no quitan victorias al bot**: la pelea con el jefe decide y casi todos los mutadores tocan la horda. Detalle por mutador en la fase C (sección 6).
 
-### 5.4 Propuesta: Peligro del día por bioma (reglas r2)
+### 5.4 Cambio aplicado: Peligro del día por bioma (reglas r2)
 
-Como el kit casi no mueve el resultado (4.1, 4.2) y los mutadores tampoco (5.3), la palanca que queda para que el reto sea un reto es el **Peligro del día**. Con el mismo Peligro los biomas no se parecen, así que la tabla pasa a depender del bioma (misma tirada, mismo orden de tiradas; solo cambia cómo se traduce):
+Como la potencia del kit casi no mueve el resultado (4.1, 4.2, 4.2b) y los mutadores en conjunto tampoco (5.3), la palanca que queda para que el reto sea un reto es el **Peligro del día**. Con el mismo Peligro los biomas no se parecen, así que la tabla depende del bioma (la misma tirada en la misma posición; solo cambia cómo se traduce, así que el número y el orden de tiradas no cambian):
 
-| bioma | r1 (II / III / IV) | **r2 propuesta** | Oro esperado del bot, sin mutadores (modelo fases A-B) |
+| bioma | r1 (II / III / IV) | **r2** (II / III / IV) | Oro del bot sin mutadores, modelo fases A-B: r1 -> r2 |
 |---|---|---|---|
-| Bosque | 35 / 45 / 20 | 0 / 70 / 30 | 76 -> **28 %** |
+| Bosque | 35 / 45 / 20 | 0 / 70 / 30 | 32 -> **28 %** |
 | Cripta | 35 / 45 / 20 | 0 / 0 / 100 | 76 -> **38 %** |
 | Asfódelo | 35 / 45 / 20 | 0 / 90 / 10 | 37 -> **35 %** |
 | Tundra | 35 / 45 / 20 | 0 / 0 / 100 | 61 -> **34 %** |
 | Panal | 35 / 45 / 20 | 0 / 0 / 100 | 59 -> **38 %** |
-| **media** | **53 %** (medido en el reto real: 54 %) | **34 %** | objetivo 25-35 % |
+| **media** | | | **53 -> 34 %** (objetivo 25-35 %) |
 
-(Bosque r1 sale 32 % en esa fila; la columna "r1" de la media es 53 %.) **Esto sube la dificultad del reto**: de un 54 % de Oro a un 34 % para el bot. Está dentro de la meta del diseño (25-35 %), en su borde alto a propósito: si el jugador real esquiva peor que el bot en la pelea con el jefe, el reto quedará más duro de lo que dice esta tabla, no más fácil. Se mantienen: nunca Peligro I ni V; la excepción de novato (Peligro II como máximo si nunca has vencido a ese jefe); el presupuesto de mutadores por Peligro.
+Se mantienen: nunca Peligro I ni V; la excepción de novato (Peligro II como máximo si nunca has vencido a ese jefe); el presupuesto de mutadores por Peligro (2 / 1,5 / 1). Además r2 saca del MVP el mutador "Dos etiquetas" porque facilita (sección 6).
 
-Riesgos: (1) en Peligro IV el presupuesto de mutadores es 1, así que los días de Cripta, Tundra y Panal traen 1 mutador o 2 de peso 0,5; hay menos variedad (aceptable: los mutadores no deciden). (2) el multiplicador de puntuación sigue ligado al Peligro: un día de Cripta (IV) puntúa más que uno de Bosque (III); las puntuaciones solo se comparan dentro del mismo día, así que no importa. (3) depende de que el bot hábil se parezca al jugador; lo contrasta la fase E.
+### 5.5 Validación directa de r2: los mismos 200 días (20401-20600), ALTA (`calib/reto_real_r2.csv`)
 
-Aplicación: `Dl.PEL_W` en `src/daily.js` y `Dl.RV` -> `r2` (el historial anota `rv`). **Pendiente de aplicar al terminar los lotes**, porque cambiar las reglas cambia qué días caen en cada bioma y rompería las comparaciones por pares en curso.
+| | r1 (antes) | **r2 (aplicado)** |
+|---|---|---|
+| **Oro, todos los días** (n=200) | 54 % (48-61) | **35 % (29-42)** |
+| Bronce+ / Plata+ | 90 % / 86 % | 92 % / 84 % |
+| Bosque / Cripta / Asfódelo / Tundra / Panal | 31 / 80 / 29 / 53 / 80 % | 22 / 38 / 39 / 41 / 32 % |
+| Peligro III / IV (n) | 53 % (97) / 40 % (35) | 32 % (60) / 36 % (140) |
 
-## 6. Fase C: mutadores (Asfódelo, Peligro III, Fragua y Pantano, n=48, comparación por pares con la fase A)
+**Medido: con r2 el bot hábil saca Oro el 35 % de los días (IC95 29-42), frente al 54 % (48-61) de r1. Los intervalos no se solapan.** Cae en el borde alto del objetivo (25-35 %) y los cinco biomas quedan entre el 22 % y el 41 % (antes, del 29 % al 80 %). **Este cambio sube la dificultad del reto**; no baja la de nada.
 
-En curso (`calib/faseC_mut_alta.csv`; `python3 tools/card-swarm-bot/calib/pares.py <csv>`). Primeros resultados con Pantano (n=31-48 por mutador):
+Por qué en el borde alto y no en el centro: el bot esquiva las telegrafías con reacción de 250 ms y conocimiento perfecto de las zonas de peligro. Si el jugador real esquiva peor, el reto quedará más duro que estas cifras, no más fácil. Subirlo más exigiría Peligro V (el diseño lo descarta) o meter Peligro IV en el Asfódelo (allí IV da un 4 %).
 
-| mutador | Oro base -> con mutador | solo base / solo mutador | Plata+ base -> con mutador | lectura |
-|---|---|---|---|---|
-| duros | 23 -> 14 % | 8 / 4 | 72 -> 58 % | quita (no significativo) |
-| sincor | 23 -> 17 % | 6 / 3 | 73 -> 69 % | quita poco |
-| bolsillo | 23 -> 19 % | 5 / 3 | 73 -> 79 % | casi neutro |
-| cristal | 23 -> 15 % | 5 / 1 | 73 -> **54 %** (10 / 1, p = 0,01) | el que más quita |
-| **dos** | 23 -> 15 % | 10 / 6 | 73 -> **98 %** (0 / 12, p < 0,001) | **facilita llegar al jefe y la Plata** |
-| sincambio | 23 -> 23 % | 0 / 0 | sin cambio | neutro (el bot no paga cambios de oferta) |
+Riesgos: (1) en Peligro IV el presupuesto de mutadores es 1, así que los días de Cripta, Tundra y Panal traen 1 mutador o 2 de peso 0,5: hay menos variedad; (2) el multiplicador de puntuación sigue atado al Peligro, así que un día de Cripta (IV) puntúa más que uno de Bosque (III); las marcas solo se comparan dentro del mismo día, así que no importa; (3) cambiar `rv` cambia los retos de cada fecha (el historial guarda `rv` por entrada, como estaba previsto).
 
-Medido: "Dos etiquetas" hace la baraja más concentrada y el bot llega antes a sus fusiones: Pantano llega al jefe y saca Plata en 12 partidas más de 48 (ninguna menos). En Oro no se ve efecto. Eso incumple la regla de T-F4-01 ("ningún mutador facilita") para las medallas Bronce y Plata. Pendiente confirmar con Fragua.
+## 6. Fase C: mutadores (Asfódelo, Peligro III, Fragua y Pantano, n=48 por kit, 864 partidas, pares con la fase A)
 
-## 7. Qué queda sin medir (a fecha de este corte)
+`calib/faseC_mut_alta.csv`; `python3 tools/card-swarm-bot/calib/pares.py tools/card-swarm-bot/calib/faseC_mut_alta.csv --by mut [--metric m1|m2]`. Base de las mismas 96 semillas: Oro 46 %, Plata+ 83 %, Bronce+ 89 %.
 
-- Fases B (Peligro II y IV), C (mutadores), D (combinaciones límite R1-R6) y calidades MEDIA / BAJA.
-- Reto diario real con las reglas del día (`DAILY=1`).
-- La correspondencia bot hábil -> jugador competente (fase E, humano en móvil).
-- Puntuación y tabla de premios: sin cambios propuestos todavía.
+| mutador (peso) | Oro con mutador | solo base / solo mutador (p) | Plata+ | Bronce+ | lectura |
+|---|---|---|---|---|---|
+| cristal (1) | **27 %** | 19 / 1 (p < 0,001) | 66 % (18 / 1) | 72 % | el que más quita, con diferencia |
+| marea (1) | 34 % | 25 / 14 (0,11) | 81 % | 86 % | quita (no significativo) |
+| bolsillo (0,5) | 35 % | 20 / 10 (0,10) | 88 % | 91 % | quita Oro (no significativo) |
+| duros (1) | 36 % | 20 / 11 (0,15) | 72 % (0,06) | 75 % (19 / 6, p = 0,01) | quita |
+| sincor (1) | 38 % | 17 / 9 (0,17) | 74 % | 76 % (21 / 9, p = 0,04) | quita |
+| veloz (1) | 45 % | 20 / 19 (1,0) | 85 % | 92 % | neutro para el bot |
+| sincambio (0,5) | 46 % | 0 / 0 | 83 % | 89 % | sin efecto medible: el bot nunca paga cambios de oferta |
+| curtidos (1) | 52 % | 12 / 18 (0,36) | 85 % | 89 % | neutro (+6, dentro del ruido) |
+| **dos (1)** | 52 % | 13 / 19 (0,38) | **98 %** (1 / 15, p < 0,001) | **99 %** (1 / 11, p = 0,01) | **facilita** |
+
+Decisión aplicada: **"Dos etiquetas" sale del MVP** (`mvp: false` en `G.Daily.MUT`). Concentra la baraja, el bot llega antes a sus fusiones y saca Bronce y Plata mucho más (Fragua: Oro 69 -> 90 %, 3 / 13, p = 0,02). Incumple T-F4-01 ("ningún mutador facilita"). Quitarlo sube la dificultad. Su código sigue (R5 y la baraja recortada), por si se rediseña.
+
+Sin cambios, con nota: `curtidos` y `veloz` no quitan victorias al bot (+6 y -1, dentro del ruido). No facilitan de forma medible, así que se quedan. Pero su peso 1 vale más de lo que hacen y `cristal`, con el mismo peso, quita 19 puntos. No retoco los pesos: el Oro del reto ya está en objetivo con r2, y subir el peso de `cristal` a 1,5 lo echaría de todos los días de Peligro IV, lo que haría el reto más fácil. `sincambio` no se puede medir con este bot.
+
+## 7. Fase D: combinaciones límite (R1-R6), de las celdas de las fases A y B
+
+| combinación | P III (fase A, n=48) | P IV (fase B, n=16) | con r2 |
+|---|---|---|---|
+| Pantano en la Tundra (R1, Caldo de brasa y Crampones) | 62 % | 38 % | IV: 38 % |
+| Carmesí en el Panal (R2/R3, sin Tostada) | 79 % | 62 % | IV: 62 % |
+| Tempestad en la Cripta contra Karceron (resiste Fuego) | 92 % | 31 % | IV: 31 % |
+| Pantano contra Yarlak (R4/R6, Fuego de acompañamiento) | = Pantano en la Tundra | | |
+
+Medido: ninguna regla deja una combinación imposible (todas por encima del 30 % en su Peligro r2). Ninguna queda trivial, salvo Carmesí en el Panal (62 % en IV, por encima del 60 %; n=16, IC95 39-82). Es un caso del problema general de Carmesí (sección 8), no de R2/R3.
+
+## 8. Diferencias entre kits: no resueltas (decisión del dueño)
+
+Oro esperado de cada kit en cada bioma con r2 (modelo de las fases A-B, sin mutadores; celdas de P II y IV con n=16, así que cada cifra tiene +-20 puntos):
+
+| kit | Bosque | Cripta | Asfódelo | Tundra | Panal | **media** | reto real r2 (n) |
+|---|---|---|---|---|---|---|---|
+| fragua | 27 | 25 | 64 | 75 | 62 | **51** | 76 % (17) |
+| carmesi | 40 | 75 | 38 | 38 | 62 | **50** | 50 % (22) |
+| hogar | 41 | 31 | 54 | 50 | 56 | 46 | 50 % (28) |
+| lana | 22 | 62 | 52 | 25 | 50 | 42 | 48 % (21) |
+| pantano | 37 | 12 | 21 | 38 | 31 | 28 | 39 % (28) |
+| tempestad | 16 | 31 | 34 | 12 | 19 | 23 | 18 % (28) |
+| alquimia | 29 | 19 | **6** | 25 | 19 | **19** | 18 % (28) |
+| ventisca | **9** | 44 | **9** | 12 | **6** | **16** | **4 %** (28) |
+
+**Medido: el criterio de 1.10.6 (no más de 10 puntos entre kits) no se cumple.** Hay unos 35 puntos entre Fragua y Carmesí, arriba, y Ventisca y Alquimia, abajo. El orden es el mismo en P II, III y IV y en el reto real. Una semana de Ventisca, el bot saca Oro el 4-16 % de los días; una de Fragua, el 50-76 %. Hay celdas por debajo del 10 % ("kit inútil" ese día): Ventisca en Bosque, Asfódelo y Panal, y Alquimia en el Asfódelo.
+
+Lo que probé y **no sirve** (todo medido por pares, sección 4): refuerzo de la armadura +1 -> +0, -3 / +3 PF por kit, cambiar el plato. Ninguna palanca de potencia mueve un kit más de 8 puntos. La diferencia tampoco la explica el cruce de etiquetas con las debilidades del jefe. Viene de la identidad del kit (fusión firma, set de armadura, cómo juega el AUTO de poderes con esas cartas), y eso es diseño, no números.
+
+No he aplicado nada a los kits:
+- Subir a los kits flojos **bajaría la dificultad** de sus semanas, y no hay palanca de potencia que funcione.
+- Para bajar a los fuertes haría falta Peligro V (descartado en el diseño) o tocar su identidad.
+
+Opciones para el dueño (pregunta 1):
+- (a) **Peligro por kit además de por bioma**: las semanas de Ventisca y Alquimia, III donde r2 pone IV. Baja la dificultad de esas semanas, de un 16-19 % a un 30 % estimado.
+- (b) **Permitir Peligro V en el reto** solo para Fragua y Carmesí en Tundra y Panal. Sube su dificultad.
+- (c) **Rediseñar Ventisca y Alquimia** (fusión firma, etiquetas o set), trabajo de game-designer, y volver a medir con `kit_bot.js`.
+- (d) Aceptar semanas fáciles y difíciles.
+
+Recomiendo (c), y mientras tanto (d). La (a) es la vía rápida, pero baja la dificultad.
+
+## 9. Puntuación, premios y objetivos
+
+Reparto esperado de medallas por intento (modelo fases A-B, 8 kits):
+
+| | Participación | Bronce | Plata | Oro | Brasas por reto | partes | Esencias por semana (7 retos) |
+|---|---|---|---|---|---|---|---|
+| r1 | 10 % | 4 % | 33 % | 53 % | 146 | 37 | 3,7 |
+| **r2** | 10 % | 7 % | 49 % | 34 % | 135 | 35 | **2,4** |
+
+Con r2, las Esencias por semana (2,4) caen en lo que suponía el diseño (2-3, 1.6), y el reto sigue pagando menos que una expedición normal (unas 200 Brasas). **Tabla de premios sin cambios**: solo materiales y medallas, sin PF (decisión del dueño), como ya estaba. Puntuación y multiplicador: sin cambios. La puntuación media apenas cambia (6.782 -> 6.811). Objetivos (`objectives.js`): sin cambios. `w_oro` ("Saca un Oro en el reto") pasa a ser más difícil, como corresponde a un objetivo semanal difícil. Plata (romper una parte o quitar media vida) sale casi en la mitad de los intentos: es una medalla de consuelo frecuente, no un problema de dificultad.
+
+## 10. Cambios aplicados y pruebas
+
+- `games/card-swarm/src/daily.js`: `Dl.RV = 'r2'`; `Dl.PEL_W` (tabla de 5.4) y `pelOf(biome, u)` (la tirada de Peligro se traduce después de elegir el bioma; mismas tiradas y en el mismo orden); mutador `dos` con `mvp: false`. Nada más: kits, potencia, pesos de mutadores, puntuación, premios y objetivos quedan igual. `kits.js` y `objectives.js` sin tocar; `G.Kit.KV` sigue en `k1`.
+- `tools/card-swarm-bot/tests.js` (grupo `daily`): `DAILY_SNAP` del 2026-11-14 con r2 (`["panal",4,["bolsillo","sincambio"],"lana",["fire","ice"]]`); `R14.rv === 'r2'`; el reparto de Peligro de 365 días se comprueba por bioma contra `PEL_W` (+-12 puntos y 0 donde la tabla da 0), en vez de 35/45/20; "Dos etiquetas" comprueba que no sale en 1.000 días y que, forzada, recorta la baraja.
+- Resultado: `tests.js daily` **93/93 OK**; `seed` **69/69 OK** y `diff` **26/26 OK** (hashes de la simulación de partidas normales idénticos: el cambio solo toca las reglas del reto). `G.god` y el balance general (armaduras, `zoneDmg`, Peligro IV-V de campaña) sin tocar.
+- Herramienta: `tools/card-swarm-bot/kit_bot.js` (nuevo). `dodge_fusion.js` admite `rng`, `onlyBoss` y `noCards`, con el comportamiento anterior por defecto. Scripts y datos en `tools/card-swarm-bot/calib/`: `analiza.py`, `pares.py`, `purga.py`, `tabla_peligro.py`, `cola*.sh` y los CSV y registros de cada lote.
+
+## 11. Qué queda sin medir
+
+- **La correspondencia bot hábil -> jugador competente** (fase E): 3-5 retos del dueño en móvil con r2. Es la medición que decide si el 35 % del bot es un 35 % humano.
+- `sincambio` (el bot no paga cambios de oferta), y `furia`, `pesados` y `cortamano` (fuera del MVP).
+- Fase C solo en el Asfódelo y con 2 kits; mutadores en otros biomas y kits, sin medir.
+- Celdas de P II y IV con n=16 (+-20 puntos por celda): bastan para medias por bioma y por kit, no para celdas sueltas.
+- Rendimiento de `marea` en móviles lentos (fps).
+- Por qué Ventisca y Alquimia rinden poco (uso del AUTO con sus fusiones firma, set): sin diagnosticar.
+- Incidencias del método: un lote se cortó por falta de memoria (Chromium crecía con los contextos; arreglado renovando el navegador cada 30 partidas) y el servidor se cayó varias veces porque otro proceso compartía el archivo de PID. Las filas afectadas se rehicieron. `kit_bot.js` reanuda lo que falta y reintenta si no hay servidor. El ruido entre lotes iguales es 0 (determinista), así que los intervalos dados son solo de muestreo.
+
+## 12. Preguntas para el dueño
+
+1. **Diferencias entre kits** (sección 8): ¿(a) Peligro más bajo en las semanas de los kits flojos (baja la dificultad de esas semanas), (b) Peligro V en el reto para los kits fuertes en Tundra y Panal, (c) rediseñar Ventisca y Alquimia o (d) aceptarlo? Recomiendo (c), y (d) mientras tanto.
+2. **¿Confirmas r2?** Sube el reto de un 54 % a un 35 % de días con Oro para el bot. Ya está aplicado en el código y es fácil de revertir (`Dl.RV`, `Dl.PEL_W = null`).
+3. **"Dos etiquetas" fuera del MVP**: ¿se rediseña (por ejemplo, más un mutador de jefe obligatorio) o se queda fuera?
