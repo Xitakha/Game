@@ -210,3 +210,5 @@ pantano,tundra,3,-,baja,5,250/0.1,1,15,20077,fire+lightning,1,3,450,7217,5155,10
 pantano,tundra,3,-,baja,5,250/0.1,1,16,20084,lightning+fire,0,2,450,5471,3908,76,3,1106,14,0,22,57,0,86,descarga+gas+gas+escarcha+plasma+plasma+escarcha
 pantano,tundra,3,-,baja,5,250/0.1,1,17,20085,steel+fire,0,2,450,5480,3914,83,3,1079,14,0,22,37,0,54,escarcha+gas+forja+escarcha+filo+virote+virote
 pantano,tundra,3,-,baja,5,250/0.1,1,18,20087,blood+fire,1,3,450,7799,5571,100,3,1202,15,33,23,83,382,100,escarcha+gas+cristal+vapor+pacto+hemo+escarcha+escarcha
+pantano,tundra,3,-,baja,5,250/0.1,1,19,20089,steel+fire,1,3,450,7897,5641,100,3,1086,14,54,22,67,255,80,virote+escarcha+forja+escarcha+filo+gas+virote
+pantano,tundra,3,-,baja,5,250/0.1,1,20,20103,steel+fire,1,3,450,7602,5430,100,2,1039,14,64,25,67,221,59,escarcha+virote+forja+filo+vapor+escarcha+virote

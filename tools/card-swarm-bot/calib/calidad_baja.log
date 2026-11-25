@@ -209,3 +209,5 @@ pantano/tundra/P3/- #15 dia=20077 acomp=fire+lightning: ORO t=450s pts=7217 jefe
 pantano/tundra/P3/- #16 dia=20084 acomp=lightning+fire: plata t=450s pts=5471 jefe=76% min=0 blk=22% firma=57 errs=0
 pantano/tundra/P3/- #17 dia=20085 acomp=steel+fire: plata t=450s pts=5480 jefe=83% min=0 blk=22% firma=37 errs=0
 pantano/tundra/P3/- #18 dia=20087 acomp=blood+fire: ORO t=450s pts=7799 jefe=100% min=33 blk=23% firma=83 errs=0
+pantano/tundra/P3/- #19 dia=20089 acomp=steel+fire: ORO t=450s pts=7897 jefe=100% min=54 blk=22% firma=67 errs=0
+pantano/tundra/P3/- #20 dia=20103 acomp=steel+fire: ORO t=450s pts=7602 jefe=100% min=64 blk=25% firma=67 errs=0
