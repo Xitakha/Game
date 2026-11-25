@@ -112,7 +112,7 @@ const pc = x => Math.round(x * 100);
   if (DAILY) cells.push({ kit: (env.KIT || 'auto'), biome: '-', pel: 0, muts: [] });
   else for (const kit of KITS) for (const biome of BIOMES) for (const pel of PELS) for (const muts of MUTS) cells.push({ kit, biome, pel, muts });
   const jobs = []; cells.forEach((c, ci) => { for (let i = 0; i < N; i++) jobs.push([ci, i]); });
-  const res = cells.map(() => []); let next = 0, retries = 0;   // sin servidor (o navegador caído) la partida se reintenta, no se pierde const T0 = Date.now();
+  const res = cells.map(() => []), T0 = Date.now(); let next = 0, retries = 0;   // sin servidor (o navegador caído) la partida se reintenta, no se pierde
   // Reanudar: si OUT ya existe, se saltan las partidas que ya tiene (misma celda e idx; en DAILY=1, el mismo día)
   if (OUT && fs.existsSync(OUT)) {
     const have = new Set(fs.readFileSync(OUT, 'utf8').trim().split('\n').slice(1).map(l => { const f = l.split(','); return DAILY ? 'd' + f[9] : [f[0], f[1], f[2], f[3], f[8]].join('|'); }));

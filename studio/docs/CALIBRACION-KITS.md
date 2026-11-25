@@ -86,7 +86,28 @@ Carmesí y Hogar con Té de brasas (+10 % XP) en vez de Sopa de hebra (+0,25 HP/
 | Carmesí | 69 % | 62 % | 24 / 15 (McNemar p ~ 0,2: **no es un resultado**) |
 | Hogar | 69 % | 68 % | 16 / 14 (sin diferencia) |
 
-Medido: el plato apenas mueve la victoria. No se propone cambiarlo.
+Segundo lote (`calib/exp_plato2.csv`, 5 biomas, n=24 por bioma, pares):
+
+| kit | cambio | base | variante | solo base / solo variante | p |
+|---|---|---|---|---|---|
+| Fragua | Caldo -> Té | 72 % | 72 % | 13 / 13 | 1,0 |
+| Ventisca | Pan -> Asado (-15 % daño de jefes) | 41 % | 48 % | 13 / 22 | 0,18 |
+| Alquimia | Estofado -> Asado | 38 % | 43 % | 5 / 10 (n=92) | 0,30 |
+
+Medido: el plato apenas mueve la victoria (diferencias de 0-8 puntos, ninguna fuera del ruido). No se propone cambiarlo.
+
+### 4.3 Calidades MEDIA y BAJA (Fragua y Pantano, 5 biomas, P III, n=24 por kit y bioma, pares con ALTA)
+
+| bioma | ALTA | MEDIA | BAJA |
+|---|---|---|---|
+| Bosque | 46 % | 44 % (9 / 8) | 31 % (16 / 9, p = 0,23) |
+| Cripta | 77 % | 79 % | 81 % |
+| Asfódelo | 42 % | 44 % | 50 % (6 / 10) |
+| Tundra | 79 % | 73 % | 84 % (n=25) |
+| Panal | 69 % | 65 % | 88 % (n=24, base de esas semillas 88 %) |
+| total (n=240) | 63 % | 61 % | 62 % (Fragua 72 -> 74, Pantano 49 -> 42) |
+
+Medido: con el perfil `G.D` de MEDIA y BAJA el reto queda igual de difícil para el bot que en ALTA (ninguna diferencia fuera del ruido; la mayor, Bosque en BAJA, -15 puntos con p = 0,23). No hace falta ajustar nada por calidad. Lo que no se mide aquí: los fps reales de un móvil lento con `marea` (es trabajo de rendimiento).
 
 ## 5. Fase B (Peligro IV) y reto diario real
 

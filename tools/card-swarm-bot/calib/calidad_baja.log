@@ -220,3 +220,29 @@ pantano/panal/P3/- #2 dia=20011 acomp=steel+fire: ORO t=450s pts=7630 jefe=100% 
 pantano/panal/P3/- #3 dia=20026 acomp=lightning+fire: plata t=450s pts=4738 jefe=46% min=0 blk=26% firma=60 errs=0
 pantano/panal/P3/- #4 dia=20028 acomp=lightning+fire: plata t=450s pts=5510 jefe=81% min=0 blk=26% firma=71 errs=0
 pantano/panal/P3/- #5 dia=20030 acomp=steel+fire: plata t=450s pts=5317 jefe=69% min=0 blk=26% firma=61 errs=0
+pantano/panal/P3/- #6 dia=20036 acomp=lightning+fire: bronce t=450s pts=3763 jefe=19% min=0 blk=26% firma=49 errs=0
+pantano/panal/P3/- #7 dia=20041 acomp=steel+fire: ORO t=450s pts=7608 jefe=100% min=39 blk=26% firma=70 errs=0
+pantano/panal/P3/- #8 dia=20044 acomp=blood+fire: ORO t=450s pts=7409 jefe=100% min=41 blk=27% firma=0 errs=0
+pantano/panal/P3/- #9 dia=20048 acomp=steel+fire: ORO t=450s pts=7238 jefe=100% min=25 blk=26% firma=59 errs=0
+pantano/panal/P3/- #10 dia=20049 acomp=blood+fire: plata t=450s pts=5443 jefe=84% min=0 blk=26% firma=0 errs=0
+pantano/panal/P3/- #11 dia=20057 acomp=steel+fire: ORO t=450s pts=7269 jefe=100% min=31 blk=26% firma=10 errs=0
+pantano/panal/P3/- #12 dia=20069 acomp=blood+fire: plata t=450s pts=5258 jefe=68% min=0 blk=26% firma=0 errs=0
+pantano/panal/P3/- #14 dia=20078 acomp=steel+fire: ORO t=450s pts=7568 jefe=100% min=74 blk=26% firma=51 errs=0
+pantano/panal/P3/- #13 dia=20074 acomp=blood+fire: ORO t=450s pts=7232 jefe=100% min=4 blk=26% firma=27 errs=0
+pantano/panal/P3/- #15 dia=20079 acomp=lightning+fire: ORO t=450s pts=7504 jefe=100% min=29 blk=26% firma=72 errs=0
+pantano/panal/P3/- #16 dia=20082 acomp=blood+fire: ORO t=450s pts=7232 jefe=100% min=3 blk=26% firma=64 errs=0
+pantano/panal/P3/- #18 dia=20098 acomp=lightning+fire: plata t=450s pts=4817 jefe=51% min=0 blk=26% firma=43 errs=0
+pantano/panal/P3/- #17 dia=20094 acomp=steel+fire: ORO t=450s pts=7545 jefe=100% min=62 blk=26% firma=0 errs=0
+pantano/panal/P3/- #19 dia=20102 acomp=blood+fire: ORO t=450s pts=7353 jefe=100% min=19 blk=26% firma=0 errs=0
+pantano/panal/P3/- #20 dia=20104 acomp=fire+steel: plata t=450s pts=5491 jefe=86% min=0 blk=26% firma=37 errs=0
+pantano/panal/P3/- #21 dia=20107 acomp=blood+fire: plata t=450s pts=4386 jefe=42% min=0 blk=26% firma=0 errs=0
+pantano/panal/P3/- #22 dia=20112 acomp=lightning+fire: ORO t=450s pts=7375 jefe=100% min=26 blk=26% firma=79 errs=0
+pantano/panal/P3/- #23 dia=20114 acomp=lightning+fire: plata t=450s pts=5636 jefe=96% min=0 blk=26% firma=71 errs=0
+/home/user/Game/tools/card-swarm-bot/kit_bot.js:144
+  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} KITPF=${env.KITPF || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
+                                                                         ^
+
+ReferenceError: T0 is not defined
+    at /home/user/Game/tools/card-swarm-bot/kit_bot.js:144:74
+
+Node.js v22.23.4
