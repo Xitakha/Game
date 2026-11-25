@@ -1,0 +1,18 @@
+--- 32 partidas en 80 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- KITPF=- KITARMOR=- KITANCHOR=- KITSIG=alquimia={"lv":[{"hit":6,"cd":9000},{"hit":8,"cd":9000}]} BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+alquimia/bosque/P3/- | 16 | 50 % (28-72) | 81 % | 81 % | 450 | 6052 | 16 | 0
+alquimia/asfodelo/P3/- | 16 | 25 % (10-49) | 69 % | 75 % | 450 | 5028 | 13 | 0
+--- 48 partidas en 143 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- KITPF=- KITARMOR=- KITANCHOR=- KITSIG=alquimia={"lv":[{"hit":6,"cd":9000},{"hit":8,"cd":9000}]} BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+alquimia/cripta/P4/- | 16 | 31 % (14-56) | 100 % | 100 % | 450 | 6448 | 11 | 0
+alquimia/tundra/P4/- | 16 | 38 % (18-61) | 100 % | 100 % | 450 | 6777 | 16 | 0
+alquimia/panal/P4/- | 16 | 25 % (10-49) | 44 % | 100 % | 450 | 5852 | 8 | 0
+--- 32 partidas en 81 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- KITPF=- KITARMOR=- KITANCHOR=- KITSIG=alquimia={"lv":[{"hit":10,"cd":8000,"dur":7000},{"hit":12,"cd":8000,"dur":7000}]} BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+alquimia/bosque/P3/- | 16 | 75 % (51-90) | 88 % | 88 % | 450 | 6768 | 19 | 0
+alquimia/asfodelo/P3/- | 16 | 31 % (14-56) | 75 % | 94 % | 450 | 5514 | 10 | 0
+--- 48 partidas en 152 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- KITPF=- KITARMOR=- KITANCHOR=- KITSIG=alquimia={"lv":[{"hit":10,"cd":8000,"dur":7000},{"hit":12,"cd":8000,"dur":7000}]} BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+alquimia/cripta/P4/- | 16 | 19 % (7-43) | 100 % | 100 % | 450 | 6241 | 11 | 0
+alquimia/tundra/P4/- | 16 | 31 % (14-56) | 100 % | 100 % | 450 | 6783 | 10 | 0
+alquimia/panal/P4/- | 16 | 25 % (10-49) | 63 % | 100 % | 450 | 5835 | 12 | 0

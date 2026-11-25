@@ -2297,7 +2297,7 @@ async function daily() {
   const j2 = await E(pg, new Function('(' + ACC_VET + ')(); return (' + rulesOf + ')();'));
   const R14 = JSON.parse(j1);
   ok(j1 === j2, 'reglas del 2026-11-14 idénticas en dos cargas y dos cuentas con todo abierto (nueva con 3 salidas y veterana)');
-  ok(R14.key === '2026-11-14' && R14.biome === R14.perm[0] && R14.rv === 'r2' && R14.kv === 'k1' && JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]) === DAILY_SNAP, 'instantánea fijada del 2026-11-14: ' + JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]));
+  ok(R14.key === '2026-11-14' && R14.biome === R14.perm[0] && R14.rv === 'r2' && R14.kv === 'k2' && JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]) === DAILY_SNAP, 'instantánea fijada del 2026-11-14: ' + JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]));
   await done(pg, 'daily-reglas-2');
   // 6. apertura y filtros de la cuenta; 7. 365 fechas
   pg = await mk(b, 'reset=1&cine=0&speed=0');
@@ -2348,6 +2348,18 @@ async function daily() {
   ok(r.r1[0] && r.r1[1] === 'caldobrasa' && r.r1[2] && r.r1[3] === 'pan', 'R1: Pantano en la Tundra recibe Crampones y Caldo de brasa; Ventisca (Pelaje Glacial) solo Crampones ' + JSON.stringify(r.r1));
   ok(r.r2[0] && r.r2[1] === 'sopa' && r.r2[2] === 'tostada', 'R2/R3: Carmesí (Jalea Real) en el Panal recibe el Ahumador sin Tostada; Fragua sí la recibe ' + JSON.stringify(r.r2));
   ok(r.yar[0] === 'tundra' && r.yar[1] === 'yarlak' && r.yar[3], 'R4/R6: Pantano contra Yarlak lleva Fuego de acompañamiento (debilidad del jefe) ' + JSON.stringify(r.yar));
+  // k2 (CALIBRACION-KITS.md 13): refuerzo de firma de Ventisca y Alquimia, solo con el kit puesto y solo para su fusión firma
+  r = await E(pg, () => {
+    const K = G.Kit, F = G.Fusion, rt = F.recipe('tormenta'), rh = F.recipe('hemo'), out = {};
+    out.off = [F.lvOf(rt, 1) === rt.lv[0], F.lvOf(rh, 2) === rh.lv[1]];
+    K.begin(K.build('ventisca', 'cripta'), []); out.v = [F.lvOf(rt, 1).r, F.lvOf(rt, 2).r, F.lvOf(rt, 1).dmg, F.lvOf(rh, 1) === rh.lv[0], rt.lv[0].r]; out.vd = K.view(K.cur).fusionDesc; K.end();
+    K.begin(K.build('alquimia', 'cripta'), []); out.a = [F.lvOf(rh, 1).hit, F.lvOf(rh, 2).hit, F.lvOf(rh, 1).cd, F.lvOf(rh, 1).n, rh.lv[0].hit, rh.lv[0].cd]; K.end();
+    K.begin(K.build('fragua', 'cripta'), []); out.f = F.lvOf(rt, 1) === rt.lv[0] && F.lvOf(F.recipe('forja'), 1) === F.recipe('forja').lv[0]; K.end();
+    out.after = F.lvOf(rt, 1) === rt.lv[0]; out.kv = K.KV;
+    return out;
+  });
+  ok(r.off.every(Boolean) && r.after && r.f && JSON.stringify(r.v) === '[150,170,18,true,110]' && JSON.stringify(r.a) === '[6,8,9000,6,null,13000]' && /^Firma del kit/.test(r.vd) && r.kv === 'k2',
+    'k2: firma de Ventisca (zona 150 / 170) y de Alquimia (marca que muerde 6 / 8, recarga 9 s) solo con su kit; fuera del reto y con otros kits, los niveles de siempre ' + JSON.stringify(r));
   await done(pg, 'daily-reglas-365');
   // 3-5. Determinismo: misma fecha y mismas entradas, cuentas distintas (y con ?seed= y un encargo de caza) -> mismo hash; ALTA y BAJA. Kit idéntico (kit 1 y 4)
   const runDaily = async (acc, url, cps, extra) => {
@@ -2575,7 +2587,7 @@ async function daily() {
   r = await E(pg, () => ({ d: !!G.daily, off: G.daily && G.daily.official, st: G.state }));
   ok(r.d && r.off, 'EMPEZAR en la confirmación lanza el intento con premio');
   await E(pg, () => { for (let i = 0; i < 1200; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } });
-  const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /^RETO\s+[\d.]+$/.test(t.s)) && TC.analyze(dh, { minSize: WX === '&wide=0' ? 11.5 : TC.MIN_HUD }).filter(i => i.k === 'solape').length === 0, 'chip del HUD "RETO  n" visible y sin solapes');
+  const dh = await TC.snap(pg, 1); ok(dh.texts.some(t => /^RETO\s+[\d.]+$/.test(t.s)) && TC.analyze(dh, { minSize: WX === '&wide=0' ? 11.5 : TC.MIN_HUD }).filter(i => i.k === 'solape' && /"RETO\s/.test(i.msg)).length === 0, 'chip del HUD "RETO  n" visible y sin solapes');   // solo los solapes del chip: una cifra de daño flotante que pisa otro texto del HUD es de la partida, no del chip (con k2 el 2026-11-14 es Hogar)
   if (SP) await pg.screenshot({ path: path.join(SP, 'daily-hud.png') });
   await E(pg, () => { G.state = 'paused'; G.Hud.pauseOpen(); }); await report(pg, 'pausa del reto');
   ok((await TC.snap(pg, 1)).texts.some(t => t.s === 'TERMINAR INTENTO'), 'pausa: TERMINAR INTENTO');
@@ -2816,7 +2828,7 @@ async function vibe() {
   ok(!(await E(pg, () => G.fx.vibeSupported() || G.fx.vibe('fuse'))), 'sin API: boton oculto y vibe no hace nada');
   await done(pg, 'vibe'); await b.close();
 }
-const DAILY_SNAP = '["panal",4,["bolsillo","sincambio"],"lana",["fire","ice"]]';   // reglas r2 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
+const DAILY_SNAP = '["panal",4,["bolsillo","sincambio"],"hogar",["lightning","poison"]]';   // reglas r2 y kits k2 del 2026-11-14 (si se suben rv / kv, se actualiza; con k1 era Lana con Fuego e Hielo)
 
 (async () => {
   const run = { daily, fte, end, res, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide, vibe };

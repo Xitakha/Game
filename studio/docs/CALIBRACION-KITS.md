@@ -3,6 +3,8 @@
 Autor: balance-designer. Estado: **cerrado** (fases A-D medidas con bot; fase E, humano, pendiente). Unas 6.800 partidas en total.
 
 Resumen: con las reglas r1 el bot hábil sacaba Oro el 54 % de los días (objetivo 25-35 %), con biomas del 29 % al 80 %. **Aplicado r2** (Peligro del día por bioma y fuera "Dos etiquetas", que facilita): **35 % (IC95 29-42) en los mismos 200 días**, con todos los biomas entre el 22 % y el 41 %. Las diferencias entre kits (unos 35 puntos) **no se resuelven** con palancas de potencia (medido) y quedan para el dueño (sección 8).
+
+**Actualización k2 (opción (c) del dueño, sección 13):** Ventisca y Alquimia rediseñadas con un refuerzo de su fusión firma (solo en el reto) y, en Alquimia, 4 elecciones de nodo. Bot hábil, kit en su día r2, n=160 por kit y mismas semillas: **Ventisca 23 -> 38 %, Alquimia 18 -> 39 %** (media de los 8 kits 42 %); los otros 6 kits no cambian (120 de 120 partidas idénticas). Esto **baja la dificultad** de las semanas de esos dos kits y sube el reto real a un 43 % (36-50), por encima del objetivo: falta bajar a Fragua (56 %).
 Referencia de diseño: `games/card-swarm/DESIGN-v10-retencion.md`, 1.10.6 (plan) y 8.1 (lo que quedó sin calibrar).
 
 ## 1. Objetivos medibles
@@ -275,6 +277,8 @@ Opciones para el dueño (pregunta 1):
 
 Recomiendo (c), y mientras tanto (d). La (a) es la vía rápida, pero baja la dificultad.
 
+**El dueño eligió (c).** Diagnóstico, rediseño y medición en la sección 13.
+
 ## 9. Puntuación, premios y objetivos
 
 Reparto esperado de medallas por intento (modelo fases A-B, 8 kits):
@@ -300,7 +304,7 @@ Con r2, las Esencias por semana (2,4) caen en lo que suponía el diseño (2-3, 1
 - Fase C solo en el Asfódelo y con 2 kits; mutadores en otros biomas y kits, sin medir.
 - Celdas de P II y IV con n=16 (+-20 puntos por celda): bastan para medias por bioma y por kit, no para celdas sueltas.
 - Rendimiento de `marea` en móviles lentos (fps).
-- Por qué Ventisca y Alquimia rinden poco (uso del AUTO con sus fusiones firma, set): sin diagnosticar.
+- ~~Por qué Ventisca y Alquimia rinden poco~~: diagnosticado y rediseñado en la sección 13 (k2).
 - Incidencias del método: un lote se cortó por falta de memoria (Chromium crecía con los contextos; arreglado renovando el navegador cada 30 partidas) y el servidor se cayó varias veces porque otro proceso compartía el archivo de PID. Las filas afectadas se rehicieron. `kit_bot.js` reanuda lo que falta y reintenta si no hay servidor. El ruido entre lotes iguales es 0 (determinista), así que los intervalos dados son solo de muestreo.
 
 ## 12. Preguntas para el dueño
@@ -308,3 +312,98 @@ Con r2, las Esencias por semana (2,4) caen en lo que suponía el diseño (2-3, 1
 1. **Diferencias entre kits** (sección 8): ¿(a) Peligro más bajo en las semanas de los kits flojos (baja la dificultad de esas semanas), (b) Peligro V en el reto para los kits fuertes en Tundra y Panal, (c) rediseñar Ventisca y Alquimia o (d) aceptarlo? Recomiendo (c), y (d) mientras tanto.
 2. **¿Confirmas r2?** Sube el reto de un 54 % a un 35 % de días con Oro para el bot. Ya está aplicado en el código y es fácil de revertir (`Dl.RV`, `Dl.PEL_W = null`).
 3. **"Dos etiquetas" fuera del MVP**: ¿se rediseña (por ejemplo, más un mutador de jefe obligatorio) o se queda fuera?
+
+## 13. Rediseño de Ventisca y Alquimia (kits k2, opción (c) del dueño)
+
+### 13.1 Objetivo y métrica
+
+- **Objetivo**: la media de Ventisca y Alquimia a no más de 10 puntos de la media de los 8 kits, y ninguna de sus celdas kit x bioma por debajo del 10 % ni por encima del 60 %. Sin tocar el balance general (armadura, `zoneDmg`, Peligro de campaña, Corrosión), `G.god`, `daily.js` ni `PEL_W`, ni a los otros 6 kits.
+- **Métrica nueva, "kit en su día r2"**: cada kit en los 5 biomas con el Peligro que r2 da casi siempre a ese bioma (Bosque y Asfódelo III; Cripta, Tundra y Panal IV), sin mutadores, n=32 por celda (160 por kit), `SEED=1`. Script `tools/card-swarm-bot/calib/kits2/lote.sh`; resumen y pares `calib/kits2/resumen.py <variante.csv> [base.csv]` (Wilson al 95 % y McNemar exacta por pares de semilla).
+- **Por qué no se compara con la fase A**: r2 cambió `rv` y con él los días que toca cada índice; las semillas de la fase A ya no son las mismas. Por eso medí de nuevo la base de los 8 kits con el código actual (`calib/kits2/base_k1.csv`, 1.280 partidas, 0 errores de consola).
+
+### 13.2 Base con el código actual (k1, r2): Oro por kit y bioma
+
+| kit | Bosque III | Cripta IV | Asfódelo III | Tundra IV | Panal IV | **media** (IC95) |
+|---|---|---|---|---|---|---|
+| fragua | 22 | 59 | 66 | 69 | 62 | **56** (48-63) |
+| hogar | 44 | 38 | 44 | 66 | 56 | 49 (42-57) |
+| carmesi | 31 | 66 | 38 | 53 | 47 | 47 (39-55) |
+| lana | 16 | 62 | 75 | 47 | 34 | 47 (39-55) |
+| tempestad | 31 | 31 | 31 | 41 | 34 | 34 (27-41) |
+| pantano | 47 | 16 | 16 | 47 | 12 | 28 (21-35) |
+| ventisca | **9** | 38 | 19 | 22 | 28 | **23** (17-30) |
+| alquimia | 41 | 16 | **6** | 16 | 12 | **18** (13-25) |
+| media de los 8 | | | | | | **37,7** |
+
+### 13.3 Diagnóstico (medido)
+
+1. **Llegan al jefe, pero no lo matan a tiempo.** Ventisca llega al jefe el 84 % de las veces y Alquimia el 91 % (Carmesí, 100 %; Fragua, 84 %). De sus derrotas, **100 de 123 (Ventisca) y 117 de 131 (Alquimia) son por tiempo**: el reto acaba a los 450 s con el jefe vivo, a un 58-62 % de su vida quitada. Mueren poco (23 y 14 partidas). El problema es el **daño al jefe**, no la supervivencia ni la horda. Eso explica por qué en la sección 4 no funcionaban DEF, PF y plato.
+2. **Sus fusiones firma son de las peores contra el jefe.** Ganancia de Oro con y sin cada fusión, entre partidas que llegan al jefe (fase A, por bioma): Tormenta de escarcha, de -26 a +6 puntos; Hemotoxina, de -26 a 0 (con Forja, de +8 a +42). El bot las fusiona casi siempre (140 de 160 y 137 de 160 partidas): son la pareja de su ancla y de sus cartas a Rango II.
+   - **Tormenta**: la zona va pegada al jugador (radio 110) y el esquivador se queda lejos del jefe, así que casi no le cae ningún rayo.
+   - **Hemotoxina**: no hace daño directo. Solo sangrado y 3 stacks de veneno durante 6 s, y el veneno lo resisten 4 de los 6 jefes. Su cura al morir el marcado no funciona contra un jefe.
+3. **Los nodos apenas cuentan**, como ya decía la sección 4. Cambiar 2 elecciones de nodo de Ventisca a otras más pensadas para el jefe (Quebradizo y Un solo rayo, en orden) dio 23 -> 26 % (18 / 23, p = 0,53). Cambiar 4 de Alquimia dio 18 -> 25 % (14 / 25, p = 0,11). Ninguno es un resultado por sí solo (`calib/kits2/v1_nodos.csv`).
+
+### 13.4 Rediseño (k2, `kits.js`; mecanismo en `fusion.js`)
+
+- **Refuerzo de firma** (`sig` en el kit). En el reto, y solo para la fusión firma del kit de la semana, pisa algunos valores de su nivel (`G.Kit.sigL`, llamado desde `G.Fusion.lvOf`). Fuera del reto, o con otro kit, se devuelve el mismo objeto `r.lv[n]`: nada cambia en la campaña.
+  - **Ventisca, Tormenta de escarcha**: zona de radio **150 / 170** (Nv1 / Nv2; antes 110 / 130). Daño, recarga y duración, sin cambios. Identidad: "congela y remata con rayos", ahora a la distancia a la que se esquiva.
+  - **Alquimia, Hemotoxina**: la marca **muerde**, con **6 / 8** de daño a cada marcado cada 0,5 s (parámetro nuevo `L.hit` en `fusion.js`; sin él, el código de siempre). Recarga **9 s** (antes 13). Marcas, duración, cura y contagio, sin cambios. Identidad: "marca a la manada y déjala caer".
+  - Ficha VER KIT, pestaña MANO: el texto de la fusión firma pasa a `sig.desc` ("Firma del kit: ..."). Ocupa 2 líneas con letra 17.
+- **Alquimia, 4 elecciones de nodo** (mismos nodos, costes y orden): Dardo II A (Dosis doble) en vez de B (Punta afilada), Charco II A (Pantano) en vez de B (Charco amplio), Berserker en vez de Vampiro y Sangría II B (Sangrado profundo) en vez de A (Cuatro marcas).
+- Ventisca conserva sus nodos, su armadura (Pelaje Glacial, R1 sin cambios), su ancla y su plato. Alquimia conserva su armadura, su ancla y su plato.
+- **`G.Kit.KV = 'k2'`**, como pide `kits.js` al retocar kits. Efecto secundario: la rotación semanal se baraja de nuevo, porque `KV` entra en la semilla de la bolsa. El 2026-11-14 pasa de Lana a Hogar.
+
+### 13.5 Resultados (mismas 160 semillas por kit, pares)
+
+| variante | Ventisca | Alquimia |
+|---|---|---|
+| base k1 | 23 % (17-30) | 18 % (13-25) |
+| solo nodos (13.3) | 26 % (18 / 23, p = 0,53) | 25 % (14 / 25, p = 0,11) |
+| barrido n=80: radio 150/170 ; hit 4/5 | 40 % (9 / 25 frente a la base, p = 0,009) | 26 % (p = 0,30) |
+| barrido n=80: + recarga 12 s ; hit 7/9 | 40 % (la recarga no añade nada) | 29 % (p = 0,19) |
+| barrido n=80: hit 6/8, recarga 9 s | | 34 % (4 / 15, p = 0,02) |
+| barrido n=80: hit 10/12, recarga 8 s, 7 s | | 36 %, pero **Bosque 75 %** (por encima del 60 %): descartado |
+| firma k2 (n=160) | **38 % (31-46)**; 19 / 43, p = 0,003 | 29 % (23-37); 9 / 27, p = 0,004 |
+| recarga 7,5 s en vez de 9 s | | igual, partida por partida: el periodo lo fija la duración de la marca (6 s), no la recarga |
+| **k2: firma + 4 nodos (n=160)** | | **39 % (32-47)**; 14 / 48 frente a la base, p < 0,001; frente a solo la firma, 24 / 40, p = 0,06 |
+
+Celdas k2 (Bosque III / Cripta IV / Asfódelo III / Tundra IV / Panal IV):
+- Ventisca: 19 / 44 / 28 / 56 / 44 (antes 9 / 38 / 19 / 22 / 28).
+- Alquimia: 47 / 53 / 38 / 34 / 25 (antes 41 / 16 / 6 / 16 / 12).
+
+Todas entre el 10 % y el 60 %. Los dos kits llegan al jefe igual que antes (87 y 93 %; antes 84 y 91 %). Cambia la derrota por tiempo: 79 en vez de 100 en Ventisca y 86 en vez de 117 en Alquimia.
+
+**Media de los 8 kits con k2: 42,2 %** (antes 37,7). Ventisca (-4) y Alquimia (-3) quedan dentro de +-10. **Fuera de +-10 siguen Fragua (56 %, +14) y Pantano (28 %, -14)**, igual que antes; no estaban en el encargo.
+
+**Los otros 6 kits no cambian**: 120 de 120 partidas idénticas bit a bit a la base (`calib/kits2/otros_k2.csv`, n=4 por celda), porque sin `sig` `G.Kit.sigL` devuelve el mismo objeto de nivel.
+
+### 13.6 Reto real con k2 (días 20401-20600, `DAILY=1`, `calib/kits2/reto_real_r2_k2.csv`)
+
+| | r2 + k1 (5.5) | **r2 + k2** |
+|---|---|---|
+| Oro, todos los días (n=200) | 35 % (29-42) | **43 % (36-50)** |
+| Bronce+ / Plata+ | 92 / 84 % | 92 / 86 % |
+| días de Ventisca / Alquimia (Oro) | 28 (4 %) / 28 (18 %) | 28 (32 %) / 24 (42 %) |
+| días de Fragua (Oro) | 17 (76 %) | 28 (61 %) |
+
+**Medido: con k2 el bot saca Oro el 43 % de los días, por encima del objetivo (25-35 %).** La comparación no va por pares, porque `KV` baraja qué kit cae cada semana (hay 11 días más de Fragua). El modelo de las celdas (+4,5 puntos de media) predice un 39-40 %. **Este cambio baja la dificultad del reto**: es lo que implica la opción (c) si no se toca a los kits fuertes.
+
+Para volver al objetivo, la palanca que queda es **bajar a Fragua** (56 %, el kit dominante), y quizá a Hogar (49 %), con el mismo método (firma más débil o nodos). Eso subiría la dificultad. No lo he hecho: el encargo era no tocar a los otros kits.
+
+### 13.7 Pruebas
+
+- `tests.js daily` **94/94 OK**:
+  - `DAILY_SNAP` del 2026-11-14 con k2 (`["panal",4,["bolsillo","sincambio"],"hogar",["lightning","poison"]]`) y `kv === 'k2'`.
+  - Prueba nueva: firma de Ventisca y Alquimia solo con su kit; fuera del reto y con Fragua, los niveles de siempre (el mismo objeto).
+  - La prueba del chip "RETO  n" del HUD solo cuenta los solapes del propio chip. Con Hogar ese día, una cifra de daño flotante ("50!") pisaba el texto "Jefe en 07:09" y tumbaba la prueba sin tener que ver con el chip.
+- `seed` **69/69 OK**, `diff` **26/26 OK** (hashes de partidas normales idénticos) y `text` **175/175 OK**.
+- `kit_bot.js`: perillas nuevas `KITSIG=kit={json}` (refuerzo de firma; `{}` lo quita), `KITARMOR=kit=p1+p2+p3+p4` y `KITANCHOR=kit=carta`. Para reproducir la base k1 con el código k2: `KITSIG='ventisca={};alquimia={}' KITNODES='alquimia=V1:B,S1:A,V4,S4,V3:B,ASH,S6,V7,V10,S3:A,V9:A'` (las partidas son idénticas salvo por la rotación de `DAILY=1`).
+
+### 13.8 Riesgos y lo que queda sin medir
+
+- **Baja la dificultad** de las semanas de Ventisca y Alquimia (+15 y +21 puntos de Oro para el bot) y la del reto en conjunto (35 -> 43 %). Lo decidió el dueño con la opción (c), pero el reto queda por encima del objetivo hasta que se baje a Fragua.
+- **Rotación barajada** por `KV = 'k2'`: al publicarlo, el kit de la semana en curso puede cambiar a mitad de semana. El historial guarda `kv` en cada entrada. Si se prefiere no barajar, basta con dejar `KV = 'k1'` y volver a poner el `DAILY_SNAP` anterior; los kits quedan igual de calibrados.
+- **Hemotoxina reforzada en la horda**: el daño de la marca también limpia la horda. En el Bosque, Alquimia pasa de 41 a 47 % (dentro del ruido). Con más daño (hit 10/12) el Bosque subía al 75 %, por eso no se usó.
+- **Bot frente a jugador**: lo que arregla Ventisca (la zona de radio 150 alcanza al jefe mientras esquivas) depende de a qué distancia esquive el jugador. Un jugador que se acerque más ya sacaba partido de la Tormenta y ganará algo menos de lo medido. Lo decide la fase E (móvil, dueño).
+- **Textos dentro de la partida**: la ventana de fusión y el cartel "¡FUSIÓN!" siguen mostrando la descripción general de la receta. Solo VER KIT dice "Firma del kit: ...". Si se quiere que el refuerzo se vea al fusionar, es trabajo de UI.
+- Sin medir: k2 con mutadores; k2 en Peligro II y en las tiradas raras de r2 (Bosque IV 30 %, Asfódelo IV 10 %); calidades MEDIA y BAJA (en la sección 4.3 no cambiaban nada); n=32 por celda (+-17 puntos por celda: bastan las medias por kit, no las celdas sueltas).

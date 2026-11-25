@@ -121,7 +121,10 @@
     var p = G.player, i = p.actives.indexOf(null); if (i < 0) i = NS - 1; var r = RBY[id];
     p.actives[i] = newSlot(r, lvl || 1);
   };
-  function newSlot(r, lvl) { var L = r.lv[lvl - 1]; return { id: r.id, lvl: lvl, cd: Math.min(3000, L.cd), cdMax: L.cd, flash: 0, st: null, use: {}, dmg: 0, uses: 0, readyT: 0, used: false, press: 0 }; }
+  // v10: niveles de un poder. Fuera del reto, r.lv tal cual; en el reto, la fusión firma del kit de la semana usa su refuerzo de firma (G.Kit.sigL, kits.js)
+  function lvOf(r, lvl) { var L = r.lv[lvl - 1]; return G.Kit && G.Kit.cur ? G.Kit.sigL(r.id, lvl, L) : L; }
+  F.lvOf = lvOf;
+  function newSlot(r, lvl) { var L = lvOf(r, lvl); return { id: r.id, lvl: lvl, cd: Math.min(3000, L.cd), cdMax: L.cd, flash: 0, st: null, use: {}, dmg: 0, uses: 0, readyT: 0, used: false, press: 0 }; }
   F.activeCount = function () { var n = 0; G.player.actives.forEach(function (a) { if (a) n++; }); return n; };
   function activeOf(id) { var a = G.player.actives; for (var i = 0; i < NS; i++) if (a[i] && a[i].id === id) return i; return -1; }
   function canUse(r) { var i = activeOf(r.id); return !(i >= 0 && G.player.actives[i].lvl >= 2); }
@@ -159,7 +162,7 @@
       if (offeredId) { if (F.fused > 0) drop.push(slotA); }
       else { [slotA, slotB].forEach(function (k) { if (!(F.fused === 0 && h[k].starter)) drop.push(k); }); }
       drop.forEach(function (k) { h[k] = null; });
-      if (ex >= 0) { p.actives[ex].lvl = 2; var L2 = r.lv[1]; p.actives[ex].cdMax = L2.cd; p.actives[ex].cd = Math.min(p.actives[ex].cd, 2000); lvlUp = true; }
+      if (ex >= 0) { p.actives[ex].lvl = 2; var L2 = lvOf(r, 2); p.actives[ex].cdMax = L2.cd; p.actives[ex].cd = Math.min(p.actives[ex].cd, 2000); lvlUp = true; }
       else {
         var at = replaceIdx != null ? replaceIdx : free;
         if (replaceIdx != null) { p.ash += P.replaceAsh; if (!G.Res || G.Res.visible('ceniza')) fx.num(p.x, p.y - 30, '+' + P.replaceAsh + ' Ceniza', '#ff9a3c'); snd('fx_replace', 0); }
@@ -565,7 +568,7 @@
     var p = G.player, s = p.actives[i]; if (!s || p.dead || G.state !== 'play') return false;
     s.press = 160;
     if (s.cd > 0 || s.st) { if (!auto) snd('fx_btn_cancel', 120); return false; }
-    var r = RBY[s.id], L = r.lv[s.lvl - 1];
+    var r = RBY[s.id], L = lvOf(r, s.lvl);
     s.use = {};
     if (!CAST[r.kind](s, r, L, p)) { if (!auto) { fx.num(p.x, p.y - 34, 'sin objetivo', '#9a8fb0'); snd('fx_btn_cancel', 120); } return false; }
     s.cdMax = Math.round(L.cd * cdMul() * P.pcd); s.cd = s.cdMax; s.flash = 220; s.uses++; s.used = true;
@@ -635,7 +638,7 @@
       }
     } else if (r.kind === 'mark') {
       st.tk = (st.tk || 0) - dt;
-      if (st.tk <= 0) { st.tk = 500; st.marks.forEach(function (e) { if (e.dead || !(e.hemoT > 0)) return; e.hemoT = Math.max(e.hemoT, st.t); CB.bleed(e); if (!(e.poisonT > 600)) e.poisonT = 900; }); }
+      if (st.tk <= 0) { st.tk = 500; st.marks.forEach(function (e) { if (e.dead || !(e.hemoT > 0)) return; e.hemoT = Math.max(e.hemoT, st.t); CB.bleed(e); if (!(e.poisonT > 600)) e.poisonT = 900; if (st.L.hit) hitE(e, s, st.L.hit, { noChain: true, kb: 0 }, ['blood', 'poison']); }); }   // hit: solo con el refuerzo de firma de Alquimia (kits.js)
     }
     if (r.kind === 'ward') {
       st.tk -= dt; if (st.tk <= 0) { st.tk = 250; var wn = CB.inRange(p.x, p.y, p.r + 22); for (var wi = 0; wi < wn.length; wi++) CB.slow(wn[wi], 0.3, 600); }
