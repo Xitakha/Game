@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var G = window.G, Dl = G.Daily = {}, DAY = 864e5;
-  Dl.RV = 'r1';
+  Dl.RV = 'r1';   // PENDIENTE subir a 'r2' al terminar los lotes de calibración. r2 (calibración de kits, studio/docs/CALIBRACION-KITS.md): Peligro del día por bioma (PEL_W) en vez de 35/45/20 en todos
   Dl.ON = !(Dev.on && /[?&]reto=0/.test(Dev.search));
   Dl.OPEN_RUNS = 3;
   Dl.forceOfficial = false;
@@ -91,6 +91,11 @@
   var INCOMPAT = { dos: ['cortamano'], cortamano: ['dos'], marea: ['veloz'], veloz: ['marea'] };
   Dl.BIOMES = ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal'];   // el Cráter no entra (es un Asalto, sin horda)
   var BUDGET = { 2: 2, 3: 1.5, 4: 1 };
+  // Peligro del día por bioma: probabilidad de II / III / IV (r2). Medido con el bot hábil (kit_bot.js, CALIBRACION-KITS.md): con el mismo Peligro los biomas no se parecen
+  // (Peligro III sin mutadores: Bosque 34 %, Cripta 83 %, Asfódelo 38 %, Tundra 62 %, Panal 59 % de Oro). Con esta tabla el Oro esperado del bot queda en 28-38 % en cada bioma (media ~34 %).
+  // r1 era { II 35 %, III 45 %, IV 20 % } en todos los biomas: Oro del bot el 54 % de los días (200 días medidos). Nunca I ni V.
+  Dl.PEL_W = null;   // PENDIENTE (al terminar los lotes): { bosque: [0, 0.7, 0.3], cripta: [0, 0, 1], asfodelo: [0, 0.9, 0.1], tundra: [0, 0, 1], panal: [0, 0, 1] }
+  function pelOf(biome, u) { var w = (Dl.PEL_W && Dl.PEL_W[biome]) || [0.35, 0.45, 0.2], a = 0; for (var i = 0; i < 3; i++) { a += w[i]; if (u < a - 1e-12) return i + 2; } return 4; }
   function weakTags(boss) { var d = G.Boss.DEFS[boss], out = []; ((d && d.weak) || []).forEach(function (w) { if (out.indexOf(w.tag) < 0) out.push(w.tag); }); return out; }
 
   // ------------------------------------------------------------- Reglas del día (1.1): puras y deterministas. acct = { unlocked: [biomas], kills: { jefe: n } }
@@ -99,13 +104,13 @@
     var H = G.util.hash, key = Dl.dayKey(day), r = G.util.rng(H('SH-reto|' + key + '|' + Dl.RV)), i, j, t;
     acct = acct || { unlocked: G.Quests.unlockedBiomes(), kills: SV().bossKills || {} };
     var perm = Dl.BIOMES.slice(); for (i = perm.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = perm[i]; perm[i] = perm[j]; perm[j] = t; }   // 1. bioma (4 tiradas)
-    var u = r(), pel0 = u < 0.35 ? 2 : u < 0.80 ? 3 : 4;                                                                                                // 2. Peligro (1)
+    var u = r();                                                                                                                                         // 2. Peligro (1 tirada; se traduce con la tabla del bioma, PEL_W)
     var mt = Dl.MUT.map(function (m) { return m.id; }); for (i = mt.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = mt[i]; mt[i] = mt[j]; mt[j] = t; }   // 3. mutadores (11)
     var week = Dl.weekOf(day), kid = kitId || K().forced() || K().ofWeek(week), kit = K().get(kid);
     var other = K().TAGS.filter(function (tg) { return kit.tags.indexOf(tg) < 0; }); for (i = other.length - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = other[i]; other[i] = other[j]; other[j] = t; }   // 4. acompañamiento (3)
     var neu = K().NEUTRALS.slice(); neu.splice(Math.floor(r() * neu.length), 1); neu.splice(Math.floor(r() * neu.length), 1);                         // 5. 3 de 5 neutrales (2)
     // ---- filtros de la cuenta: primer bioma abierto de la permutación y excepción de novato
-    var un = acct.unlocked || ['bosque'], biome = perm.filter(function (b) { return un.indexOf(b) >= 0; })[0] || 'bosque';
+    var un = acct.unlocked || ['bosque'], biome = perm.filter(function (b) { return un.indexOf(b) >= 0; })[0] || 'bosque', pel0 = pelOf(biome, u);
     var boss = G.Boss.bossFor(biome), novato = !((acct.kills || {})[boss] > 0), peligro = novato ? Math.min(2, pel0) : pel0;
     var needFire = (biome === 'tundra' || biome === 'panal') && !K().hasFire(kit);
     // ---- mutadores: hasta 2, familias distintas, compatibles y dentro del presupuesto (R5: 'dos' fuera si el bioma pide Fuego y el kit no lo trae)

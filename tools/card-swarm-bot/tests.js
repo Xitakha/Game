@@ -1247,7 +1247,9 @@ const DENSE = {
   rufo: ['G.Panels.rufoTab(0)', 'G.Panels.rufoTab(1)', 'G.Panels.rufoTab(2)'],
   cook: ['G.Panels.cookPage(0, 0)', 'G.Panels.cookPage(0, 1)', 'G.Panels.cookPage(0, 2)', 'G.Panels.cookPage(1, 0)'],
   logros: [null, 'G.Panels.logrosScroll(5)', 'G.Panels.logrosScroll(30)'],
-  armor: ['G.Smith.setTab(0)', 'G.Smith.setTab(1)', 'G.Smith.setTab(1); G.Smith.ui.slot = 0; G.Smith.ui.sel = 1; G.Smith.ui.det = true', 'G.Smith.setTab(0); G.Smith.ui.slot = 1; G.Smith.ui.det = true', 'G.Smith.setTab(2)', 'G.Smith.setTab(2); G.Smith.ui.scroll = 6', 'G.Smith.setTab(3)', 'G.Smith.setTab(3); G.Smith.ui.pp = 1'],
+  armor: ['G.Smith.setTab(0)', 'G.Smith.setTab(1)', 'G.Smith.setTab(1); G.Smith.ui.slot = 0; G.Smith.ui.sel = 1; G.Smith.ui.det = true', 'G.Smith.setTab(0); G.Smith.ui.slot = 1; G.Smith.ui.det = true', 'G.Smith.setTab(2)', 'G.Smith.setTab(2); G.Smith.ui.scroll = 6', 'G.Smith.setTab(3)', 'G.Smith.setTab(3); G.Smith.ui.pp = 1',
+    // F2: detalle de talismán con "Trofeo de guardián: ..." (el nombre más largo) y Rescoldo (5 filas "Trofeo de guardián del bioma")
+    ...['mn_tundra', 'bra_talis'].map(id => `G.Smith.setTab(1); G.Smith.ui.slot = 3; G.Smith.ui.sel = G.ArmorData.ofSlot(3).sort((a, b) => G.ArmorData.SETS[a.set].tier - G.ArmorData.SETS[b.set].tier).findIndex(p => p.id === '${id}'); G.Smith.ui.det = true`)],
   manual: ['G.Manual.setTab(0); G.Manual.select(9); G.Manual.setView(0)', 'G.Manual.setTab(0); G.Manual.select(9); G.Manual.setView(1)', 'G.Manual.setTab(1); G.Manual.select(12); G.Manual.setView(0)', 'G.Manual.setTab(1); G.Manual.select(12); G.Manual.setView(1)']
 };
 // Legibilidad de esos paneles a 844x390 y 740x360: letra >= 11 px reales, sin solapes ni desbordes, botones de 66 lógicos (>= 44 px reales) y 0 errores.
@@ -1657,7 +1659,64 @@ async function save2() {
   r = await E(pg, () => { const d = G.Save.data; d.runs = 25; d.flags.expAt = 14; d.flags.remAt = 0; G.PWA.reminded = false; G.state = 'aldea'; const a = G.PWA.remindCheck(), t = [...document.querySelectorAll('div')].find(x => x.style.zIndex === '25').textContent, b2 = G.PWA.remindCheck(); return { a, b2, t, rem: d.flags.remAt }; });
   ok(r.a && !r.b2 && /11 expediciones sin exportar/.test(r.t) && /EXPORTAR/.test(r.t) && r.rem === 25, 'recordatorio de exportar tras 10 expediciones (una vez por sesión, con botón EXPORTAR)');
   ok(await E(pg, () => new Promise(res => G.Save.persist(p => res(p === null || typeof p === 'boolean')))), 'navigator.storage.persist() se pide sin errores');
-  await done(pg, 'save2-import'); await b.close();
+  await done(pg, 'save2-import');
+  await saveF2(b, reload);
+  await b.close();
+}
+// F2 (SPEC-T-F1-07 8.1, opción A): las Insignias pasan a ser "trofeos de guardián" dentro de Trofeos SIN tocar el guardado (sigue v13, mismos campos).
+// Guardado real de antes de F2 (fixtures/save-v13-pre-f2.json, hecho con el código de dacc6d4 por fixtures/gen-save-v13-pre-f2.js): carga sellado sin
+// recuperación ni reparaciones, no pierde nada, cuenta igual (costes, piezas listas, logros, pedidos, saldos) y pasa por copias, sello e import estricto.
+async function saveF2(b, reload) {
+  const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'save-v13-pre-f2.json'), 'utf8')), raw0 = JSON.parse(FX.raw);
+  const pg = await mk(b, 'reset=1&direct=1&speed=0&seed=7');
+  await E(pg, r => { localStorage.clear(); localStorage.setItem('swarmhand.fusion.save', r); }, FX.raw);
+  await pg.goto(`${base}/index.html?dev=1&nosw=1&direct=1&speed=0&seed=7${WX}`); await sleep(pg, 900);
+  let r = await E(pg, ref => {
+    const S = G.Save, d = S.data, A = G.Armor, D = G.ArmorData, costs = {};
+    D.PIECES.forEach(p => { costs[p.id] = [0, 1, 2, 3].map(k => A.cost(p, k)); });
+    const now = { costs, ready: A.readyCount(), insCount: G.Minis.insigniaCount(), achCount: G.Ach.count(), achOk: G.Ach.DEFS.filter(a => a.ok(d)).map(a => a.id), pedOk: A.PED.filter(x => x.ok(d)).map(x => x.id),
+      haveIns: Object.fromEntries(G.Minis.ALL.map(m => [m, A.have('ins', m)])), haveTro: { horn: A.have('tro', 'horn') }, costOK: Object.fromEntries(D.PIECES.map(p => [p.id, A.costOK(A.cost(p, 0))])) };
+    const diff = Object.keys(ref).filter(k => JSON.stringify(ref[k]) !== JSON.stringify(now[k]));
+    const rows = G.Res.rows(), tro = rows.find(x => x.id === 'trofeos');
+    return { rc: S.recovered, rep: S.repairs.length, v: d.v, ins: d.insignias, insE: d.insigniasEver, tr: d.trophies, trE: d.trophiesEver, owned: d.armor.owned, ach: d.ach, diff, nRows: rows.length, ids: rows.map(x => x.id).join(), troHave: tro && tro.have, resOn: G.Res.on(), visIns: G.Res.visible('insignias') === G.Res.visible('trofeos') };
+  }, FX.ref);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(!r.rc && r.rep === 0 && r.v === 13, `F2: el guardado v13 real de antes de F2 carga sellado, sin recuperación ni reparaciones (v${r.v}, recuperado ${JSON.stringify(r.rc)}, ${r.rep} reparaciones)`);
+  ok(same(r.ins, raw0.insignias) && same(r.insE, raw0.insigniasEver) && same(r.tr, raw0.trophies) && same(r.trE, raw0.trophiesEver) && same(r.owned, raw0.armor.owned) && same(r.ach, raw0.ach), 'F2: sin pérdida: Insignias antiguas (saldo y acumulado), trofeos, armadura y logros idénticos (' + JSON.stringify(r.ins) + ')');
+  ok(r.diff.length === 0, 'F2: cuenta igual que el código de antes: costes de las 33 piezas (fabricar y 3 refuerzos), piezas listas, logros, pedidos, saldos de jefe y de guardián' + (r.diff.length ? ' -> distinto: ' + r.diff.join(',') : ''));
+  ok(r.nRows === 6 && r.ids === 'ceniza,brasas,partes,esencia,pf,trofeos' && r.troHave === 1 + 3 && r.visIns, `F2: las Insignias siguen contando, ahora dentro de Trofeos: Archivo RECURSOS 6 filas, Trofeos = 1 de jefe + 3 de guardián = ${r.troHave}`);
+  // Archivo COLECCIÓN, Logros y Lanudo con el guardado viejo: los nombres nuevos, ninguna "Insignia" en pantalla
+  await E(pg, () => { G.Dialog.close(); G.Aldea.open(false); G.Aldea.openPanel('archive'); G.Panels.archTab(0); }); await sleep(pg, 150);
+  let d = await TC.snap(pg, 2);
+  ok(d.texts.some(t => t.s === 'TROFEOS DE GUARDIÁN 4/10') && !d.texts.some(t => /[Ii]nsignia/.test(t.s)) && TC.analyze(d, { minSize: TC.MIN_MENU }).length === 0, 'F2: Archivo COLECCIÓN dice "TROFEOS DE GUARDIÁN 4/10" (letra 17, sin problemas de texto) y ya no "INSIGNIAS"');
+  const lg = await E(pg, () => G.Ach.DEFS.concat(G.Armor.PED).filter(a => /[Ii]nsignia/.test(a.name + a.desc + (a.lore || ''))).map(a => a.id));
+  ok(lg.length === 0, 'F2: ningún logro ni pedido de Carapa nombra ya las Insignias' + (lg.length ? ' (' + lg.join(',') + ')' : ''));
+  const lan = await E(pg, () => { let said = [], opts = null; const o = G.Dialog.say; G.Dialog.say = function (w, t, op) { said = said.concat(t); if (op) opts = op; return o.apply(this, arguments); };
+    G.Dialog.close(); G.Aldea.talk('lanudo'); const tip = (opts || []).find(x => x.label === 'Consejo'); said = []; if (tip) tip.fn(); G.Dialog.say = o; G.Dialog.close(); return said; });
+  ok(lan.length === 1 && /^(Cuerno del Carnero|Raíz de la Tejedora|Llave del Alcaide|Aguijón Real)\.\.\. /.test(lan[0]) && !/[Ii]nsignia/.test(lan[0]), 'F2: el consejo de Lanudo cuenta la historia de un trofeo de guardián del guardado viejo con su nombre nuevo ("' + String(lan[0]).slice(0, 40) + '...")');
+  // gastar y ganar: el talismán de la Cripta pide los 2 trofeos de guardián del bioma (los mismos campos de siempre)
+  r = await E(pg, () => { const S = G.Save.data, A = G.Armor, p = G.ArmorData.piece('mn_cripta'); S.bossKills.karceron = 1; const before = A.costOK(A.cost(p, 0)); G.Minis.collectInsignia({ ins: G.Minis.D.centinela.ins.id, mid: 'centinela' });
+    const mid = { c: S.insignias.centinela, e: S.insigniasEver.centinela, ok: A.costOK(A.cost(p, 0)) }; S.brasas += 5000; S.parts.wick = 500; S.parts.rare = 5; const cr = A.craft('mn_cripta'); return { before, mid, cr: !!(cr && cr.ok !== false), after: { a: S.insignias.alcaide, c: S.insignias.centinela, ea: S.insigniasEver.alcaide, ec: S.insigniasEver.centinela } }; });
+  ok(!r.before && r.mid.c === 1 && r.mid.e === 1 && r.cr && r.after.a === 0 && r.after.c === 0 && r.after.ea === 1 && r.after.ec === 1, 'F2: un trofeo de guardián nuevo se suma al saldo viejo y el talismán de la Cripta gasta los 2 del bioma (saldo 0, acumulado intacto): ' + JSON.stringify(r));
+  // sello, copias rotativas e import estricto con el guardado viejo
+  r = await E(pg, fx => {
+    const S = G.Save, K = S.KEYS; S.save(); const main = localStorage.getItem(S.KEY), rec = localStorage.getItem(K.rec);
+    const o = { sealed: /,"_sum":"[0-9a-z]+\.[0-9a-z]+"\}$/.test(main) && !!S.readRaw(main).d, v: JSON.parse(main).v, recOk: !!rec && !!S.readRaw(rec).d };
+    const imp = S.importText(fx.exp); o.imp = imp.ok; o.ins = JSON.stringify(S.data.insignias); o.insE = JSON.stringify(S.data.insigniasEver); o.owned = JSON.stringify(S.data.armor.owned);
+    const t1 = S.exportText(), r1 = S.importText(t1); o.round = r1.ok && S.exportText() === t1;
+    const bad = JSON.parse(JSON.stringify(S.data)); bad.insignias.carnero = -3; o.badRej = !S.importText('SWARM1:' + btoa(unescape(encodeURIComponent(JSON.stringify(bad))))).ok;
+    const fut = JSON.parse(JSON.stringify(S.data)); fut.v = 14; o.futRej = !S.importText('SWARM1:' + btoa(unescape(encodeURIComponent(JSON.stringify(fut))))).ok;
+    return o;
+  }, FX);
+  ok(r.sealed && r.v === 13 && r.recOk, 'F2: tras cargarlo se guarda sellado con _sum, sigue siendo v13 (opción A: sin subir versión) y la copia .reciente es válida');
+  ok(r.imp && r.ins === JSON.stringify(raw0.insignias) && r.insE === JSON.stringify(raw0.insigniasEver) && r.owned === JSON.stringify(raw0.armor.owned) && r.round, 'F2: el texto SWARM1 exportado por el código de antes se importa (estricto) sin pérdida y la ida y vuelta es idéntica');
+  ok(r.badRej && r.futRej, 'F2: el import estricto sigue rechazando Insignias negativas y la versión 14');
+  // un v12 del mismo guardado (antes de v13, sin sello): migra a v13 y conserva las Insignias
+  await E(pg, r => { const d = JSON.parse(r); delete d._sum; d.v = 12; delete d.daily; delete d.flags.migrated13; localStorage.clear(); localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); }, FX.raw);
+  await reload(pg, 'direct=1&speed=0');
+  r = await E(pg, () => ({ v: G.Save.data.v, ins: G.Save.data.insignias, insE: G.Save.data.insigniasEver, bak: !!localStorage.getItem(G.Save.KEY + '.v12'), cnt: G.Minis.insigniaCount(), tro: G.Res.have('trofeos') }));
+  ok(r.v === 13 && same(r.ins, raw0.insignias) && same(r.insE, raw0.insigniasEver) && r.bak && r.cnt === 4 && r.tro === 4, 'F2: el mismo guardado como v12 migra a v13 (copia .v12) con las Insignias intactas, que cuentan como trofeos de guardián (' + r.cnt + '/10, Trofeos ' + r.tro + ')');
+  await done(pg, 'save2-f2');
 }
 
 // ---------------------------------------------------------------- Analítica con consentimiento (T-F1-01: src/track.js, track_ui.js)
@@ -2533,11 +2592,11 @@ async function daily() {
 }
 // ---------------------------------------------------------------- T-F1-07: economía presentada por pasos (src/res.js, studio/docs/SPEC-T-F1-07.md, sección 7)
 // Cada comprobación cuenta los recursos de dos formas: el registro G.Res.shown() y una regex por recurso sobre TC.snap.
-const RES_RX = { ceniza: /Ceniza/, brasas: /Brasas/, partes: /\b[Pp]artes?\b|Hebra|Pluma|Púa|Colmillo|Placa|Mecha|Escarcha|Jirón/, esencia: /Esencia|Rara x/, pf: /\bPF\b|punto.? de forja/i, trofeos: /[Tt]rofeo/, insignias: /[Ii]nsignia/ };
+const RES_RX = { ceniza: /Ceniza/, brasas: /Brasas/, partes: /\b[Pp]artes?\b|Hebra|Pluma|Púa|Colmillo|Placa|Mecha|Escarcha|Jirón/, esencia: /Esencia|Rara x/, pf: /\bPF\b|punto.? de forja/i, trofeos: /trofeo|insignia/i };   // F2: las Insignias van dentro de Trofeos (una regex para las dos familias)
 const resRx = d => Object.keys(RES_RX).filter(k => d.texts.some(t => RES_RX[k].test(t.s))).sort();
 async function resSnap(pg, frames = 2) { const d = await TC.snap(pg, frames); const reg = await E(pg, () => G.Res.shown()); return { d, rx: resRx(d), reg, has: re => d.texts.some(t => re.test(t.s)) }; }
 const sub = (a, allow) => a.every(x => allow.includes(x));
-const resLoot = pg => E(pg, () => {   // guardián abatido (PF), Esencia, parte de jefe rota (trofeo) e insignia
+const resLoot = pg => E(pg, () => {   // guardián abatido (PF), Esencia, parte de jefe rota (trofeo de jefe) y trofeo de guardián
   const p = G.player, mid = G.Minis.ALL[0];
   G.Tree.onElite('mini_bulwark', { x: p.x, y: p.y, mini: true, slot: 1 });
   G.Loot.collect('rare'); G.Loot.run.boss = { id: 'pastor', parts: ['cuernos'], won: false }; G.Loot.collect('rare', 'horn');
@@ -2558,7 +2617,7 @@ async function res() {
   ok(await E(pg, () => G.Res.on() && !G.Res.visible('pf') && !G.Res.visible('ceniza') && G.Res.visible('partes')), 'cuenta nueva del flujo nuevo: G.Res activo; PF y Ceniza ocultos, Partes visibles');
   await resLoot(pg); await fStep(pg, 2);
   let s = await resSnap(pg, 1); add(s.rx); add(s.reg);
-  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && s.has(/GUARDIÁN DERRIBADO/) && !s.has(/PUNTO DE FORJA|INSIGNIA|Rara x/), `salida 1, combate (guardián, Esencia, trofeo e insignia forzados): regex [${s.rx}] registro [${s.reg}], "¡GUARDIÁN DERRIBADO!" y sin PF / INSIGNIA / Rara x`);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && s.has(/GUARDIÁN DERRIBADO/) && !s.has(/PUNTO DE FORJA|INSIGNIA|TROFEO|Rara x/), `salida 1, combate (guardián, Esencia, trofeo de jefe y de guardián forzados): regex [${s.rx}] registro [${s.reg}], "¡GUARDIÁN DERRIBADO!" y sin PF / TROFEO / Rara x`);
   ok((await resOffer(pg)) === 'cards', 'salida 1: subida de nivel -> oferta');
   s = await resSnap(pg, 1); add(s.rx); add(s.reg);
   const rr = await E(pg, () => { const a = G.player.ash, n = G.Cards.off.rerolls; G.Cards.reroll(); G.input.pressed.KeyR = true; G.step(); return a === G.player.ash && (!G.Cards.off || G.Cards.off.rerolls === n); });
@@ -2570,8 +2629,8 @@ async function res() {
   ok((await resDetail(pg)) === 'detail', 'salida 1: detalle del botín');
   s = await resSnap(pg); add(s.rx); add(s.reg);
   ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && !s.has(/Prob\. de Esencia|PF libres/), `salida 1, detalle: sin Esencia, trofeos ni PF (regex [${s.rx}] registro [${s.reg}])`);
-  const sm1 = await E(pg, () => ({ t: G.Loot.summary.total, rare: G.Loot.summary.rare, pf: G.Save.data.pf.earned, ins: Object.keys(G.Save.data.insignias).length, tr: G.Save.data.trophies.horn }));
-  ok(sm1.rare >= 2 && sm1.pf >= 2 && sm1.ins >= 1 && sm1.tr === 1, 'lo ganado en silencio se guarda igual: Esencia ' + sm1.rare + ', PF ' + sm1.pf + ', insignias ' + sm1.ins + ', trofeo ' + sm1.tr + ' (dentro de "+' + sm1.t + ' partes")');
+  const sm1 = await E(pg, () => ({ t: G.Loot.summary.total, rare: G.Loot.summary.rare, pf: G.Save.data.pf.earned, ins: Object.keys(G.Save.data.insignias).length, tr: G.Save.data.trophies.horn }));   // ins = trofeos de guardián (campo insignias)
+  ok(sm1.rare >= 2 && sm1.pf >= 2 && sm1.ins >= 1 && sm1.tr === 1, 'lo ganado en silencio se guarda igual: Esencia ' + sm1.rare + ', PF ' + sm1.pf + ', trofeos de guardián ' + sm1.ins + ', trofeo de jefe ' + sm1.tr + ' (dentro de "+' + sm1.t + ' partes")');
   // 2. Aldea tras la salida 1: barra y Portal (DESTINO y SALIDA) solo {Brasas}; Rápida = "Menos botín, jefe antes"
   await E(pg, () => G.Base.open(true)); await sleep(pg, 100);
   s = await resSnap(pg); add(s.rx); add(s.reg);
@@ -2581,12 +2640,12 @@ async function res() {
   await E(pg, () => { G.Save.data.len = 7; G.Panels.portalTab(2); }); await sleep(pg, 100);
   s = await resSnap(pg); add(s.rx); add(s.reg);
   ok(sub(pd.rx, ['brasas']) && sub(s.rx, ['brasas']) && sub(s.reg, ['brasas']) && s.has(/Menos botín, jefe antes/) && !s.has(/\bPF\b|Esencia/), `Portal tras la salida 1 (DESTINO [${pd.rx}], SALIDA [${s.rx}]): sin PF ni Esencia; Rápida = "Menos botín, jefe antes"`);
-  // T-F1-08 / T-F1-07: Logros de Lanudo (todas sus páginas) y Forja (nodo épico "Exige 1 Esencia rara") no nombran Insignias, trofeos, Esencia ni PF aún ocultos
-  { const hid = await E(pg, () => ['insignias', 'trofeos', 'esencia', 'pf'].filter(k => !G.Res.visible(k)));
+  // T-F1-08 / T-F1-07: Logros de Lanudo (todas sus páginas) y Forja (nodo épico "Exige 1 Esencia rara") no nombran trofeos (de jefe o de guardián), Esencia ni PF aún ocultos
+  { const hid = await E(pg, () => ['trofeos', 'esencia', 'pf'].filter(k => !G.Res.visible(k)));
     const lg = []; let lgN = 0, ach = await E(pg, () => JSON.stringify(G.Save.data.ach));
     for (let sc = 0; sc < 40; sc += 5) { await E(pg, n => { G.Aldea.open(false); G.Aldea.openPanel('logros'); G.Panels.logrosScroll(n); }, sc); await sleep(pg, 80); s = await resSnap(pg); lgN += s.d.texts.length; s.rx.filter(k => hid.includes(k)).forEach(k => lg.push(k)); }
     const lgD = await E(pg, () => G.Ach.DEFS.map(a => G.Panels.achText(a)).filter(t => /[Ii]nsignia|[Tt]rofeo|Esencia|\bPF\b/.test(t.name + t.desc + t.lore)).length);
-    ok(hid.length === 4 && lg.length === 0 && lgD === 0 && lgN > 40 && ach === (await E(pg, () => JSON.stringify(G.Save.data.ach))), `Logros tras la salida 1 (ocultos: ${hid}): ninguna página ni ficha los nombra (${[...new Set(lg)]}); los logros conseguidos no cambian`);
+    ok(hid.length === 3 && lg.length === 0 && lgD === 0 && lgN > 40 && ach === (await E(pg, () => JSON.stringify(G.Save.data.ach))), `Logros tras la salida 1 (ocultos: ${hid}): ninguna página ni ficha los nombra (${[...new Set(lg)]}); los logros conseguidos no cambian`);
     await E(pg, () => { G.Aldea.open(false); G.Aldea.openPanel('forge'); G.Tree.showDetail('F8'); }); await sleep(pg, 100); s = await resSnap(pg);
     const fj = d => d.texts.map(t => t.s).join(' ');
     ok(!s.has(/Esencia/) && /Exige 1 parte rara/.test(fj(s.d)) && TC.analyze(s.d, { minSize: TC.MIN_MENU }).length === 0, 'Forja, nodo épico sin la Esencia presentada: "Exige 1 parte rara" (G.Res.fix), sin nombrar la Esencia');
@@ -2597,7 +2656,7 @@ async function res() {
   // 3. Salida 2: igual que la 1
   ok((await resLaunch(pg)) === 'play' && (await fteState(pg)).runs === 1, 'salida 2 desde el Portal');
   await resLoot(pg); await fStep(pg, 2); s = await resSnap(pg, 1); add(s.rx); add(s.reg);
-  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && !s.has(/PUNTO DE FORJA|INSIGNIA|Rara x/), `salida 2, combate: regex [${s.rx}] registro [${s.reg}]`);
+  ok(sub(s.rx, ['partes', 'brasas']) && sub(s.reg, ['partes', 'brasas']) && !s.has(/PUNTO DE FORJA|INSIGNIA|TROFEO|Rara x/), `salida 2, combate: regex [${s.rx}] registro [${s.reg}]`);
   await resOffer(pg); s = await resSnap(pg, 1); add(s.rx);
   ok(!s.has(/REROLL|Ceniza/), 'salida 2, oferta: sin REROLL ni Ceniza');
   await E(pg, () => G.Cards.closeOffer()); await resEnd(pg); s = await resSnap(pg); add(s.rx); add(s.reg);
@@ -2646,42 +2705,46 @@ async function res() {
   r = await E(pg, () => { const o = G.Tree.buy('R3'); return { o, v: G.Res.visible('esencia'), lk: G.Res.nodeLock(G.Tree.node('F8')) }; });
   ok(r.o.ok && r.o.res === 'esencia' && r.o.msg.indexOf(T['res.esencia.first']) === 0 && r.o.msg.indexOf(T['res.esencia.stored'].replace('{0}', 3)) > 0 && r.v && r.lk === null, 'comprar el Rango III: aviso res.esencia.first + "Guardabas 3 Esencias..." y desde ahí el nodo enseña su coste');
   await done(pg, 'res-esencia');
-  // 9. Trofeos e Insignias: ocultos hasta vencer al Pastor; la escena de Carapa da las tres líneas con sus saldos; desde ahí, aviso INSIGNIA
+  // 9. Trofeos (de jefe y de guardián, F2): ocultos hasta vencer al Pastor; la escena de Carapa da sus líneas con los saldos; desde ahí, aviso "TROFEO: ..."
   pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg);
   r = await E(pg, () => { const S = G.Save.data, f = S.flags.fte; f.runs = 2; f.step = 'village'; S.trophies = { horn: 2, staff: 1 }; S.insignias = { [G.Minis.ALL[0]]: 1 }; return { t: G.Res.visible('trofeos'), i: G.Res.visible('insignias') }; });
-  ok(!r.t && !r.i, 'sin vencer al Pastor: trofeos e Insignias ocultos');
+  ok(!r.t && !r.i, 'sin vencer al Pastor: trofeos de jefe y de guardián ocultos (el alias \'insignias\' sigue a \'trofeos\')');
   await resSaid(pg); await E(pg, () => { G.Save.data.bossKills.pastor = 1; G.Aldea.open(true); for (let i = 0; i < 5; i++) G.Aldea.update(16); });
   said = await E(pg, () => window.__said);
-  ok(said.includes(T['res.trofeos.first']) && said.includes(T['res.trofeos.stored'].replace('{0}', 3)) && said.includes(T['res.insignias.first']) && said.indexOf(T['res.insignias.first']) < said.findIndex(x => /Toma el set de Aldeano|Ya te dejé ropa/.test(x)), 'escena de Carapa: trofeos (con "Traes 3 trofeos..."), insignias y luego el regalo');
+  ok(said.includes(T['res.trofeos.first']) && said.includes(T['res.trofeos.stored'].replace('{0}', 3)) && said.includes(T['res.trofeos.guard']) && said.includes(T['res.trofeos.guardStored1']) && said.indexOf(T['res.trofeos.first']) < said.indexOf(T['res.trofeos.guard']) && said.indexOf(T['res.trofeos.guardStored1']) < said.findIndex(x => /Toma el set de Aldeano|Ya te dejé ropa/.test(x)) && !said.some(x => /[Ii]nsignia/.test(x)), 'escena de Carapa: trofeos de jefe ("Traes 3 trofeos..."), de guardián ("Ya traes un trofeo de guardián."), sin la palabra Insignia, y luego el regalo');
   const tc = await TC.snap(pg, 2); ok(TC.analyze(tc, { minSize: TC.MIN_MENU }).length === 0, 'escena de Carapa: sin problemas de texto');
   await resLaunch(pg); await E(pg, () => { const mid = G.Minis.ALL[1]; G.Minis.collectInsignia({ ins: G.Minis.D[mid].ins.id, mid: mid }); }); await fStep(pg, 1);
-  s = await resSnap(pg, 1); ok(s.has(/^INSIGNIA: /) && s.reg.includes('insignias'), 'con Carapa abierta, recoger una insignia da el aviso "INSIGNIA: ..."');
+  s = await resSnap(pg, 1); ok(s.has(/^TROFEO: /) && !s.has(/INSIGNIA/) && s.reg.includes('trofeos'), 'con Carapa abierta, recoger un trofeo de guardián da el aviso "TROFEO: ..." (registro trofeos)');
+  await E(pg, () => G.Minis.collectInsignia({ ins: G.Minis.D.yeti_mayor.ins.id, mid: 'yeti_mayor' })); await fStep(pg, 30); s = await resSnap(pg, 1);   // tras el 'pop' inicial (1/7 de 1,8 s), a letra 40
+  { const bn = s.d.texts.find(t => /^TROFEO: /.test(t.s)), out = TC.analyze(s.d, { minSize: 0 }).filter(i => i.k === 'fuera' && /TROFEO/.test(i.msg));
+    ok(bn && bn.s === 'TROFEO: GARRA DEL YETI MAYOR  (¡NUEVO!)' && out.length === 0, 'F2: el aviso más largo ("' + (bn && bn.s) + '", x ' + (bn && Math.round(bn.x0) + '..' + Math.round(bn.x1)) + ' de ' + s.d.W + ') cabe en pantalla (2 caracteres más corto que el de antes, "INSIGNIA: ...")' + out.map(i => ' -> ' + i.msg).join('')); }
   await E(pg, () => { G.Loot.run.boss = { id: 'pastor', parts: ['cuernos'], won: false }; G.Loot.collect('rare', 'horn'); }); await resEnd(pg); await resDetail(pg); s = await resSnap(pg);
   ok(s.reg.includes('trofeos') && s.has(/^\+1 Cuerno/), 'y el detalle del botín enseña la casilla del trofeo');
   await done(pg, 'res-carapa');
-  // 10. Regla 5: vencer al Pastor en la salida 2 vuelve visibles PF, Ceniza, trofeos e Insignias (la Esencia no)
+  // 10. Regla 5: vencer al Pastor en la salida 2 vuelve visibles PF, Ceniza y trofeos (la Esencia no)
   pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg);
   r = await E(pg, () => { const f = G.Save.data.flags.fte; f.runs = 1; f.step = 'village'; G.Save.data.bossKills.pastor = 1; const o = {}; G.Res.IDS.forEach(id => { o[id] = G.Res.visible(id); }); return o; });
-  ok(r.pf && r.ceniza && r.trofeos && r.insignias && !r.esencia, 'regla 5: un jefe vencido en la salida 2 abre PF, Ceniza, trofeos e Insignias; la Esencia sigue esperando al Rango III (' + JSON.stringify(r) + ')');
+  ok(r.pf && r.ceniza && r.trofeos && !('insignias' in r) && !r.esencia, 'regla 5: un jefe vencido en la salida 2 abre PF, Ceniza y trofeos (6 recursos, sin Insignias aparte); la Esencia sigue esperando al Rango III (' + JSON.stringify(r) + ')');
   await done(pg, 'res-regla5');
   // 11. Abandonar antes de 60 s no adelanta ningún recurso
   pg = await mkV(b, 'track=log&cine=0&reset=1&speed=0&seed=3'); await startFirst(pg); await fStep(pg, 120); await E(pg, () => G.finish(false)); await sleep(pg, 100);
   r = await E(pg, () => ({ runs: G.Fte.data().runs, pf: G.Res.visible('pf'), c: G.Res.visible('ceniza') }));
   ok(r.runs === 0 && !r.pf && !r.c, 'abandonar antes de 60 s no adelanta recursos (salidas ' + r.runs + ')');
-  // 12. Archivo, pestaña RECURSOS: 7 filas siempre con el saldo real
+  // 12. Archivo, pestaña RECURSOS: 6 filas siempre con el saldo real (F2: Trofeos = de jefe + de guardián)
   const arch = async (label, prep) => {
     const o = await E(pg, prep => { if (prep) new Function(prep)(); G.Dialog.close(); G.Aldea.open(false); G.Aldea.openPanel('archive'); G.Panels.archTab(2); const rows = G.Panels.resRows(), S = G.Save.data;
-      const okv = rows.length === 7 && rows.map(r => r.id).join() === 'ceniza,brasas,partes,esencia,pf,trofeos,insignias' && rows[1].have === S.brasas && rows[3].have === (S.parts.rare || 0) && rows[4].have === G.Tree.pfFree() && rows[0].have === null;
+      const sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
+      const okv = rows.length === 6 && rows.map(r => r.id).join() === 'ceniza,brasas,partes,esencia,pf,trofeos' && rows[1].have === S.brasas && rows[3].have === (S.parts.rare || 0) && rows[4].have === G.Tree.pfFree() && rows[0].have === null && rows[5].have === sum(S.trophies) + sum(S.insignias);
       return { okv, soon: rows.filter(r => r.soon).map(r => r.id).join() }; }, prep || null);
     await sleep(pg, 100); const d = await TC.snap(pg, 2);
-    const names = ['Ceniza', 'Brasas', 'Partes', 'Esencia rara', 'Puntos de Forja', 'Trofeos', 'Insignias'].filter(n => d.texts.some(t => t.s === n)).length;
-    ok(o.okv && names === 7, `Archivo RECURSOS (${label}): 7 filas con el saldo real; por presentar: ${o.soon || 'ninguno'}`);
+    const names = ['Ceniza', 'Brasas', 'Partes', 'Esencia rara', 'Puntos de Forja', 'Trofeos'].filter(n => d.texts.some(t => t.s === n)).length;
+    ok(o.okv && names === 6 && !d.texts.some(t => /[Ii]nsignia/.test(t.s)), `Archivo RECURSOS (${label}): 6 filas con el saldo real (Trofeos = de jefe + de guardián), sin la palabra Insignia; por presentar: ${o.soon || 'ninguno'}`);
     return d;
   };
   let ad = await arch('cuenta nueva, 0 salidas');
   ok(TC.analyze(ad, { minSize: TC.MIN_MENU }).length === 0 && !kbdHints(ad).length, 'Archivo RECURSOS: sin problemas de texto');
   await arch('n = 1', "const f = G.Save.data.flags.fte; f.runs = 1; f.step = 'village'; G.Save.data.brasas = 321; G.Save.data.parts.rare = 2;");
-  await arch('n = 4', "const f = G.Save.data.flags.fte; f.runs = 4; f.step = 'done';");
+  await arch('n = 4', "const f = G.Save.data.flags.fte; f.runs = 4; f.step = 'done'; G.Save.data.trophies = { horn: 2 }; G.Save.data.insignias = { carnero: 1, tejedora: 2 };");
   await arch('legacy', "const f = G.Save.data.flags.fte; f.legacy = 1;");
   await done(pg, 'res-archivo');
   // 13. Economía intacta: misma semilla y mismas acciones con ?res=0 y sin él dan el mismo resumen y el mismo guardado (salvo flags.res)
@@ -2705,7 +2768,7 @@ async function res() {
     await resLoot(p3); await fStep(p3, 1);
     let s3 = await resSnap(p3, 1); const hud = s3.rx;
     await resOffer(p3); s3 = await resSnap(p3, 1);
-    ok(!(await E(p3, () => G.Res.on())) && hud.includes('ceniza') && (hud.includes('insignias') || hud.includes('pf')) && s3.has(/REROLL/) && s3.has(/Ceniza: \d+/), `?${q}: todo visible desde la salida 1 (HUD [${hud}]) y REROLL en la oferta`);
+    ok(!(await E(p3, () => G.Res.on())) && hud.includes('ceniza') && (hud.includes('trofeos') || hud.includes('pf')) && s3.has(/REROLL/) && s3.has(/Ceniza: \d+/), `?${q}: todo visible desde la salida 1 (HUD [${hud}]) y REROLL en la oferta`);
     await done(p3, 'res-off-' + q);
   }
   // 15. Guardados v9-v12 con progreso: legacy, todo visible, ninguna línea de primera vez
@@ -2714,7 +2777,7 @@ async function res() {
     await E(p4, v => { const d = JSON.parse(JSON.stringify(G.Save.data)); d.v = v; d.runs = 3; d.brasas = 120; d.parts = { rare: 2, thread: 5 }; delete d.flags.fte; delete d.flags.res; if (v < 12) delete d.cine; localStorage.setItem('swarmhand.fusion.save', JSON.stringify(d)); }, v);
     await p4.goto(`${base}/index.html?dev=1&nosw=1&track=log&cine=0&speed=0${WX}`); await sleep(p4, 700);
     const o = await E(p4, () => { const all = G.Res.IDS.every(id => G.Res.visible(id)), fl = G.Res.first('pf') || G.Res.first('esencia') || G.Res.endLines(); return { on: G.Res.on(), all, fl, leg: G.Save.data.flags.fte.legacy }; });
-    ok(o.leg === 1 && !o.on && o.all && o.fl === null, `guardado v${v} con progreso: legacy, los 7 recursos visibles y ninguna línea de primera vez`);
+    ok(o.leg === 1 && !o.on && o.all && o.fl === null, `guardado v${v} con progreso: legacy, los 6 recursos visibles y ninguna línea de primera vez`);
     await done(p4, 'res-legacy-v' + v);
   }
   // 16. Textos de las pantallas nuevas a 844x390 y 740x360 (fin de la salida 1, Grum, Carapa, Archivo RECURSOS, Forja con "Pide Rango de forja III")

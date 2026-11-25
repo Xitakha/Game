@@ -1,1572 +1,387 @@
-fragua/bosque/P4/- #0 dia=20001 acomp=blood+poison: part t=349s pts=2736 jefe=0% min=0 blk=9% firma=0 errs=0
-fragua/bosque/P4/- #3 dia=20025 acomp=lightning+ice: ORO t=450s pts=8613 jefe=100% min=12 blk=9% firma=63 errs=0
-fragua/bosque/P4/- #2 dia=20020 acomp=poison+ice: ORO t=450s pts=8410 jefe=100% min=8 blk=9% firma=60 errs=0
-fragua/bosque/P4/- #1 dia=20004 acomp=poison+lightning: plata t=450s pts=6206 jefe=80% min=0 blk=10% firma=26 errs=0
-fragua/bosque/P4/- #4 dia=20027 acomp=blood+poison: part t=441s pts=3920 jefe=0% min=0 blk=9% firma=22 errs=0
-fragua/bosque/P4/- #5 dia=20029 acomp=ice+lightning: part t=421s pts=3770 jefe=0% min=0 blk=9% firma=0 errs=0
-fragua/bosque/P4/- #7 dia=20053 acomp=blood+lightning: part t=338s pts=2662 jefe=0% min=0 blk=9% firma=30 errs=0
-fragua/bosque/P4/- #6 dia=20039 acomp=poison+ice: part t=437s pts=3848 jefe=0% min=0 blk=9% firma=42 errs=0
-fragua/bosque/P4/- #8 dia=20055 acomp=ice+poison: plata t=450s pts=6560 jefe=96% min=0 blk=9% firma=45 errs=0
-fragua/bosque/P4/- #11 dia=20067 acomp=lightning+poison: part t=416s pts=3632 jefe=0% min=0 blk=9% firma=40 errs=0
-fragua/bosque/P4/- #10 dia=20065 acomp=poison+ice: plata t=450s pts=6461 jefe=98% min=0 blk=9% firma=45 errs=0
-fragua/bosque/P4/- #9 dia=20064 acomp=blood+ice: plata t=450s pts=6291 jefe=95% min=0 blk=9% firma=50 errs=0
-fragua/bosque/P4/- #12 dia=20075 acomp=ice+lightning: part t=325s pts=2552 jefe=0% min=0 blk=9% firma=32 errs=0
-fragua/bosque/P4/- #13 dia=20086 acomp=ice+lightning: part t=406s pts=3658 jefe=0% min=0 blk=9% firma=32 errs=0
-fragua/bosque/P4/- #15 dia=20106 acomp=poison+lightning: part t=297s pts=2341 jefe=0% min=0 blk=9% firma=31 errs=0
-fragua/bosque/P4/- #14 dia=20092 acomp=blood+poison: part t=431s pts=3760 jefe=0% min=0 blk=9% firma=37 errs=0
-fragua/cripta/P4/- #0 dia=20009 acomp=blood+lightning: plata t=450s pts=5566 jefe=62% min=0 blk=15% firma=23 errs=0
-fragua/cripta/P4/- #1 dia=20010 acomp=blood+lightning: ORO t=450s pts=8154 jefe=100% min=13 blk=16% firma=68 errs=0
-fragua/cripta/P4/- #2 dia=20012 acomp=ice+poison: plata t=450s pts=5856 jefe=83% min=0 blk=15% firma=0 errs=0
-fragua/cripta/P4/- #3 dia=20017 acomp=ice+lightning: plata t=450s pts=5990 jefe=68% min=0 blk=15% firma=0 errs=0
-fragua/cripta/P4/- #4 dia=20019 acomp=lightning+poison: plata t=450s pts=5602 jefe=65% min=0 blk=15% firma=55 errs=0
-fragua/cripta/P4/- #5 dia=20022 acomp=ice+blood: ORO t=450s pts=8253 jefe=100% min=31 blk=15% firma=61 errs=0
-fragua/cripta/P4/- #7 dia=20032 acomp=lightning+ice: ORO t=450s pts=8202 jefe=100% min=54 blk=15% firma=18 errs=0
-fragua/cripta/P4/- #6 dia=20024 acomp=ice+poison: plata t=450s pts=5330 jefe=48% min=0 blk=17% firma=34 errs=0
-fragua/cripta/P4/- #8 dia=20033 acomp=lightning+poison: plata t=450s pts=5485 jefe=56% min=0 blk=17% firma=9 errs=0
-fragua/cripta/P4/- #9 dia=20040 acomp=lightning+blood: plata t=450s pts=5936 jefe=83% min=0 blk=15% firma=59 errs=0
-fragua/cripta/P4/- #11 dia=20060 acomp=blood+ice: ORO t=450s pts=8245 jefe=100% min=25 blk=16% firma=57 errs=0
-fragua/cripta/P4/- #10 dia=20050 acomp=lightning+poison: plata t=450s pts=5861 jefe=91% min=0 blk=15% firma=59 errs=0
-fragua/cripta/P4/- #12 dia=20088 acomp=lightning+blood: plata t=450s pts=4766 jefe=28% min=0 blk=17% firma=12 errs=0
-fragua/cripta/P4/- #13 dia=20090 acomp=poison+lightning: plata t=450s pts=5437 jefe=56% min=0 blk=15% firma=61 errs=0
-fragua/cripta/P4/- #14 dia=20093 acomp=blood+ice: plata t=450s pts=5837 jefe=75% min=0 blk=17% firma=60 errs=0
-fragua/cripta/P4/- #15 dia=20095 acomp=lightning+ice: plata t=450s pts=6307 jefe=90% min=0 blk=16% firma=44 errs=0
-fragua/asfodelo/P4/- #0 dia=20002 acomp=lightning+poison: plata t=450s pts=5976 jefe=65% min=0 blk=31% firma=36 errs=0
-fragua/asfodelo/P4/- #1 dia=20006 acomp=blood+ice: ORO t=450s pts=8440 jefe=100% min=0 blk=33% firma=63 errs=0
-fragua/asfodelo/P4/- #2 dia=20007 acomp=poison+ice: plata t=450s pts=4864 jefe=26% min=0 blk=32% firma=37 errs=0
-fragua/asfodelo/P4/- #3 dia=20013 acomp=ice+lightning: plata t=450s pts=4776 jefe=21% min=0 blk=35% firma=54 errs=0
-fragua/asfodelo/P4/- #4 dia=20015 acomp=ice+blood: plata t=450s pts=4658 jefe=15% min=0 blk=34% firma=0 errs=0
-fragua/asfodelo/P4/- #6 dia=20031 acomp=poison+ice: bronce t=450s pts=4466 jefe=14% min=0 blk=32% firma=0 errs=0
-fragua/asfodelo/P4/- #5 dia=20023 acomp=ice+poison: plata t=450s pts=6622 jefe=92% min=0 blk=28% firma=59 errs=0
-fragua/asfodelo/P4/- #7 dia=20042 acomp=ice+blood: plata t=450s pts=4907 jefe=27% min=0 blk=34% firma=38 errs=0
-fragua/asfodelo/P4/- #8 dia=20043 acomp=lightning+poison: bronce t=450s pts=4322 jefe=12% min=0 blk=31% firma=0 errs=0
-fragua/asfodelo/P4/- #9 dia=20045 acomp=lightning+blood: part t=347s pts=2901 jefe=0% min=0 blk=39% firma=0 errs=0
-fragua/asfodelo/P4/- #10 dia=20047 acomp=blood+poison: plata t=450s pts=4752 jefe=22% min=0 blk=35% firma=49 errs=0
-fragua/asfodelo/P4/- #12 dia=20070 acomp=ice+blood: ORO t=450s pts=8835 jefe=100% min=40 blk=33% firma=67 errs=0
-fragua/asfodelo/P4/- #11 dia=20066 acomp=blood+lightning: ORO t=450s pts=8680 jefe=100% min=23 blk=31% firma=64 errs=0
-fragua/asfodelo/P4/- #13 dia=20080 acomp=lightning+blood: plata t=450s pts=5710 jefe=53% min=0 blk=30% firma=60 errs=0
-fragua/asfodelo/P4/- #14 dia=20081 acomp=ice+poison: plata t=450s pts=5958 jefe=63% min=0 blk=33% firma=61 errs=0
-fragua/asfodelo/P4/- #15 dia=20091 acomp=poison+ice: plata t=450s pts=4963 jefe=32% min=0 blk=33% firma=58 errs=0
-fragua/tundra/P4/- #0 dia=20005 acomp=lightning+ice: ORO t=450s pts=8986 jefe=100% min=33 blk=30% firma=77 errs=0
-fragua/tundra/P4/- #1 dia=20018 acomp=lightning+poison: plata t=450s pts=5901 jefe=64% min=0 blk=30% firma=67 errs=0
-fragua/tundra/P4/- #3 dia=20051 acomp=lightning+ice: ORO t=450s pts=9158 jefe=100% min=87 blk=30% firma=69 errs=0
-fragua/tundra/P4/- #2 dia=20034 acomp=lightning+ice: ORO t=450s pts=8216 jefe=100% min=21 blk=30% firma=91 errs=0
-fragua/tundra/P4/- #4 dia=20052 acomp=lightning+poison: ORO t=450s pts=9085 jefe=100% min=86 blk=30% firma=85 errs=0
-fragua/tundra/P4/- #5 dia=20054 acomp=ice+lightning: ORO t=450s pts=9090 jefe=100% min=84 blk=30% firma=83 errs=0
-fragua/tundra/P4/- #7 dia=20062 acomp=lightning+poison: bronce t=450s pts=4507 jefe=28% min=0 blk=30% firma=0 errs=0
-fragua/tundra/P4/- #6 dia=20056 acomp=poison+lightning: ORO t=450s pts=8987 jefe=100% min=89 blk=30% firma=38 errs=0
-fragua/tundra/P4/- #8 dia=20072 acomp=lightning+poison: plata t=450s pts=6323 jefe=82% min=0 blk=30% firma=78 errs=0
-fragua/tundra/P4/- #9 dia=20076 acomp=lightning+poison: ORO t=450s pts=8424 jefe=100% min=30 blk=30% firma=81 errs=0
-fragua/tundra/P4/- #10 dia=20077 acomp=ice+lightning: ORO t=450s pts=9166 jefe=100% min=56 blk=30% firma=98 errs=0
-fragua/tundra/P4/- #11 dia=20084 acomp=lightning+blood: ORO t=450s pts=9171 jefe=100% min=39 blk=30% firma=93 errs=0
-fragua/tundra/P4/- #12 dia=20085 acomp=lightning+poison: ORO t=450s pts=8555 jefe=100% min=43 blk=30% firma=88 errs=0
-fragua/tundra/P4/- #13 dia=20089 acomp=blood+lightning: plata t=450s pts=5794 jefe=70% min=0 blk=30% firma=74 errs=0
-fragua/panal/P4/- #0 dia=20011 acomp=ice+poison: plata t=450s pts=6176 jefe=76% min=0 blk=34% firma=17 errs=0
-fragua/tundra/P4/- #14 dia=20103 acomp=lightning+ice: ORO t=450s pts=8269 jefe=100% min=19 blk=30% firma=92 errs=0
-fragua/tundra/P4/- #15 dia=20128 acomp=lightning+blood: ORO t=450s pts=8859 jefe=100% min=68 blk=30% firma=75 errs=0
-fragua/panal/P4/- #1 dia=20026 acomp=ice+blood: plata t=450s pts=5747 jefe=54% min=0 blk=35% firma=41 errs=0
-fragua/panal/P4/- #2 dia=20036 acomp=ice+blood: ORO t=450s pts=8451 jefe=100% min=28 blk=35% firma=68 errs=0
-fragua/panal/P4/- #4 dia=20049 acomp=ice+lightning: ORO t=450s pts=8485 jefe=100% min=28 blk=34% firma=41 errs=0
-fragua/panal/P4/- #3 dia=20044 acomp=ice+lightning: ORO t=450s pts=8746 jefe=100% min=69 blk=33% firma=44 errs=0
-fragua/panal/P4/- #5 dia=20057 acomp=blood+ice: ORO t=450s pts=8731 jefe=100% min=57 blk=33% firma=14 errs=0
-fragua/panal/P4/- #8 dia=20078 acomp=blood+ice: ORO t=450s pts=8736 jefe=100% min=54 blk=33% firma=36 errs=0
-fragua/panal/P4/- #6 dia=20069 acomp=ice+blood: ORO t=450s pts=8963 jefe=100% min=54 blk=33% firma=67 errs=0
-fragua/panal/P4/- #7 dia=20074 acomp=ice+lightning: plata t=450s pts=6776 jefe=98% min=0 blk=35% firma=30 errs=0
-fragua/panal/P4/- #9 dia=20079 acomp=lightning+ice: plata t=450s pts=6307 jefe=89% min=0 blk=36% firma=67 errs=0
-fragua/panal/P4/- #11 dia=20094 acomp=blood+ice: plata t=450s pts=5429 jefe=48% min=0 blk=33% firma=38 errs=0
-fragua/panal/P4/- #10 dia=20082 acomp=ice+blood: ORO t=450s pts=8408 jefe=100% min=6 blk=33% firma=0 errs=0
-fragua/panal/P4/- #12 dia=20098 acomp=ice+poison: plata t=450s pts=5510 jefe=50% min=0 blk=33% firma=39 errs=0
-fragua/panal/P4/- #13 dia=20102 acomp=ice+lightning: ORO t=450s pts=8698 jefe=100% min=9 blk=33% firma=50 errs=0
-fragua/panal/P4/- #15 dia=20107 acomp=poison+ice: ORO t=450s pts=9213 jefe=100% min=100 blk=33% firma=67 errs=0
-fragua/panal/P4/- #14 dia=20104 acomp=ice+blood: ORO t=450s pts=8984 jefe=100% min=68 blk=33% firma=56 errs=0
-ventisca/bosque/P4/- #1 dia=20004 acomp=fire+poison: part t=391s pts=3506 jefe=0% min=0 blk=9% firma=22 errs=0
-ventisca/bosque/P4/- #0 dia=20001 acomp=steel+blood: plata t=450s pts=6198 jefe=66% min=0 blk=9% firma=23 errs=0
-ventisca/bosque/P4/- #5 dia=20029 acomp=fire+poison: part t=336s pts=2630 jefe=0% min=0 blk=9% firma=15 errs=0
-ventisca/bosque/P4/- #2 dia=20020 acomp=blood+fire: plata t=450s pts=6058 jefe=68% min=0 blk=9% firma=0 errs=0
-ventisca/bosque/P4/- #3 dia=20025 acomp=poison+fire: plata t=450s pts=6541 jefe=98% min=0 blk=9% firma=37 errs=0
-ventisca/bosque/P4/- #4 dia=20027 acomp=steel+blood: ORO t=450s pts=8213 jefe=100% min=14 blk=9% firma=51 errs=0
-ventisca/bosque/P4/- #6 dia=20039 acomp=blood+fire: part t=366s pts=3352 jefe=0% min=0 blk=9% firma=22 errs=0
-ventisca/bosque/P4/- #7 dia=20053 acomp=steel+poison: part t=445s pts=3909 jefe=0% min=0 blk=9% firma=25 errs=0
-ventisca/bosque/P4/- #8 dia=20055 acomp=fire+blood: part t=343s pts=2691 jefe=0% min=0 blk=9% firma=19 errs=0
-ventisca/bosque/P4/- #9 dia=20064 acomp=steel+fire: part t=316s pts=2472 jefe=0% min=0 blk=9% firma=7 errs=0
-ventisca/bosque/P4/- #10 dia=20065 acomp=blood+fire: part t=388s pts=3434 jefe=0% min=0 blk=9% firma=21 errs=0
-ventisca/bosque/P4/- #11 dia=20067 acomp=steel+blood: part t=329s pts=2597 jefe=0% min=0 blk=9% firma=20 errs=0
-ventisca/bosque/P4/- #12 dia=20075 acomp=fire+poison: part t=381s pts=3435 jefe=0% min=0 blk=9% firma=22 errs=0
-ventisca/bosque/P4/- #13 dia=20086 acomp=fire+poison: part t=424s pts=3770 jefe=0% min=0 blk=9% firma=18 errs=0
-ventisca/bosque/P4/- #14 dia=20092 acomp=steel+blood: part t=300s pts=2365 jefe=0% min=0 blk=9% firma=9 errs=0
-ventisca/bosque/P4/- #15 dia=20106 acomp=steel+poison: part t=447s pts=3917 jefe=0% min=0 blk=9% firma=23 errs=0
-ventisca/cripta/P4/- #0 dia=20009 acomp=steel+poison: plata t=450s pts=6456 jefe=91% min=0 blk=15% firma=30 errs=0
-ventisca/cripta/P4/- #1 dia=20010 acomp=steel+poison: plata t=450s pts=6138 jefe=95% min=0 blk=15% firma=39 errs=0
-ventisca/cripta/P4/- #2 dia=20012 acomp=fire+blood: ORO t=450s pts=8118 jefe=100% min=6 blk=15% firma=26 errs=0
-ventisca/cripta/P4/- #3 dia=20017 acomp=fire+poison: ORO t=450s pts=8053 jefe=100% min=35 blk=15% firma=32 errs=0
-ventisca/cripta/P4/- #5 dia=20022 acomp=blood+steel: ORO t=450s pts=8917 jefe=100% min=70 blk=15% firma=41 errs=0
-ventisca/cripta/P4/- #4 dia=20019 acomp=steel+blood: plata t=450s pts=6429 jefe=94% min=0 blk=15% firma=17 errs=0
-ventisca/cripta/P4/- #6 dia=20024 acomp=fire+blood: ORO t=450s pts=8926 jefe=100% min=91 blk=15% firma=22 errs=0
-ventisca/cripta/P4/- #7 dia=20032 acomp=poison+fire: plata t=450s pts=5306 jefe=58% min=0 blk=15% firma=0 errs=0
-ventisca/cripta/P4/- #8 dia=20033 acomp=steel+blood: plata t=450s pts=6528 jefe=98% min=0 blk=15% firma=53 errs=0
-ventisca/cripta/P4/- #9 dia=20040 acomp=poison+steel: plata t=450s pts=5802 jefe=78% min=0 blk=15% firma=36 errs=0
-ventisca/cripta/P4/- #10 dia=20050 acomp=poison+blood: plata t=450s pts=6315 jefe=98% min=0 blk=15% firma=23 errs=0
-ventisca/cripta/P4/- #11 dia=20060 acomp=steel+fire: plata t=450s pts=6366 jefe=94% min=0 blk=15% firma=31 errs=0
-ventisca/cripta/P4/- #13 dia=20090 acomp=blood+poison: ORO t=450s pts=8480 jefe=100% min=65 blk=15% firma=46 errs=0
-ventisca/cripta/P4/- #12 dia=20088 acomp=blood+steel: plata t=450s pts=6171 jefe=90% min=0 blk=15% firma=32 errs=0
-ventisca/cripta/P4/- #14 dia=20093 acomp=steel+fire: ORO t=450s pts=8394 jefe=100% min=59 blk=15% firma=31 errs=0
-ventisca/cripta/P4/- #15 dia=20095 acomp=poison+fire: ORO t=450s pts=8406 jefe=100% min=23 blk=15% firma=41 errs=0
-ventisca/asfodelo/P4/- #0 dia=20002 acomp=poison+blood: part t=236s pts=1605 jefe=0% min=0 blk=20% firma=0 errs=0
-ventisca/asfodelo/P4/- #1 dia=20006 acomp=blood+fire: plata t=450s pts=5082 jefe=35% min=0 blk=20% firma=19 errs=0
-ventisca/asfodelo/P4/- #3 dia=20013 acomp=fire+poison: part t=336s pts=2782 jefe=0% min=0 blk=23% firma=0 errs=0
-ventisca/asfodelo/P4/- #2 dia=20007 acomp=blood+fire: plata t=450s pts=4800 jefe=20% min=0 blk=20% firma=24 errs=0
-ventisca/asfodelo/P4/- #4 dia=20015 acomp=blood+steel: part t=355s pts=3109 jefe=0% min=0 blk=22% firma=28 errs=0
-ventisca/asfodelo/P4/- #5 dia=20023 acomp=fire+blood: plata t=450s pts=4882 jefe=23% min=0 blk=20% firma=35 errs=0
-ventisca/asfodelo/P4/- #6 dia=20031 acomp=blood+fire: plata t=450s pts=4874 jefe=21% min=0 blk=20% firma=31 errs=0
-ventisca/asfodelo/P4/- #7 dia=20042 acomp=poison+steel: plata t=450s pts=4722 jefe=15% min=0 blk=20% firma=29 errs=0
-ventisca/asfodelo/P4/- #8 dia=20043 acomp=poison+blood: plata t=450s pts=5557 jefe=51% min=0 blk=20% firma=26 errs=0
-ventisca/asfodelo/P4/- #9 dia=20045 acomp=poison+steel: plata t=450s pts=4701 jefe=17% min=0 blk=21% firma=12 errs=0
-ventisca/asfodelo/P4/- #10 dia=20047 acomp=steel+blood: part t=339s pts=2880 jefe=0% min=0 blk=22% firma=18 errs=0
-ventisca/asfodelo/P4/- #11 dia=20066 acomp=steel+poison: bronce t=450s pts=4416 jefe=15% min=0 blk=21% firma=0 errs=0
-ventisca/asfodelo/P4/- #12 dia=20070 acomp=poison+steel: bronce t=450s pts=4469 jefe=15% min=0 blk=20% firma=4 errs=0
-ventisca/asfodelo/P4/- #13 dia=20080 acomp=poison+steel: bronce t=450s pts=4240 jefe=7% min=0 blk=21% firma=15 errs=0
-ventisca/asfodelo/P4/- #14 dia=20081 acomp=fire+blood: plata t=450s pts=4682 jefe=18% min=0 blk=21% firma=0 errs=0
-ventisca/asfodelo/P4/- #15 dia=20091 acomp=blood+fire: plata t=450s pts=6606 jefe=74% min=0 blk=19% firma=42 errs=0
-ventisca/tundra/P4/- #1 dia=20014 acomp=poison+fire: plata t=450s pts=5350 jefe=43% min=0 blk=22% firma=0 errs=0
-ventisca/tundra/P4/- #0 dia=20005 acomp=poison+fire: plata t=450s pts=6590 jefe=91% min=0 blk=22% firma=39 errs=0
-ventisca/tundra/P4/- #2 dia=20018 acomp=fire+blood: plata t=450s pts=5550 jefe=46% min=0 blk=22% firma=0 errs=0
-ventisca/tundra/P4/- #3 dia=20021 acomp=poison+fire: bronce t=450s pts=4395 jefe=21% min=0 blk=22% firma=4 errs=0
-ventisca/tundra/P4/- #4 dia=20034 acomp=blood+fire: plata t=450s pts=5822 jefe=51% min=0 blk=22% firma=3 errs=0
-ventisca/tundra/P4/- #5 dia=20038 acomp=fire+steel: ORO t=450s pts=8245 jefe=100% min=4 blk=23% firma=31 errs=0
-ventisca/tundra/P4/- #6 dia=20051 acomp=steel+fire: plata t=450s pts=5394 jefe=47% min=0 blk=22% firma=0 errs=0
-ventisca/tundra/P4/- #7 dia=20052 acomp=poison+fire: bronce t=450s pts=4566 jefe=26% min=0 blk=23% firma=35 errs=0
-ventisca/tundra/P4/- #9 dia=20056 acomp=blood+fire: plata t=450s pts=5552 jefe=51% min=0 blk=23% firma=24 errs=0
-ventisca/tundra/P4/- #8 dia=20054 acomp=fire+poison: plata t=450s pts=6299 jefe=74% min=0 blk=22% firma=54 errs=0
-ventisca/tundra/P4/- #10 dia=20061 acomp=steel+fire: plata t=450s pts=5939 jefe=63% min=0 blk=23% firma=5 errs=0
-ventisca/tundra/P4/- #11 dia=20062 acomp=poison+fire: plata t=450s pts=6586 jefe=98% min=0 blk=23% firma=55 errs=0
-ventisca/tundra/P4/- #13 dia=20072 acomp=poison+fire: plata t=450s pts=5818 jefe=61% min=0 blk=23% firma=27 errs=0
-ventisca/tundra/P4/- #12 dia=20071 acomp=fire+blood: plata t=450s pts=5806 jefe=69% min=0 blk=22% firma=53 errs=0
-ventisca/tundra/P4/- #14 dia=20076 acomp=poison+fire: ORO t=450s pts=8923 jefe=100% min=61 blk=23% firma=0 errs=0
-ventisca/tundra/P4/- #15 dia=20077 acomp=fire+poison: plata t=450s pts=6032 jefe=65% min=0 blk=22% firma=0 errs=0
-ventisca/panal/P4/- #1 dia=20008 acomp=fire+steel: plata t=450s pts=6347 jefe=87% min=0 blk=26% firma=46 errs=0
-ventisca/panal/P4/- #0 dia=20003 acomp=steel+fire: ORO t=450s pts=8989 jefe=100% min=50 blk=26% firma=20 errs=0
-ventisca/panal/P4/- #2 dia=20011 acomp=steel+fire: bronce t=450s pts=4504 jefe=27% min=0 blk=26% firma=6 errs=0
-ventisca/panal/P4/- #3 dia=20026 acomp=poison+fire: bronce t=450s pts=4734 jefe=37% min=0 blk=26% firma=44 errs=0
-ventisca/panal/P4/- #4 dia=20028 acomp=poison+fire: bronce t=450s pts=4558 jefe=26% min=0 blk=26% firma=27 errs=0
-ventisca/panal/P4/- #5 dia=20030 acomp=steel+fire: plata t=450s pts=6013 jefe=67% min=0 blk=26% firma=42 errs=0
-ventisca/panal/P4/- #6 dia=20036 acomp=poison+fire: plata t=450s pts=6286 jefe=82% min=0 blk=26% firma=48 errs=0
-ventisca/panal/P4/- #7 dia=20041 acomp=steel+fire: bronce t=450s pts=4696 jefe=39% min=0 blk=26% firma=34 errs=0
-ventisca/panal/P4/- #9 dia=20048 acomp=steel+fire: plata t=450s pts=6366 jefe=91% min=0 blk=26% firma=26 errs=0
-ventisca/panal/P4/- #8 dia=20044 acomp=blood+fire: plata t=450s pts=5115 jefe=52% min=0 blk=26% firma=59 errs=0
-ventisca/panal/P4/- #10 dia=20049 acomp=blood+fire: plata t=450s pts=5029 jefe=35% min=0 blk=26% firma=0 errs=0
-ventisca/panal/P4/- #11 dia=20057 acomp=steel+fire: plata t=450s pts=5682 jefe=56% min=0 blk=26% firma=18 errs=0
-ventisca/panal/P4/- #13 dia=20074 acomp=blood+fire: plata t=450s pts=5507 jefe=55% min=0 blk=26% firma=26 errs=0
-ventisca/panal/P4/- #12 dia=20069 acomp=blood+fire: plata t=450s pts=5618 jefe=70% min=0 blk=26% firma=57 errs=0
-ventisca/panal/P4/- #14 dia=20078 acomp=steel+fire: plata t=450s pts=6366 jefe=94% min=0 blk=26% firma=21 errs=0
-ventisca/panal/P4/- #15 dia=20079 acomp=poison+fire: plata t=450s pts=6386 jefe=85% min=0 blk=26% firma=57 errs=0
-pantano/bosque/P4/- #0 dia=20001 acomp=steel+blood: plata t=450s pts=6438 jefe=95% min=0 blk=22% firma=68 errs=0
-pantano/bosque/P4/- #2 dia=20020 acomp=blood+fire: part t=424s pts=3739 jefe=0% min=0 blk=27% firma=0 errs=0
-pantano/bosque/P4/- #1 dia=20004 acomp=fire+lightning: plata t=450s pts=5478 jefe=51% min=0 blk=12% firma=50 errs=0
-pantano/bosque/P4/- #3 dia=20025 acomp=lightning+fire: plata t=450s pts=5650 jefe=49% min=0 blk=22% firma=50 errs=0
-pantano/bosque/P4/- #6 dia=20039 acomp=blood+fire: part t=350s pts=2750 jefe=0% min=0 blk=26% firma=0 errs=0
-pantano/bosque/P4/- #4 dia=20027 acomp=steel+blood: plata t=450s pts=6363 jefe=88% min=0 blk=20% firma=0 errs=0
-pantano/bosque/P4/- #5 dia=20029 acomp=fire+lightning: plata t=450s pts=6459 jefe=89% min=0 blk=19% firma=30 errs=0
-pantano/bosque/P4/- #7 dia=20053 acomp=steel+lightning: plata t=450s pts=6570 jefe=99% min=0 blk=23% firma=0 errs=0
-pantano/bosque/P4/- #8 dia=20055 acomp=fire+blood: ORO t=450s pts=8429 jefe=100% min=32 blk=16% firma=72 errs=0
-pantano/bosque/P4/- #9 dia=20064 acomp=steel+fire: plata t=450s pts=6482 jefe=96% min=0 blk=25% firma=0 errs=0
-pantano/bosque/P4/- #10 dia=20065 acomp=blood+fire: plata t=450s pts=5744 jefe=66% min=0 blk=24% firma=31 errs=0
-pantano/bosque/P4/- #11 dia=20067 acomp=steel+blood: plata t=450s pts=6136 jefe=94% min=0 blk=17% firma=23 errs=0
-pantano/bosque/P4/- #12 dia=20075 acomp=fire+lightning: plata t=450s pts=6272 jefe=82% min=0 blk=25% firma=20 errs=0
-pantano/bosque/P4/- #13 dia=20086 acomp=fire+lightning: plata t=450s pts=6544 jefe=97% min=0 blk=18% firma=72 errs=0
-pantano/bosque/P4/- #14 dia=20092 acomp=steel+blood: ORO t=450s pts=8752 jefe=100% min=21 blk=22% firma=24 errs=0
-pantano/bosque/P4/- #15 dia=20106 acomp=steel+lightning: plata t=450s pts=5382 jefe=39% min=0 blk=16% firma=0 errs=0
-pantano/cripta/P4/- #0 dia=20009 acomp=steel+lightning: plata t=450s pts=5326 jefe=49% min=0 blk=18% firma=32 errs=0
-pantano/cripta/P4/- #1 dia=20010 acomp=steel+lightning: plata t=450s pts=5760 jefe=68% min=0 blk=15% firma=54 errs=0
-pantano/cripta/P4/- #2 dia=20012 acomp=lightning+blood: plata t=450s pts=5410 jefe=66% min=0 blk=16% firma=24 errs=0
-pantano/cripta/P4/- #3 dia=20017 acomp=fire+lightning: plata t=450s pts=5854 jefe=80% min=0 blk=15% firma=50 errs=0
-pantano/cripta/P4/- #4 dia=20019 acomp=lightning+blood: plata t=450s pts=6134 jefe=93% min=0 blk=15% firma=62 errs=0
-pantano/cripta/P4/- #5 dia=20022 acomp=lightning+steel: plata t=450s pts=5125 jefe=50% min=0 blk=16% firma=23 errs=0
-pantano/cripta/P4/- #6 dia=20024 acomp=lightning+blood: plata t=450s pts=5301 jefe=44% min=0 blk=16% firma=18 errs=0
-pantano/cripta/P4/- #8 dia=20033 acomp=lightning+blood: bronce t=450s pts=4306 jefe=19% min=0 blk=15% firma=35 errs=0
-pantano/cripta/P4/- #7 dia=20032 acomp=lightning+fire: plata t=450s pts=5930 jefe=80% min=0 blk=17% firma=62 errs=0
-pantano/cripta/P4/- #10 dia=20050 acomp=lightning+blood: plata t=450s pts=5594 jefe=64% min=0 blk=16% firma=23 errs=0
-pantano/cripta/P4/- #9 dia=20040 acomp=lightning+steel: plata t=450s pts=6101 jefe=76% min=0 blk=15% firma=55 errs=0
-pantano/cripta/P4/- #12 dia=20088 acomp=lightning+steel: plata t=450s pts=5035 jefe=47% min=0 blk=15% firma=36 errs=0
-pantano/cripta/P4/- #11 dia=20060 acomp=lightning+fire: ORO t=450s pts=8386 jefe=100% min=34 blk=15% firma=48 errs=0
-pantano/cripta/P4/- #13 dia=20090 acomp=blood+lightning: bronce t=450s pts=4570 jefe=33% min=0 blk=18% firma=38 errs=0
-pantano/asfodelo/P4/- #0 dia=20002 acomp=lightning+blood: part t=423s pts=3915 jefe=0% min=0 blk=19% firma=38 errs=0
-pantano/cripta/P4/- #14 dia=20093 acomp=lightning+fire: ORO t=450s pts=8224 jefe=100% min=3 blk=15% firma=0 errs=0
-pantano/cripta/P4/- #15 dia=20095 acomp=lightning+fire: plata t=450s pts=5920 jefe=84% min=0 blk=15% firma=34 errs=0
-pantano/asfodelo/P4/- #4 dia=20015 acomp=blood+steel: part t=311s pts=2666 jefe=0% min=0 blk=19% firma=0 errs=0
-pantano/asfodelo/P4/- #1 dia=20006 acomp=blood+fire: plata t=450s pts=6648 jefe=90% min=0 blk=19% firma=63 errs=0
-pantano/asfodelo/P4/- #2 dia=20007 acomp=blood+fire: bronce t=450s pts=4530 jefe=22% min=0 blk=19% firma=28 errs=0
-pantano/asfodelo/P4/- #3 dia=20013 acomp=fire+lightning: bronce t=450s pts=4424 jefe=15% min=0 blk=19% firma=36 errs=0
-pantano/asfodelo/P4/- #5 dia=20023 acomp=fire+blood: part t=304s pts=2597 jefe=0% min=0 blk=19% firma=0 errs=0
-pantano/asfodelo/P4/- #6 dia=20031 acomp=blood+fire: bronce t=450s pts=4366 jefe=10% min=0 blk=19% firma=21 errs=0
-pantano/asfodelo/P4/- #8 dia=20043 acomp=lightning+blood: part t=316s pts=2736 jefe=0% min=0 blk=19% firma=0 errs=0
-pantano/asfodelo/P4/- #7 dia=20042 acomp=lightning+steel: bronce t=450s pts=4338 jefe=9% min=0 blk=19% firma=34 errs=0
-pantano/asfodelo/P4/- #9 dia=20045 acomp=lightning+steel: bronce t=450s pts=4552 jefe=20% min=0 blk=19% firma=18 errs=0
-pantano/asfodelo/P4/- #11 dia=20066 acomp=steel+lightning: bronce t=450s pts=4299 jefe=9% min=0 blk=19% firma=15 errs=0
-pantano/asfodelo/P4/- #10 dia=20047 acomp=steel+blood: plata t=450s pts=6198 jefe=91% min=0 blk=19% firma=28 errs=0
-pantano/asfodelo/P4/- #12 dia=20070 acomp=lightning+steel: bronce t=450s pts=4467 jefe=17% min=0 blk=19% firma=14 errs=0
-pantano/asfodelo/P4/- #14 dia=20081 acomp=fire+blood: part t=307s pts=2648 jefe=0% min=0 blk=19% firma=19 errs=0
-pantano/asfodelo/P4/- #13 dia=20080 acomp=lightning+steel: plata t=450s pts=5306 jefe=43% min=0 blk=19% firma=29 errs=0
-pantano/asfodelo/P4/- #15 dia=20091 acomp=blood+fire: bronce t=450s pts=4333 jefe=12% min=0 blk=19% firma=36 errs=0
-pantano/tundra/P4/- #0 dia=20005 acomp=lightning+fire: plata t=450s pts=5930 jefe=61% min=0 blk=23% firma=33 errs=0
-pantano/tundra/P4/- #1 dia=20014 acomp=lightning+fire: plata t=450s pts=6437 jefe=88% min=0 blk=23% firma=66 errs=0
-pantano/tundra/P4/- #2 dia=20018 acomp=fire+blood: plata t=450s pts=6189 jefe=71% min=0 blk=23% firma=50 errs=0
-pantano/tundra/P4/- #3 dia=20021 acomp=lightning+fire: plata t=450s pts=6312 jefe=77% min=0 blk=24% firma=54 errs=0
-pantano/tundra/P4/- #4 dia=20034 acomp=blood+fire: plata t=450s pts=5715 jefe=54% min=0 blk=24% firma=49 errs=0
-pantano/tundra/P4/- #5 dia=20038 acomp=fire+steel: ORO t=450s pts=8870 jefe=100% min=69 blk=22% firma=69 errs=0
-pantano/tundra/P4/- #7 dia=20052 acomp=lightning+fire: bronce t=450s pts=4568 jefe=28% min=0 blk=23% firma=0 errs=0
-pantano/tundra/P4/- #6 dia=20051 acomp=steel+fire: ORO t=450s pts=9002 jefe=100% min=64 blk=24% firma=28 errs=0
-pantano/tundra/P4/- #8 dia=20054 acomp=fire+lightning: ORO t=450s pts=9086 jefe=100% min=37 blk=22% firma=42 errs=0
-pantano/tundra/P4/- #9 dia=20056 acomp=blood+fire: plata t=450s pts=6106 jefe=69% min=0 blk=22% firma=66 errs=0
-pantano/tundra/P4/- #10 dia=20061 acomp=steel+fire: ORO t=450s pts=8683 jefe=100% min=8 blk=22% firma=38 errs=0
-pantano/tundra/P4/- #11 dia=20062 acomp=lightning+fire: plata t=450s pts=5691 jefe=48% min=0 blk=22% firma=47 errs=0
-pantano/tundra/P4/- #12 dia=20071 acomp=fire+blood: plata t=450s pts=5026 jefe=37% min=0 blk=23% firma=58 errs=0
-pantano/tundra/P4/- #13 dia=20072 acomp=lightning+fire: plata t=450s pts=6381 jefe=86% min=0 blk=23% firma=59 errs=0
-pantano/tundra/P4/- #14 dia=20076 acomp=lightning+fire: ORO t=450s pts=8670 jefe=100% min=9 blk=23% firma=39 errs=0
-pantano/tundra/P4/- #15 dia=20077 acomp=fire+lightning: ORO t=450s pts=8400 jefe=100% min=19 blk=23% firma=94 errs=0
-pantano/panal/P4/- #0 dia=20003 acomp=steel+fire: plata t=450s pts=6318 jefe=94% min=0 blk=26% firma=0 errs=0
-pantano/panal/P4/- #1 dia=20008 acomp=fire+steel: plata t=450s pts=5738 jefe=68% min=0 blk=26% firma=25 errs=0
-pantano/panal/P4/- #2 dia=20011 acomp=steel+fire: plata t=450s pts=6344 jefe=85% min=0 blk=26% firma=69 errs=0
-pantano/panal/P4/- #4 dia=20028 acomp=lightning+fire: plata t=450s pts=5379 jefe=45% min=0 blk=26% firma=43 errs=0
-pantano/panal/P4/- #3 dia=20026 acomp=lightning+fire: bronce t=450s pts=4874 jefe=46% min=0 blk=26% firma=21 errs=0
-pantano/panal/P4/- #5 dia=20030 acomp=steel+fire: ORO t=450s pts=8437 jefe=100% min=43 blk=26% firma=53 errs=0
-pantano/panal/P4/- #7 dia=20041 acomp=steel+fire: ORO t=450s pts=8973 jefe=100% min=50 blk=26% firma=68 errs=0
-pantano/panal/P4/- #6 dia=20036 acomp=lightning+fire: ORO t=450s pts=8707 jefe=100% min=20 blk=26% firma=77 errs=0
-pantano/panal/P4/- #8 dia=20044 acomp=blood+fire: bronce t=450s pts=4704 jefe=32% min=0 blk=27% firma=45 errs=0
-pantano/panal/P4/- #9 dia=20048 acomp=steel+fire: bronce t=450s pts=4728 jefe=40% min=0 blk=26% firma=29 errs=0
-pantano/panal/P4/- #10 dia=20049 acomp=blood+fire: plata t=450s pts=6371 jefe=93% min=0 blk=26% firma=63 errs=0
-pantano/panal/P4/- #11 dia=20057 acomp=steel+fire: ORO t=450s pts=8917 jefe=100% min=35 blk=27% firma=70 errs=0
-pantano/panal/P4/- #12 dia=20069 acomp=blood+fire: bronce t=450s pts=4835 jefe=34% min=0 blk=26% firma=71 errs=0
-pantano/panal/P4/- #13 dia=20074 acomp=blood+fire: plata t=450s pts=6602 jefe=86% min=0 blk=26% firma=112 errs=0
-carmesi/bosque/P4/- #0 dia=20001 acomp=steel+poison: ORO t=450s pts=8539 jefe=100% min=40 blk=11% firma=0 errs=0
-pantano/panal/P4/- #14 dia=20078 acomp=steel+fire: ORO t=450s pts=8651 jefe=100% min=54 blk=26% firma=37 errs=0
-pantano/panal/P4/- #15 dia=20079 acomp=lightning+fire: plata t=450s pts=5595 jefe=52% min=0 blk=26% firma=54 errs=0
-carmesi/bosque/P4/- #1 dia=20004 acomp=fire+ice: plata t=450s pts=6338 jefe=84% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #2 dia=20020 acomp=poison+fire: plata t=450s pts=6546 jefe=100% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #4 dia=20027 acomp=steel+poison: plata t=450s pts=5560 jefe=62% min=0 blk=10% firma=0 errs=0
-carmesi/bosque/P4/- #3 dia=20025 acomp=ice+fire: ORO t=450s pts=8554 jefe=100% min=46 blk=11% firma=1 errs=0
-carmesi/bosque/P4/- #5 dia=20029 acomp=fire+ice: plata t=450s pts=5581 jefe=54% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #6 dia=20039 acomp=poison+fire: plata t=450s pts=5693 jefe=68% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #8 dia=20055 acomp=fire+poison: plata t=450s pts=6482 jefe=95% min=0 blk=10% firma=0 errs=0
-carmesi/bosque/P4/- #7 dia=20053 acomp=steel+ice: plata t=450s pts=6195 jefe=67% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #9 dia=20064 acomp=steel+fire: plata t=450s pts=6125 jefe=69% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #10 dia=20065 acomp=poison+fire: plata t=450s pts=6275 jefe=82% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #11 dia=20067 acomp=steel+poison: ORO t=450s pts=8941 jefe=100% min=100 blk=10% firma=0 errs=0
-carmesi/bosque/P4/- #12 dia=20075 acomp=fire+ice: plata t=450s pts=6408 jefe=94% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #13 dia=20086 acomp=fire+ice: plata t=450s pts=6299 jefe=84% min=0 blk=11% firma=0 errs=0
-carmesi/bosque/P4/- #14 dia=20092 acomp=steel+poison: ORO t=450s pts=8768 jefe=100% min=100 blk=11% firma=0 errs=0
-carmesi/cripta/P4/- #0 dia=20009 acomp=steel+ice: ORO t=450s pts=8595 jefe=100% min=82 blk=18% firma=0 errs=0
-carmesi/bosque/P4/- #15 dia=20106 acomp=steel+ice: plata t=450s pts=6690 jefe=93% min=0 blk=11% firma=0 errs=0
-carmesi/cripta/P4/- #1 dia=20010 acomp=steel+ice: ORO t=450s pts=8901 jefe=100% min=58 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #2 dia=20012 acomp=ice+poison: ORO t=450s pts=8442 jefe=100% min=39 blk=19% firma=0 errs=0
-carmesi/cripta/P4/- #3 dia=20017 acomp=fire+ice: ORO t=450s pts=8747 jefe=100% min=76 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #4 dia=20019 acomp=ice+poison: plata t=450s pts=6451 jefe=95% min=0 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #6 dia=20024 acomp=ice+poison: ORO t=450s pts=8557 jefe=100% min=78 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #5 dia=20022 acomp=ice+steel: plata t=450s pts=6330 jefe=94% min=0 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #7 dia=20032 acomp=ice+fire: ORO t=450s pts=8666 jefe=100% min=58 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #8 dia=20033 acomp=ice+poison: ORO t=450s pts=8902 jefe=100% min=100 blk=19% firma=0 errs=0
-carmesi/cripta/P4/- #9 dia=20040 acomp=ice+steel: ORO t=450s pts=9285 jefe=100% min=100 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #10 dia=20050 acomp=ice+poison: ORO t=450s pts=8586 jefe=100% min=46 blk=19% firma=0 errs=0
-carmesi/cripta/P4/- #11 dia=20060 acomp=ice+fire: plata t=450s pts=6469 jefe=97% min=0 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #12 dia=20088 acomp=ice+steel: ORO t=450s pts=8928 jefe=100% min=100 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #14 dia=20093 acomp=ice+fire: ORO t=450s pts=8014 jefe=100% min=5 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #13 dia=20090 acomp=poison+ice: ORO t=450s pts=8365 jefe=100% min=59 blk=18% firma=0 errs=0
-carmesi/cripta/P4/- #15 dia=20095 acomp=ice+fire: plata t=450s pts=6203 jefe=94% min=0 blk=18% firma=0 errs=0
-carmesi/asfodelo/P4/- #0 dia=20002 acomp=ice+poison: plata t=450s pts=5910 jefe=64% min=0 blk=23% firma=6 errs=0
-carmesi/asfodelo/P4/- #2 dia=20007 acomp=poison+fire: bronce t=450s pts=4400 jefe=14% min=0 blk=22% firma=2 errs=0
-carmesi/asfodelo/P4/- #1 dia=20006 acomp=poison+fire: plata t=450s pts=5658 jefe=57% min=0 blk=22% firma=1 errs=0
-carmesi/asfodelo/P4/- #3 dia=20013 acomp=poison+ice: part t=448s pts=4109 jefe=0% min=0 blk=20% firma=0 errs=0
-carmesi/asfodelo/P4/- #4 dia=20015 acomp=poison+steel: plata t=450s pts=6146 jefe=87% min=0 blk=23% firma=7 errs=0
-carmesi/asfodelo/P4/- #6 dia=20031 acomp=poison+fire: plata t=450s pts=5610 jefe=65% min=0 blk=22% firma=3 errs=0
-carmesi/asfodelo/P4/- #5 dia=20023 acomp=fire+poison: plata t=450s pts=5952 jefe=62% min=0 blk=23% firma=2 errs=0
-carmesi/asfodelo/P4/- #7 dia=20042 acomp=poison+steel: plata t=450s pts=6325 jefe=83% min=0 blk=23% firma=3 errs=0
-carmesi/asfodelo/P4/- #8 dia=20043 acomp=ice+poison: plata t=450s pts=5824 jefe=61% min=0 blk=22% firma=1 errs=0
-carmesi/asfodelo/P4/- #10 dia=20047 acomp=steel+poison: plata t=450s pts=5027 jefe=28% min=0 blk=23% firma=0 errs=0
-carmesi/asfodelo/P4/- #9 dia=20045 acomp=poison+steel: plata t=450s pts=5016 jefe=33% min=0 blk=21% firma=3 errs=0
-carmesi/asfodelo/P4/- #11 dia=20066 acomp=poison+ice: bronce t=450s pts=4486 jefe=14% min=0 blk=21% firma=1 errs=0
-carmesi/asfodelo/P4/- #14 dia=20081 acomp=fire+poison: bronce t=450s pts=4341 jefe=12% min=0 blk=21% firma=0 errs=0
-carmesi/asfodelo/P4/- #12 dia=20070 acomp=poison+steel: plata t=450s pts=6010 jefe=87% min=0 blk=22% firma=0 errs=0
-carmesi/asfodelo/P4/- #13 dia=20080 acomp=poison+steel: plata t=450s pts=5701 jefe=59% min=0 blk=22% firma=3 errs=0
-carmesi/asfodelo/P4/- #15 dia=20091 acomp=poison+fire: plata t=450s pts=5517 jefe=58% min=0 blk=22% firma=4 errs=0
-carmesi/tundra/P4/- #0 dia=20005 acomp=ice+fire: plata t=450s pts=6445 jefe=78% min=0 blk=28% firma=0 errs=0
-carmesi/tundra/P4/- #1 dia=20014 acomp=ice+fire: plata t=450s pts=6242 jefe=82% min=0 blk=28% firma=0 errs=0
-carmesi/tundra/P4/- #2 dia=20018 acomp=fire+poison: ORO t=450s pts=8475 jefe=100% min=40 blk=27% firma=0 errs=0
-carmesi/tundra/P4/- #3 dia=20021 acomp=ice+fire: plata t=450s pts=6682 jefe=88% min=0 blk=28% firma=1 errs=0
-carmesi/tundra/P4/- #4 dia=20034 acomp=poison+fire: plata t=450s pts=6443 jefe=89% min=0 blk=28% firma=0 errs=0
-ERR 18 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 18 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-carmesi/tundra/P4/- #5 dia=20038 acomp=fire+steel: ORO t=450s pts=8774 jefe=100% min=56 blk=28% firma=0 errs=0
-ERR 19 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 19 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-carmesi/tundra/P4/- #6 dia=20051 acomp=steel+fire: plata t=450s pts=6538 jefe=88% min=0 blk=27% firma=0 errs=0
-ERR 20 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 20 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-carmesi/tundra/P4/- #7 dia=20052 acomp=ice+fire: plata t=450s pts=5938 jefe=66% min=0 blk=28% firma=0 errs=2
-ERR 21 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 21 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 22 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 23 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 24 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 25 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 26 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 27 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 28 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 29 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 30 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 31 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 32 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 33 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 34 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 35 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 36 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 7 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 8 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 9 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 10 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 11 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 12 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 13 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 14 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 37 15 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 0 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 1 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 2 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 3 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 4 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 5 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
-ERR 38 6 page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta
-Call log:
-[2m  - navigating to "http://localhost:8891/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=alta", waiting until "load"[22m
-
+reanudando: 296 partidas ya estaban en tools/card-swarm-bot/calib/faseB_P4_alta.csv
+carmesi/tundra/P4/- #10 dia=20061 acomp=steel+fire: ORO t=450s pts=8704 jefe=100% min=48 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #11 dia=20062 acomp=ice+fire: plata t=450s pts=6622 jefe=96% min=0 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #8 dia=20054 acomp=fire+ice: ORO t=450s pts=9037 jefe=100% min=100 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #9 dia=20056 acomp=poison+fire: plata t=450s pts=6462 jefe=94% min=0 blk=28% firma=1 errs=0
+carmesi/tundra/P4/- #12 dia=20071 acomp=fire+poison: plata t=450s pts=6021 jefe=78% min=0 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #14 dia=20076 acomp=ice+fire: ORO t=450s pts=8446 jefe=100% min=16 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #13 dia=20072 acomp=ice+fire: plata t=450s pts=6509 jefe=97% min=0 blk=28% firma=0 errs=0
+carmesi/tundra/P4/- #15 dia=20077 acomp=fire+ice: ORO t=450s pts=9365 jefe=100% min=55 blk=28% firma=0 errs=0
+carmesi/panal/P4/- #0 dia=20003 acomp=steel+fire: plata t=450s pts=6198 jefe=77% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #1 dia=20008 acomp=fire+steel: ORO t=450s pts=9027 jefe=100% min=87 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #2 dia=20011 acomp=steel+fire: plata t=450s pts=6805 jefe=100% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #3 dia=20026 acomp=ice+fire: ORO t=450s pts=9258 jefe=100% min=90 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #4 dia=20028 acomp=ice+fire: ORO t=450s pts=9165 jefe=100% min=95 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #5 dia=20030 acomp=steel+fire: ORO t=450s pts=8750 jefe=100% min=83 blk=31% firma=0 errs=0
+carmesi/panal/P4/- #6 dia=20036 acomp=ice+fire: ORO t=450s pts=8459 jefe=100% min=35 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #7 dia=20041 acomp=steel+fire: ORO t=450s pts=8717 jefe=100% min=75 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #8 dia=20044 acomp=poison+fire: plata t=450s pts=6749 jefe=80% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #9 dia=20048 acomp=steel+fire: ORO t=450s pts=9027 jefe=100% min=84 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #10 dia=20049 acomp=poison+fire: plata t=450s pts=5126 jefe=53% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #11 dia=20057 acomp=steel+fire: ORO t=450s pts=8496 jefe=100% min=46 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #12 dia=20069 acomp=poison+fire: bronce t=450s pts=4906 jefe=43% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #13 dia=20074 acomp=poison+fire: bronce t=450s pts=4814 jefe=39% min=0 blk=32% firma=0 errs=0
+carmesi/panal/P4/- #14 dia=20078 acomp=steel+fire: ORO t=450s pts=9062 jefe=100% min=100 blk=32% firma=0 errs=0
+lana/bosque/P4/- #1 dia=20004 acomp=fire+ice: part t=440s pts=3882 jefe=0% min=0 blk=16% firma=0 errs=0
+carmesi/panal/P4/- #15 dia=20079 acomp=ice+fire: ORO t=450s pts=8728 jefe=100% min=29 blk=32% firma=0 errs=0
+lana/bosque/P4/- #0 dia=20001 acomp=fire+lightning: ORO t=450s pts=8176 jefe=100% min=13 blk=30% firma=0 errs=0
+lana/bosque/P4/- #2 dia=20020 acomp=lightning+fire: plata t=450s pts=6010 jefe=58% min=0 blk=37% firma=0 errs=0
+lana/bosque/P4/- #4 dia=20027 acomp=fire+lightning: part t=297s pts=2328 jefe=0% min=0 blk=9% firma=1 errs=0
+lana/bosque/P4/- #3 dia=20025 acomp=ice+fire: plata t=450s pts=6312 jefe=83% min=0 blk=25% firma=0 errs=0
+lana/bosque/P4/- #5 dia=20029 acomp=fire+ice: plata t=450s pts=6411 jefe=95% min=0 blk=31% firma=0 errs=0
+lana/bosque/P4/- #7 dia=20053 acomp=fire+ice: part t=389s pts=3448 jefe=0% min=0 blk=13% firma=1 errs=0
+lana/bosque/P4/- #6 dia=20039 acomp=lightning+fire: plata t=450s pts=6080 jefe=69% min=0 blk=34% firma=11 errs=0
+lana/bosque/P4/- #10 dia=20065 acomp=lightning+fire: part t=326s pts=2560 jefe=0% min=0 blk=9% firma=0 errs=0
+lana/bosque/P4/- #9 dia=20064 acomp=poison+fire: part t=385s pts=3429 jefe=0% min=0 blk=15% firma=1 errs=0
+lana/bosque/P4/- #8 dia=20055 acomp=fire+lightning: plata t=450s pts=6442 jefe=97% min=0 blk=27% firma=0 errs=0
+lana/bosque/P4/- #11 dia=20067 acomp=fire+lightning: part t=338s pts=2658 jefe=0% min=0 blk=13% firma=0 errs=0
+lana/bosque/P4/- #12 dia=20075 acomp=fire+ice: part t=429s pts=3723 jefe=0% min=0 blk=14% firma=0 errs=0
+lana/bosque/P4/- #13 dia=20086 acomp=fire+ice: part t=415s pts=3650 jefe=0% min=0 blk=13% firma=4 errs=0
+lana/bosque/P4/- #14 dia=20092 acomp=fire+lightning: part t=329s pts=2632 jefe=0% min=0 blk=9% firma=0 errs=0
+lana/bosque/P4/- #15 dia=20106 acomp=fire+ice: part t=437s pts=3858 jefe=0% min=0 blk=15% firma=0 errs=0
+lana/cripta/P4/- #2 dia=20012 acomp=fire+lightning: ORO t=450s pts=8022 jefe=100% min=1 blk=43% firma=3 errs=0
+lana/cripta/P4/- #0 dia=20009 acomp=poison+ice: ORO t=450s pts=8494 jefe=100% min=74 blk=41% firma=10 errs=0
+lana/cripta/P4/- #1 dia=20010 acomp=poison+ice: ORO t=450s pts=8888 jefe=100% min=88 blk=35% firma=12 errs=0
+lana/cripta/P4/- #3 dia=20017 acomp=fire+ice: ORO t=450s pts=8341 jefe=100% min=40 blk=34% firma=6 errs=0
+lana/cripta/P4/- #5 dia=20022 acomp=lightning+poison: plata t=450s pts=5707 jefe=82% min=0 blk=40% firma=4 errs=0
+lana/cripta/P4/- #4 dia=20019 acomp=poison+lightning: ORO t=450s pts=8248 jefe=100% min=12 blk=42% firma=2 errs=0
+lana/cripta/P4/- #6 dia=20024 acomp=fire+lightning: plata t=450s pts=6464 jefe=92% min=0 blk=34% firma=1 errs=0
+lana/cripta/P4/- #7 dia=20032 acomp=ice+fire: ORO t=450s pts=8778 jefe=100% min=66 blk=33% firma=9 errs=0
+lana/cripta/P4/- #8 dia=20033 acomp=poison+lightning: plata t=450s pts=6440 jefe=98% min=0 blk=40% firma=15 errs=0
+lana/cripta/P4/- #9 dia=20040 acomp=ice+poison: ORO t=450s pts=8448 jefe=100% min=53 blk=48% firma=6 errs=0
+lana/cripta/P4/- #10 dia=20050 acomp=ice+lightning: ORO t=450s pts=8400 jefe=100% min=23 blk=41% firma=15 errs=0
+lana/cripta/P4/- #11 dia=20060 acomp=ice+fire: plata t=450s pts=6040 jefe=91% min=0 blk=44% firma=14 errs=0
+lana/cripta/P4/- #13 dia=20090 acomp=lightning+ice: ORO t=450s pts=8994 jefe=100% min=81 blk=38% firma=18 errs=0
+lana/cripta/P4/- #12 dia=20088 acomp=lightning+poison: plata t=450s pts=6133 jefe=98% min=0 blk=39% firma=10 errs=0
+lana/cripta/P4/- #14 dia=20093 acomp=lightning+fire: plata t=450s pts=5544 jefe=60% min=0 blk=34% firma=0 errs=0
+lana/cripta/P4/- #15 dia=20095 acomp=ice+fire: ORO t=450s pts=8566 jefe=100% min=36 blk=46% firma=11 errs=0
+lana/asfodelo/P4/- #1 dia=20006 acomp=poison+fire: bronce t=450s pts=4518 jefe=24% min=0 blk=34% firma=0 errs=0
+lana/asfodelo/P4/- #0 dia=20002 acomp=ice+lightning: plata t=450s pts=5838 jefe=62% min=0 blk=37% firma=22 errs=0
+lana/asfodelo/P4/- #3 dia=20013 acomp=poison+ice: plata t=450s pts=6115 jefe=88% min=0 blk=36% firma=21 errs=0
+lana/asfodelo/P4/- #4 dia=20015 acomp=fire+poison: part t=402s pts=3691 jefe=0% min=0 blk=29% firma=4 errs=0
+lana/asfodelo/P4/- #2 dia=20007 acomp=lightning+fire: plata t=450s pts=6627 jefe=86% min=0 blk=41% firma=24 errs=0
+lana/asfodelo/P4/- #5 dia=20023 acomp=fire+lightning: plata t=450s pts=6560 jefe=96% min=0 blk=38% firma=18 errs=0
+lana/asfodelo/P4/- #6 dia=20031 acomp=lightning+fire: part t=375s pts=3498 jefe=0% min=0 blk=33% firma=4 errs=0
+lana/asfodelo/P4/- #7 dia=20042 acomp=fire+poison: part t=420s pts=3910 jefe=0% min=0 blk=31% firma=3 errs=0
+lana/asfodelo/P4/- #8 dia=20043 acomp=ice+lightning: plata t=450s pts=6419 jefe=78% min=0 blk=40% firma=24 errs=0
+lana/asfodelo/P4/- #9 dia=20045 acomp=ice+poison: plata t=450s pts=6528 jefe=97% min=0 blk=38% firma=21 errs=0
+lana/asfodelo/P4/- #10 dia=20047 acomp=poison+lightning: ORO t=450s pts=8394 jefe=100% min=4 blk=37% firma=11 errs=0
+lana/asfodelo/P4/- #11 dia=20066 acomp=poison+ice: plata t=450s pts=4883 jefe=25% min=0 blk=37% firma=4 errs=0
+lana/asfodelo/P4/- #12 dia=20070 acomp=fire+poison: plata t=450s pts=4806 jefe=26% min=0 blk=35% firma=7 errs=0
+lana/asfodelo/P4/- #13 dia=20080 acomp=ice+poison: plata t=450s pts=6770 jefe=99% min=0 blk=37% firma=22 errs=0
+lana/asfodelo/P4/- #14 dia=20081 acomp=fire+lightning: ORO t=450s pts=8595 jefe=100% min=19 blk=36% firma=15 errs=0
+lana/asfodelo/P4/- #15 dia=20091 acomp=lightning+fire: plata t=450s pts=5000 jefe=23% min=0 blk=35% firma=9 errs=0
+lana/tundra/P4/- #0 dia=20005 acomp=ice+fire: plata t=450s pts=6474 jefe=74% min=0 blk=43% firma=30 errs=0
+lana/tundra/P4/- #2 dia=20018 acomp=fire+lightning: plata t=450s pts=4914 jefe=34% min=0 blk=37% firma=3 errs=0
+lana/tundra/P4/- #1 dia=20014 acomp=ice+fire: plata t=450s pts=5661 jefe=50% min=0 blk=43% firma=23 errs=0
+lana/tundra/P4/- #3 dia=20021 acomp=ice+fire: ORO t=450s pts=8475 jefe=100% min=42 blk=43% firma=29 errs=0
+lana/tundra/P4/- #4 dia=20034 acomp=lightning+fire: plata t=450s pts=5499 jefe=49% min=0 blk=37% firma=6 errs=0
+lana/tundra/P4/- #5 dia=20038 acomp=fire+poison: ORO t=450s pts=8365 jefe=100% min=30 blk=34% firma=14 errs=0
+lana/tundra/P4/- #6 dia=20051 acomp=poison+fire: ORO t=450s pts=8787 jefe=100% min=77 blk=54% firma=20 errs=0
+lana/tundra/P4/- #7 dia=20052 acomp=ice+fire: plata t=450s pts=6374 jefe=84% min=0 blk=49% firma=5 errs=0
+lana/tundra/P4/- #8 dia=20054 acomp=fire+ice: plata t=450s pts=6344 jefe=77% min=0 blk=47% firma=8 errs=0
+lana/tundra/P4/- #9 dia=20056 acomp=lightning+fire: plata t=450s pts=5722 jefe=58% min=0 blk=43% firma=27 errs=0
+lana/tundra/P4/- #10 dia=20061 acomp=poison+fire: plata t=450s pts=5214 jefe=50% min=0 blk=45% firma=21 errs=0
+lana/tundra/P4/- #11 dia=20062 acomp=ice+fire: plata t=450s pts=6374 jefe=88% min=0 blk=41% firma=24 errs=0
+lana/tundra/P4/- #12 dia=20071 acomp=fire+lightning: plata t=450s pts=6347 jefe=85% min=0 blk=37% firma=18 errs=0
+lana/tundra/P4/- #13 dia=20072 acomp=ice+fire: plata t=450s pts=6221 jefe=70% min=0 blk=38% firma=21 errs=0
+lana/tundra/P4/- #14 dia=20076 acomp=ice+fire: plata t=450s pts=6760 jefe=93% min=0 blk=43% firma=34 errs=0
+lana/tundra/P4/- #15 dia=20077 acomp=fire+ice: ORO t=450s pts=8310 jefe=100% min=24 blk=57% firma=5 errs=0
+lana/panal/P4/- #0 dia=20003 acomp=poison+fire: plata t=450s pts=5533 jefe=83% min=0 blk=52% firma=22 errs=0
+lana/panal/P4/- #1 dia=20008 acomp=fire+poison: plata t=450s pts=5802 jefe=72% min=0 blk=48% firma=16 errs=0
+lana/panal/P4/- #2 dia=20011 acomp=poison+fire: plata t=450s pts=5147 jefe=60% min=0 blk=42% firma=16 errs=0
+lana/panal/P4/- #3 dia=20026 acomp=ice+fire: ORO t=450s pts=9205 jefe=100% min=100 blk=49% firma=18 errs=0
+lana/panal/P4/- #4 dia=20028 acomp=ice+fire: ORO t=450s pts=8669 jefe=100% min=7 blk=42% firma=35 errs=0
+lana/panal/P4/- #5 dia=20030 acomp=poison+fire: plata t=450s pts=5056 jefe=58% min=0 blk=43% firma=16 errs=0
+lana/panal/P4/- #6 dia=20036 acomp=ice+fire: ORO t=450s pts=9024 jefe=100% min=95 blk=53% firma=0 errs=0
+lana/panal/P4/- #7 dia=20041 acomp=poison+fire: bronce t=450s pts=4685 jefe=38% min=0 blk=48% firma=0 errs=0
+lana/panal/P4/- #8 dia=20044 acomp=lightning+fire: ORO t=450s pts=8818 jefe=100% min=59 blk=55% firma=21 errs=0
+lana/panal/P4/- #9 dia=20048 acomp=poison+fire: ORO t=450s pts=8142 jefe=100% min=3 blk=43% firma=10 errs=0
+lana/panal/P4/- #11 dia=20057 acomp=poison+fire: plata t=450s pts=4954 jefe=52% min=0 blk=40% firma=13 errs=0
+lana/panal/P4/- #10 dia=20049 acomp=lightning+fire: plata t=450s pts=6208 jefe=73% min=0 blk=55% firma=10 errs=0
+lana/panal/P4/- #12 dia=20069 acomp=lightning+fire: ORO t=450s pts=8614 jefe=100% min=59 blk=48% firma=17 errs=0
+lana/panal/P4/- #13 dia=20074 acomp=lightning+fire: plata t=450s pts=5970 jefe=69% min=0 blk=45% firma=0 errs=0
+tempestad/bosque/P4/- #0 dia=20001 acomp=steel+blood: part t=398s pts=3547 jefe=0% min=0 blk=9% firma=31 errs=0
+lana/panal/P4/- #14 dia=20078 acomp=poison+fire: ORO t=450s pts=8622 jefe=100% min=57 blk=50% firma=12 errs=0
+lana/panal/P4/- #15 dia=20079 acomp=ice+fire: ORO t=450s pts=8774 jefe=100% min=36 blk=47% firma=23 errs=0
+tempestad/bosque/P4/- #4 dia=20027 acomp=steel+blood: part t=384s pts=3437 jefe=0% min=0 blk=12% firma=26 errs=0
+tempestad/bosque/P4/- #1 dia=20004 acomp=steel+poison: plata t=450s pts=5946 jefe=60% min=0 blk=13% firma=56 errs=0
+tempestad/bosque/P4/- #3 dia=20025 acomp=steel+ice: plata t=450s pts=5949 jefe=65% min=0 blk=11% firma=60 errs=0
+tempestad/bosque/P4/- #2 dia=20020 acomp=steel+ice: plata t=450s pts=6245 jefe=76% min=0 blk=11% firma=0 errs=0
+tempestad/bosque/P4/- #5 dia=20029 acomp=steel+poison: part t=306s pts=2419 jefe=0% min=0 blk=9% firma=21 errs=0
+tempestad/bosque/P4/- #6 dia=20039 acomp=steel+ice: part t=389s pts=3451 jefe=0% min=0 blk=9% firma=21 errs=0
+tempestad/bosque/P4/- #8 dia=20055 acomp=steel+blood: part t=420s pts=3698 jefe=0% min=0 blk=9% firma=27 errs=0
+tempestad/bosque/P4/- #9 dia=20064 acomp=steel+ice: part t=306s pts=2398 jefe=0% min=0 blk=9% firma=24 errs=0
+tempestad/bosque/P4/- #7 dia=20053 acomp=steel+poison: plata t=450s pts=6509 jefe=99% min=0 blk=11% firma=17 errs=0
+tempestad/bosque/P4/- #10 dia=20065 acomp=steel+ice: part t=429s pts=3822 jefe=0% min=0 blk=9% firma=16 errs=0
+tempestad/bosque/P4/- #11 dia=20067 acomp=steel+blood: part t=354s pts=2747 jefe=0% min=0 blk=11% firma=19 errs=0
+tempestad/bosque/P4/- #13 dia=20086 acomp=steel+poison: part t=352s pts=3202 jefe=0% min=0 blk=11% firma=16 errs=0
+tempestad/bosque/P4/- #12 dia=20075 acomp=steel+poison: plata t=450s pts=6062 jefe=66% min=0 blk=12% firma=56 errs=0
+tempestad/bosque/P4/- #15 dia=20106 acomp=steel+poison: plata t=450s pts=6200 jefe=74% min=0 blk=14% firma=34 errs=0
+tempestad/bosque/P4/- #14 dia=20092 acomp=steel+blood: ORO t=450s pts=8022 jefe=100% min=2 blk=12% firma=64 errs=0
+tempestad/cripta/P4/- #1 dia=20010 acomp=ice+poison: bronce t=450s pts=4331 jefe=17% min=0 blk=19% firma=39 errs=0
+tempestad/cripta/P4/- #0 dia=20009 acomp=ice+poison: plata t=450s pts=4893 jefe=51% min=0 blk=19% firma=28 errs=0
+tempestad/cripta/P4/- #2 dia=20012 acomp=ice+blood: ORO t=450s pts=8218 jefe=100% min=28 blk=20% firma=0 errs=0
+tempestad/cripta/P4/- #3 dia=20017 acomp=ice+poison: plata t=450s pts=5696 jefe=70% min=0 blk=20% firma=57 errs=0
+tempestad/cripta/P4/- #4 dia=20019 acomp=ice+blood: bronce t=450s pts=4448 jefe=26% min=0 blk=19% firma=43 errs=0
+tempestad/cripta/P4/- #5 dia=20022 acomp=ice+steel: plata t=450s pts=6534 jefe=97% min=0 blk=20% firma=63 errs=0
+tempestad/cripta/P4/- #6 dia=20024 acomp=ice+blood: bronce t=450s pts=4173 jefe=12% min=0 blk=19% firma=20 errs=0
+tempestad/cripta/P4/- #7 dia=20032 acomp=poison+ice: ORO t=450s pts=8290 jefe=100% min=27 blk=20% firma=60 errs=0
+tempestad/cripta/P4/- #8 dia=20033 acomp=ice+blood: plata t=450s pts=6363 jefe=92% min=0 blk=20% firma=44 errs=0
+tempestad/cripta/P4/- #9 dia=20040 acomp=ice+steel: plata t=450s pts=5714 jefe=69% min=0 blk=20% firma=49 errs=0
+tempestad/cripta/P4/- #10 dia=20050 acomp=ice+blood: plata t=450s pts=6389 jefe=95% min=0 blk=19% firma=67 errs=0
+tempestad/cripta/P4/- #11 dia=20060 acomp=steel+ice: ORO t=450s pts=8714 jefe=100% min=61 blk=18% firma=31 errs=0
+tempestad/cripta/P4/- #13 dia=20090 acomp=ice+poison: ORO t=450s pts=7861 jefe=100% min=10 blk=20% firma=51 errs=0
+tempestad/cripta/P4/- #12 dia=20088 acomp=ice+steel: plata t=450s pts=6437 jefe=97% min=0 blk=20% firma=58 errs=0
+tempestad/cripta/P4/- #14 dia=20093 acomp=steel+ice: ORO t=450s pts=8715 jefe=100% min=71 blk=20% firma=8 errs=0
+tempestad/cripta/P4/- #15 dia=20095 acomp=poison+ice: bronce t=450s pts=4235 jefe=15% min=0 blk=20% firma=0 errs=0
+tempestad/asfodelo/P4/- #0 dia=20002 acomp=poison+blood: bronce t=450s pts=4309 jefe=9% min=0 blk=21% firma=26 errs=0
+tempestad/asfodelo/P4/- #1 dia=20006 acomp=blood+ice: part t=399s pts=3731 jefe=0% min=0 blk=21% firma=36 errs=0
+tempestad/asfodelo/P4/- #3 dia=20013 acomp=ice+poison: plata t=450s pts=4915 jefe=30% min=0 blk=23% firma=44 errs=0
+tempestad/asfodelo/P4/- #2 dia=20007 acomp=blood+ice: plata t=450s pts=6093 jefe=52% min=0 blk=23% firma=44 errs=0
+tempestad/asfodelo/P4/- #5 dia=20023 acomp=ice+blood: part t=421s pts=3874 jefe=0% min=0 blk=20% firma=10 errs=0
+tempestad/asfodelo/P4/- #4 dia=20015 acomp=blood+steel: plata t=450s pts=4661 jefe=16% min=0 blk=21% firma=26 errs=0
+tempestad/asfodelo/P4/- #6 dia=20031 acomp=blood+ice: plata t=450s pts=4710 jefe=17% min=0 blk=22% firma=26 errs=0
+tempestad/asfodelo/P4/- #7 dia=20042 acomp=poison+steel: plata t=450s pts=6032 jefe=59% min=0 blk=23% firma=0 errs=0
+tempestad/asfodelo/P4/- #8 dia=20043 acomp=poison+blood: plata t=450s pts=4733 jefe=17% min=0 blk=22% firma=36 errs=0
+tempestad/asfodelo/P4/- #9 dia=20045 acomp=poison+steel: bronce t=450s pts=4344 jefe=10% min=0 blk=21% firma=37 errs=0
+tempestad/asfodelo/P4/- #10 dia=20047 acomp=steel+blood: bronce t=450s pts=4414 jefe=14% min=0 blk=21% firma=39 errs=0
+tempestad/asfodelo/P4/- #12 dia=20070 acomp=poison+steel: bronce t=450s pts=4445 jefe=16% min=0 blk=22% firma=19 errs=0
+tempestad/asfodelo/P4/- #11 dia=20066 acomp=steel+poison: bronce t=450s pts=4331 jefe=10% min=0 blk=20% firma=35 errs=0
+tempestad/asfodelo/P4/- #13 dia=20080 acomp=poison+steel: part t=320s pts=2714 jefe=0% min=0 blk=20% firma=31 errs=0
+tempestad/asfodelo/P4/- #14 dia=20081 acomp=ice+blood: plata t=450s pts=4811 jefe=23% min=0 blk=21% firma=48 errs=0
+tempestad/asfodelo/P4/- #15 dia=20091 acomp=blood+ice: bronce t=450s pts=4197 jefe=6% min=0 blk=20% firma=31 errs=0
+tempestad/tundra/P4/- #1 dia=20018 acomp=ice+blood: plata t=450s pts=4939 jefe=30% min=0 blk=29% firma=55 errs=0
+tempestad/tundra/P4/- #0 dia=20005 acomp=poison+ice: ORO t=450s pts=8309 jefe=100% min=10 blk=28% firma=0 errs=0
+tempestad/tundra/P4/- #2 dia=20034 acomp=blood+ice: plata t=450s pts=6213 jefe=66% min=0 blk=28% firma=40 errs=0
+tempestad/tundra/P4/- #3 dia=20051 acomp=steel+ice: plata t=450s pts=6358 jefe=78% min=0 blk=28% firma=69 errs=0
+tempestad/tundra/P4/- #4 dia=20052 acomp=poison+blood: plata t=450s pts=5755 jefe=61% min=0 blk=29% firma=54 errs=0
+tempestad/tundra/P4/- #5 dia=20054 acomp=ice+poison: plata t=450s pts=5806 jefe=59% min=0 blk=28% firma=43 errs=0
+tempestad/tundra/P4/- #6 dia=20056 acomp=blood+poison: plata t=450s pts=5165 jefe=40% min=0 blk=28% firma=60 errs=0
+tempestad/tundra/P4/- #7 dia=20062 acomp=poison+blood: plata t=450s pts=4957 jefe=32% min=0 blk=28% firma=26 errs=0
+tempestad/tundra/P4/- #9 dia=20076 acomp=poison+blood: bronce t=450s pts=4246 jefe=13% min=0 blk=28% firma=47 errs=0
+tempestad/tundra/P4/- #8 dia=20072 acomp=poison+blood: plata t=450s pts=6368 jefe=80% min=0 blk=29% firma=45 errs=0
+tempestad/tundra/P4/- #10 dia=20077 acomp=ice+poison: bronce t=450s pts=4568 jefe=29% min=0 blk=28% firma=56 errs=0
+tempestad/tundra/P4/- #11 dia=20084 acomp=poison+steel: ORO t=450s pts=8491 jefe=100% min=5 blk=29% firma=0 errs=0
+tempestad/tundra/P4/- #12 dia=20085 acomp=steel+blood: plata t=450s pts=5795 jefe=59% min=0 blk=29% firma=39 errs=0
+tempestad/tundra/P4/- #13 dia=20089 acomp=steel+poison: plata t=450s pts=6078 jefe=83% min=0 blk=29% firma=54 errs=0
+tempestad/tundra/P4/- #14 dia=20103 acomp=steel+ice: plata t=450s pts=6406 jefe=75% min=0 blk=29% firma=59 errs=0
+tempestad/tundra/P4/- #15 dia=20128 acomp=poison+steel: plata t=450s pts=6675 jefe=97% min=0 blk=29% firma=90 errs=0
+tempestad/panal/P4/- #0 dia=20011 acomp=ice+blood: plata t=450s pts=5122 jefe=60% min=0 blk=33% firma=38 errs=0
+tempestad/panal/P4/- #1 dia=20026 acomp=ice+steel: plata t=450s pts=6232 jefe=90% min=0 blk=31% firma=48 errs=0
+tempestad/panal/P4/- #2 dia=20036 acomp=ice+steel: plata t=450s pts=6198 jefe=83% min=0 blk=33% firma=67 errs=0
+tempestad/panal/P4/- #3 dia=20044 acomp=ice+poison: plata t=450s pts=5986 jefe=64% min=0 blk=34% firma=23 errs=0
+tempestad/panal/P4/- #4 dia=20049 acomp=ice+poison: bronce t=450s pts=4830 jefe=43% min=0 blk=32% firma=74 errs=0
+tempestad/panal/P4/- #5 dia=20057 acomp=steel+ice: ORO t=450s pts=8949 jefe=100% min=42 blk=31% firma=84 errs=0
+tempestad/panal/P4/- #6 dia=20069 acomp=ice+steel: ORO t=450s pts=8554 jefe=100% min=24 blk=33% firma=74 errs=0
+tempestad/panal/P4/- #7 dia=20074 acomp=ice+poison: plata t=450s pts=5954 jefe=57% min=0 blk=34% firma=0 errs=0
+tempestad/panal/P4/- #8 dia=20078 acomp=steel+ice: plata t=450s pts=6478 jefe=87% min=0 blk=29% firma=36 errs=0
+tempestad/panal/P4/- #9 dia=20079 acomp=poison+ice: plata t=450s pts=5280 jefe=44% min=0 blk=32% firma=63 errs=0
+tempestad/panal/P4/- #10 dia=20082 acomp=ice+steel: plata t=450s pts=6016 jefe=67% min=0 blk=33% firma=64 errs=0
+tempestad/panal/P4/- #11 dia=20094 acomp=steel+ice: plata t=450s pts=6472 jefe=89% min=0 blk=32% firma=75 errs=0
+tempestad/panal/P4/- #13 dia=20102 acomp=ice+poison: plata t=450s pts=6054 jefe=61% min=0 blk=33% firma=89 errs=0
+tempestad/panal/P4/- #12 dia=20098 acomp=ice+blood: ORO t=450s pts=8741 jefe=100% min=51 blk=34% firma=0 errs=0
+tempestad/panal/P4/- #14 dia=20104 acomp=ice+steel: plata t=450s pts=6018 jefe=67% min=0 blk=31% firma=20 errs=0
+alquimia/bosque/P4/- #0 dia=20001 acomp=steel+lightning: plata t=450s pts=6445 jefe=95% min=0 blk=26% firma=0 errs=0
+tempestad/panal/P4/- #15 dia=20107 acomp=blood+ice: plata t=450s pts=6458 jefe=94% min=0 blk=33% firma=90 errs=0
+alquimia/bosque/P4/- #1 dia=20004 acomp=fire+ice: plata t=450s pts=6334 jefe=88% min=0 blk=22% firma=29 errs=0
+alquimia/bosque/P4/- #2 dia=20020 acomp=lightning+fire: plata t=450s pts=6496 jefe=96% min=0 blk=16% firma=43 errs=0
+alquimia/bosque/P4/- #4 dia=20027 acomp=steel+lightning: plata t=450s pts=5728 jefe=69% min=0 blk=28% firma=26 errs=0
+alquimia/bosque/P4/- #3 dia=20025 acomp=ice+fire: plata t=450s pts=6459 jefe=94% min=0 blk=24% firma=25 errs=0
+alquimia/bosque/P4/- #6 dia=20039 acomp=lightning+fire: plata t=450s pts=4866 jefe=32% min=0 blk=25% firma=0 errs=0
+alquimia/bosque/P4/- #5 dia=20029 acomp=fire+ice: plata t=450s pts=6514 jefe=93% min=0 blk=21% firma=36 errs=0
+alquimia/bosque/P4/- #7 dia=20053 acomp=steel+ice: part t=336s pts=2595 jefe=0% min=0 blk=33% firma=0 errs=0
+alquimia/bosque/P4/- #8 dia=20055 acomp=fire+lightning: plata t=450s pts=5491 jefe=54% min=0 blk=24% firma=30 errs=0
+alquimia/bosque/P4/- #9 dia=20064 acomp=steel+fire: plata t=450s pts=6098 jefe=92% min=0 blk=22% firma=36 errs=0
+alquimia/bosque/P4/- #10 dia=20065 acomp=lightning+fire: plata t=450s pts=5158 jefe=49% min=0 blk=26% firma=25 errs=0
+alquimia/bosque/P4/- #11 dia=20067 acomp=steel+lightning: plata t=450s pts=6506 jefe=97% min=0 blk=20% firma=41 errs=0
+alquimia/bosque/P4/- #12 dia=20075 acomp=fire+ice: ORO t=450s pts=8656 jefe=100% min=14 blk=24% firma=10 errs=0
+alquimia/bosque/P4/- #13 dia=20086 acomp=fire+ice: plata t=450s pts=6349 jefe=86% min=0 blk=24% firma=0 errs=0
+alquimia/bosque/P4/- #15 dia=20106 acomp=steel+ice: plata t=450s pts=6493 jefe=97% min=0 blk=20% firma=34 errs=0
+alquimia/bosque/P4/- #14 dia=20092 acomp=steel+lightning: ORO t=450s pts=8291 jefe=100% min=4 blk=23% firma=29 errs=0
+alquimia/cripta/P4/- #0 dia=20009 acomp=steel+ice: ORO t=450s pts=8698 jefe=100% min=86 blk=18% firma=0 errs=0
+alquimia/cripta/P4/- #1 dia=20010 acomp=steel+ice: ORO t=450s pts=8432 jefe=100% min=37 blk=18% firma=28 errs=0
+alquimia/cripta/P4/- #2 dia=20012 acomp=fire+lightning: plata t=450s pts=4661 jefe=24% min=0 blk=16% firma=18 errs=0
+alquimia/cripta/P4/- #4 dia=20019 acomp=steel+lightning: plata t=450s pts=5606 jefe=61% min=0 blk=18% firma=30 errs=0
+alquimia/cripta/P4/- #3 dia=20017 acomp=fire+ice: plata t=450s pts=6150 jefe=88% min=0 blk=18% firma=33 errs=0
+alquimia/cripta/P4/- #5 dia=20022 acomp=lightning+steel: plata t=450s pts=6053 jefe=87% min=0 blk=18% firma=15 errs=0
+alquimia/cripta/P4/- #6 dia=20024 acomp=fire+lightning: bronce t=450s pts=4459 jefe=29% min=0 blk=19% firma=15 errs=0
+alquimia/cripta/P4/- #7 dia=20032 acomp=ice+fire: plata t=450s pts=5947 jefe=84% min=0 blk=19% firma=28 errs=0
+alquimia/cripta/P4/- #8 dia=20033 acomp=steel+lightning: plata t=450s pts=5682 jefe=65% min=0 blk=18% firma=23 errs=0
+alquimia/cripta/P4/- #9 dia=20040 acomp=ice+steel: ORO t=450s pts=8643 jefe=100% min=52 blk=18% firma=43 errs=0
+alquimia/cripta/P4/- #10 dia=20050 acomp=ice+lightning: plata t=450s pts=6427 jefe=96% min=0 blk=20% firma=34 errs=0
+alquimia/cripta/P4/- #11 dia=20060 acomp=ice+fire: bronce t=450s pts=4518 jefe=32% min=0 blk=20% firma=26 errs=0
+alquimia/cripta/P4/- #12 dia=20088 acomp=lightning+steel: plata t=450s pts=6382 jefe=92% min=0 blk=17% firma=37 errs=0
+alquimia/cripta/P4/- #13 dia=20090 acomp=lightning+ice: bronce t=450s pts=4350 jefe=22% min=0 blk=20% firma=0 errs=0
+alquimia/cripta/P4/- #14 dia=20093 acomp=lightning+fire: plata t=450s pts=5762 jefe=72% min=0 blk=19% firma=0 errs=0
+alquimia/cripta/P4/- #15 dia=20095 acomp=ice+fire: plata t=450s pts=6058 jefe=84% min=0 blk=19% firma=20 errs=0
+alquimia/asfodelo/P4/- #0 dia=20002 acomp=ice+lightning: plata t=450s pts=4867 jefe=23% min=0 blk=21% firma=21 errs=0
+alquimia/asfodelo/P4/- #1 dia=20006 acomp=lightning+fire: plata t=450s pts=4958 jefe=33% min=0 blk=20% firma=21 errs=0
+alquimia/asfodelo/P4/- #2 dia=20007 acomp=lightning+fire: part t=324s pts=2790 jefe=0% min=0 blk=19% firma=9 errs=0
+alquimia/asfodelo/P4/- #4 dia=20015 acomp=lightning+steel: part t=230s pts=1645 jefe=0% min=0 blk=22% firma=10 errs=0
+alquimia/asfodelo/P4/- #3 dia=20013 acomp=lightning+ice: plata t=450s pts=5077 jefe=31% min=0 blk=21% firma=22 errs=0
+alquimia/asfodelo/P4/- #6 dia=20031 acomp=lightning+fire: bronce t=450s pts=4430 jefe=15% min=0 blk=20% firma=0 errs=0
+alquimia/asfodelo/P4/- #5 dia=20023 acomp=fire+lightning: plata t=450s pts=4765 jefe=16% min=0 blk=21% firma=6 errs=0
+alquimia/asfodelo/P4/- #7 dia=20042 acomp=lightning+steel: plata t=450s pts=5646 jefe=65% min=0 blk=21% firma=24 errs=0
+alquimia/asfodelo/P4/- #8 dia=20043 acomp=ice+lightning: bronce t=450s pts=4411 jefe=15% min=0 blk=21% firma=19 errs=0
+alquimia/asfodelo/P4/- #9 dia=20045 acomp=lightning+steel: bronce t=450s pts=4546 jefe=18% min=0 blk=21% firma=17 errs=0
+alquimia/asfodelo/P4/- #10 dia=20047 acomp=steel+lightning: bronce t=450s pts=4506 jefe=20% min=0 blk=20% firma=15 errs=0
+alquimia/asfodelo/P4/- #11 dia=20066 acomp=lightning+ice: plata t=450s pts=4734 jefe=17% min=0 blk=20% firma=12 errs=0
+alquimia/asfodelo/P4/- #12 dia=20070 acomp=lightning+steel: bronce t=450s pts=4533 jefe=21% min=0 blk=21% firma=15 errs=0
+alquimia/asfodelo/P4/- #13 dia=20080 acomp=lightning+steel: plata t=450s pts=4734 jefe=15% min=0 blk=20% firma=23 errs=0
+alquimia/asfodelo/P4/- #14 dia=20081 acomp=fire+lightning: bronce t=450s pts=4472 jefe=17% min=0 blk=21% firma=16 errs=0
+alquimia/asfodelo/P4/- #15 dia=20091 acomp=lightning+fire: part t=300s pts=2507 jefe=0% min=0 blk=19% firma=8 errs=0
+alquimia/tundra/P4/- #0 dia=20005 acomp=ice+fire: ORO t=450s pts=8411 jefe=100% min=27 blk=27% firma=0 errs=0
+alquimia/tundra/P4/- #1 dia=20014 acomp=ice+fire: plata t=450s pts=6683 jefe=99% min=0 blk=27% firma=54 errs=0
+alquimia/tundra/P4/- #2 dia=20018 acomp=fire+lightning: plata t=450s pts=6029 jefe=70% min=0 blk=26% firma=14 errs=0
+alquimia/tundra/P4/- #3 dia=20021 acomp=ice+fire: plata t=450s pts=5826 jefe=62% min=0 blk=27% firma=39 errs=0
+alquimia/tundra/P4/- #4 dia=20034 acomp=lightning+fire: plata t=450s pts=5875 jefe=69% min=0 blk=27% firma=57 errs=0
+alquimia/tundra/P4/- #6 dia=20051 acomp=steel+fire: plata t=450s pts=6059 jefe=87% min=0 blk=27% firma=45 errs=0
+alquimia/tundra/P4/- #5 dia=20038 acomp=fire+steel: ORO t=450s pts=8142 jefe=100% min=3 blk=27% firma=69 errs=0
+alquimia/tundra/P4/- #7 dia=20052 acomp=ice+fire: ORO t=450s pts=9182 jefe=100% min=73 blk=27% firma=67 errs=0
+alquimia/tundra/P4/- #8 dia=20054 acomp=fire+ice: plata t=450s pts=6019 jefe=76% min=0 blk=27% firma=25 errs=0
+alquimia/tundra/P4/- #10 dia=20061 acomp=steel+fire: plata t=450s pts=5699 jefe=61% min=0 blk=27% firma=0 errs=0
+alquimia/tundra/P4/- #9 dia=20056 acomp=lightning+fire: plata t=450s pts=5882 jefe=69% min=0 blk=27% firma=63 errs=0
+alquimia/tundra/P4/- #11 dia=20062 acomp=ice+fire: ORO t=450s pts=9216 jefe=100% min=40 blk=27% firma=51 errs=0
+alquimia/tundra/P4/- #12 dia=20071 acomp=fire+lightning: plata t=450s pts=4835 jefe=32% min=0 blk=26% firma=21 errs=0
+alquimia/tundra/P4/- #13 dia=20072 acomp=ice+fire: plata t=450s pts=6610 jefe=97% min=0 blk=27% firma=28 errs=0
+alquimia/tundra/P4/- #14 dia=20076 acomp=ice+fire: plata t=450s pts=6397 jefe=89% min=0 blk=26% firma=72 errs=0
+alquimia/tundra/P4/- #15 dia=20077 acomp=fire+ice: plata t=450s pts=6322 jefe=79% min=0 blk=27% firma=58 errs=0
+alquimia/panal/P4/- #0 dia=20003 acomp=steel+fire: bronce t=450s pts=4880 jefe=42% min=0 blk=31% firma=24 errs=0
+alquimia/panal/P4/- #1 dia=20008 acomp=fire+steel: ORO t=450s pts=8432 jefe=100% min=43 blk=31% firma=32 errs=0
+alquimia/panal/P4/- #2 dia=20011 acomp=steel+fire: ORO t=450s pts=8539 jefe=100% min=15 blk=31% firma=28 errs=0
+alquimia/panal/P4/- #4 dia=20028 acomp=ice+fire: bronce t=450s pts=4426 jefe=21% min=0 blk=29% firma=32 errs=0
+alquimia/panal/P4/- #3 dia=20026 acomp=ice+fire: bronce t=450s pts=4926 jefe=36% min=0 blk=31% firma=86 errs=0
+alquimia/panal/P4/- #5 dia=20030 acomp=steel+fire: plata t=450s pts=5659 jefe=66% min=0 blk=31% firma=24 errs=0
+alquimia/panal/P4/- #7 dia=20041 acomp=steel+fire: bronce t=450s pts=4520 jefe=30% min=0 blk=31% firma=16 errs=0
+alquimia/panal/P4/- #6 dia=20036 acomp=ice+fire: bronce t=450s pts=4906 jefe=36% min=0 blk=31% firma=49 errs=0
+alquimia/panal/P4/- #8 dia=20044 acomp=lightning+fire: bronce t=450s pts=4602 jefe=31% min=0 blk=31% firma=39 errs=0
+alquimia/panal/P4/- #9 dia=20048 acomp=steel+fire: plata t=450s pts=6261 jefe=86% min=0 blk=31% firma=26 errs=0
+alquimia/panal/P4/- #10 dia=20049 acomp=lightning+fire: bronce t=450s pts=4624 jefe=29% min=0 blk=31% firma=29 errs=0
+alquimia/panal/P4/- #12 dia=20069 acomp=lightning+fire: plata t=450s pts=4848 jefe=32% min=0 blk=31% firma=40 errs=0
+alquimia/panal/P4/- #11 dia=20057 acomp=steel+fire: ORO t=450s pts=8477 jefe=100% min=18 blk=31% firma=40 errs=0
+alquimia/panal/P4/- #13 dia=20074 acomp=lightning+fire: plata t=450s pts=5568 jefe=58% min=0 blk=31% firma=38 errs=0
+hogar/bosque/P4/- #0 dia=20001 acomp=steel+blood: part t=399s pts=3578 jefe=0% min=0 blk=9% firma=23 errs=0
+alquimia/panal/P4/- #14 dia=20078 acomp=steel+fire: plata t=450s pts=6437 jefe=98% min=0 blk=31% firma=41 errs=0
+alquimia/panal/P4/- #15 dia=20079 acomp=ice+fire: plata t=450s pts=4947 jefe=18% min=0 blk=31% firma=13 errs=0
+hogar/bosque/P4/- #2 dia=20020 acomp=steel+lightning: part t=327s pts=2573 jefe=0% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #1 dia=20004 acomp=steel+poison: ORO t=450s pts=8211 jefe=100% min=17 blk=9% firma=40 errs=0
+hogar/bosque/P4/- #4 dia=20027 acomp=steel+blood: part t=412s pts=3648 jefe=0% min=0 blk=9% firma=25 errs=0
+hogar/bosque/P4/- #3 dia=20025 acomp=steel+lightning: plata t=450s pts=6446 jefe=88% min=0 blk=9% firma=51 errs=0
+hogar/bosque/P4/- #5 dia=20029 acomp=steel+poison: ORO t=450s pts=8374 jefe=100% min=25 blk=9% firma=36 errs=0
+hogar/bosque/P4/- #7 dia=20053 acomp=steel+poison: ORO t=450s pts=8947 jefe=100% min=27 blk=9% firma=24 errs=0
+hogar/bosque/P4/- #6 dia=20039 acomp=steel+lightning: plata t=450s pts=6629 jefe=95% min=0 blk=9% firma=61 errs=0
+hogar/bosque/P4/- #8 dia=20055 acomp=steel+blood: plata t=450s pts=6307 jefe=77% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #9 dia=20064 acomp=steel+lightning: plata t=450s pts=6437 jefe=96% min=0 blk=9% firma=17 errs=0
+hogar/bosque/P4/- #11 dia=20067 acomp=steel+blood: plata t=450s pts=6350 jefe=95% min=0 blk=9% firma=40 errs=0
+hogar/bosque/P4/- #10 dia=20065 acomp=steel+lightning: plata t=450s pts=6486 jefe=94% min=0 blk=9% firma=26 errs=0
+hogar/bosque/P4/- #12 dia=20075 acomp=steel+poison: part t=450s pts=3936 jefe=0% min=0 blk=9% firma=12 errs=0
+hogar/bosque/P4/- #13 dia=20086 acomp=steel+poison: plata t=450s pts=6413 jefe=95% min=0 blk=9% firma=22 errs=0
+hogar/bosque/P4/- #15 dia=20106 acomp=steel+poison: part t=363s pts=3293 jefe=0% min=0 blk=9% firma=0 errs=0
+hogar/bosque/P4/- #14 dia=20092 acomp=steel+blood: plata t=450s pts=6426 jefe=87% min=0 blk=9% firma=44 errs=0
+hogar/cripta/P4/- #0 dia=20009 acomp=lightning+poison: plata t=450s pts=6174 jefe=75% min=0 blk=15% firma=0 errs=0
+hogar/cripta/P4/- #1 dia=20010 acomp=lightning+poison: plata t=450s pts=6182 jefe=82% min=0 blk=15% firma=44 errs=0
+hogar/cripta/P4/- #2 dia=20012 acomp=lightning+blood: ORO t=450s pts=8504 jefe=100% min=67 blk=15% firma=33 errs=0
+hogar/cripta/P4/- #3 dia=20017 acomp=lightning+poison: plata t=450s pts=5438 jefe=53% min=0 blk=15% firma=28 errs=0
+hogar/cripta/P4/- #4 dia=20019 acomp=lightning+blood: plata t=450s pts=5779 jefe=70% min=0 blk=15% firma=17 errs=0
+hogar/cripta/P4/- #5 dia=20022 acomp=lightning+steel: plata t=450s pts=6203 jefe=90% min=0 blk=15% firma=23 errs=0
+hogar/cripta/P4/- #6 dia=20024 acomp=lightning+blood: ORO t=450s pts=8192 jefe=100% min=15 blk=15% firma=44 errs=0
+hogar/cripta/P4/- #7 dia=20032 acomp=poison+lightning: plata t=450s pts=5093 jefe=52% min=0 blk=15% firma=22 errs=0
+hogar/cripta/P4/- #8 dia=20033 acomp=lightning+blood: plata t=450s pts=5197 jefe=55% min=0 blk=15% firma=33 errs=0
+hogar/cripta/P4/- #10 dia=20050 acomp=lightning+blood: plata t=450s pts=4776 jefe=31% min=0 blk=15% firma=30 errs=0
+hogar/cripta/P4/- #9 dia=20040 acomp=lightning+steel: ORO t=450s pts=8688 jefe=100% min=24 blk=15% firma=22 errs=0
+hogar/cripta/P4/- #11 dia=20060 acomp=steel+lightning: plata t=450s pts=5885 jefe=83% min=0 blk=15% firma=40 errs=0
+hogar/cripta/P4/- #12 dia=20088 acomp=lightning+steel: ORO t=450s pts=8800 jefe=100% min=85 blk=15% firma=43 errs=0
+hogar/cripta/P4/- #13 dia=20090 acomp=lightning+poison: plata t=450s pts=6046 jefe=84% min=0 blk=15% firma=18 errs=0
+hogar/cripta/P4/- #14 dia=20093 acomp=steel+lightning: plata t=450s pts=6298 jefe=95% min=0 blk=15% firma=39 errs=0
+hogar/cripta/P4/- #15 dia=20095 acomp=poison+lightning: ORO t=450s pts=8264 jefe=100% min=43 blk=15% firma=42 errs=0
+hogar/asfodelo/P4/- #0 dia=20002 acomp=poison+blood: bronce t=450s pts=4438 jefe=16% min=0 blk=20% firma=31 errs=0
+hogar/asfodelo/P4/- #1 dia=20006 acomp=steel+lightning: plata t=450s pts=4654 jefe=14% min=0 blk=21% firma=25 errs=0
+hogar/asfodelo/P4/- #2 dia=20007 acomp=blood+lightning: plata t=450s pts=4771 jefe=23% min=0 blk=22% firma=15 errs=0
+hogar/asfodelo/P4/- #3 dia=20013 acomp=lightning+poison: bronce t=450s pts=4344 jefe=9% min=0 blk=20% firma=0 errs=0
+hogar/asfodelo/P4/- #4 dia=20015 acomp=lightning+steel: bronce t=450s pts=4414 jefe=15% min=0 blk=21% firma=27 errs=0
+hogar/asfodelo/P4/- #5 dia=20023 acomp=lightning+blood: part t=392s pts=3626 jefe=0% min=0 blk=22% firma=28 errs=0
+hogar/asfodelo/P4/- #6 dia=20031 acomp=blood+lightning: bronce t=450s pts=4283 jefe=11% min=0 blk=21% firma=31 errs=0
+hogar/asfodelo/P4/- #7 dia=20042 acomp=lightning+steel: plata t=450s pts=4838 jefe=24% min=0 blk=20% firma=33 errs=0
+hogar/asfodelo/P4/- #8 dia=20043 acomp=poison+blood: bronce t=450s pts=4483 jefe=16% min=0 blk=21% firma=5 errs=0
+hogar/asfodelo/P4/- #9 dia=20045 acomp=poison+steel: bronce t=450s pts=4318 jefe=12% min=0 blk=21% firma=6 errs=0
+hogar/asfodelo/P4/- #10 dia=20047 acomp=steel+blood: plata t=450s pts=4746 jefe=19% min=0 blk=20% firma=0 errs=0
+hogar/asfodelo/P4/- #11 dia=20066 acomp=steel+poison: plata t=450s pts=4784 jefe=22% min=0 blk=21% firma=0 errs=0
+hogar/asfodelo/P4/- #12 dia=20070 acomp=lightning+steel: bronce t=450s pts=4371 jefe=12% min=0 blk=21% firma=27 errs=0
+hogar/asfodelo/P4/- #14 dia=20081 acomp=lightning+blood: plata t=450s pts=4880 jefe=24% min=0 blk=20% firma=35 errs=0
+hogar/asfodelo/P4/- #15 dia=20091 acomp=blood+lightning: plata t=450s pts=4898 jefe=22% min=0 blk=21% firma=34 errs=0
+hogar/asfodelo/P4/- #13 dia=20080 acomp=poison+steel: bronce t=450s pts=4478 jefe=17% min=0 blk=20% firma=13 errs=0
+hogar/tundra/P4/- #0 dia=20005 acomp=poison+lightning: ORO t=450s pts=8419 jefe=100% min=40 blk=22% firma=52 errs=0
+hogar/tundra/P4/- #2 dia=20034 acomp=blood+lightning: ORO t=450s pts=9482 jefe=100% min=100 blk=22% firma=61 errs=0
+hogar/tundra/P4/- #1 dia=20018 acomp=lightning+blood: plata t=450s pts=6264 jefe=74% min=0 blk=22% firma=0 errs=0
+hogar/tundra/P4/- #3 dia=20051 acomp=steel+lightning: plata t=450s pts=6390 jefe=75% min=0 blk=23% firma=0 errs=0
+hogar/tundra/P4/- #4 dia=20052 acomp=lightning+blood: plata t=450s pts=6486 jefe=91% min=0 blk=23% firma=47 errs=0
+hogar/tundra/P4/- #6 dia=20056 acomp=lightning+poison: plata t=450s pts=6536 jefe=91% min=0 blk=23% firma=61 errs=0
+hogar/tundra/P4/- #5 dia=20054 acomp=lightning+poison: ORO t=450s pts=8850 jefe=100% min=41 blk=22% firma=66 errs=0
+hogar/tundra/P4/- #7 dia=20062 acomp=lightning+blood: ORO t=450s pts=9094 jefe=100% min=83 blk=22% firma=55 errs=0
+hogar/tundra/P4/- #8 dia=20072 acomp=lightning+blood: plata t=450s pts=6278 jefe=72% min=0 blk=22% firma=62 errs=0
+hogar/tundra/P4/- #10 dia=20077 acomp=lightning+poison: ORO t=450s pts=8942 jefe=100% min=3 blk=22% firma=74 errs=0
+hogar/tundra/P4/- #11 dia=20084 acomp=lightning+steel: ORO t=450s pts=8826 jefe=100% min=72 blk=22% firma=55 errs=0
+hogar/tundra/P4/- #9 dia=20076 acomp=lightning+blood: ORO t=450s pts=9027 jefe=100% min=65 blk=23% firma=0 errs=0
+hogar/tundra/P4/- #12 dia=20085 acomp=lightning+blood: plata t=450s pts=6312 jefe=80% min=0 blk=22% firma=49 errs=0
+hogar/tundra/P4/- #13 dia=20089 acomp=lightning+poison: plata t=450s pts=6259 jefe=74% min=0 blk=22% firma=38 errs=0
+hogar/tundra/P4/- #14 dia=20103 acomp=steel+lightning: ORO t=450s pts=9056 jefe=100% min=90 blk=22% firma=45 errs=0
+hogar/tundra/P4/- #15 dia=20128 acomp=lightning+steel: plata t=450s pts=5834 jefe=62% min=0 blk=23% firma=58 errs=0
+hogar/panal/P4/- #0 dia=20011 acomp=steel+blood: ORO t=450s pts=8941 jefe=100% min=73 blk=26% firma=39 errs=0
+hogar/panal/P4/- #1 dia=20026 acomp=poison+steel: ORO t=450s pts=8811 jefe=100% min=93 blk=26% firma=42 errs=0
+hogar/panal/P4/- #2 dia=20036 acomp=poison+steel: plata t=450s pts=6182 jefe=74% min=0 blk=26% firma=49 errs=0
+hogar/panal/P4/- #3 dia=20044 acomp=blood+poison: ORO t=450s pts=8616 jefe=100% min=44 blk=26% firma=65 errs=0
+hogar/panal/P4/- #4 dia=20049 acomp=blood+poison: plata t=450s pts=6176 jefe=67% min=0 blk=26% firma=45 errs=0
+hogar/panal/P4/- #5 dia=20057 acomp=steel+lightning: plata t=450s pts=6445 jefe=100% min=0 blk=26% firma=20 errs=0
+hogar/panal/P4/- #6 dia=20069 acomp=blood+steel: plata t=450s pts=5357 jefe=59% min=0 blk=26% firma=33 errs=0
+hogar/panal/P4/- #7 dia=20074 acomp=blood+poison: bronce t=450s pts=4030 jefe=3% min=0 blk=26% firma=31 errs=0
+hogar/panal/P4/- #8 dia=20078 acomp=steel+lightning: ORO t=450s pts=8278 jefe=100% min=17 blk=26% firma=50 errs=0
+hogar/panal/P4/- #9 dia=20079 acomp=poison+lightning: plata t=450s pts=5394 jefe=41% min=0 blk=26% firma=47 errs=0
+hogar/panal/P4/- #10 dia=20082 acomp=blood+steel: ORO t=450s pts=8565 jefe=100% min=58 blk=26% firma=32 errs=0
+hogar/panal/P4/- #11 dia=20094 acomp=steel+lightning: ORO t=450s pts=8158 jefe=100% min=11 blk=26% firma=45 errs=0
+hogar/panal/P4/- #12 dia=20098 acomp=poison+blood: ORO t=450s pts=8238 jefe=100% min=8 blk=26% firma=42 errs=0
+hogar/panal/P4/- #13 dia=20102 acomp=blood+poison: ORO t=450s pts=9133 jefe=100% min=69 blk=26% firma=63 errs=0
+hogar/panal/P4/- #14 dia=20104 acomp=lightning+steel: ORO t=450s pts=9163 jefe=100% min=100 blk=26% firma=24 errs=0
+hogar/panal/P4/- #15 dia=20107 acomp=blood+lightning: plata t=450s pts=6091 jefe=92% min=0 blk=26% firma=36 errs=0
+--- 344 partidas en 1034 s; Q=alta SEED=1 REACT=5 KITPOW=- KITNODES=- KITDISH=- BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+fragua/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+fragua/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+ventisca/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/tundra/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+pantano/panal/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/bosque/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/cripta/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/asfodelo/P4/- | 0 | 0 % (0-0) | 0 % | 0 % | - | 0 | 0 | 0
+carmesi/tundra/P4/- | 8 | 50 % (22-78) | 100 % | 100 % | 450 | 7646 | 27 | 0
+carmesi/panal/P4/- | 16 | 63 % (39-82) | 88 % | 100 % | 450 | 7705 | 45 | 0
+lana/bosque/P4/- | 16 | 6 % (1-28) | 38 % | 38 % | 429 | 4475 | 1 | 0
+lana/cripta/P4/- | 16 | 63 % (39-82) | 100 % | 100 % | 450 | 7594 | 30 | 0
+lana/asfodelo/P4/- | 16 | 13 % (3-36) | 75 % | 81 % | 450 | 5760 | 1 | 0
+lana/tundra/P4/- | 16 | 25 % (10-49) | 100 % | 100 % | 450 | 6615 | 11 | 0
+lana/panal/P4/- | 16 | 50 % (28-72) | 94 % | 100 % | 450 | 7076 | 26 | 0
+tempestad/bosque/P4/- | 16 | 6 % (1-28) | 44 % | 44 % | 420 | 4603 | 0 | 0
+tempestad/cripta/P4/- | 16 | 31 % (14-56) | 75 % | 100 % | 450 | 6313 | 12 | 0
+tempestad/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 81 % | 450 | 4520 | 0 | 0
+tempestad/tundra/P4/- | 16 | 13 % (3-36) | 88 % | 100 % | 450 | 6008 | 1 | 0
+tempestad/panal/P4/- | 16 | 19 % (7-43) | 94 % | 100 % | 450 | 6459 | 7 | 0
+alquimia/bosque/P4/- | 16 | 13 % (3-36) | 94 % | 94 % | 450 | 6155 | 1 | 0
+alquimia/cripta/P4/- | 16 | 19 % (7-43) | 81 % | 100 % | 450 | 6114 | 11 | 0
+alquimia/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 81 % | 450 | 4289 | 0 | 0
+alquimia/tundra/P4/- | 16 | 25 % (10-49) | 100 % | 100 % | 450 | 6699 | 9 | 0
+alquimia/panal/P4/- | 16 | 19 % (7-43) | 56 % | 100 % | 450 | 5753 | 5 | 0
+hogar/bosque/P4/- | 16 | 19 % (7-43) | 69 % | 69 % | 450 | 5878 | 4 | 0
+hogar/cripta/P4/- | 16 | 31 % (14-56) | 100 % | 100 % | 450 | 6595 | 15 | 0
+hogar/asfodelo/P4/- | 16 | 0 % (0-19) | 44 % | 94 % | 450 | 4520 | 0 | 0
+hogar/tundra/P4/- | 16 | 50 % (28-72) | 100 % | 100 % | 450 | 7628 | 31 | 0
+hogar/panal/P4/- | 16 | 56 % (33-77) | 94 % | 100 % | 450 | 7349 | 30 | 0

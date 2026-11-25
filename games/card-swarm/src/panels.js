@@ -708,14 +708,14 @@
     var gain = isAnchor || !rank ? [] : nw.filter(function (cb) { return comboNames(S.anchors).indexOf(cb) < 0; });
     if (gain.length && y < 340) U.wrap(c, 'FUSIÓN posible: ' + gain.map(function (cb) { return cb.name; }).join(', '), 310, 17).slice(0, y < 320 ? 2 : 1).forEach(function (l) { G.txt(c, l, 626, y, 12, '#ffe9a0', 'left'); y += 22; });
     U.button(c, R_ANC, isAnchor ? 'QUITAR ANCLA' : 'FIJAR ANCLA', { off: !rank, color: '#a8801a', hot: '#d8a82a', size: 18, sub: G.hint('[E]', null) });
-    // P4.5 / P7: Insignias de minijefe (trofeo menor; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan las del Panal)
-    G.txt(c, 'INSIGNIAS ' + G.Minis.insigniaCount() + '/10', 626, 450, 12, '#c8a0ff', 'left');
+    // P4.5 / P7: trofeos de guardián (antes Insignias; 3 = logro, 8 = logro + 1 Esencia, 10 = logro + 1 Esencia; cuentan los del Panal). F2: letra 17
+    G.txt(c, 'TROFEOS DE GUARDIÁN ' + G.Minis.insigniaCount() + '/10', 626, 448, 17, '#c8a0ff', 'left');
     G.Minis.ALL.forEach(function (mid, k) {
       var have = (S.insigniasEver || {})[mid], ix = 626 + k * 30;
       try { c.globalAlpha = have ? 1 : 0.9; c.drawImage(Assets.sprite(G.Minis.D[mid].ins.id, have ? 0 : 1), ix, 468, 26, 26); c.globalAlpha = 1; } catch (e0) { /* sin icono */ }
     });
   }
-  // T-F1-07: página RECURSOS del Archivo. Los 7 recursos siempre (con o sin la presentación por pasos), con su saldo real; los aún no presentados llevan "Lo conocerás más adelante".
+  // T-F1-07: página RECURSOS del Archivo. Los 6 recursos siempre (F2: las Insignias van dentro de Trofeos) (con o sin la presentación por pasos), con su saldo real; los aún no presentados llevan "Lo conocerás más adelante".
   // Una fila de 66 por recurso: nombre y saldo / cómo se consigue / para qué sirve (letra 17, interlineado 21,5).
   function resIcon(c, id, x, y) {
     try {
@@ -725,7 +725,6 @@
       else if (id === 'esencia') U.part(c, 'rare', x, y, 10);
       else if (id === 'pf') G.Tree.pfIcon(c, x, y, 10);
       else if (id === 'trofeos') c.drawImage(Assets.sprite('trophy_pastor_horn', 0), x - 12, y - 12, 24, 24);
-      else if (id === 'insignias') c.drawImage(Assets.sprite('trophy_mini_carnero', 0), x - 12, y - 12, 24, 24);
     } catch (e) { /* sin icono */ }
   }
   function drawArchRes(c) {
@@ -899,9 +898,9 @@
   P.logrosRects = function () { return { row: lRow, up: R_LUP, dn: R_LDN }; };   // pruebas
   P.logrosScroll = function (n) { st.lscroll = n; st.lsel = n; lFix(); };   // pruebas
   function lFix() { var n = G.Ach.DEFS.length; st.lsel = G.clamp(st.lsel || 0, 0, n - 1); st.lscroll = G.clamp(st.lscroll || 0, 0, Math.max(0, n - LROWS)); if (st.lsel < st.lscroll) st.lscroll = st.lsel; if (st.lsel >= st.lscroll + LROWS) st.lscroll = st.lsel - LROWS + 1; }
-  // T-F1-07: los textos de un logro no nombran un recurso que G.Res aún no enseña (cuentas del flujo nuevo). Insignias, trofeos o PF ocultos: el nombre
+  // T-F1-07: los textos de un logro no nombran un recurso que G.Res aún no enseña (cuentas del flujo nuevo). Trofeos (de jefe o de guardián) o PF ocultos: el nombre
   // pasa a "???" y la descripción / el recuerdo a "Lo conocerás más adelante"; la Esencia oculta pasa a "parte rara" (G.Res.fix, como en el reto y los encargos).
-  var ACH_RX = { insignias: /[Ii]nsignia/, trofeos: /[Tt]rofeo/, pf: /\bPF\b|[Pp]untos? de [Ff]orja/ };
+  var ACH_RX = { trofeos: /[Tt]rofeo|[Ii]nsignia/, pf: /\bPF\b|[Pp]untos? de [Ff]orja/ };
   function achHidden(t) { var R = G.Res; if (!R) return false; for (var k in ACH_RX) if (ACH_RX[k].test(t) && !R.visible(k)) return true; return false; }
   function achFix(t) { var R = G.Res; if (!R || R.visible('esencia')) return t; return R.fix(t).replace(/\b(una|otra) Esencia\b/g, '$1 ' + R.t('res.rareAsPart').replace(/^1 /, '')); }
   function achText(t, alt) { return achHidden(t) ? alt : achFix(t); }

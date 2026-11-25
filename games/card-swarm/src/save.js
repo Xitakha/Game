@@ -42,7 +42,7 @@
       ever: {}, mile: 0,                       // nodos comprados alguna vez (hitos "Maestría de oficio") y hitos ya cobrados
       respecFree: 1,                           // el primer reespecializado es gratis
       elites: {},                              // primer élite abatido de cada SLOT (+1 PF; v6: mini_slot1 / mini_slot2)
-      insignias: {},                           // v6: Insignias de los minijefes (id -> veces)
+      insignias: {},                           // v6: Insignias de los minijefes (id -> veces). F2 (T-F1-07 8.1, opción A): en pantalla son 'trofeos de guardián'; el campo no cambia
       quest: { active: null, prog: {}, done: {} },
       shop: { trade: 0, tonic: 0, magnet: 0, part: 0, dish: 0 }, pending: { tonic: 0, magnet: 0, dish: null },
       flags: {},

@@ -77,7 +77,108 @@ Cripta, Peligro III, sin mutadores, mismas semillas que la fase A (`calib/exp_cr
 
 Comparación por pares (misma semilla): +0 gana 18 partidas que la base pierde y pierde 20 que la base gana (sin diferencia); +0 y 6 PF, 16 frente a 31 (McNemar p ~ 0,04: baja unos 8 puntos). Medido: quitar el refuerzo (DEF 20,7 -> 18) no cambia nada; quitar 3 PF baja 8 puntos. La potencia del kit casi no mueve el resultado en la Cripta: el bot llega siempre al jefe y Karceron en Peligro III cae ante casi cualquier kit (todos los kits traen Hielo o Rayo, o los recibe por R6, y Karceron es débil a los dos). **Conclusión: con las palancas del kit no se puede llevar la Cripta del 83 % al 35 %** sin desmontar el kit (dejarlo con menos PF que el Bosque). La palanca que sí actúa sobre todos los kits a la vez es el **Peligro del día** (sección 5).
 
-## 5. Qué queda sin medir (a fecha de este corte)
+### 4.2 Plato de los kits dominantes (palanca 2 bis)
+
+Carmesí y Hogar con Té de brasas (+10 % XP) en vez de Sopa de hebra (+0,25 HP/s), P III, 5 biomas, n=24 por bioma, mismas semillas (`calib/exp_plato_te.csv`):
+
+| kit | Sopa (fase A, mismas 120 semillas) | Té | partidas que solo gana la Sopa / solo el Té |
+|---|---|---|---|
+| Carmesí | 69 % | 62 % | 24 / 15 (McNemar p ~ 0,2: **no es un resultado**) |
+| Hogar | 69 % | 68 % | 16 / 14 (sin diferencia) |
+
+Medido: el plato apenas mueve la victoria. No se propone cambiarlo.
+
+## 5. Fase B (Peligro IV) y reto diario real
+
+### 5.1 Peligro IV, sin mutadores (n=16 por celda, 640 partidas, `calib/faseB_P4_alta.csv`)
+
+Objetivo: 25 +-7.
+
+| kit \ bioma | Bosque | Cripta | Asfódelo | Tundra | Panal | total (n=80) |
+|---|---|---|---|---|---|---|
+| fragua | 12 | 25 | 19 | 75 | 62 | **39** (29-50) |
+| ventisca | 6 | 44 | 0 | 12 | 6 | **14** (8-23) |
+| pantano | 12 | 12 | 0 | 38 | 31 | 19 (12-29) |
+| carmesi | 25 | 75 | 0 | 38 | 62 | **40** (30-51) |
+| lana | 6 | 62 | 12 | 25 | 50 | 31 (22-42) |
+| tempestad | 6 | 31 | 0 | 12 | 19 | **14** (8-23) |
+| alquimia | 12 | 19 | 0 | 25 | 19 | **15** (9-24) |
+| hogar | 19 | 31 | 0 | 50 | 56 | 31 (22-42) |
+| **media** (n=128) | **12** (8-19) | **38** (30-46) | **4** (2-9) | **34** (27-43) | **38** (30-47) | **25** (22-29) |
+
+Con n=16 cada celda tiene un IC95 de unos +-20 puntos: solo leo medias por kit y por bioma. Medido: **Peligro IV es la palanca fuerte** (de III a IV la media cae de 55 % a 25 %; la Cripta, de 83 % a 38 %). El orden de los kits se mantiene: Fragua y Carmesí arriba, Ventisca, Tempestad y Alquimia abajo.
+
+### 5.1b Peligro II, sin mutadores (n=16 por celda, 640 partidas, `calib/faseB_P2_alta.csv`)
+
+Objetivo: 45 +-7. Media 65 % (62-69). Por bioma: Bosque 40, Cripta 90, Asfódelo 54, Tundra 73, Panal 70. Por kit: Fragua 75, Carmesí 76, Hogar 70, Lana 69, Pantano 60, Alquimia 60, Tempestad 58, Ventisca 55.
+
+### 5.1c Resumen de la escala de Peligro (media de los 8 kits, sin mutadores)
+
+| bioma | II | III | IV |
+|---|---|---|---|
+| Bosque | 40 | 34 | 12 |
+| Cripta | 90 | 83 | 38 |
+| Asfódelo | 54 | 38 | 4 |
+| Tundra | 73 | 62 | 34 |
+| Panal | 70 | 59 | 38 |
+| **media** | **65** (meta 45) | **55** (meta 35) | **25** (meta 25) |
+
+Medido: de II a III el bot pierde solo 10 puntos y de III a IV, 30. En II y III el reto es unos 20 puntos más fácil que la meta; en IV está en la meta. Los biomas no son comparables con el mismo Peligro: la Cripta en IV (38 %) vale lo que el Bosque o el Asfódelo en III (34-38 %).
+
+### 5.2 Reto diario real con las reglas actuales (r1, k1): 200 días seguidos (días 20401-20600), ALTA (`DAILY=1`, `calib/reto_real_r1.csv`)
+
+Reglas tal cual: bioma, Peligro (35/45/20), mutadores, kit de la semana y baraja del día; cuenta con todo abierto.
+
+| | n | Oro | IC95 | Bronce+ | Plata+ |
+|---|---|---|---|---|---|
+| **todos los días** | 200 | **54 %** | 48-61 | 90 % | 86 % |
+| Peligro II | 68 | 65 % | 53-75 | 90 % | 90 % |
+| Peligro III | 97 | 53 % | 43-62 | 89 % | 85 % |
+| Peligro IV | 35 | 40 % | 26-56 | 94 % | 80 % |
+| Bosque / Asfódelo | 32 / 45 | 31 % / 29 % | | 66 % / 80 % | |
+| Cripta / Tundra / Panal | 51 / 47 / 25 | 80 % / 53 % / 80 % | | 100 % | |
+
+**Medido: con las reglas actuales el bot hábil saca Oro el 54 % de los días** (objetivo 25-35 %; el intervalo entero queda por encima). El reto diario, tal como está, no es el desafío que pide el diseño: el problema no es un kit, es el reparto de Peligro y la diferencia entre biomas.
+
+### 5.3 Los mutadores en el reto real
+
+Con las celdas de las fases A y B (kit x bioma x Peligro, sin mutadores) se predice el Oro de cada uno de los 200 días medidos: **54,7 % esperado sin mutadores frente a 54,5 % real con ellos**. El modelo acierta el total (valida que las fases A-B describen el reto) y dice que **los mutadores del día, en conjunto, no quitan victorias al bot**: la pelea con el jefe decide y casi todos los mutadores tocan la horda. Detalle por mutador en la fase C (sección 6).
+
+### 5.4 Propuesta: Peligro del día por bioma (reglas r2)
+
+Como el kit casi no mueve el resultado (4.1, 4.2) y los mutadores tampoco (5.3), la palanca que queda para que el reto sea un reto es el **Peligro del día**. Con el mismo Peligro los biomas no se parecen, así que la tabla pasa a depender del bioma (misma tirada, mismo orden de tiradas; solo cambia cómo se traduce):
+
+| bioma | r1 (II / III / IV) | **r2 propuesta** | Oro esperado del bot, sin mutadores (modelo fases A-B) |
+|---|---|---|---|
+| Bosque | 35 / 45 / 20 | 0 / 70 / 30 | 76 -> **28 %** |
+| Cripta | 35 / 45 / 20 | 0 / 0 / 100 | 76 -> **38 %** |
+| Asfódelo | 35 / 45 / 20 | 0 / 90 / 10 | 37 -> **35 %** |
+| Tundra | 35 / 45 / 20 | 0 / 0 / 100 | 61 -> **34 %** |
+| Panal | 35 / 45 / 20 | 0 / 0 / 100 | 59 -> **38 %** |
+| **media** | **53 %** (medido en el reto real: 54 %) | **34 %** | objetivo 25-35 % |
+
+(Bosque r1 sale 32 % en esa fila; la columna "r1" de la media es 53 %.) **Esto sube la dificultad del reto**: de un 54 % de Oro a un 34 % para el bot. Está dentro de la meta del diseño (25-35 %), en su borde alto a propósito: si el jugador real esquiva peor que el bot en la pelea con el jefe, el reto quedará más duro de lo que dice esta tabla, no más fácil. Se mantienen: nunca Peligro I ni V; la excepción de novato (Peligro II como máximo si nunca has vencido a ese jefe); el presupuesto de mutadores por Peligro.
+
+Riesgos: (1) en Peligro IV el presupuesto de mutadores es 1, así que los días de Cripta, Tundra y Panal traen 1 mutador o 2 de peso 0,5; hay menos variedad (aceptable: los mutadores no deciden). (2) el multiplicador de puntuación sigue ligado al Peligro: un día de Cripta (IV) puntúa más que uno de Bosque (III); las puntuaciones solo se comparan dentro del mismo día, así que no importa. (3) depende de que el bot hábil se parezca al jugador; lo contrasta la fase E.
+
+Aplicación: `Dl.PEL_W` en `src/daily.js` y `Dl.RV` -> `r2` (el historial anota `rv`). **Pendiente de aplicar al terminar los lotes**, porque cambiar las reglas cambia qué días caen en cada bioma y rompería las comparaciones por pares en curso.
+
+## 6. Fase C: mutadores (Asfódelo, Peligro III, Fragua y Pantano, n=48, comparación por pares con la fase A)
+
+En curso (`calib/faseC_mut_alta.csv`; `python3 tools/card-swarm-bot/calib/pares.py <csv>`). Primeros resultados con Pantano (n=31-48 por mutador):
+
+| mutador | Oro base -> con mutador | solo base / solo mutador | Plata+ base -> con mutador | lectura |
+|---|---|---|---|---|
+| duros | 23 -> 14 % | 8 / 4 | 72 -> 58 % | quita (no significativo) |
+| sincor | 23 -> 17 % | 6 / 3 | 73 -> 69 % | quita poco |
+| bolsillo | 23 -> 19 % | 5 / 3 | 73 -> 79 % | casi neutro |
+| cristal | 23 -> 15 % | 5 / 1 | 73 -> **54 %** (10 / 1, p = 0,01) | el que más quita |
+| **dos** | 23 -> 15 % | 10 / 6 | 73 -> **98 %** (0 / 12, p < 0,001) | **facilita llegar al jefe y la Plata** |
+| sincambio | 23 -> 23 % | 0 / 0 | sin cambio | neutro (el bot no paga cambios de oferta) |
+
+Medido: "Dos etiquetas" hace la baraja más concentrada y el bot llega antes a sus fusiones: Pantano llega al jefe y saca Plata en 12 partidas más de 48 (ninguna menos). En Oro no se ve efecto. Eso incumple la regla de T-F4-01 ("ningún mutador facilita") para las medallas Bronce y Plata. Pendiente confirmar con Fragua.
+
+## 7. Qué queda sin medir (a fecha de este corte)
 
 - Fases B (Peligro II y IV), C (mutadores), D (combinaciones límite R1-R6) y calidades MEDIA / BAJA.
 - Reto diario real con las reglas del día (`DAILY=1`).

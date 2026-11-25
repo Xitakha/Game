@@ -129,7 +129,7 @@
   A.snd2 = function (t, a, pitch) { try { if (G.Snd && G.Snd.armor2) { G.Snd.armor2(t, a, pitch); return true; } } catch (e) { /* audio opcional */ } return false; };
   A.snd = function (t, a, pitch) { try { if (G.Snd && G.Snd.armor) G.Snd.armor(t, a, pitch); } catch (e) { /* audio opcional */ } };
 
-  // ---- materiales: trofeos / insignias gastables (S.trophies / S.insignias = saldo; *Ever = acumulado para Ruta, logros y Archivo)
+  // ---- materiales: trofeos gastables (S.trophies = de jefe, kind 'tro'; S.insignias = de guardián, kind 'ins': las antiguas Insignias, F2 solo cambió el nombre; saldo; *Ever = acumulado para Ruta, logros y Archivo)
   A.have = function (kind, id) { var S = SV(); return ((kind === 'tro' ? S.trophies : S.insignias) || {})[id] || 0; };
   A.haveAny = function (kind, ids) { return ids.reduce(function (n, id) { return n + A.have(kind, id); }, 0); };
   A.itemName = function (kind, id) { try { return kind === 'tro' ? G.Boss.TROPHY[id].name : G.Minis.D[id].ins.name; } catch (e) { return id; } };
@@ -252,7 +252,7 @@
     { id: 'p3', name: 'Mosaico', desc: 'Lleva piezas de 3 sets distintos a la vez.', ok: function () { return Object.keys(A.real().sets).length >= 3; }, reward: { brasas: 150, parts: { plate: 6 } } },
     { id: 'p4', name: 'Refuerzo', desc: 'Refuerza una pieza a +1.', ok: function (S) { return Object.keys(S.armor.owned).some(function (k) { return S.armor.owned[k] >= 1; }); }, reward: { brasas: 100, parts: { thread: 10 } } },
     { id: 'p5', name: 'Sin rasguños', desc: 'Gana una expedición sin recibir daño llevando armadura de tier 2.', ok: function (S) { return !!S.flags.arm_clean; }, reward: { brasas: 200, parts: { rare: 1 } } },
-    { id: 'p6', name: 'Cazador de insignias', desc: 'Consigue 2 Insignias de minijefe en una salida.', ok: function (S) { return !!S.flags.arm_ins2; }, reward: { brasas: 180, parts: { rare: 1 } } },
+    { id: 'p6', name: 'Cazador de trofeos', desc: 'Consigue 2 trofeos de guardián en una salida.', ok: function (S) { return !!S.flags.arm_ins2; }, reward: { brasas: 180, parts: { rare: 1 } } },
     { id: 'p7', name: 'A pelo', desc: 'Vence a un jefe en Peligro II sin armadura equipada.', ok: function (S) { return !!S.flags.arm_bare; }, reward: { brasas: 250, parts: { rare: 1 } } }
   ];
   A.pedReady = function (d) { var S = SV(); return !S.armor.ped[d.id] && !!d.ok(S); };

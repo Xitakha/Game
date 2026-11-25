@@ -141,15 +141,15 @@
   };
 
   // ---- dibujo
-  function costLines(c, cost, x, y) {   // fila de partes y Brasas (lo que tienes / lo que pide) y debajo trofeos e insignias
+  function costLines(c, cost, x, y) {   // fila de partes y Brasas (lo que tienes / lo que pide) y debajo los trofeos (de jefe y de guardián; F2: antes insignias)
     var Sv = SV(), k, cx = x, t;
     for (k in cost.parts) {
       var have = Sv.parts[k] || 0, ok = have >= cost.parts[k]; t = have + '/' + cost.parts[k]; U.part(c, k, cx + 8, y, 8); G.txt(c, t, cx + 20, y + 1, 17, ok ? '#9dffb4' : '#ff8a8a', 'left'); cx += 20 + tw(c, t, 17) + 18;
     }
     var okb = Sv.brasas >= cost.brasas; U.part(c, 'brasa', cx + 8, y, 8); G.txt(c, Sv.brasas + '/' + cost.brasas, cx + 20, y + 1, 17, okb ? '#9dffb4' : '#ff8a8a', 'left');
     cost.items.forEach(function (it, j) {
-      var have = A.haveAny(it.kind, it.ids), ok = have >= it.n, nm = it.ids.length === 1 ? A.itemName(it.kind, it.ids[0]) : (it.kind === 'tro' ? 'trofeo' : 'insignia') + ' del jefe' + (it.kind === 'ins' ? ' (minijefe)' : '');
-      U.wrap(c, (it.kind === 'tro' ? 'Trofeo: ' : 'Insignia: ') + nm + ' ' + have + '/' + it.n, 456, 17).slice(0, 2).forEach(function (l, q) { G.txt(c, l, x, y + 28 + j * 44 + q * 22, 17, ok ? '#9dffb4' : '#ff8a8a', 'left'); });
+      var have = A.haveAny(it.kind, it.ids), ok = have >= it.n, nm = it.kind === 'tro' ? 'Trofeo: ' + (it.ids.length === 1 ? A.itemName(it.kind, it.ids[0]) : 'trofeo del jefe') : 'Trofeo de guardián' + (it.ids.length === 1 ? ': ' + A.itemName(it.kind, it.ids[0]) : ' del bioma');
+      U.wrap(c, nm + ' ' + have + '/' + it.n, 456, 17).slice(0, 2).forEach(function (l, q) { G.txt(c, l, x, y + 28 + j * 44 + q * 22, 17, ok ? '#9dffb4' : '#ff8a8a', 'left'); });
     });
   }
   function drawDetail(c, p) {   // vista DETALLE (EQUIPO / FABRICAR): pieza a la izquierda, coste o refuerzo a la derecha, botones abajo
@@ -249,7 +249,7 @@
       G.txt(c, s.name + (mini ? '' : '  (T' + s.tier + ')'), r.x + 12, r.y + 18, 17, unl ? '#fff' : '#7a7086', 'left');
       D.ofSet(sid).forEach(function (p, j) { var own = A.owned(p.id), sz = 34, x = r.x + 12 + j * (sz + 4); c.save(); if (!own) c.globalAlpha = 0.4; icon(c, p, x, r.y + 32, sz, A.baseRef(p.id)); c.restore(); if (own && A.eq()[p.slot] === p.id) { c.fillStyle = '#9dffb4'; c.fillRect(x + 2, r.y + 32 + sz + 1, sz - 4, 3); } });
       if (!mini) U.wrap(c, unl ? 'Equipadas ' + cnt + '/4' : 'Vence a ' + (G.Boss.DEFS[s.boss] ? G.Boss.DEFS[s.boss].name : s.boss), 214, 17).slice(0, 2).forEach(function (l, j) { G.txt(c, l, r.x + 12, r.y + 86 + j * 22, 17, unl ? (cnt >= 2 ? s.color : '#b4a8c8') : '#ff8a8a', 'left'); });
-      if (mini) { U.wrap(c, rfix('+10 % imán, +1 HP por corazón, +10 % XP en el Asfódelo, Frío -10 %, miel -15 %. Sin bono de set: 2 Insignias del bioma + 1 Esencia.'), 680, 17).slice(0, 4).forEach(function (l, j) { G.txt(c, l, MX, r.y + 40 + j * 22, 17, '#c8b8e8', 'left'); }); }
+      if (mini) { U.wrap(c, rfix('+10 % imán, +1 HP por corazón, +10 % XP en el Asfódelo, Frío -10 %, miel -15 %. Sin bono de set: 2 trofeos de guardián del bioma + 1 Esencia.'), 680, 17).slice(0, 4).forEach(function (l, j) { G.txt(c, l, MX, r.y + 40 + j * 22, 17, '#c8b8e8', 'left'); }); }
       else {
         var ly = r.y + 40;
         U.wrap(c, 'B2: ' + s.t2, 560, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, MX, ly, 17, cnt >= 2 ? '#c8f0c8' : '#a89cc0', 'left'); ly += 22; });

@@ -11,7 +11,7 @@
 //   Peligro ni mutadores; SEED= es el primer día y N días seguidos; KIT y BIOME se ignoran salvo KIT=auto, el de la semana).
 //   BOSSBOT=1 (por defecto): en la pelea con el jefe esquiva telegrafías con dodge_fusion.js (BREACT= ms de reacción, 250; BMIST= prob. de error, 0,1; azar sembrado);
 //   BOSSBOT=0: la misma repulsión de play_bot.js también contra el jefe.
-//   KITPOW=bioma=tier/ref/pf[,...] pisa G.Kit.POWER en memoria y KITNODES=kit=N1:A,N2,...[;kit2=...] la lista de nodos de un kit y KITDISH=kit=plato[,...] su plato (perillas de exploración; kits.js no cambia).
+//   KITPOW=bioma=tier/ref/pf[,...] pisa G.Kit.POWER en memoria y KITNODES=kit=N1:A,N2,...[;kit2=...] la lista de nodos de un kit KITDISH=kit=plato[,...] su plato y KITPF=kit=+-n[,...] sus PF en todos los biomas (perillas de exploración; kits.js no cambia).
 //   REACT= ticks entre decisiones de movimiento (5 = bot hábil, 83 ms; 19 = bot torpe, lo que hace play_bot.js a speed=4 con su setInterval de 80 ms reales).
 // Salida: una línea por partida y un resumen por celda con victoria (Oro), Bronce (llega al jefe), Plata, intervalo de Wilson al 95 %, tiempo de muerte y puntuación.
 const { launch } = require('../lib/browser.js');
@@ -28,6 +28,7 @@ const KITS = list(env.KIT, ALLK, ['fragua']), BIOMES = list(env.BIOME, ALLB, ['b
 const SETUP = ([kit, biome, pel, muts, seed, idx, daily, boss]) => {
   const D = G.Daily, K = G.Kit, S = G.Save.data;
   (boss.pow || '').split(',').filter(Boolean).forEach(x => { const [bi, v] = x.split('='), [t, rf, pf] = v.split('/').map(Number); K.POWER[bi] = { tier: t, ref: rf, pf: pf }; });   // KITPOW=cripta=2/0/9 (exploración; no toca kits.js)
+  (boss.pf || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); if (kid === kit) Object.keys(K.POWER).forEach(bi => { K.POWER[bi] = Object.assign({}, K.POWER[bi], { pf: Math.max(0, K.POWER[bi].pf + Number(v)) }); }); });   // KITPF=fragua=-3 (PF del árbol por kit)
   (boss.dish || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).dish = v; });   // KITDISH=carmesi=te,hogar=pan
   (boss.nodes || '').split(';').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).nodes = v.split(',').map(n => n.split(':')); });   // KITNODES=hogar=F1:A,H1:A,...
   S.runs = 3; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 };
@@ -106,29 +107,41 @@ const ADV = ([n, react]) => {
 const wilson = (k, n) => { if (!n) return [0, 0]; const z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; };
 const pc = x => Math.round(x * 100);
 (async () => {
-  const b = await launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
+  const newB = () => launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const cells = [];
   if (DAILY) cells.push({ kit: (env.KIT || 'auto'), biome: '-', pel: 0, muts: [] });
   else for (const kit of KITS) for (const biome of BIOMES) for (const pel of PELS) for (const muts of MUTS) cells.push({ kit, biome, pel, muts });
   const jobs = []; cells.forEach((c, ci) => { for (let i = 0; i < N; i++) jobs.push([ci, i]); });
-  const res = cells.map(() => []); let next = 0; const T0 = Date.now();
+  const res = cells.map(() => []); let next = 0, retries = 0;   // sin servidor (o navegador caído) la partida se reintenta, no se pierde const T0 = Date.now();
+  // Reanudar: si OUT ya existe, se saltan las partidas que ya tiene (misma celda e idx; en DAILY=1, el mismo día)
+  if (OUT && fs.existsSync(OUT)) {
+    const have = new Set(fs.readFileSync(OUT, 'utf8').trim().split('\n').slice(1).map(l => { const f = l.split(','); return DAILY ? 'd' + f[9] : [f[0], f[1], f[2], f[3], f[8]].join('|'); }));
+    const k0 = jobs.length;
+    for (let j = jobs.length - 1; j >= 0; j--) { const [ci, i] = jobs[j], c = cells[ci]; if (have.has(DAILY ? 'd' + (20000 + SEED + i) : [c.kit, c.biome, c.pel, c.muts.join('+') || '-', i].join('|'))) jobs.splice(j, 1); }
+    if (k0 !== jobs.length) console.log(`reanudando: ${k0 - jobs.length} partidas ya estaban en ${OUT}`);
+  }
   if (OUT && !fs.existsSync(OUT)) fs.writeFileSync(OUT, 'kit,biome,pel,mut,q,react,bossbot,seed,idx,day,comp,won,medal,t,score,base,bossFrac,parts,kills,lvl,minHp,blk,sig,bt,coldMax,fus\n');
-  async function one(ci, idx) {
-    const c = cells[ci], ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), pg = await ctx.newPage(), errs = [];
+  async function one(b, ci, idx) {
+    const c = cells[ci], ctx = await b.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }), errs = [];
+    let pg, R, r = null;
+    try {
+    pg = await ctx.newPage();
     pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     await pg.goto(`${base}/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=${Q}${EXTRA}`); await pg.waitForTimeout(400);
     if (BOSSBOT) await pg.addScriptTag({ content: DODGE });
-    const R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST, pow: env.KITPOW || '', nodes: env.KITNODES || '', dish: env.KITDISH || '' }]);
-    let r = null; for (let k = 0; k < 40; k++) { r = await pg.evaluate(ADV, [3000, REACT]); if (r.st === 'gameover') break; }
-    await pg.close(); await ctx.close();
+    R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST, pow: env.KITPOW || '', nodes: env.KITNODES || '', dish: env.KITDISH || '', pf: env.KITPF || '' }]);
+    for (let k = 0; k < 40; k++) { r = await pg.evaluate(ADV, [3000, REACT]); if (r.st === 'gameover') break; }
+    } finally { await ctx.close().catch(() => {}); }   // siempre se cierra el contexto (antes, un fallo de carga dejaba renderizadores vivos y agotaba la memoria)
+    if (!r || r.st !== 'gameover') throw new Error('partida sin terminar');
     r = Object.assign(r, { R, errs: errs.length, idx }); res[ci].push(r);
     const lab = DAILY ? `${R.kit}/${R.biome}/P${R.peligro}/${R.mut || '-'}` : `${c.kit}/${c.biome}/P${c.pel}/${c.muts.join('+') || '-'}`;
     console.log(`${lab} #${idx} dia=${R.day} acomp=${R.comp}: ${r.won ? 'ORO' : ['part', 'bronce', 'plata', 'oro'][r.medal] || r.st} t=${r.t}s pts=${r.score} jefe=${r.bossFrac}% min=${r.minHp} blk=${r.blk}% firma=${r.sig} errs=${r.errs}`);
     if (OUT) fs.appendFileSync(OUT, [R.kit, R.biome, R.peligro, R.mut || '-', Q, REACT, BOSSBOT ? BREACT + '/' + BMIST : 0, SEED, idx, R.day, R.comp || '-', r.won ? 1 : 0, r.medal, r.t, r.score, r.base, r.bossFrac, r.parts, r.kills, r.lvl, r.minHp, r.blk, r.sig, r.bt, r.coldMax, r.fus].join(',') + '\n');
   }
-  async function worker() { while (next < jobs.length) { const [ci, i] = jobs[next++]; try { await one(ci, i); } catch (e) { console.log('ERR', ci, i, e.message); } } }
+  // Cada trabajador tiene su navegador y lo renueva cada 30 partidas (Chromium crece con contextos sucesivos)
+  async function worker() { let b = await newB(), used = 0; while (next < jobs.length) { const [ci, i] = jobs[next++]; if (used++ >= 30) { await b.close().catch(() => {}); b = await newB(); used = 1; } try { await one(b, ci, i); } catch (e) { console.log('ERR', ci, i, e.message.split('\n')[0]); if (/net::|ECONNREFUSED|Target .*closed/.test(e.message) && retries++ < 300) { jobs.push([ci, i]); await new Promise(r => setTimeout(r, 5000)); if (/Target .*closed/.test(e.message)) { b = await newB(); used = 0; } } } } await b.close().catch(() => {}); }
   await Promise.all(Array.from({ length: Math.min(PAR, jobs.length) }, worker));
-  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
+  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} KITPF=${env.KITPF || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
   console.log('celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores');
   cells.forEach((c, ci) => {
     const a = res[ci], n = a.length, w = a.filter(x => x.won).length, s2 = a.filter(x => x.medal >= 2).length, s1 = a.filter(x => x.medal >= 1).length, [lo, hi] = wilson(w, n);
@@ -136,5 +149,4 @@ const pc = x => Math.round(x * 100);
     const lab = DAILY ? 'reto real' : `${c.kit}/${c.biome}/P${c.pel}/${c.muts.join('+') || '-'}`;
     console.log(`${lab} | ${n} | ${pc(w / Math.max(1, n))} % (${pc(lo)}-${pc(hi)}) | ${pc(s2 / Math.max(1, n))} % | ${pc(s1 / Math.max(1, n))} % | ${med} | ${pts} | ${n ? Math.round(a.reduce((s, x) => s + x.minHp, 0) / n) : 0} | ${a.reduce((s, x) => s + x.errs, 0)}`);
   });
-  await b.close();
 })();

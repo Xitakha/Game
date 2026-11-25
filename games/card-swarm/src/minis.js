@@ -20,11 +20,11 @@
   var D = {
     carnero: { id: 'carnero', dmgK: 0.85, name: 'CARNERO MAYOR', sub: 'Morueco del Pastor', role: 'PRESIÓN', biome: 'bosque', slot: 1, hp: 7000, spd: 48, spdE: 62, r: 26, dmg: 22, foot: 26, shadow: 1.9, gap: 1000, gapE: 650, expMul: 1.4,
       mat: 'lana', contact: 0.5, part: { key: 'cuernos', name: 'CUERNOS', pct: 0.24, mode: 'share', share: 0.45 }, bag: ['cornada', 'balido', 'embestida'],
-      guaranteed: { static: 3, plate: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_carnero', name: 'Insignia de Cuerno' }, xp: 30, ash: 20, spr: 'enemy_mini_carnero',
+      guaranteed: { static: 3, plate: 2, thread: 2 }, bonus: { static: 2 }, ins: { id: 'trophy_mini_carnero', name: 'Cuerno del Carnero' }, xp: 30, ash: 20, spr: 'enemy_mini_carnero',
       fb: { spr: 'enemy_mini_bulwark', tint: '#e8e4d4', a: 0.45, kind: 'sol', sc: 1.1 }, lore: 'El morueco más viejo del rebaño. El Pastor le dejó los cuernos de hierro negro para que le abra camino.' },
     tejedora: { id: 'tejedora', dmgK: 0.7, name: 'TEJEDORA DE ZARZAS', sub: 'Tejedora del Bosque quemado', role: 'CONTROL', biome: 'bosque', slot: 2, hp: 4000, spd: 34, spdE: 42, r: 24, dmg: 14, foot: 28, shadow: 2, gap: 2200, gapE: 1500, expMul: 1.4,
       mat: 'vegetal', kite: [200, 280], contact: 0.4, part: { key: 'raiz', name: 'RAÍZ MADRE', pct: 0.22, mode: 'share', share: 0.33 }, bag: ['raices', 'floracion', 'maranya'],
-      guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_tejedora', name: 'Insignia de Raíz' }, xp: 40, ash: 25, spr: 'enemy_mini_tejedora',
+      guaranteed: { frost: 3, thread: 3, feather: 1 }, bonus: { frost: 2 }, ins: { id: 'trophy_mini_tejedora', name: 'Raíz de la Tejedora' }, xp: 40, ash: 25, spr: 'enemy_mini_tejedora',
       noSpawn: ['sower'], fb: { spr: 'enemy_mini_hive', tint: '#3a5a2a', a: 0.55, kind: 'flo', sc: 1 }, lore: 'Hiló su red con las espinas del bosque quemado; lo que se enreda en ella alimenta a las zarzas.' },
     alcaide: { id: 'alcaide', dmgK: 0.55, name: 'ALCAIDE DE HIERRO', sub: 'Guardián de las celdas vacías', role: 'PRESIÓN', biome: 'cripta', slot: 1, hp: 4200, spd: 44, spdE: 59, r: 24, dmg: 22, foot: 30, shadow: 1.9, gap: 1000, gapE: 600, expMul: 1.5,
       mat: 'metal', contact: 0.3, shield: true, part: { key: 'escudo', name: 'ESCUDO-REJA', pct: 0.30, mode: 'frontal', fw: 0.6 }, bag: ['reja', 'llavero', 'grilletes'],
@@ -306,7 +306,7 @@
     if (De.onBreak) De.onBreak(e);
   };
 
-  // ================================================================= INSIGNIAS (trofeo menor, no cuenta como Esencia)
+  // ================================================================= TROFEOS DE GUARDIÁN (antes Insignias; F2 solo cambia el nombre: siguen en S.insignias, no cuentan como Esencia)
   M.dropInsignia = function (e) {
     if (G.mode === 'practice' || G.daily || e.insDropped) return;   // v10: el reto no da insignias
     e.insDropped = true;
@@ -318,7 +318,7 @@
     var id = g.ins, De = D[g.mid]; if (!De) return;
     var first = !(S.insigniasEver && S.insigniasEver[g.mid]); S.insignias[g.mid] = (S.insignias[g.mid] || 0) + 1; S.insigniasEver = S.insigniasEver || {}; S.insigniasEver[g.mid] = (S.insigniasEver[g.mid] || 0) + 1;
     try { var R = G.Loot.run; (R.insignias = R.insignias || []).push(g.mid); } catch (x) { /* run */ }
-    try { G.Snd.play('gem', 2.2); if (!G.Res || G.Res.visible('insignias')) G.Hud.banner('INSIGNIA: ' + De.ins.name.toUpperCase() + (first ? '  (¡NUEVA!)' : ''), 1800, '#e0c8ff', null, 'insignias'); } catch (x2) { /* hud */ }   // T-F1-07: sin aviso hasta Carapa (el sonido queda)
+    try { G.Snd.play('gem', 2.2); if (!G.Res || G.Res.visible('trofeos')) G.Hud.banner('TROFEO: ' + De.ins.name.toUpperCase() + (first ? '  (¡NUEVO!)' : ''), 1800, '#e0c8ff', null, 'trofeos'); } catch (x2) { /* hud */ }   // T-F1-07: sin aviso hasta Carapa (el sonido queda)
     G.Save.save(); try { G.Ach.check(); } catch (x3) { /* logros */ }
   };
   M.insigniaCount = function () { var S = G.Save.data.insigniasEver || {}, n = 0; M.ALL.forEach(function (k) { if (S[k]) n++; }); return n; };   // P7: las 10 (8 + Avispón Real y Reina Joven)

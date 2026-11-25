@@ -1,7 +1,9 @@
 /* res.js - G.Res: la economía presentada por pasos (T-F1-07, studio/docs/SPEC-T-F1-07.md). Solo UI: NUNCA toca G.rng ni la simulación; todo se gana, guarda y gasta igual.
-   - Registro central de visibilidad: cada sitio que dibuja un recurso pregunta G.Res.visible(id) con id en ceniza, brasas, partes, esencia, pf, trofeos, insignias.
+   - Registro central de visibilidad: cada sitio que dibuja un recurso pregunta G.Res.visible(id) con id en ceniza, brasas, partes, esencia, pf, trofeos.
+     F2 (SPEC 8.1, opción A): las Insignias de guardián son ya "trofeos de guardián", dentro del recurso Trofeos (6 recursos). Solo presentación: el guardado
+     sigue con trophies / trophiesEver (jefe) e insignias / insigniasEver (guardián); 'insignias' queda como alias de 'trofeos' en visible().
    - Disparadores (n = salidas contadas de G.Fte, J = algún jefe vencido): Partes y Brasas siempre; PF con n >= 2 o J (Grum); Ceniza con n >= 3 o J (Rufo; antes no hay REROLL);
-     Esencia con el Rango de forja III o Yarlak vencido; trofeos e Insignias con Carapa (G.Armor.smithOn()).
+     Esencia con el Rango de forja III o Yarlak vencido; trofeos (de jefe y de guardián) con Carapa (G.Armor.smithOn()).
    - Activo solo en cuentas del flujo nuevo de T-F1-02 (step != '' y sin legacy). Cuentas con progreso anterior, bots y URLs de prueba que no pasan por la intro: todo visible.
    - Interruptor: G.B.resSteps = false, ?dev=1&res=0 o ?fte=0 -> todo visible como antes, REROLL incluido, y sin líneas de primera vez.
    - Estado en Save.data.flags.res = { v: 1, intro: { id: 1 } } (sin subir la versión del guardado). Textos en G.Res.TXT (claves res.*), listos para la capa de traducción. */
@@ -10,7 +12,7 @@
   var G = window.G, R = G.Res = {}, D = window.Dev || { on: false, search: location.search };
   var SEARCH = D.search || location.search || '';
   if (G.B && G.B.resSteps == null) G.B.resSteps = !(D.on && /[?&]res=0/.test(SEARCH));
-  R.IDS = ['ceniza', 'brasas', 'partes', 'esencia', 'pf', 'trofeos', 'insignias'];
+  R.IDS = ['ceniza', 'brasas', 'partes', 'esencia', 'pf', 'trofeos'];
 
   // ------------------------------------------------------------- Textos (español). t('clave', a, b...) sustituye {0}, {1}...
   R.TXT = {
@@ -27,7 +29,9 @@
     'res.trofeos.first': 'Cada parte que rompes a un jefe deja su trofeo. Carapa cose con ellos.',
     'res.trofeos.stored': 'Traes {0} trofeos del Pastor: dan para un yelmo, un peto o unas grebas.',
     'res.trofeos.stored1': 'Traes un trofeo del Pastor: da para un yelmo, un peto o unas grebas.',
-    'res.insignias.first': 'Los guardianes dejan insignias. Con las dos de un bosque, te coso un talismán.',
+    'res.trofeos.guard': 'Los guardianes también dejan su trofeo. Con los dos de un bosque, te coso un talismán.',
+    'res.trofeos.guardStored': 'Ya traes {0} trofeos de guardián.',
+    'res.trofeos.guardStored1': 'Ya traes un trofeo de guardián.',
     'res.guardDown': '¡GUARDIÁN DERRIBADO!',
     'res.rareAsPart': '1 parte rara',
     'res.rapidaTag': 'Menos botín, jefe antes',
@@ -40,8 +44,7 @@
     'res.partes.name': 'Partes', 'res.partes.how': 'Las sueltan los bichos: cada familia, la suya.', 'res.partes.use': 'Forjar nodos, coser armadura, cocinar y cambiar con Rufo.',
     'res.esencia.name': 'Esencia rara', 'res.esencia.how': 'Casi nunca cae: guardianes, jefes y bichos fuertes. Cada trofeo trae una.', 'res.esencia.use': 'Nodos de Rango III, cartas épicas y armadura alta.',
     'res.pf.name': 'Puntos de Forja', 'res.pf.how': 'Primer guardián de cada hueco, jefes, encargos y logros.', 'res.pf.use': 'Aprender nodos del árbol de Grum.',
-    'res.trofeos.name': 'Trofeos', 'res.trofeos.how': 'Romper partes de un jefe.', 'res.trofeos.use': 'Armadura de Carapa y nodos de Ruta.',
-    'res.insignias.name': 'Insignias', 'res.insignias.how': 'Derribar guardianes.', 'res.insignias.use': 'Talismanes de Carapa.'
+    'res.trofeos.name': 'Trofeos', 'res.trofeos.how': 'Romper partes de un jefe o derribar guardianes.', 'res.trofeos.use': 'Armadura y talismanes de Carapa, nodos de Ruta.'
   };
   R.t = function (k) { var s = R.TXT[k] != null ? R.TXT[k] : k, a = arguments; return s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); };
 
@@ -75,26 +78,30 @@
     return true;
   };
   var vis = R.visible;
-  // Saldo actual de cada recurso (Archivo y líneas "stored")
+  function sum(o) { var n = 0; for (var k in o || {}) n += o[k] || 0; return n; }
+  R.haveBoss = function () { return sum(SV().trophies); };       // trofeos de jefe (saldo de S.trophies)
+  R.haveGuard = function () { return sum(SV().insignias); };     // trofeos de guardián (saldo de S.insignias, las antiguas Insignias)
+  // Saldo actual de cada recurso (Archivo y líneas "stored"). Trofeos = de jefe + de guardián
   R.have = function (id) {
     var S = SV(), n = 0, k;
     if (id === 'brasas') return S.brasas || 0;
     if (id === 'partes') { for (k in S.parts) if (k !== 'rare') n += S.parts[k] || 0; return n; }
     if (id === 'esencia') return (S.parts && S.parts.rare) || 0;
     if (id === 'pf') return G.Tree ? G.Tree.pfFree() : 0;
-    if (id === 'trofeos') { for (k in S.trophies || {}) n += S.trophies[k] || 0; return n; }
-    if (id === 'insignias') { for (k in S.insignias || {}) n += S.insignias[k] || 0; return n; }
+    if (id === 'trofeos') return R.haveBoss() + R.haveGuard();
     return null;   // ceniza: solo existe en la expedición
   };
   // Línea(s) de primera vez: una sola vez por cuenta y clave; null si el flag está apagado, el recurso no es visible o ya se dijo.
-  // key: clave de intro (por defecto el id); devuelve un array de líneas (la principal y, si hay saldo, la de lo guardado)
+  // key: clave de intro (por defecto el id); devuelve un array de líneas (la principal y, si hay saldo, la de lo guardado).
+  // Trofeos de guardián: R.first('trofeos', 'insignias') (se conserva la clave de intro de antes de F2: quien ya la oyó no la repite)
   R.first = function (id, key) {
-    key = key || id;
+    key = key || id; if (id === 'insignias') { id = 'trofeos'; key = 'insignias'; }
     if (!R.on() || !vis(id)) return null;
     var st = d(); if (st.intro[key]) return null;
     st.intro[key] = 1; save();
-    var out = [], n = R.have(id);
+    var out = [], n = id === 'trofeos' ? (key === 'insignias' ? R.haveGuard() : R.haveBoss()) : R.have(id);
     if (key === 'rufo') out.push(R.t('res.ceniza.rufo'));
+    else if (key === 'insignias') { out.push(R.t('res.trofeos.guard')); if (n > 0) out.push(n === 1 ? R.t('res.trofeos.guardStored1') : R.t('res.trofeos.guardStored', n)); return out; }
     else if (key === 'cenizaOffer') out.push(R.t('res.ceniza.first'));
     else out.push(R.t('res.' + id + '.first'));
     if ((id === 'pf' || id === 'esencia' || id === 'trofeos') && key === id && n > 0) out.push(n === 1 ? R.t('res.' + id + '.stored1') : R.t('res.' + id + '.stored', n));
@@ -138,7 +145,7 @@
   R.mark = function (id) { R.cur[id] = 1; };
   R.frame = function () { R.last = R.cur; R.cur = {}; };
   R.shown = function () { var o = {}, k; for (k in R.last) o[k] = 1; for (k in R.cur) o[k] = 1; return Object.keys(o).sort(); };
-  // Archivo, pestaña RECURSOS: las 7 filas (siempre, con o sin el flag)
+  // Archivo, pestaña RECURSOS: las 6 filas (siempre, con o sin el flag)
   R.rows = function () {
     return R.IDS.map(function (id) {
       var n = R.have(id);
