@@ -949,6 +949,8 @@ Todo puede ser procedural en el estilo de `src/assets_*.js` y `src/sfx_*.js`. No
 Implementado en esta tanda (T-F1-05 y T-F1-06, MVP con los 8 kits por decisión del dueño): `src/kits.js`, `src/daily.js`, `src/objectives.js`, `src/reto_ui.js`, guardado v13 (`src/save.js`) y ganchos mínimos en `main.js`, `armor.js`, `cards.js`, `fusion.js`, `loot.js`, `quests.js`, `combat.js`, `player.js`, `enemies.js`, `minis.js`, `smith.js`, `panels.js`, `aldea.js`, `base.js`, `hud.js`, `dev.js` e `index.html`. Pruebas: grupo `daily` de `tools/card-swarm-bot/tests.js` (incluye lo de los grupos `kit` y `obj` de 5.2).
 
 ### 8.1 Sin calibrar (pendiente de balance-designer, 1.10.6)
+
+**Actualización (balance-designer, 2026-11-25):** fases A-D medidas; informe en `studio/docs/CALIBRACION-KITS.md`. Aplicado: reglas **r2** (Peligro del día por bioma, `G.Daily.PEL_W`, y `dos` fuera del MVP). Kits (k1), presupuesto y pesos de mutadores, puntuación y premios: medidos y sin cambios. Lo que sigue en esta lista es el estado anterior.
 - **Los 8 kits** llevan exactamente los valores de 1.10.3-1.10.4 (tramos de PF 6/9/12/15/18, tier y refuerzo por bioma, piezas, nodos, platos). No se ha corrido ninguna fase A-D. Palancas en `G.Kit.POWER` y `G.Kit.KITS` (`src/kits.js`); si se tocan, subir `G.Kit.KV` a `k2`.
 - **Pesos de Peligro** (35/45/20), **presupuesto de mutadores** (2 / 1,5 / 1) y **pesos de cada mutador** (`G.Daily.MUT`): los del diseño. Si cambian, subir `G.Daily.RV` a `r2`.
 - **Puntuación y multiplicador** (1.4) y **tabla de premios** (1.6): tal cual el diseño.
