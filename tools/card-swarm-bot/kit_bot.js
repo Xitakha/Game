@@ -111,7 +111,7 @@ const pc = x => Math.round(x * 100);
   if (DAILY) cells.push({ kit: (env.KIT || 'auto'), biome: '-', pel: 0, muts: [] });
   else for (const kit of KITS) for (const biome of BIOMES) for (const pel of PELS) for (const muts of MUTS) cells.push({ kit, biome, pel, muts });
   const jobs = []; cells.forEach((c, ci) => { for (let i = 0; i < N; i++) jobs.push([ci, i]); });
-  const res = cells.map(() => []); let next = 0; const T0 = Date.now();
+  const res = cells.map(() => []); let next = 0, retries = 0;   // sin servidor (o navegador caído) la partida se reintenta, no se pierde const T0 = Date.now();
   // Reanudar: si OUT ya existe, se saltan las partidas que ya tiene (misma celda e idx; en DAILY=1, el mismo día)
   if (OUT && fs.existsSync(OUT)) {
     const have = new Set(fs.readFileSync(OUT, 'utf8').trim().split('\n').slice(1).map(l => { const f = l.split(','); return DAILY ? 'd' + f[9] : [f[0], f[1], f[2], f[3], f[8]].join('|'); }));
@@ -138,7 +138,7 @@ const pc = x => Math.round(x * 100);
     if (OUT) fs.appendFileSync(OUT, [R.kit, R.biome, R.peligro, R.mut || '-', Q, REACT, BOSSBOT ? BREACT + '/' + BMIST : 0, SEED, idx, R.day, R.comp || '-', r.won ? 1 : 0, r.medal, r.t, r.score, r.base, r.bossFrac, r.parts, r.kills, r.lvl, r.minHp, r.blk, r.sig, r.bt, r.coldMax, r.fus].join(',') + '\n');
   }
   // Cada trabajador tiene su navegador y lo renueva cada 30 partidas (Chromium crece con contextos sucesivos)
-  async function worker() { let b = await newB(), used = 0; while (next < jobs.length) { const [ci, i] = jobs[next++]; if (used++ >= 30) { await b.close().catch(() => {}); b = await newB(); used = 1; } try { await one(b, ci, i); } catch (e) { console.log('ERR', ci, i, e.message.split('\n')[0]); } } await b.close().catch(() => {}); }
+  async function worker() { let b = await newB(), used = 0; while (next < jobs.length) { const [ci, i] = jobs[next++]; if (used++ >= 30) { await b.close().catch(() => {}); b = await newB(); used = 1; } try { await one(b, ci, i); } catch (e) { console.log('ERR', ci, i, e.message.split('\n')[0]); if (/net::|ECONNREFUSED|Target .*closed/.test(e.message) && retries++ < 300) { jobs.push([ci, i]); await new Promise(r => setTimeout(r, 5000)); if (/Target .*closed/.test(e.message)) { b = await newB(); used = 0; } } } } await b.close().catch(() => {}); }
   await Promise.all(Array.from({ length: Math.min(PAR, jobs.length) }, worker));
   console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
   console.log('celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores');

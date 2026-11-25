@@ -97,6 +97,23 @@ Objetivo: 25 +-7.
 
 Con n=16 cada celda tiene un IC95 de unos +-20 puntos: solo leo medias por kit y por bioma. Medido: **Peligro IV es la palanca fuerte** (de III a IV la media cae de 55 % a 25 %; la Cripta, de 83 % a 38 %). El orden de los kits se mantiene: Fragua y Carmesí arriba, Ventisca, Tempestad y Alquimia abajo.
 
+### 5.1b Peligro II, sin mutadores (n=16 por celda, 640 partidas, `calib/faseB_P2_alta.csv`)
+
+Objetivo: 45 +-7. Media 65 % (62-69). Por bioma: Bosque 40, Cripta 90, Asfódelo 54, Tundra 73, Panal 70. Por kit: Fragua 75, Carmesí 76, Hogar 70, Lana 69, Pantano 60, Alquimia 60, Tempestad 58, Ventisca 55.
+
+### 5.1c Resumen de la escala de Peligro (media de los 8 kits, sin mutadores)
+
+| bioma | II | III | IV |
+|---|---|---|---|
+| Bosque | 40 | 34 | 12 |
+| Cripta | 90 | 83 | 38 |
+| Asfódelo | 54 | 38 | 4 |
+| Tundra | 73 | 62 | 34 |
+| Panal | 70 | 59 | 38 |
+| **media** | **65** (meta 45) | **55** (meta 35) | **25** (meta 25) |
+
+Medido: de II a III el bot pierde solo 10 puntos y de III a IV, 30. En II y III el reto es unos 20 puntos más fácil que la meta; en IV está en la meta. Los biomas no son comparables con el mismo Peligro: la Cripta en IV (38 %) vale lo que el Bosque o el Asfódelo en III (34-38 %).
+
 ### 5.2 Reto diario real con las reglas actuales (r1, k1): 200 días seguidos (días 20401-20600), ALTA (`DAILY=1`, `calib/reto_real_r1.csv`)
 
 Reglas tal cual: bioma, Peligro (35/45/20), mutadores, kit de la semana y baraja del día; cuenta con todo abierto.
