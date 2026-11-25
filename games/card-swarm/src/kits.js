@@ -1,12 +1,12 @@
 /* kits.js - G.Kit: kits semanales del reto diario (DESIGN-v10-retencion.md 1.10). El Portal presta a todos el mismo equipo durante una semana (lunes 00:00 UTC):
    2 etiquetas, 1 ancla, 4 piezas de armadura, nodos del árbol por tramos de PF, plato. El bioma del día fija la potencia (tier y refuerzo de la armadura, presupuesto de PF).
    NADA del kit se escribe en el guardado: begin() instala capas en memoria (Armor.kitOvr, Tree.fx, rangos por Save.rank, anclas, plato) y end() las quita (Tree.sync()).
-   Datos puros en KITS (ids reales de armor_data.js, tree.js, cards.js, fusion.js y del Cook de panels.js). Versión del catálogo KV ('k1'): si se retocan kits, se sube a 'k2'.
-   Calibración: los valores son los del diseño SIN calibrar (pendiente de balance-designer, fases A-D de 1.10.6). Parámetro de prueba: ?dev=1&kit=<id> (el intento es PRUEBA). */
+   Datos puros en KITS (ids reales de armor_data.js, tree.js, cards.js, fusion.js y del Cook de panels.js). Versión del catálogo KV ('k2'): si se retocan kits, se sube (k3...). sig (opcional): refuerzo de la fusión firma, solo en el reto (K.sigL).
+   Calibración: studio/docs/CALIBRACION-KITS.md (fases A-D con bot; k2 rediseña Ventisca y Alquimia, sección 13). Parámetro de prueba: ?dev=1&kit=<id> (el intento es PRUEBA). */
 (function () {
   'use strict';
   var G = window.G, K = G.Kit = {};
-  K.KV = 'k1';
+  K.KV = 'k2';   // k2: refuerzo de firma de Ventisca y Alquimia y nodos de Alquimia (CALIBRACION-KITS.md 13)
   // Potencia por bioma (1.10.3): tier y refuerzo de la armadura nivelada y presupuesto de PF del árbol
   K.POWER = { bosque: { tier: 1, ref: 0, pf: 6 }, cripta: { tier: 2, ref: 1, pf: 9 }, asfodelo: { tier: 3, ref: 1, pf: 12 }, tundra: { tier: 4, ref: 1, pf: 15 }, panal: { tier: 5, ref: 1, pf: 18 } };
   // Catálogo (1.10.4). nodes: [id, elección A/B] en el orden de los tramos; el kit toma nodos hasta que el siguiente no cabe en el presupuesto del bioma
@@ -16,7 +16,9 @@
       nodes: [['F1', 'B'], ['A1', 'A'], ['F4'], ['A4'], ['F7'], ['ASH'], ['F3', 'A'], ['A7'], ['A10'], ['F10'], ['A3', 'A']] },
     { id: 'ventisca', name: 'Ventisca', tags: ['ice', 'lightning'], fusion: 'tormenta', anchor: 'shard', dish: 'pan', motto: 'Congela y remata con rayos.', color: '#8fe0ff',
       armor: ['gla_helm', 'gla_chest', 'gla_greaves', 'gla_talis'],
-      nodes: [['H1', 'B'], ['Z2', 'A'], ['H4'], ['Z4'], ['H3', 'B'], ['ASH'], ['Z6'], ['H6'], ['H10'], ['Z10'], ['Z9', 'A']] },
+      nodes: [['H1', 'B'], ['Z2', 'A'], ['H4'], ['Z4'], ['H3', 'B'], ['ASH'], ['Z6'], ['H6'], ['H10'], ['Z10'], ['Z9', 'A']],
+      sig: { lv: [{ r: 150 }, { r: 170 }],   // k2: zona de la Tormenta de escarcha 110 -> 150 (Nv2 130 -> 170)
+        desc: 'Firma del kit: la zona es más ancha (+35 %). Te sigue; cada 0,5 s cae un rayo (x1,5 sobre ralentizados) y aturde.' } },
     { id: 'pantano', name: 'Pantano', tags: ['poison', 'ice'], fusion: 'escarcha', anchor: 'dart', dish: 'estofado', motto: 'Frena y envenena.', color: '#a8e86a',
       armor: ['esc_helm', 'esc_chest', 'esc_greaves', 'esc_talis'],
       nodes: [['V1', 'A'], ['H1', 'B'], ['V4'], ['H4'], ['V3', 'A'], ['ASH'], ['V6'], ['H7'], ['V10'], ['H3', 'B'], ['V9', 'B']] },
@@ -31,7 +33,9 @@
       nodes: [['Z2', 'A'], ['F1', 'A'], ['Z4'], ['F4'], ['Z6'], ['ASH'], ['F3', 'B'], ['F6'], ['Z10'], ['F10'], ['Z9', 'A']] },
     { id: 'alquimia', name: 'Alquimia', tags: ['poison', 'blood'], fusion: 'hemo', anchor: 'bleed', dish: 'estofado', motto: 'Marca a la manada y déjala caer.', color: '#b0206a',
       armor: ['esc_helm', 'jal_chest', 'esc_greaves', 'mn_asfodelo'],
-      nodes: [['V1', 'B'], ['S1', 'A'], ['V4'], ['S4'], ['V3', 'B'], ['ASH'], ['S6'], ['V7'], ['V10'], ['S3', 'A'], ['V9', 'A']] },
+      nodes: [['V1', 'A'], ['S1', 'A'], ['V4'], ['S4'], ['V3', 'A'], ['ASH'], ['S7'], ['V7'], ['V10'], ['S3', 'B'], ['V9', 'A']],   // k2: Dosis doble, Pantano, Berserker y Sangrado profundo (antes Punta afilada, Charco amplio, Vampiro y Cuatro marcas)
+      sig: { lv: [{ hit: 6, cd: 9000 }, { hit: 8, cd: 9000 }],   // k2: las marcas hacen daño cada 0,5 s (fusion.js, L.hit) y la recarga baja de 13 a 9 s
+        desc: 'Firma del kit: marca hasta 6 enemigos; la marca muerde cada 0,5 s (sangrado + veneno) y recarga en 9 s. Al morir curan y propagan el veneno.' } },
     { id: 'hogar', name: 'Hogar', tags: ['fire', 'ice'], fusion: 'vapor', anchor: 'ember', dish: 'sopa', motto: 'Con lo puesto: chispa y escarcha.', color: '#bfeaff',
       armor: ['ald_helm', 'ald_chest', 'ald_boots', 'ald_amulet'],
       nodes: [['F1', 'A'], ['H1', 'A'], ['F4'], ['H4'], ['H3', 'A'], ['ASH'], ['F7'], ['H7'], ['F10'], ['F3', 'A'], ['H10']] }
@@ -103,6 +107,14 @@
     G.B.anchorSlots = prev ? prev.slots : 1; prev = null;
     G.Tree.sync();   // T.fx y ranuras de ancla de la cuenta
   };
+  // Refuerzo de firma (k2): la fusión firma del kit de la semana pisa algunos valores de su nivel (sig.lv[0] = Nv1, sig.lv[1] = Nv2). Solo en el reto; fuera, fusion.js usa r.lv
+  var sigCache = {};
+  K.sigL = function (rid, lvl, L) {
+    var b = K.cur, sg = b && b.kit.sig; if (!sg || b.kit.fusion !== rid || !sg.lv || !sg.lv[lvl - 1]) return L;
+    var key = b.kit.id + '|' + rid + '|' + lvl, c = sigCache[key]; if (c && c.src === L && c.sg === sg) return c.L;
+    var o = {}, k; for (k in L) o[k] = L[k]; for (k in sg.lv[lvl - 1]) o[k] = sg.lv[lvl - 1][k];
+    sigCache[key] = { src: L, sg: sg, L: o }; return o;
+  };
   K.inDeck = function (id) { return !!K.cur && K.cur.deck.indexOf(id) >= 0; };
   // Rango de forja prestado: las cartas de la baraja a Rango I (II si el kit sube la carta con un nodo de mejora dentro del presupuesto)
   (function () {
@@ -121,6 +133,6 @@
     var dish = G.Cook && G.Cook.def(b.dish), rec = G.Fusion && G.Fusion.recipe(k.fusion);
     return { name: k.name, motto: k.motto, tags: k.tags, anchor: k.anchor, pieces: k.armor.map(function (id) { return AD.BY[id]; }).filter(Boolean), stats: m, bonus: bonus,
       active: b.nodes.map(nodeTxt), later: b.later.map(nodeTxt), pfSpent: b.pfSpent, pf: b.pf, prov: b.prov.map(function (id) { var n = G.Tree.node(id); return n ? n.name : id; }),
-      dish: dish ? dish.name : '', dishDesc: dish ? dish.desc : '', fusion: rec ? rec.name : k.fusion, fusionDesc: rec ? rec.desc : '' };
+      dish: dish ? dish.name : '', dishDesc: dish ? dish.desc : '', fusion: rec ? rec.name : k.fusion, fusionDesc: k.sig && k.sig.desc ? k.sig.desc : rec ? rec.desc : '' };
   };
 })();

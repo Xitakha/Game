@@ -1,0 +1,12 @@
+tempestad/bosque/P3/- | 4 | 25 % (5-70) | 25 % | 25 % | 384 | 3981 | 7 | 0
+tempestad/asfodelo/P3/- | 4 | 25 % (5-70) | 75 % | 75 % | 450 | 4944 | 8 | 0
+hogar/bosque/P3/- | 4 | 25 % (5-70) | 50 % | 50 % | 362 | 4432 | 5 | 0
+hogar/asfodelo/P3/- | 4 | 50 % (15-85) | 50 % | 50 % | 414 | 5712 | 30 | 0
+tempestad/tundra/P4/- | 4 | 25 % (5-70) | 75 % | 100 % | 450 | 5855 | 1 | 0
+tempestad/panal/P4/- | 4 | 75 % (30-95) | 100 % | 100 % | 450 | 8182 | 43 | 0
+hogar/cripta/P4/- | 4 | 50 % (15-85) | 100 % | 100 % | 450 | 6961 | 11 | 0
+hogar/tundra/P4/- | 4 | 75 % (30-95) | 100 % | 100 % | 450 | 8061 | 39 | 0
+hogar/panal/P4/- | 4 | 75 % (30-95) | 100 % | 100 % | 450 | 7860 | 36 | 0
+--- 200 partidas en 560 s; Q=alta SEED=401 REACT=5 KITPOW=- KITNODES=- KITDISH=- KITPF=- KITARMOR=- KITANCHOR=- KITSIG=- BOSSBOT=1/250/0.1
+celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores
+reto real | 200 | 43 % (36-50) | 86 % | 92 % | 450 | 7084 | 18 | 0

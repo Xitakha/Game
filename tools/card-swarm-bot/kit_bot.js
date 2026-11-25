@@ -12,6 +12,7 @@
 //   BOSSBOT=1 (por defecto): en la pelea con el jefe esquiva telegrafías con dodge_fusion.js (BREACT= ms de reacción, 250; BMIST= prob. de error, 0,1; azar sembrado);
 //   BOSSBOT=0: la misma repulsión de play_bot.js también contra el jefe.
 //   KITPOW=bioma=tier/ref/pf[,...] pisa G.Kit.POWER en memoria y KITNODES=kit=N1:A,N2,...[;kit2=...] la lista de nodos de un kit KITDISH=kit=plato[,...] su plato y KITPF=kit=+-n[,...] sus PF en todos los biomas (perillas de exploración; kits.js no cambia).
+//   KITARMOR=kit=pieza+pieza+pieza+pieza[;kit2=...] su armadura y KITANCHOR=kit=carta[,...] su ancla y KITSIG=kit={json}[;kit2=...] su refuerzo de firma (exploración, solo en memoria).
 //   REACT= ticks entre decisiones de movimiento (5 = bot hábil, 83 ms; 19 = bot torpe, lo que hace play_bot.js a speed=4 con su setInterval de 80 ms reales).
 // Salida: una línea por partida y un resumen por celda con victoria (Oro), Bronce (llega al jefe), Plata, intervalo de Wilson al 95 %, tiempo de muerte y puntuación.
 const { launch } = require('../lib/browser.js');
@@ -30,6 +31,9 @@ const SETUP = ([kit, biome, pel, muts, seed, idx, daily, boss]) => {
   (boss.pow || '').split(',').filter(Boolean).forEach(x => { const [bi, v] = x.split('='), [t, rf, pf] = v.split('/').map(Number); K.POWER[bi] = { tier: t, ref: rf, pf: pf }; });   // KITPOW=cripta=2/0/9 (exploración; no toca kits.js)
   (boss.pf || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); if (kid === kit) Object.keys(K.POWER).forEach(bi => { K.POWER[bi] = Object.assign({}, K.POWER[bi], { pf: Math.max(0, K.POWER[bi].pf + Number(v)) }); }); });   // KITPF=fragua=-3 (PF del árbol por kit)
   (boss.dish || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).dish = v; });   // KITDISH=carmesi=te,hogar=pan
+  (boss.armor || '').split(';').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).armor = v.split('+'); });   // KITARMOR=ventisca=gla_helm+jal_chest+gla_greaves+jal_talis
+  (boss.sig || '').split(';').filter(Boolean).forEach(x => { const i = x.indexOf('='); K.get(x.slice(0, i)).sig = JSON.parse(x.slice(i + 1)); });   // KITSIG=ventisca={"lv":[{"r":150},{"r":170}]} (refuerzo de firma; {} lo quita)
+  (boss.anchor || '').split(',').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).anchor = v; });   // KITANCHOR=ventisca=nova
   (boss.nodes || '').split(';').filter(Boolean).forEach(x => { const [kid, v] = x.split('='); K.get(kid).nodes = v.split(',').map(n => n.split(':')); });   // KITNODES=hogar=F1:A,H1:A,...
   S.runs = 3; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1, cenizar: 1 };
   const ALL = { unlocked: ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'], kills: S.bossKills };
@@ -129,7 +133,7 @@ const pc = x => Math.round(x * 100);
     pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     await pg.goto(`${base}/index.html?dev=1&nosw=1&reset=1&cine=0&speed=0&dq=${Q}${EXTRA}`); await pg.waitForTimeout(400);
     if (BOSSBOT) await pg.addScriptTag({ content: DODGE });
-    R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST, pow: env.KITPOW || '', nodes: env.KITNODES || '', dish: env.KITDISH || '', pf: env.KITPF || '' }]);
+    R = await pg.evaluate(SETUP, [c.kit, c.biome, c.pel, c.muts, SEED, idx, DAILY, { on: BOSSBOT, react: BREACT, mistakes: BMIST, pow: env.KITPOW || '', nodes: env.KITNODES || '', armor: env.KITARMOR || '', anchor: env.KITANCHOR || '', sig: env.KITSIG || '', dish: env.KITDISH || '', pf: env.KITPF || '' }]);
     for (let k = 0; k < 40; k++) { r = await pg.evaluate(ADV, [3000, REACT]); if (r.st === 'gameover') break; }
     } finally { await ctx.close().catch(() => {}); }   // siempre se cierra el contexto (antes, un fallo de carga dejaba renderizadores vivos y agotaba la memoria)
     if (!r || r.st !== 'gameover') throw new Error('partida sin terminar');
@@ -141,7 +145,7 @@ const pc = x => Math.round(x * 100);
   // Cada trabajador tiene su navegador y lo renueva cada 30 partidas (Chromium crece con contextos sucesivos)
   async function worker() { let b = await newB(), used = 0; while (next < jobs.length) { const [ci, i] = jobs[next++]; if (used++ >= 30) { await b.close().catch(() => {}); b = await newB(); used = 1; } try { await one(b, ci, i); } catch (e) { console.log('ERR', ci, i, e.message.split('\n')[0]); if (/net::|ECONNREFUSED|Target .*closed/.test(e.message) && retries++ < 300) { jobs.push([ci, i]); await new Promise(r => setTimeout(r, 5000)); if (/Target .*closed/.test(e.message)) { b = await newB(); used = 0; } } } } await b.close().catch(() => {}); }
   await Promise.all(Array.from({ length: Math.min(PAR, jobs.length) }, worker));
-  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} KITPF=${env.KITPF || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
+  console.log(`--- ${jobs.length} partidas en ${Math.round((Date.now() - T0) / 1000)} s; Q=${Q} SEED=${SEED} REACT=${REACT} KITPOW=${env.KITPOW || '-'} KITNODES=${env.KITNODES || '-'} KITDISH=${env.KITDISH || '-'} KITPF=${env.KITPF || '-'} KITARMOR=${env.KITARMOR || '-'} KITANCHOR=${env.KITANCHOR || '-'} KITSIG=${env.KITSIG || '-'} BOSSBOT=${BOSSBOT ? 1 : 0}/${BREACT}/${BMIST}${EXTRA}`);
   console.log('celda | n | Oro (IC95) | Plata+ | Bronce+ | t muerte mediana | pts media | min HP medio | errores');
   cells.forEach((c, ci) => {
     const a = res[ci], n = a.length, w = a.filter(x => x.won).length, s2 = a.filter(x => x.medal >= 2).length, s1 = a.filter(x => x.medal >= 1).length, [lo, hi] = wilson(w, n);
