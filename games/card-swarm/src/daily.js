@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var G = window.G, Dl = G.Daily = {}, DAY = 864e5;
-  Dl.RV = 'r1';   // PENDIENTE subir a 'r2' al terminar los lotes de calibración. r2 (calibración de kits, studio/docs/CALIBRACION-KITS.md): Peligro del día por bioma (PEL_W) en vez de 35/45/20 en todos
+  Dl.RV = 'r2';   // r2 (calibración de kits, studio/docs/CALIBRACION-KITS.md): Peligro del día por bioma (PEL_W) en vez de 35/45/20 en todos
   Dl.ON = !(Dev.on && /[?&]reto=0/.test(Dev.search));
   Dl.OPEN_RUNS = 3;
   Dl.forceOfficial = false;
@@ -79,7 +79,7 @@
     { id: 'sincor', name: 'Sin corazones', eff: 'los enemigos no sueltan corazones.', fam: 'jugador', w: 1, mvp: true },
     { id: 'bolsillo', name: 'Bolsillos cortos', eff: 'radio de recogida -40 %.', fam: 'jugador', w: 0.5, mvp: true },
     { id: 'cristal', name: 'Piel de cristal', eff: 'recibes +20 % de daño.', fam: 'jugador', w: 1, mvp: true },
-    { id: 'dos', name: 'Dos etiquetas', eff: 'la baraja solo trae las 2 etiquetas del kit.', fam: 'mano', w: 1, mvp: true },
+    { id: 'dos', name: 'Dos etiquetas', eff: 'la baraja solo trae las 2 etiquetas del kit.', fam: 'mano', w: 1, mvp: false },   // r2: fuera. Facilita (fase C, CALIBRACION-KITS.md 6): Plata 83 -> 98 %, Bronce 89 -> 99 % (p < 0,01)
     { id: 'sincambio', name: 'Sin cambios', eff: 'no se puede pagar para cambiar la oferta.', fam: 'mano', w: 0.5, mvp: true },
     { id: 'curtidos', name: 'Guardianes curtidos', eff: 'guardianes +35 % de vida.', fam: 'jefe', w: 1, mvp: true },
     { id: 'furia', name: 'Furia temprana', eff: 'el jefe entra en furia 30 s antes.', fam: 'jefe', w: 1, mvp: false },
@@ -94,7 +94,7 @@
   // Peligro del día por bioma: probabilidad de II / III / IV (r2). Medido con el bot hábil (kit_bot.js, CALIBRACION-KITS.md): con el mismo Peligro los biomas no se parecen
   // (Peligro III sin mutadores: Bosque 34 %, Cripta 83 %, Asfódelo 38 %, Tundra 62 %, Panal 59 % de Oro). Con esta tabla el Oro esperado del bot queda en 28-38 % en cada bioma (media ~34 %).
   // r1 era { II 35 %, III 45 %, IV 20 % } en todos los biomas: Oro del bot el 54 % de los días (200 días medidos). Nunca I ni V.
-  Dl.PEL_W = null;   // PENDIENTE (al terminar los lotes): { bosque: [0, 0.7, 0.3], cripta: [0, 0, 1], asfodelo: [0, 0.9, 0.1], tundra: [0, 0, 1], panal: [0, 0, 1] }
+  Dl.PEL_W = { bosque: [0, 0.7, 0.3], cripta: [0, 0, 1], asfodelo: [0, 0.9, 0.1], tundra: [0, 0, 1], panal: [0, 0, 1] };
   function pelOf(biome, u) { var w = (Dl.PEL_W && Dl.PEL_W[biome]) || [0.35, 0.45, 0.2], a = 0; for (var i = 0; i < 3; i++) { a += w[i]; if (u < a - 1e-12) return i + 2; } return 4; }
   function weakTags(boss) { var d = G.Boss.DEFS[boss], out = []; ((d && d.weak) || []).forEach(function (w) { if (out.indexOf(w.tag) < 0) out.push(w.tag); }); return out; }
 

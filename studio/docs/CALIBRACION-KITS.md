@@ -96,6 +96,22 @@ Segundo lote (`calib/exp_plato2.csv`, 5 biomas, n=24 por bioma, pares):
 
 Medido: el plato apenas mueve la victoria (diferencias de 0-8 puntos, ninguna fuera del ruido). No se propone cambiarlo.
 
+### 4.2b PF del árbol por kit (palanca 1 por kit)
+
+-3 PF en todos los biomas a los kits fuertes y +3 PF a los flojos, P III, 5 biomas, n=16 por bioma, pares (`calib/exp_pf_kit.csv`):
+
+| kit | cambio | base | variante | solo base / solo variante | p |
+|---|---|---|---|---|---|
+| Fragua | -3 PF | 75 % | 72 % | 6 / 4 | 0,75 |
+| Carmesí | -3 PF | 75 % | 70 % | 8 / 4 | 0,39 |
+| Hogar | -3 PF | 68 % | 60 % | 13 / 7 | 0,26 |
+| Lana | -3 PF | 58 % | 59 % | 4 / 5 | 1,0 |
+| Ventisca | +3 PF | 44 % | 41 % | 4 / 2 | 0,69 |
+| Alquimia | +3 PF | 38 % | 39 % | 7 / 8 | 1,0 |
+| Tempestad | +3 PF | 46 % | 49 % | 2 / 4 (n=71) | 0,69 |
+
+Medido: **3 PF arriba o abajo no cambian la victoria de ningún kit** (todas las diferencias dentro del ruido). Tampoco el refuerzo de la armadura (4.1) ni el plato (4.2). Con el bot hábil, la potencia del kit (DEF, nodos, plato) pesa poco frente a la pelea con el jefe; lo que separa a los kits es su identidad (etiquetas, fusión firma, set). Comprobé si la diferencia la explica el cruce de etiquetas del kit con las debilidades y resistencias del jefe: no (Oro medio por "debilidades - resistencias" de -1 a +2: 57 / 56 / 59 / 46 % en P III, sin tendencia).
+
 ### 4.3 Calidades MEDIA y BAJA (Fragua y Pantano, 5 biomas, P III, n=24 por kit y bioma, pares con ALTA)
 
 | bioma | ALTA | MEDIA | BAJA |

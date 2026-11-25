@@ -2297,7 +2297,7 @@ async function daily() {
   const j2 = await E(pg, new Function('(' + ACC_VET + ')(); return (' + rulesOf + ')();'));
   const R14 = JSON.parse(j1);
   ok(j1 === j2, 'reglas del 2026-11-14 idénticas en dos cargas y dos cuentas con todo abierto (nueva con 3 salidas y veterana)');
-  ok(R14.key === '2026-11-14' && R14.biome === R14.perm[0] && R14.rv === 'r1' && R14.kv === 'k1' && JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]) === DAILY_SNAP, 'instantánea fijada del 2026-11-14: ' + JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]));
+  ok(R14.key === '2026-11-14' && R14.biome === R14.perm[0] && R14.rv === 'r2' && R14.kv === 'k1' && JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]) === DAILY_SNAP, 'instantánea fijada del 2026-11-14: ' + JSON.stringify([R14.biome, R14.peligro, R14.mut, R14.kit, R14.comp]));
   await done(pg, 'daily-reglas-2');
   // 6. apertura y filtros de la cuenta; 7. 365 fechas
   pg = await mk(b, 'reset=1&cine=0&speed=0');
@@ -2308,9 +2308,9 @@ async function daily() {
     for (let d = 20000; d < 20060; d++) { const R = D.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.biome !== 'bosque') bos = false; if (R.peligro > 2) pelOk = false; }
     out.bos = bos; out.pel2 = pelOk;
     const all = { unlocked: ['bosque', 'cripta', 'asfodelo', 'tundra', 'panal', 'crater'], kills: { pastor: 1, karceron: 1, letea: 1, yarlak: 1, melaria: 1 } };
-    const cnt = { 2: 0, 3: 0, 4: 0 }; let fire = true, bud = true, fam = true, rng = true, first = true, dosBad = 0, r6 = true, n = 0;
+    const cnt = { 2: 0, 3: 0, 4: 0 }, bc = {}; let fire = true, bud = true, fam = true, rng = true, first = true, dosBad = 0, r6 = true, n = 0;
     for (let d = 20400; d < 20765; d++) {
-      const R = D.rules(d, all); n++; cnt[R.peligro]++;
+      const R = D.rules(d, all); n++; cnt[R.peligro]++; const c = bc[R.biome] = bc[R.biome] || { 2: 0, 3: 0, 4: 0, n: 0 }; c[R.peligro]++; c.n++;
       if (R.biome !== R.perm[0]) first = false;
       if ((R.biome === 'tundra' || R.biome === 'panal') && R.tags.indexOf('fire') < 0) fire = false;
       const w = R.mut.reduce((a, id) => a + D.mut(id).w, 0); if (w > { 2: 2, 3: 1.5, 4: 1 }[R.peligro] + 1e-9 || R.mut.length < 1) bud = false;
@@ -2319,7 +2319,7 @@ async function daily() {
       if (R.mut.indexOf('dos') >= 0 && (R.biome === 'tundra' || R.biome === 'panal') && !G.Kit.hasFire(G.Kit.get(R.kit))) dosBad++;
       const wk = []; (G.Boss.DEFS[R.boss].weak || []).forEach(x => wk.push(x.tag)); if (R.comp.length && !R.comp.some(t => wk.indexOf(t) >= 0) && G.Kit.TAGS.some(t => wk.indexOf(t) >= 0 && G.Kit.get(R.kit).tags.indexOf(t) < 0)) r6 = false;
     }
-    Object.assign(out, { cnt, fire, bud, fam, rng, first, dosBad, r6, n });
+    Object.assign(out, { cnt, bc, pw: D.PEL_W, fire, bud, fam, rng, first, dosBad, r6, n });
     return out;
   });
   ok(r.closed2 && r.open3, 'el reto se abre tras la 3.ª expedición (2 salidas: cerrado; 3: abierto aunque no hayas vencido al Pastor)');
@@ -2327,8 +2327,8 @@ async function daily() {
   ok(r.first, '365 días, cuenta completa: el bioma es siempre permutación[0]');
   ok(r.fire && r.dosBad === 0, '365 días: Fuego en la baraja siempre que toca Tundra o Panal (R4) y nunca "Dos etiquetas" sin Fuego allí (R5)');
   ok(r.bud && r.fam && r.rng && r.r6, '365 días: presupuesto de mutadores, familias distintas, al menos 1 mutador, Peligro II-IV y debilidad del jefe en el acompañamiento (R6)');
-  const pc = k => Math.round(r.cnt[k] / r.n * 1000) / 10;
-  ok(Math.abs(pc(2) - 35) <= 5 && Math.abs(pc(3) - 45) <= 5 && Math.abs(pc(4) - 20) <= 5, `reparto de Peligro en 365 días: II ${pc(2)} %, III ${pc(3)} %, IV ${pc(4)} % (objetivo 35/45/20 +-5)`);
+  { const bad = Object.keys(r.bc).filter(bi => [2, 3, 4].some(p => { const w = r.pw[bi][p - 2], f = r.bc[bi][p] / r.bc[bi].n; return w === 0 ? f > 0 : Math.abs(f - w) > 0.12; }));   // r2: Peligro del día por bioma (G.Daily.PEL_W, CALIBRACION-KITS.md 5.4)
+    ok(!bad.length && Object.keys(r.bc).length === 5, `reparto de Peligro por bioma en 365 días (r2, tabla PEL_W +-12 puntos y 0 donde la tabla da 0): ` + Object.keys(r.bc).map(bi => bi + ' ' + [2, 3, 4].map(p => Math.round(100 * r.bc[bi][p] / r.bc[bi].n)).join('/')).join(', ') + (bad.length ? ' -> fuera: ' + bad.join(',') : '')); }
   // kits: rotación de 104 semanas, potencia nivelada y reglas R1-R3
   r = await E(pg, () => {
     const K = G.Kit, out = { cnt: {}, rep: 0 }; let prev = null;
@@ -2457,10 +2457,10 @@ async function daily() {
   ok(JSON.stringify(r.D) === '[1.15,1.15,1.2]', 'mutadores de horda: velocidad x1,15, cantidad x1,15 y vida x1,2 sobre el perfil G.D ' + JSON.stringify(r.D));
   ok(r.m[0] === 0 && r.m[1] === 0.6 && r.m[2] === 1.2 && r.m[3] === true && r.m[4] === 1.35 && r.reroll, 'Sin corazones, Bolsillos cortos (x0,6), Piel de cristal (x1,2), Sin cambios (el cambio de oferta no cobra ni cambia) y Guardianes curtidos (x1,35) ' + JSON.stringify(r.m));
   await done(pg, 'daily-mutadores');
-  // "Dos etiquetas": la baraja solo trae las 2 etiquetas del kit (busca un día con el mutador)
+  // "Dos etiquetas": fuera del MVP desde r2 (facilita; CALIBRACION-KITS.md 6). Nunca sale en 1000 días; si se fuerza, la baraja solo trae las 2 etiquetas del kit
   pg = await mk(b, 'reset=1&cine=0&speed=0');
-  r = await E(pg, () => { for (let d = 20000; d < 21000; d++) { const R = G.Daily.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.mut.indexOf('dos') >= 0) { const kt = G.Kit.get(R.kit).tags; return { d, ok: R.comp.length === 0 && R.deck.every(id => { const c = G.Cards.def(id); return c.tag === 'neutral' || c.id === 'heart' || kt.indexOf(c.tag) >= 0; }), n: R.deck.length }; } } return null; });
-  ok(r && r.ok && r.n >= 8 && r.n <= 11, 'Dos etiquetas: la baraja solo trae las 2 del kit y 3 neutrales (' + (r && r.n) + ' cartas)');
+  r = await E(pg, () => { for (let d = 20000; d < 21000; d++) { const R = G.Daily.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.mut.indexOf('dos') >= 0) return { d, seen: true }; } const m = G.Daily.mut('dos'); m.mvp = true; let out = null; for (let d = 20000; d < 21000 && !out; d++) { const R = G.Daily.rules(d, { unlocked: ['bosque'], kills: {} }); if (R.mut.indexOf('dos') >= 0) { const kt = G.Kit.get(R.kit).tags; out = { d, seen: false, ok: R.comp.length === 0 && R.deck.every(id => { const c = G.Cards.def(id); return c.tag === 'neutral' || c.id === 'heart' || kt.indexOf(c.tag) >= 0; }), n: R.deck.length }; } } m.mvp = false; return out; });
+  ok(r && !r.seen && r.ok && r.n >= 8 && r.n <= 11, 'Dos etiquetas: no sale en 1000 días (fuera del MVP en r2) y, forzada, la baraja solo trae las 2 del kit y 3 neutrales (' + (r && r.n) + ' cartas)');
   await done(pg, 'daily-dos');
   // 15 / 15b. Migración v12 -> v13 con copia, cadena v9 -> v13, v13 que sobrevive a la recuperación e importación estricta
   pg = await mk(b, 'reset=1&cine=0&speed=0');
@@ -2816,7 +2816,7 @@ async function vibe() {
   ok(!(await E(pg, () => G.fx.vibeSupported() || G.fx.vibe('fuse'))), 'sin API: boton oculto y vibe no hace nada');
   await done(pg, 'vibe'); await b.close();
 }
-const DAILY_SNAP = '["tundra",3,["sincor","sincambio"],"lana",["fire","ice"]]';   // reglas r1 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
+const DAILY_SNAP = '["panal",4,["bolsillo","sincambio"],"lana",["fire","ice"]]';   // reglas r2 y kits k1 del 2026-11-14 (si se suben rv / kv, se actualiza)
 
 (async () => {
   const run = { daily, fte, end, res, save2, dev, diag, track, manual, text, seed, diff, cine, cards, armor, armor2, iso, flow, powers, ui, village, touch, boss, balance, wide, vibe };
