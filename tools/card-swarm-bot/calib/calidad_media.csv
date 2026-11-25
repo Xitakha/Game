@@ -48,3 +48,11 @@ fragua,cripta,3,-,media,5,250/0.1,1,20,20122,ice+lightning,1,3,450,7283,5202,100
 fragua,cripta,3,-,media,5,250/0.1,1,22,20127,lightning+poison,0,2,450,4962,3544,67,2,1094,14,0,15,0,0,0,plasma+gas+virote+gas+virote+iman+plasma
 fragua,cripta,3,-,media,5,250/0.1,1,23,20129,ice+poison,1,3,450,7463,5331,100,3,1108,14,38,17,30,130,0,vapor+vapor+filo+gas+filo+forja+escarcha
 fragua,asfodelo,3,-,media,5,250/0.1,1,0,20002,lightning+poison,0,2,450,4396,3140,35,1,1190,14,0,34,0,0,0,plasma+plasma+descarga+iman+iman+virote+gas
+fragua,asfodelo,3,-,media,5,250/0.1,1,2,20007,poison+ice,0,2,450,5200,3714,55,3,1256,14,0,33,0,0,0,gas+vapor+escarcha+virote+escarcha+filo+gas
+fragua,asfodelo,3,-,media,5,250/0.1,1,1,20006,blood+ice,1,3,450,7867,5619,100,3,1361,15,40,33,62,315,0,forja+vapor+sed+filo+sed+cristal+forja+cristal
+fragua,asfodelo,3,-,media,5,250/0.1,1,3,20013,ice+lightning,1,3,450,8050,5750,100,3,1268,15,5,34,74,163,0,forja+forja+vapor+plasma+filo+vapor
+fragua,asfodelo,3,-,media,5,250/0.1,1,4,20015,ice+blood,1,3,450,7701,5501,100,3,1219,14,68,32,71,144,0,forja+forja+sed+pacto+pacto+sed
+fragua,asfodelo,3,-,media,5,250/0.1,1,5,20023,ice+poison,1,3,450,7846,5604,100,3,1208,15,58,34,62,129,0,forja+vapor+escarcha+vapor+forja+escarcha
+fragua,asfodelo,3,-,media,5,250/0.1,1,6,20031,poison+ice,0,2,450,4781,3415,53,1,1262,14,0,33,0,0,0,gas+gas+vapor+virote+filo+virote+escarcha
+fragua,asfodelo,3,-,media,5,250/0.1,1,7,20042,ice+blood,1,3,450,7573,5409,100,3,1371,15,2,32,19,243,0,pacto+vapor+cristal+filo+filo+pacto+forja
+fragua,asfodelo,3,-,media,5,250/0.1,1,8,20043,lightning+poison,1,3,450,7202,5144,100,3,1240,14,1,29,67,129,0,forja+plasma+descarga+forja+gas+plasma+descarga
