@@ -569,6 +569,7 @@
         G.txt(c, String(T.availableCount()), p.x + 16, p.y - 97 + by, 11, '#102014', 'center', 'rgba(0,0,0,0)');
       }
     });
+    if (G.RetoUI && !D.active() && mode !== 'panel') G.RetoUI.drawPortalBubble(c, now, Lay.spots.portal, !!(tg && tg.id === 'portal'));   // v10 (D3): burbuja del reto del día sobre el Portal
     if (tg && !D.active()) {
       var nm = tg.name; G.txt(c, nm, tg.x, tg.y - (tg.npc ? 96 : 140), 13, '#ffe9a0', 'center');
       var ky = G.Sys.isTouch() ? null : anim('ui_key_e', 'pulse', now), kx = tg.x, kyy = tg.y - (tg.npc ? 124 : 164);   // la tecla E solo en teclado: en táctil está el botón HABLAR

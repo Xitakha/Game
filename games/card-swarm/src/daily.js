@@ -36,7 +36,7 @@
     firstOpen: 'Nuevo en el Portal: el reto del día.', lanudo: 'Dicen que el Portal guarda un reto distinto cada día. Igual para todos.', clockBack: 'La fecha del dispositivo ha ido hacia atrás. Lo de hoy ya está cobrado.',
     chipAldea: 'RETO DEL DÍA', chipReady: 'listo', chipDone: 'hoy: {0}', menuBtn: 'RETO Y OBJETIVOS', menuSub: 'reto del día, objetivos y racha', hand: 'TU MANO FINAL', powers: 'PODERES',
     sub: '{0}  ·  {1}  ·  Peligro {2}', kitLine: '{0}  ·  {1} y {2}  ·  Ancla: {3}', mut_sincambio_msg: 'Sin cambios: hoy no se puede cambiar la oferta.',
-    hist: 'ÚLTIMOS RETOS', notReached: 'sin llegar al jefe', kitNew: 'NUEVO'
+    hist: 'ÚLTIMOS RETOS', notReached: 'sin llegar al jefe', kitNew: 'NUEVO', portalReady: 'Reto del día listo', portalDone: 'Reto de hoy: {0}'
   };
   Dl.t = function (k) { var s = Dl.TXT[k] != null ? Dl.TXT[k] : k, a = arguments; s = s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); return G.Res ? G.Res.fix(s) : s; };   // T-F1-07: "1 Esencia" = "1 parte rara" hasta el Rango III
   Dl.MEDAL_K = ['medal0', 'medal1', 'medal2', 'medal3'];

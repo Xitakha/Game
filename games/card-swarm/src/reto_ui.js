@@ -20,7 +20,7 @@
   RU.lastMsg = function () { return st.msg; };
   function bg(c, title) {
     c.fillStyle = 'rgb(10,5,16)'; c.fillRect(0, 0, G.W, G.H);
-    G.txt(c, title, 14, 26, 24, '#ffd27a', 'left');
+    if (title) G.txt(c, title, 14, 26, 24, '#ffd27a', 'left');
     U.button(c, R_CLOSE, 'X', { size: 22, color: '#7a2a3a', hot: '#c03a4a', border: '#ff8a8a' });
   }
   function drawMsg(c) {
@@ -32,6 +32,20 @@
   var BN = { bosque: 'Bosque', cripta: 'Cripta', asfodelo: 'Asfódelo', tundra: 'Tundra', panal: 'Panal' };
   var PELC = ['', '#9a9a8a', '#d8b040', '#ff8a3c', '#ff5a3a', '#e05ac0'];
   function bname(id) { return ((G.Boss.DEFS[id] || {}).name || id).split(/[ ,]/)[0]; }
+  // Emblema del kit (assets_kits.js); sin el archivo, un disco con el color del kit
+  function emblem(c, id, x, y, size) {
+    if (window.Assets && Assets.kitEmblem && Assets.kitEmblem(c, id, x, y, size)) return;
+    var k = G.Kit.get(id); c.fillStyle = (k && k.color) || '#8a7aa6'; c.beginPath(); c.arc(x, y, size / 2, 0, 6.283); c.fill();
+  }
+  RU.emblem = emblem;
+  function kitSnd(id) { if (window.Assets && Assets.kitSnd) Assets.kitSnd(id); else G.sfx('card_select', { vol: 0.6 }); }
+  // "[emblema] Fragua" alineado a la derecha en xr (pantalla de resultado)
+  RU.drawKitTag = function (c, id, xr, y) {
+    var k = G.Kit.get(id); if (!k) return;
+    c.font = 'bold ' + G.fs(17) + 'px "Courier New", monospace'; var w = c.measureText(k.name).width;
+    G.txt(c, k.name, xr, y, 17, k.color || '#fff', 'right');
+    emblem(c, id, xr - w - 16, y, 20);
+  };
   // Reglas del día y kit armado: en caché por día y progreso (se piden en cada fotograma)
   var cache = { k: null };
   function today() {
@@ -49,7 +63,7 @@
     if (name === 'diario') { st.dtab = st.dtab || 0; if (O().isOpen()) { O().ensure(); O().markSeen(); } }
     if (name === 'reto' && Dl().isOpen()) {
       var D = SV().daily, d = Dl().today(), w = Dl().weekOf(d), tc = today();
-      st.kitNew = D.reto.kit.seenWeek !== w; if (st.kitNew) { D.reto.kit.seenWeek = w; try { G.sfx('card_select', { vol: 0.6 }); } catch (e) { /* audio */ } }   // A10l: aviso de kit nuevo (etiqueta NUEVO junto al kit)
+      st.kitNew = D.reto.kit.seenWeek !== w; if (st.kitNew) { D.reto.kit.seenWeek = w; try { kitSnd(tc.R.kit); } catch (e) { /* audio */ } }   // A10l: aviso de kit nuevo (etiqueta NUEVO junto al kit)
       D.reto.seenDay = d; G.Save.save();
     }
   };
@@ -76,7 +90,7 @@
     }
     if (inp.hit('Escape') || onR(R_CLOSE)) return true;
     if (!D.isOpen()) return false;
-    if (onR(R_KIT)) { G.Panels.open('kit'); G.sfx('flip', { vol: 0.5 }); return false; }
+    if (onR(R_KIT)) { G.Panels.open('kit'); kitSnd(today().R.kit); return false; }
     if (onR(R_OBJ)) { G.Panels.open('diario'); G.sfx('flip', { vol: 0.5 }); return false; }
     if (onR(R_GO) || inp.hit('Enter')) {
       if (D.canOfficial()) { st.modal = true; st.mt = 0; G.sfx('flip', { vol: 0.5 }); }
@@ -106,7 +120,8 @@
     G.txt(c, T('medalsLine', md.oro || 0, md.plata || 0, md.bronce || 0), 14, 424, 17, '#c8b8e8', 'left');
     // ---- derecha: kit de la semana, baraja y premio
     G.txt(c, T('kitHead') + '  ·  ' + T('kitChange', D.dh(D.msToNextWeek())).toLowerCase(), 490, 92, 17, '#b4a8c8', 'left');
-    G.txt(c, v.name.toUpperCase() + '  ·  ' + G.Kit.tagName(v.tags[0]) + ' y ' + G.Kit.tagName(v.tags[1]), 490, 118, 17, tc.b.kit.color, 'left');
+    emblem(c, R.kit, 502, 118, 24);
+    G.txt(c, v.name.toUpperCase() + '  ·  ' + G.Kit.tagName(v.tags[0]) + ' y ' + G.Kit.tagName(v.tags[1]), 520, 118, 17, tc.b.kit.color, 'left');
     if (st.kitNew) { c.fillStyle = '#ffd24a'; c.fillRect(868, 107, 78, 22); G.txt(c, T('kitNew'), 907, 118, 17, '#2a1a00', 'center', '#ffd24a'); }
     G.txt(c, v.motto, 490, 140, 17, '#ffe9a0', 'left');
     G.txt(c, T('lent'), 490, 162, 17, '#d8cfe8', 'left');
@@ -144,7 +159,7 @@
   function lentTag(c, x, y) { c.fillStyle = '#ffd24a'; c.fillRect(x, y - 11, 112, 22); G.txt(c, T('lentTag'), x + 56, y, 17, '#2a1a00', 'center', '#ffd24a'); }
   function drawKit(c) {
     var tc = today(), v = tc.v, b = tc.b, R = tc.R, y, i;
-    bg(c, 'KIT: ' + v.name.toUpperCase());
+    bg(c, ''); emblem(c, R.kit, 30, 26, 32); G.txt(c, 'KIT: ' + v.name.toUpperCase(), 54, 26, 24, '#ffd27a', 'left');
     [T('kitArmor'), T('kitForge'), T('kitHand')].forEach(function (t, k) { var on = st.ktab === k; U.button(c, tabR(k), t, { size: 17, color: on ? '#2a6aa8' : '#2c2438', hot: '#3a8ad0', border: on ? '#bfeaff' : '#6a5a80' }); });
     U.button(c, R_BACK, T('back'), { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff' });
     if (st.ktab === 0) {
@@ -195,7 +210,7 @@
     var lab = weekly ? OT(o.d === 1 ? 'wdiff1' : 'wdiff2') : OT('diff' + o.d);
     G.txt(c, lab, r.x + 12, r.y + 18, 17, ['', '#9dffb4', '#ffd24a', '#ff9a6a'][o.d] || '#ffd24a', 'left');
     var lx = r.x + 12 + (lab.length + 2) * 10.2;
-    G.txt(c, o.txt, lx, r.y + 18, 17, '#fff', 'left');
+    G.txt(c, O().text(e), lx, r.y + 18, 17, '#fff', 'left');
     G.txt(c, done ? OT('done') : Dl().fmtN(e.prog) + '/' + Dl().fmtN(e.goal), r.x + w - 12, r.y + 18, 17, done ? '#7dff9a' : '#ffe9a0', 'right');
     G.txt(c, O().rewardText(o, day), r.x + 12, r.y + 44, 17, '#d8cfe8', 'left');
     var bw = 220, bx = r.x + w - bw - 12; c.fillStyle = '#1a1226'; c.fillRect(bx, r.y + 40, bw, 8); c.fillStyle = done ? '#7dff9a' : '#ff9a3c'; c.fillRect(bx, r.y + 40, bw * G.clamp(e.prog / e.goal, 0, 1), 8);
@@ -251,11 +266,13 @@
     // ---- izquierda: mano final, poderes y jefe
     G.txt(c, T('hand'), 20, 100, 17, '#b4a8c8', 'left');
     for (i = 0; i < p.hand.length; i++) { var sr = G.Cards.slotRect(i, 'end'); if (p.hand[i]) G.Cards.drawCard(c, { id: p.hand[i].id, lvl: p.hand[i].lvl }, sr.x, sr.y, sr.w, sr.h, { nocd: true }); else G.Cards.drawEmptySlot(c, sr.x, sr.y, sr.w, sr.h, ''); }
+    RU.drawKitTag(c, R.kit, 476, 100);   // emblema y nombre del kit de la semana (a la derecha de TU MANO FINAL)
     var acts = (p.actives || []).filter(Boolean); y = 256;
-    if (acts.length) { G.txt(c, T('powers'), 20, y, 17, '#b4a8c8', 'left'); y += 24; acts.slice(0, 3).forEach(function (a) { var d = G.Fusion.recipe(a.id); G.txt(c, (d ? d.short : a.id) + ' Nv' + a.lvl + '  ·  ' + a.uses + (a.uses === 1 ? ' uso' : ' usos'), 20, y, 17, '#ffe9a0', 'left'); y += 22; }); }
+    if (acts.length) { G.txt(c, T('powers'), 20, y, 17, '#b4a8c8', 'left'); y += 24; acts.slice(0, 3).forEach(function (a) { var d = G.Fusion.recipe(a.id); G.txt(c, (d ? d.short : a.id) + ' Nv' + a.lvl + '  ·  ' + a.uses + (a.uses === 1 ? ' uso' : ' usos'), 20, y, 17, '#ffe9a0', 'left'); y += 22; }); y += 4; }
+    RU.drawObjEnd(c, 20, Math.max(y, 304), 450, r.obj);   // objetivos del día: progreso y lo cumplido en este reto
     var bl = bname(R.boss).toUpperCase() + (e.won ? ' vencido' : e.bossFrac > 0 ? ' al ' + Math.round((1 - e.bossFrac) * 100) + ' % de vida' : ': ' + T('notReached')) + '  ·  partes ' + e.parts;
-    c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(14, 380, 462, 64);
-    U.wrap(c, bl, 450, 17).slice(0, 2).forEach(function (l, k) { G.txt(c, l, 22, 398 + k * 22, 17, e.won ? '#ffd24a' : '#ff9a8a', 'left'); });
+    c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(14, 390, 462, 56);
+    U.wrap(c, bl, 450, 17).slice(0, 2).forEach(function (l, k) { G.txt(c, l, 22, 406 + k * 22, 17, e.won ? '#ffd24a' : '#ff9a8a', 'left'); });
     // ---- derecha: medalla, desglose, total, récord y premio
     U.panel(c, 500, 84, 440, 360, { border: ['#8a7a9a', '#c08040', '#c8d0dc', '#ffd24a'][e.medal] });
     drawMedal(c, 552, 128, e.medal, 30);
@@ -271,11 +288,33 @@
     y += 22;
     var pl = r.pay ? (r.test ? T('testPay', r.pay.brasas) : r.pay.rare ? T('payRare', r.pay.brasas, r.pay.parts) : T('pay', r.pay.brasas, r.pay.parts)) : T('retryNo', D.medalName(e.medal).charAt(0) + D.medalName(e.medal).slice(1).toLowerCase());
     U.wrap(c, pl, 408, 17).slice(0, 2).forEach(function (l) { G.txt(c, l, 516, y, 17, r.pay ? '#ffb347' : '#b4a8c8', 'left'); y += 22; });
-    if (r.obj && r.obj.n) G.txt(c, T('objLine', r.obj.done, r.obj.n), 516, Math.min(y, 432), 17, '#9dffb4', 'left');
     if (shareT > 0 && shareMsg) G.txt(c, shareMsg, 720, 176, 17, '#9dffb4', 'center');
     U.button(c, END_RETRY, T('againBtn'), { size: 22, sub: T('againBtnSub') });
     U.button(c, END_BASE, T('toVillage'), { size: 20, color: '#2a6aa8', hot: '#3a8ad0', border: '#bfeaff', sub: T('toVillageSub') });
   };
+  // ============================================================= Línea de objetivos del día en las pantallas de fin (expedición, cacería, Asalto y reto)
+  // obj = G.Obj.summary(): { done, n, fresh: [{ txt, weekly }], next: { txt, prog, goal } }. Dos líneas de 17: "Objetivos: 2/3 de hoy cumplidos" y debajo
+  // lo cumplido en ESTA salida (verde) o, si no hay, el diario pendiente más avanzado con su progreso. Devuelve la y siguiente.
+  function tw(c, t) { c.font = 'bold ' + G.fs(17) + 'px "Courier New", monospace'; return c.measureText(t).width; }
+  function fit(c, t, w) { if (tw(c, t) <= w) return t; while (t.length > 4 && tw(c, t + '...') > w) t = t.slice(0, -1); return t.replace(/[\s.,;:]+$/, '') + '...'; }
+  RU.fit = fit;
+  RU.objLines = function (obj) {
+    if (!obj || !obj.n) return null;
+    var fr = obj.fresh || [], l2, c2;
+    if (fr.length) { l2 = OT(fr[0].weekly ? 'endNewW' : 'endNew', fr[0].txt); c2 = '#9dffb4'; if (fr.length > 1) l2 += '  ' + OT('endMore', fr.length - 1); }
+    else if (obj.next) { l2 = OT('endNext', obj.next.txt, Dl().fmtN(obj.next.prog), Dl().fmtN(obj.next.goal)); c2 = '#ffe9a0'; }
+    else { l2 = OT('endAll'); c2 = '#9dffb4'; }
+    return [T('objLine', obj.done, obj.n), l2, c2, fr.length ? (fr[0].txt) : null];
+  };
+  RU.drawObjEnd = function (c, x, y, w, obj) {
+    var L = RU.objLines(obj); if (!L) return y;
+    G.txt(c, L[0], x, y, 17, '#b4a8c8', 'left');
+    var l2 = L[1];
+    if (tw(c, l2) > w && (obj.fresh || []).length > 1) l2 = OT((obj.fresh[0].weekly ? 'endNewW' : 'endNew'), obj.fresh[0].txt);   // si no cabe, fuera el "y N más"
+    G.txt(c, fit(c, l2, w), x, y + 22, 17, L[2], 'left');
+    return y + 44;
+  };
+
   // Medalla con silueta distinta por grado (no solo color): círculo, círculo con 1 / 2 cintas, estrella
   function drawMedal(c, x, y, m, r) {
     var col = ['#8a7a9a', '#c87a3a', '#c8d0dc', '#ffd24a'][m] || '#8a7a9a';
@@ -294,10 +333,11 @@
     var sc = Dl().live(); if (!sc) return;
     var wide = G.hudWide(), A = wide ? G.anchor() : null, cx = wide ? A.CX : G.W / 2, y = wide ? A.T + 62 : 60, sz = wide ? 16 : 13;
     var txt = (G.daily.test ? T('chipTest', Dl().fmtN(sc.base)) : T('chip', Dl().fmtN(sc.base)));
-    c.save(); c.font = 'bold ' + sz + 'px "Courier New", monospace'; var w = Math.ceil(c.measureText(txt).width) + 44;
+    c.save(); c.font = 'bold ' + sz + 'px "Courier New", monospace'; var w = Math.ceil(c.measureText(txt).width) + 66;
     c.fillStyle = 'rgba(10,6,18,0.72)'; c.fillRect(Math.round(cx - w / 2), y - 13, w, 26); c.strokeStyle = '#ffd27a'; c.lineWidth = 2; c.strokeRect(Math.round(cx - w / 2) + 1, y - 12, w - 2, 24); c.restore();
     drawMedal(c, cx - w / 2 + 16, y + 1, sc.medal, 8);
-    G.txt(c, txt, cx + 10, y, sz, '#ffe9a0', 'center');
+    emblem(c, G.daily.rules.kit, cx + w / 2 - 15, y, 18);   // kit de la semana (forma propia, no solo color)
+    G.txt(c, txt, cx, y, sz, '#ffe9a0', 'center');
   };
 
   // ============================================================= Aldea: chips de la racha y del reto (abajo, junto al botón PORTAL), marcas y cosméticos
@@ -307,8 +347,30 @@
   }
   RU.chipRects = chipRects;
   RU.chipsOn = function () { return O().isOpen() || Dl().isOpen(); };
-  RU.aldeaClick = function (m) {   // true si el toque es de un chip (abre su panel)
+  // Burbuja del Portal (D3): con el reto abierto (3 salidas contadas o un jefe vencido, Daily.isOpen), dorada "Reto del día listo" mientras el intento con premio
+  // de hoy esté pendiente y apagada "Reto de hoy: Plata" cuando ya se jugó. Tocarla abre el panel del reto (zona de toque de 66 de alto). p: pies del Portal (aldea)
+  var bubR = null;
+  RU.portalBubble = function () { return bubR; };   // pruebas
+  RU.drawPortalBubble = function (c, now, p, targeted) {
+    bubR = null;
+    var D = Dl(); if (!D.isOpen() || !p) return;
+    var pend = !D.claimed(), off = D.officialToday(), md = off ? off.medal : 0;
+    var txt = pend ? T('portalReady') : T('portalDone', off ? D.medalName(md).charAt(0) + D.medalName(md).slice(1).toLowerCase() : '-');
+    var w = Math.ceil(tw(c, txt)) + 46, h = 32, by = p.y - (targeted ? 212 : 182) + (pend ? Math.round(Math.sin(now / 320) * 2) : 0);
+    var ca = G.colAnchor(), bx = G.clamp(Math.round(p.x - w / 2), Math.max(6, ca.L), Math.min(954, ca.R) - w), tx = G.clamp(p.x, bx + 14, bx + w - 14);
+    c.save(); c.lineWidth = 3; c.strokeStyle = '#2a1d3a'; c.fillStyle = pend ? '#ffe9a0' : '#3a2f48';
+    if (G.Dialog && G.Dialog.rr) G.Dialog.rr(c, bx, by, w, h, 10); else { c.beginPath(); c.rect(bx, by, w, h); }
+    c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(tx - 8, by + h - 1); c.lineTo(tx, by + h + 10); c.lineTo(tx + 8, by + h - 1); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = c.fillStyle; c.lineWidth = 4; c.beginPath(); c.moveTo(tx - 6, by + h - 2); c.lineTo(tx + 6, by + h - 2); c.stroke();
+    c.restore();
+    drawMedal(c, bx + 18, by + h / 2 + 2, pend ? 3 : md, 9);
+    G.txt(c, txt, bx + 32, by + h / 2, 17, pend ? '#2a1a00' : '#d8cfe8', 'left', pend ? '#ffe9a0' : '#3a2f48');
+    bubR = { x: bx, y: by + h / 2 - 33, w: w, h: 66, pend: pend, txt: txt };
+  };
+  RU.aldeaClick = function (m) {   // true si el toque es de un chip o de la burbuja del Portal (abre su panel)
     if (!RU.chipsOn()) return false;
+    if (bubR && Dl().isOpen() && U.inR(bubR, m)) { G.Aldea.openPanel('reto'); return true; }
     var r = chipRects();
     if (O().isOpen() && U.inR(r.fire, m)) { G.Aldea.openPanel('diario'); return true; }
     if (Dl().isOpen() && U.inR(r.reto, m)) { G.Aldea.openPanel('reto'); return true; }

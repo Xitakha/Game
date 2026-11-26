@@ -20,7 +20,8 @@
     grace: 'Ayer descansaste. Tu racha sigue: {0}.', wood: 'La Leña mantuvo la hoguera. Te queda {0}.', half: 'La hoguera se templó: racha {0} -> {1}. ¡A por ella!', welcome: '¡Has vuelto! La hoguera te guardó la mitad: racha {0}.',
     cap: 'Tope semanal de objetivos alcanzado.', tabObj: 'OBJETIVOS', tabFire: 'HOGUERA', diff1: 'FÁCIL', diff2: 'MEDIO', diff3: 'DIFÍCIL', wdiff1: 'SEMANAL', wdiff2: 'SEMANAL DIFÍCIL',
     mile3: 'Primer farolillo junto a la hoguera', mile7: 'Segundo farolillo y título "Vecino de Rescoldo"', mile14: 'Guirnalda de farolillos entre las casas', mile21: 'Chispas doradas en la hoguera', mile28: 'Hoguera mayor', got: 'conseguido', woodTxt: 'Leña: {0}/2  (+1 cada 5 días jugados)',
-    rerolled: 'Objetivo cambiado.', rerollNo: 'El cambio gratis de hoy ya está usado.'
+    d_hunt_txt: 'Derrota a {0} {1}', rerolled: 'Objetivo cambiado.', rerollNo: 'El cambio gratis de hoy ya está usado.',
+    endHead: 'OBJETIVOS DE HOY  {0}/{1}', endNew: '¡Cumplido! {0}', endNewW: '¡Semanal cumplido! {0}', endNext: '{0}  {1}/{2}', endAll: 'Los 3 de hoy, cumplidos. Mañana hay más.', endMore: 'y {0} más'
   };
   function t(k) { var s = O.TXT[k] != null ? O.TXT[k] : k, a = arguments; s = s.replace(/\{(\d)\}/g, function (m, i) { var v = a[+i + 1]; return v == null ? '' : String(v); }); return G.Res ? G.Res.fix(s) : s; }   // T-F1-07: "1 Esencia" = "1 parte rara" hasta el Rango III
   O.t = t;
@@ -38,6 +39,7 @@
     { id: 'd_power', d: 2, goal: 20, ev: 'uses', kind: 'max', txt: 'Usa poderes 20 veces' },
     { id: 'd_clean30', d: 2, goal: 30, ev: 'clean', kind: 'max', txt: 'Aguanta 30 s sin daño' },
     { id: 'd_fuse2', d: 2, goal: 2, ev: 'fuseKinds', kind: 'max', txt: 'Crea 2 fusiones distintas en una salida' },
+    { id: 'd_hunt', d: 2, goal: 1, ev: 'hunt', kind: 'sum', txt: 'Derrota a la presa del día', need: 'hunt' },   // presa del día: un encargo de caza factible (Q.feasible) al 60 % de su meta (2.2); se fija en la entrada (e.q, e.goal)
     { id: 'd_part', d: 2, goal: 1, ev: 'bparts', kind: 'sum', txt: 'Rompe una parte de jefe' },
     { id: 'd_win', d: 3, goal: 1, ev: 'wins', kind: 'sum', txt: 'Vence a un jefe' },
     { id: 'd_mini2', d: 3, goal: 2, ev: 'minis', kind: 'max', txt: 'Derrota a los 2 guardianes en una salida' },
@@ -59,6 +61,16 @@
   ];
   var BYD = {}; O.DAILY.concat(O.WEEKLY).forEach(function (o) { BYD[o.id] = o; });
   O.def = function (id) { return BYD[id]; };
+  // ---- d_hunt (2.2): la presa sale de los encargos de caza del Tablón que se pueden cumplir en algún bioma abierto (Q.feasible), sin los de "solo por cauterización".
+  // Meta = 60 % de la del encargo (redondeo hacia arriba). Cuenta 1 por baja del rol objetivo (como d_kills), en su bioma si el encargo lo fija. No toca el director (Q.target no cambia).
+  O.HUNT_FRAC = 0.6;
+  O.huntOpts = function () { var Q = G.Quests; return (Q && Q.DEFS || []).filter(function (d) { return d.kind === 'hunt' && d.target && !d.needBurn && !d.tutorial && Q.feasible(d); }); };
+  O.huntGoal = function (q) { return Math.max(1, Math.ceil(q.goal * O.HUNT_FRAC - 1e-9)); };
+  O.text = function (e) {   // texto de una entrada (d_hunt lleva la presa del día)
+    var o = O.def(e.id); if (!o) return e.id;
+    if (o.id === 'd_hunt') { var q = G.Quests.def(e.q); return q ? t('d_hunt_txt', e.goal, q.label) : o.txt; }
+    return o.txt;
+  };
   O.CYCLE = ['wick', 'frost', 'static', 'spine', 'fang', 'plate'];   // parte escasa del día (Mecha, Escarcha, Jirón, Púa, Colmillo, Placa)
   O.reward = function (o, day) {
     var c = O.CYCLE, k = ((day % 6) + 6) % 6, p = {};
@@ -80,6 +92,7 @@
     if (o.need === 'reto') return Dl().isOpen();
     if (o.need === 'pel2') return G.Save.BOSSES.some(function (b) { return G.Save.pelMax(b) >= 2; });
     if (o.need === 'pelup') return G.Save.BOSSES.some(function (b) { return G.Save.pelMax(b) < 5; });
+    if (o.need === 'hunt') return O.huntOpts().length > 0;
     return true;
   }
   function shuffled(list, seed) { var r = G.util.rng(seed), a = list.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
@@ -87,7 +100,11 @@
     var c = cat.filter(function (o) { return o.d === diff && avail(o); }), s = shuffled(c, seed);
     return s.filter(function (o) { return avoid.indexOf(o.id) < 0; })[0] || s[0] || null;
   }
-  function entry(o) { return { id: o.id, goal: o.goal, prog: 0, done: 0, paid: 0 }; }
+  function entry(o, key) {
+    var e = { id: o.id, goal: o.goal, prog: 0, done: 0, paid: 0 };
+    if (o.id === 'd_hunt') { var hs = shuffled(O.huntOpts(), G.util.hash('SH-obj-hunt|' + key)), q = hs[0]; if (q) { e.q = q.id; e.goal = O.huntGoal(q); } }
+    return e;
+  }
   // Genera o rota la lista del día y de la semana. Solo en la aldea o el título (nunca en partida)
   O.ensure = function () {
     if (!O.isOpen()) return false;
@@ -95,13 +112,13 @@
     if (ob.day < day || !ob.list.length) {
       var y = ob.list.map(function (e) { return e.id; }), key = Dl().dayKey(day);
       ob.yday = y; ob.list = [];
-      [1, 2, 3].forEach(function (d) { var o = pick(O.DAILY, d, H('SH-obj|' + key + '|' + d), y); if (o) ob.list.push(entry(o)); });
+      [1, 2, 3].forEach(function (d) { var o = pick(O.DAILY, d, H('SH-obj|' + key + '|' + d), y); if (o) ob.list.push(entry(o, key)); });
       ob.day = day; ch = true;
     }
     if (ob.week < wk || !ob.wlist.length) {
       var wp = ob.wlist.map(function (e) { return e.id; });
       ob.wprev = wp; ob.wlist = [];
-      [1, 2].forEach(function (d) { var o = pick(O.WEEKLY, d, H('SH-obj-sem|' + wk + '|' + d), wp); if (o) ob.wlist.push(entry(o)); });
+      [1, 2].forEach(function (d) { var o = pick(O.WEEKLY, d, H('SH-obj-sem|' + wk + '|' + d), wp); if (o) ob.wlist.push(entry(o, 'w' + wk)); });
       ob.week = wk; ob.wpaid = { brasas: 0, parts: 0, rare: 0, trim: 0 }; ob.wdays = {}; ob.wfuse = {}; ch = true;
       var sl = DD().streak.last; if (sl && Dl().weekOf(sl) === wk) ob.wdays[sl] = 1;   // el día ya jugado de esta semana cuenta
       daysProg();
@@ -117,7 +134,7 @@
     var c = shuffled(O.DAILY.filter(function (x) { return x.d === o.d && avail(x); }), G.util.hash('SH-obj|' + Dl().dayKey(ob.day) + '|' + o.d + '|re')).filter(function (x) { return cur.indexOf(x.id) < 0 && ob.yday.indexOf(x.id) < 0; });
     if (!c.length) c = O.DAILY.filter(function (x) { return x.d === o.d && avail(x) && cur.indexOf(x.id) < 0; });
     if (!c.length) return { ok: false };
-    ob.list[i] = entry(c[0]); ob.rerollDay = Dl().today(); G.Save.save();
+    ob.list[i] = entry(c[0], Dl().dayKey(ob.day) + '|re'); ob.rerollDay = Dl().today(); G.Save.save();
     return { ok: true, msg: t('rerolled') };
   };
 
@@ -152,12 +169,17 @@
   O.debugApply = apply;   // pruebas
   // ---- en partida
   var run = null;
-  O.beginRun = function () { run = { day: Dl().today(), kills: 0, minis: 0 }; };
+  function doneIds() { var ob = DD().obj, out = {}; ob.list.forEach(function (e) { if (e.done) out['d|' + e.id] = 1; }); ob.wlist.forEach(function (e) { if (e.done) out['w|' + e.id] = 1; }); return out; }
+  O.beginRun = function () { run = { day: Dl().today(), kills: 0, minis: 0, done0: O.isOpen() ? doneIds() : {} }; };
   O.onKill = function (e) {
     if (!run || G.mode === 'practice' || !O.isOpen() || !DD().obj.list.length) return;
     var d = G.B.enemy[e.type], mini = e.mini || (d && d.elite);
     run.kills++; if (mini) run.minis++;
     apply(mini ? { kills: 1, minis: 1 } : { kills: 1 });   // (d_mini2 es "max": recibe el total de la salida al terminar)
+    DD().obj.list.forEach(function (x) {   // d_hunt: baja de la presa del día (en su bioma, si el encargo lo pide)
+      if (x.id !== 'd_hunt' || x.done) return; var q = G.Quests.def(x.q);
+      if (q && !e.noQuest && e.type === q.target && (!q.biome || G.curBiome === q.biome)) bump(x, 1, 'sum', false, DD().obj.day);
+    });
   };
   // Fin de cualquier salida (Loot.endRun / Daily.finish / Loot.endPractice). info: { daily, official, medal, won, bossWon, peligro, parts (de jefe), runSecs, total (partes), practice, firstP, hand }
   O.runEnd = function (info) {
@@ -181,11 +203,21 @@
     apply(r2);
     fz.forEach(function (f) { ob.wfuse[f.id] = 1; });
     ob.wlist.forEach(function (e) { var o = O.def(e.id); if (o && o.kind === 'wfuse') bump(e, Object.keys(ob.wfuse).length, 'set', true, ob.day); });
+    var d0 = run && run.done0;
     run = null;
     G.Save.save();
-    return O.summary();
+    return O.summary(d0);
   };
-  O.summary = function () { var ob = DD().obj; return { done: ob.list.filter(function (e) { return e.done; }).length, n: ob.list.length }; };
+  // Resumen para la pantalla de fin: cumplidos de hoy, los que se han cumplido en ESTA salida (fresh: diarios y semanales) y el diario pendiente más avanzado (next)
+  O.summary = function (done0) {
+    var ob = DD().obj, fresh = [], next = null, best = -1;
+    if (done0) {
+      ob.list.forEach(function (e) { if (e.done && !done0['d|' + e.id]) fresh.push({ id: e.id, txt: O.text(e), weekly: 0 }); });
+      ob.wlist.forEach(function (e) { if (e.done && !done0['w|' + e.id]) fresh.push({ id: e.id, txt: O.text(e), weekly: 1 }); });
+    }
+    ob.list.forEach(function (e) { if (e.done) return; var f = e.goal ? e.prog / e.goal : 0; if (f > best) { best = f; next = { id: e.id, txt: O.text(e), prog: e.prog, goal: e.goal }; } });
+    return { done: ob.list.filter(function (e) { return e.done; }).length, n: ob.list.length, fresh: fresh, next: next };
+  };
 
   // ------------------------------------------------------------- Racha amable (2.5)
   function daysProg() {

@@ -108,6 +108,7 @@
     var e = h.indexOf(null);
     if (e < 0) return null;
     h[e] = { id: id, lvl: 1, cd: 0, cdMax: 0, flash: 0, ang: 0 };   // FUSION: sin cooldown propio (infusión)
+    if (G.Kit && G.Kit.cur) G.Kit.noteLent('c', id);   // v10: el Manual recuerda la carta prestada (solo memoria; no toca la partida)
     return { fused: false, slot: e };
   };
 

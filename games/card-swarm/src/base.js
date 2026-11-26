@@ -155,6 +155,8 @@
     y = infoRows(c, y, rows, 13, 18);
     // pie del panel: cartas nuevas (o recordatorio de PF) anclado abajo; lo opcional (armadura, encargo, duración) entra solo si queda sitio
     var bot = PN_Y + PN_H - 10, foot = sm.newCards.length ? 92 : 20, free = function (h) { return y + h <= bot - foot; };
+    var objL = sm.obj && G.RetoUI ? G.RetoUI.objLines(sm.obj) : null;   // v10: objetivos del día (cacería y Asalto: una línea si queda sitio)
+    if (objL && free(22)) y = infoRows(c, y, [[G.RetoUI.fit(c, objL[3] ? objL[1] : objL[0], IN_W), objL[3] ? objL[2] : '#b4a8c8']], 13, 18);
     if (sm.blocked > 0 && free(18)) y = infoRows(c, y, [['Daño evitado por armadura: ' + sm.blocked + ' (' + Math.round(100 * sm.blocked / Math.max(1, sm.rawDmg)) + ' %)', '#7fd8e8']], 13, 18);
     var lh2 = Math.round(G.fs(13) * 1.3);
     if (sm.quest) { var ql = U.wrap(c, 'Encargo: ' + sm.quest, IN_W, 13).slice(0, 2); while (ql.length && !free(ql.length * lh2)) ql.pop(); ql.forEach(function (ln) { G.txt(c, ln, IN_X, y, 13, '#ffe9a0', 'left'); y += lh2; }); }
@@ -214,7 +216,8 @@
       if (g.frac != null) barAt(c, 40, gy + 14, 300, 10, g.frac, '#ffd27a');
       gy += 44;
     });
-    if (sm.tip) { G.txt(c, 'CONSEJO', 20, 316, 13, '#b4a8c8', 'left'); wrapLines(c, 340, sm.tip, 2, 14, '#d8cfe8', 20, 430); }
+    var ty = 340; if (sm.tip) { G.txt(c, 'CONSEJO', 20, 316, 13, '#b4a8c8', 'left'); ty = wrapLines(c, 340, sm.tip, 2, 14, '#d8cfe8', 20, 430); }
+    if (sm.obj && G.RetoUI) G.RetoUI.drawObjEnd(c, 20, Math.max(392, ty + 8), 450, sm.obj);   // v10: objetivos del día (progreso y lo cumplido en esta salida)
     // ---- derecha: lo ganado (todo el panel abre el detalle)
     var hov = U.inR(END_PANEL, inp.mouse);
     U.panel(c, END_PANEL.x, END_PANEL.y, END_PANEL.w, END_PANEL.h, { border: hov ? '#ffd27a' : '#6a4a30' });

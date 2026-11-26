@@ -116,10 +116,20 @@
     sigCache[key] = { src: L, sg: sg, L: o }; return o;
   };
   K.inDeck = function (id) { return !!K.cur && K.cur.deck.indexOf(id) >= 0; };
+  // Manual (A10k, "Lo viste prestado en el reto"): cartas que entraron en tu mano en el reto sin tenerlas desbloqueadas (c) y fusiones creadas por primera vez en el
+  // reto (f). Solo memoria del Manual en daily.reto.lent: no desbloquea nada ni cuenta como descubierto. La fusión se borra de f al crearla fuera del reto.
+  K.lent = function () { var R = G.Save.data.daily && G.Save.data.daily.reto; if (!R) return { c: {}, f: {} }; var L = R.lent = R.lent || {}; L.c = L.c || {}; L.f = L.f || {}; return L; };
+  K.noteLent = function (kind, id) {
+    if (!K.cur || !id) return;
+    var L = K.lent();
+    if (kind === 'c') { if (!(G.fusionAll || K.ownRank(id) > 0)) L.c[id] = 1; }
+    else L.f[id] = 1;
+  };
   // Rango de forja prestado: las cartas de la baraja a Rango I (II si el kit sube la carta con un nodo de mejora dentro del presupuesto)
   (function () {
     var S = G.Save, orig = S.rank;
     S.rank = function (id) { return K.cur ? (K.cur.rank[id] || 0) : orig(id); };
+    K.ownRank = function (id) { return orig(id); };   // rango real de la cuenta (también durante el reto)
   })();
 
   // ---- Datos de la ficha VER KIT (1.10.7)

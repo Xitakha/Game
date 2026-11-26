@@ -1330,7 +1330,13 @@ async function text() {
     const variants = { 'muerte': 'G.player.hp = 0; G.player.dead = true; G.finish(false);', 'abandono': 'G.finish(false);', 'práctica': '' };
     for (const [nm, code] of Object.entries(variants)) {
       pg = await mkV(b, nm === 'práctica' ? 'reset=1&all=1&speed=0&seed=3&boss=pastor&practice=1&nointro=1&cine=0' : 'reset=1&direct=1&all=1&speed=0&seed=3', w, h);
-      await E(pg, c => { for (let i = 0; i < 20; i++) G.step(); G.runT = G.time = Math.max(G.time, 125000); new Function(c)(); if (G.state !== 'gameover') G.finish(false); }, code); await report(pg, `fin ${nm} ${tag}`); await done(pg, 'texto-fin-' + nm + tag);
+      await E(pg, c => { for (let i = 0; i < 20; i++) G.step(); G.runT = G.time = Math.max(G.time, 125000); new Function(c)(); if (G.state !== 'gameover') G.finish(false); }, code); await report(pg, `fin ${nm} ${tag}`);
+      if (nm !== 'práctica') {   // v10: línea de objetivos del día (peor caso: dos cumplidos largos y consejo de 2 líneas)
+        await E(pg, () => { const sm = G.Loot.summary; sm.obj = { done: 2, n: 3, fresh: [{ id: 'd_parts3', txt: 'Rompe 3 partes de jefe en una salida', weekly: 0 }, { id: 'w_medal3', txt: 'Saca 3 Bronces o mejor en el reto', weekly: 1 }], next: null };
+          sm.tip = 'Consejo largo de prueba para ocupar dos líneas: recoge gemas, esquiva en curva y no corras en línea recta.'; });
+        await report(pg, `fin ${nm} con objetivos ${tag}`);
+      }
+      await done(pg, 'texto-fin-' + nm + tag);
     }
   }
   await b.close();
@@ -2267,6 +2273,20 @@ async function wide() {
     });
     ok(v.W === 1200 && v.edge > 0 && Math.abs(v.a0 - 255 * 0.55 - 7 * 0.45) < 6 && v.a1 > 248 && v.mid === 255 && Math.abs(v.b1 - v.a0) < 6, `velo lateral: borde de pantalla ${v.a0}/255 (45 % #07050c), borde de la ventana ${v.a1}, centro ${v.mid}, borde derecho ${v.b1} (ventana a ${Math.round(v.edge)} px)`);
     await done(pg, 'wide-velo'); }
+  // 8. v10: burbuja del reto sobre el Portal y chip del reto en el HUD (con emblema de kit) dentro de la zona segura, con y sin pantalla ancha (muesca simulada)
+  for (const [w, h] of [[844, 390], [740, 360], [915, 412]]) for (const wd of [1, 0]) {
+    let pg = await mkW(b, `reset=1&cine=0&wide=${wd}&safe=0,47,21,47`, w, h);
+    const r = await E(pg, async () => { const S = G.Save.data; S.runs = 3; S.flags.smithMet = 1; S.flags.smithGift = 1; G.Daily.setNow(Date.UTC(2026, 10, 14, 12)); G.Aldea.open(false); G.Aldea.pos.x = 600; G.Aldea.pos.y = 300;
+      await new Promise(r => setTimeout(r, 300)); const q = G.RetoUI.portalBubble(), s = G.safe; return { q, W: G.W, OX: G.OX || 0, s: [s.l, s.r] }; });
+    const q = r.q, x0 = q && q.x + r.OX, x1 = q && q.x + q.w + r.OX;
+    ok(q && x0 >= r.s[0] - 0.5 && x1 <= r.W - r.s[1] + 0.5 && q.x >= 0 && q.x + q.w <= 960, `burbuja del Portal a ${w}x${h} wide=${wd}: dentro de la columna y de la zona segura (${q && Math.round(x0)}..${q && Math.round(x1)} de ${r.W})`);
+    await done(pg, `wide-burbuja ${w}x${h} wide=${wd}`);
+    pg = await mkW(b, `reset=1&cine=0&speed=0&wide=${wd}&safe=0,47,21,47`, w, h);
+    await E(pg, () => { const S = G.Save.data; S.runs = 3; G.Daily.setNow(Date.UTC(2026, 10, 14, 12)); G.Aldea.open(false); G.Daily.start(false); for (let i = 0; i < 300; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } G.state = 'play'; });
+    const d = await hudSnap(pg), s = d.safe, chip = d.texts.filter(t => /^RETO/.test(t.s));
+    ok(chip.length === 1 && chip[0].x0 >= s.l - 0.5 && chip[0].x1 <= d.W - s.r + 0.5 && chip[0].y0 >= s.t - 0.5, `chip RETO del HUD a ${w}x${h} wide=${wd}: visible y dentro de la zona segura`);
+    await done(pg, `wide-chip-reto ${w}x${h} wide=${wd}`);
+  }
   await b.close();
 }
 
@@ -2600,7 +2620,123 @@ async function daily() {
   await E(pg, () => { G.finish(false); G.Base.open(true); }); await sleep(pg, 300);
   ok((await E(pg, () => G.state)) === 'aldea' && !(await E(pg, () => G.Kit.cur)), 'IR A LA ALDEA vuelve a Rescoldo sin kit en memoria');
   await done(pg, 'daily-pantallas');
+  await dailyPolish(b, report);
   await b.close();
+}
+// Pulido del reto (DESIGN-v10-retencion.md 8.2): objetivos en las pantallas de fin, burbuja del Portal, emblemas y sonidos de kit, Manual "prestado" y d_hunt
+async function dailyPolish(b, report) {
+  // ---- d_hunt: presa factible al 60 %, avanza solo con su rol (y en su bioma), y lo cumplido en la salida llega al resumen de fin
+  let pg = await mk(b, 'reset=1&cine=0&speed=0');
+  let r = await E(pg, () => {
+    const D = G.Daily, O = G.Obj, S = G.Save.data, Q = G.Quests, out = {};
+    S.runs = 1; D.setNow(Date.UTC(2026, 10, 14, 9)); G.Aldea.open(false);
+    out.n = [O.DAILY.length, O.DAILY.filter(o => o.d === 2).length, O.def('d_hunt') && O.def('d_hunt').d];
+    const nf = O.huntOpts().length; out.forest = nf > 0 && O.huntOpts().every(q => Q.biomesOf(q).indexOf('bosque') >= 0 && Q.feasible(q) && !q.needBurn);
+    S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; out.more = O.huntOpts().length > nf;
+    let seen = 0, bad = []; const ob = S.daily.obj;
+    for (let d = 0; d < 90; d++) { D.setNow(Date.UTC(2026, 10, 14 + d, 9)); O.ensure(); ob.list.forEach(e => { if (e.id !== 'd_hunt') return; seen++; const q = Q.def(e.q);
+      if (!q || q.kind !== 'hunt' || !Q.feasible(q) || e.goal !== Math.ceil(q.goal * 0.6) || !/^Derrota a \d+ \S/.test(O.text(e))) bad.push(JSON.stringify(e)); }); }
+    out.rot = [seen, bad.slice(0, 2)];
+    const r0 = JSON.stringify(O.reward(O.def('d_hunt'), 5)) === JSON.stringify(O.reward(O.def('d_mini'), 5)); out.rew = r0;
+    ob.list = [{ id: 'd_hunt', q: 'dogs', goal: 24, prog: 0, done: 0, paid: 0 }, { id: 'd_fuse', goal: 1, prog: 0, done: 0, paid: 0 }, { id: 'd_clean60', goal: 60, prog: 0, done: 0, paid: 0 }];
+    ob.wlist = [{ id: 'w_kills', goal: 2000, prog: 0, done: 0, paid: 0 }, { id: 'w_fuse8', goal: 8, prog: 0, done: 0, paid: 0 }]; ob.wfuse = {}; ob.wpaid = { brasas: 0, parts: 0, rare: 0, trim: 0 };
+    G.mode = 'run'; G.curBiome = 'bosque'; O.beginRun();
+    for (let i = 0; i < 5; i++) O.onKill({ type: 'dog' }); O.onKill({ type: 'worm' }); O.onKill({ type: 'dog', noQuest: true });
+    out.prog = ob.list[0].prog;
+    ob.list[0] = { id: 'd_hunt', q: 'yetis', goal: 8, prog: 0, done: 0, paid: 0 }; O.onKill({ type: 'shield' }); const yb = ob.list[0].prog; G.curBiome = 'tundra'; O.onKill({ type: 'shield' }); out.biome = [yb, ob.list[0].prog];
+    ob.list[0] = { id: 'd_hunt', q: 'dogs', goal: 24, prog: 23, done: 0, paid: 0 }; const b0 = S.brasas; O.onKill({ type: 'dog' }); out.paid = [ob.list[0].done, ob.list[0].paid, S.brasas - b0];
+    G.Fusion.stats.fusions = [{ id: 'vapor' }]; const sm = O.runEnd({ runSecs: 120, total: 3 });
+    out.sum = sm; out.again = O.summary(null).fresh.length;
+    return out;
+  });
+  ok(r.n[0] === 19 && r.n[1] === 7 && r.n[2] === 2, 'd_hunt en el catálogo diario (19 diarios, 7 medios) ' + JSON.stringify(r.n));
+  ok(r.forest && r.more && r.rew, 'd_hunt: con solo el Bosque, solo presas que avanzan en el Bosque (Q.feasible); con más biomas, más presas; premio de dificultad media (tope semanal intacto)');
+  ok(r.rot[0] > 0 && !r.rot[1].length, `d_hunt en 90 días: sale ${r.rot[0]} veces, siempre con presa factible, meta = 60 % del encargo y texto "Derrota a N ..."` + (r.rot[1].length ? ' -> ' + r.rot[1].join(' | ') : ''));
+  ok(r.prog === 5 && r.biome[0] === 0 && r.biome[1] === 1 && r.paid[0] === 1 && r.paid[1] === 1 && r.paid[2] === 12, 'd_hunt avanza solo con la presa (no con otras bajas ni con noQuest), en su bioma si el encargo lo pide, y se cobra una vez (+12 Brasas) ' + JSON.stringify([r.prog, r.biome, r.paid]));
+  ok(r.sum && r.sum.done === 2 && r.sum.fresh.map(f => f.id).join() === 'd_hunt,d_fuse' && /^Derrota a 24 Perros pastores$/.test(r.sum.fresh[0].txt) && r.sum.next && r.sum.next.id === 'd_clean60' && r.again === 0,
+    'resumen de fin: cumplidos de hoy 2/3, lo cumplido en ESTA salida (d_hunt, d_fuse) y el pendiente más avanzado ' + JSON.stringify(r.sum));
+  await done(pg, 'daily-d_hunt');
+  // ---- pantalla de fin de expedición con la línea de objetivos (844x390 y 740x360): sin solapes, letra 17
+  for (const [w, h] of [[844, 390], [740, 360]]) {
+    pg = await mkV(b, 'reset=1&direct=1&all=1&speed=0&seed=3&cine=0', w, h);
+    r = await E(pg, () => { const S = G.Save.data, O = G.Obj; S.runs = 5; S.bossKills = { pastor: 1, karceron: 1, letea: 1, yarlak: 1 }; O.ensure(); const ob = S.daily.obj;
+      ob.list = [{ id: 'd_fuse', goal: 1, prog: 0, done: 0, paid: 0 }, { id: 'd_hunt', q: 'wolves', goal: 18, prog: 5, done: 0, paid: 0 }, { id: 'd_parts3', goal: 3, prog: 0, done: 0, paid: 0 }];
+      ob.wlist = [{ id: 'w_fuse8', goal: 8, prog: 7, done: 0, paid: 0 }, { id: 'w_parts8', goal: 8, prog: 0, done: 0, paid: 0 }]; ob.wfuse = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1 }; O.beginRun();
+      for (let i = 0; i < 20; i++) G.step(); G.Fusion.stats.fusions = [{ id: 'vapor' }, { id: 'plasma' }]; G.runT = G.time = 125000; G.player.hp = 0; G.player.dead = true; G.finish(false); return G.Loot.summary.obj; });
+    ok(r && r.fresh.length === 2 && r.fresh[1].weekly === 1, `fin de expedición ${w}x${h}: el resumen trae 2 cumplidos en la salida (diario y semanal)`);
+    let d = await TC.snap(pg, 2);
+    ok(d.texts.some(t => /^Objetivos: 1\/3 de hoy cumplidos$/.test(t.s)) && d.texts.some(t => /^¡Cumplido! Crea una fusión\s+y 1 más$/.test(t.s)), `fin de expedición ${w}x${h}: línea de objetivos (C9) y lo cumplido en la salida`);
+    await report(pg, `fin de expedición con objetivos ${w}x${h}`);
+    await E(pg, () => { G.Loot.summary.obj = { done: 0, n: 3, fresh: [], next: { id: 'd_hunt', txt: 'Derrota a 18 Lobos de escarcha', prog: 5, goal: 18 } }; G.Loot.summary.tip = 'Consejo largo de prueba para ocupar dos líneas: recoge gemas, esquiva en curva y no corras nunca en línea recta.'; });
+    d = await TC.snap(pg, 2); ok(d.texts.some(t => t.s === 'Derrota a 18 Lobos de escarcha  5/18'), `fin de expedición ${w}x${h}: sin cumplidos, el pendiente más avanzado con su progreso`);
+    await report(pg, `fin de expedición con objetivos y consejo de 2 líneas ${w}x${h}`);
+    await done(pg, 'daily-fin-objetivos-' + w);
+  }
+  // cacería (pantalla de detalle): una línea de objetivos si cabe
+  pg = await mk(b, 'reset=1&god=1&all=1&nointro=1&speed=0&seed=5&peligro=3&cine=0&hand=spark:3,shard:2,dart:1&boss=pastor');
+  await E(pg, () => { const S = G.Save.data; S.runs = 5; for (let i = 0; i < 600 && !G.Boss.e; i++) G.step(); const e = G.Boss.e; if (e) { e.hp = 1; G.Enemies.kill(e); } for (let i = 0; i < 600 && G.state !== 'gameover'; i++) { G.step(); if (G.state === 'cards') { G.Cards.off = null; G.state = 'play'; } }
+    G.Loot.summary.obj = { done: 3, n: 3, fresh: [{ id: 'd_parts3', txt: 'Rompe 3 partes de jefe en una salida', weekly: 0 }, { id: 'w_boss3', txt: 'Vence a 3 jefes', weekly: 1 }], next: null }; });
+  { const d = await TC.snap(pg, 2); ok(d.texts.some(t => /^¡Cumplido! Rompe 3 partes/.test(t.s)), 'cacería: la pantalla de detalle trae la línea de objetivos (recortada al panel)'); }
+  await report(pg, 'cacería con objetivos'); await done(pg, 'daily-caceria-objetivos');
+  // ---- burbuja del Portal (D3): cerrada antes de las 3 salidas; dorada "Reto del día listo" con el intento pendiente; apagada "Reto de hoy: ..." tras jugarlo; tocarla abre el reto
+  pg = await mk(b, 'reset=1&cine=0');   // sin speed=0: el toque se procesa en el bucle normal
+  const bub = async () => { await sleep(pg, 250); return E(pg, () => G.RetoUI.portalBubble()); };
+  await E(pg, new Function('(' + ACC_FULL + ')();' + ` G.Save.data.runs = 2; G.Save.data.bossKills = {}; G.Save.data.flags.smithMet = 1; G.Save.data.flags.smithGift = 1; G.Daily.forceOfficial = true; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false); G.Aldea.pos.x = 600; G.Aldea.pos.y = 300;`));
+  r = await bub(); const closed = !r && !(await E(pg, () => G.Daily.isOpen()));
+  await E(pg, () => { G.Save.data.runs = 3; }); r = await bub();
+  ok(closed && r && r.pend && r.txt === 'Reto del día listo' && r.x >= 0 && r.x + r.w <= 960 && r.h >= 66, 'burbuja del Portal: no sale con 2 salidas; con 3, "Reto del día listo" dentro de la columna y con zona de toque de 66 ' + JSON.stringify(r));
+  { const d = await TC.snap(pg, 2), bt = d.texts.filter(t => t.s === 'Reto del día listo'); const iss = TC.analyze({ texts: bt, boxes: [], W: d.W }, { minSize: TC.MIN_MENU }); ok(bt.length === 1 && !iss.length, 'burbuja del Portal: texto de 17 sin problemas' + (iss.length ? ' -> ' + iss.map(i => i.msg).join(' | ') : '')); }
+  await tap(pg, r.x + r.w / 2, r.y + r.h / 2); await sleep(pg, 300);
+  ok((await E(pg, () => G.Panels.current())) === 'reto', 'tocar la burbuja del Portal abre el panel del reto');
+  await E(pg, () => { G.Aldea.open(false); G.Daily.start(true); G.finish(false); G.Base.open(true); }); await sleep(pg, 1500);
+  r = await bub(); ok(r && !r.pend && /^Reto de hoy: (Participación|Bronce|Plata|Oro)$/.test(r.txt), 'burbuja del Portal tras jugar el intento con premio: apagada y con la medalla de hoy ' + JSON.stringify(r && r.txt));
+  if (process.env.SHOTS) await pg.screenshot({ path: path.join(process.env.SHOTS, 'daily-portal.png') });
+  await done(pg, 'daily-burbuja');
+  // ---- emblemas y sonidos de los 8 kits; Manual "Lo viste prestado en el reto"
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  r = await E(pg, () => {
+    const out = {}, ids = G.Kit.KITS.map(k => k.id), cv = document.createElement('canvas'); cv.width = cv.height = 40; const c = cv.getContext('2d'), hs = {};
+    out.draw = ids.every(id => { c.clearRect(0, 0, 40, 40); const ok = Assets.kitEmblem(c, id, 20, 20, 32); const px = c.getImageData(0, 0, 40, 40).data; let h = 0, a = 0; for (let i = 0; i < px.length; i += 4) { const lit = px[i] + px[i + 1] + px[i + 2] > 600 ? 1 : 0; h = (h * 31 + lit) >>> 0; a += px[i + 3] > 0 ? 1 : 0; } hs[id] = h; return ok && a > 500; });
+    out.shapes = new Set(Object.values(hs)).size;   // silueta del símbolo claro: distinta en los 8 (no solo el color)
+    out.snd = ids.every(id => typeof G.Snd.V['kit_' + id] === 'function'); out.syms = Assets.KIT_SYMBOLS.length;
+    try { ids.forEach(id => Assets.kitSnd(id)); out.play = true; } catch (e) { out.play = String(e); }
+    return out;
+  });
+  ok(r.draw && r.shapes === 8 && r.syms === 8, `emblemas de kit (Assets.kitEmblem): los 8 se dibujan y el símbolo tiene silueta distinta en los 8 (${r.shapes})`);
+  ok(r.snd && r.play === true, 'sonidos de kit: G.Snd.V.kit_<id> para los 8 y Assets.kitSnd no falla (sin audio desbloqueado cae en card_select)');
+  r = await E(pg, new Function('(' + ACC_FULL + ')();' + ` const S = G.Save.data, out = {}; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false);
+    const cards0 = JSON.stringify(S.cards), seen0 = JSON.stringify(S.manualSeen), cs0 = Object.keys(S.combosSeen).length;
+    G.Daily.start(false); const R = G.daily.rules, K = G.Kit, own = id => K.ownRank(id) > 0;
+    const pick = R.deck.filter(id => !own(id) && G.Cards.def(id).type === 'attack'); out.pick = pick.slice(0, 2);
+    const a = R.deck.filter(id => G.Cards.def(id).type === 'attack'), tags = {}; let pair = null;
+    for (const x of a) for (const y of a) if (!pair && G.Cards.def(x).tag !== G.Cards.def(y).tag && G.Fusion.recipeFor(G.Cards.def(x).tag, G.Cards.def(y).tag) && !S.combosSeen[G.Fusion.recipeFor(G.Cards.def(x).tag, G.Cards.def(y).tag).id]) pair = [x, y];
+    const h = G.player.hand; for (let i = 0; i < h.length; i++) h[i] = null; G.Cards.add(pair[0]); G.Cards.add(pair[1]);
+    G.Cards.add(pick[0]); G.player.ash = 999; const rec = G.Fusion.recipeFor(G.Cards.def(pair[0]).tag, G.Cards.def(pair[1]).tag); G.Fusion.fuse(rec, 0, 1, null); out.rec = rec.id;
+    G.finish(false);
+    const L = S.daily.reto.lent, M = G.Manual, en = M.entries(); out.c = pick[0] && !!L.c[pick[0]]; out.f = !!L.f[rec.id];
+    out.mc = M.lent(en.find(e => e.k === 'card' && e.id === pick[0])); out.mf = M.lent(en.find(e => e.k === 'fx' && e.id === rec.id));
+    out.own = R.deck.filter(own).every(id => !L.c[id]);
+    out.same = JSON.stringify(S.cards) === cards0 && JSON.stringify(S.manualSeen) === seen0 && !G.Fusion.unlockedCard(pick[0]);
+    G.Aldea.open(false); G.launchReq = null; G.startGame(); G.player.ash = 999; const hh = G.player.hand; for (let i = 0; i < hh.length; i++) hh[i] = null; G.Cards.add(pair[0]); G.Cards.add(pair[1]);
+    G.Fusion.fuse(rec, 0, 1, null); out.cleared = !L.f[rec.id] && !M.lent(en.find(e => e.k === 'fx' && e.id === rec.id));
+    G.finish(false); G.Aldea.open(false); G.Aldea.openPanel('manual'); const lst = en.filter(e => e.k === 'card'), i = lst.findIndex(e => e.id === pick[0]); G.Manual.setTab(0); G.Manual.select(i); G.Manual.setView(0);
+    return out;`));
+  ok(r.c && r.mc && r.own, 'Manual: una carta que entró en tu mano solo en el reto queda "prestada" (las que ya tenías, no) ' + JSON.stringify([r.pick, r.c, r.mc]));
+  ok(r.f && r.mf && r.cleared, `Manual: la fusión creada por primera vez en el reto (${r.rec}) se marca prestada y se desmarca al crearla fuera del reto`);
+  ok(r.same, 'Manual prestado: no desbloquea la carta ni toca cards / manualSeen');
+  await sleep(pg, 300);
+  { const d = await TC.snap(pg, 2); ok(d.texts.some(t => t.s === 'Lo viste prestado en el reto.') && d.texts.some(t => t.s === 'PRESTADO'), 'Manual: la ficha cerrada dice "Lo viste prestado en el reto." (A10k) y la fila lleva PRESTADO'); }
+  await report(pg, 'Manual con carta prestada');
+  await done(pg, 'daily-manual-prestado');
+  // ---- resultado del reto, peor caso: 3 poderes, objetivos cumplidos en el reto y kit con emblema
+  pg = await mk(b, 'reset=1&cine=0&speed=0');
+  await E(pg, new Function('(' + ACC_FULL + ')();' + ` G.Daily.forceOfficial = true; G.Daily.setNow(${DUTC('2026-11-14')}); G.Aldea.open(false); const ob = G.Save.data.daily.obj; ob.list[0] = { id: 'd_reto', goal: 1, prog: 0, done: 0, paid: 0 };
+    G.Daily.start(true); ['vapor', 'plasma', 'forja'].forEach(a => { try { G.Fusion.grant(a, 2); } catch (e) { /* receta */ } }); for (let i = 0; i < 300; i++) { if (G.state === 'cards') { G.Cards.skip(); G.state = 'play'; } G.step(); } G.finish(false);`));
+  await sleep(pg, 400);
+  { const d = await TC.snap(pg, 2), k = await E(pg, () => G.Kit.get(G.Daily.endRes.rules.kit).name); ok(d.texts.some(t => /^Objetivos: \d\/3 de hoy cumplidos$/.test(t.s)) && d.texts.some(t => t.s === '¡Cumplido! Juega el reto del día') && d.texts.some(t => t.s === k), 'resultado del reto: objetivos (C9 y lo cumplido en el reto) y kit de la semana con su emblema'); }
+  await report(pg, 'resultado del reto (3 poderes y objetivos)');
+  if (process.env.SHOTS) await pg.screenshot({ path: path.join(process.env.SHOTS, 'daily-resultado-objetivos.png') });
+  await done(pg, 'daily-resultado-objetivos');
 }
 // ---------------------------------------------------------------- T-F1-07: economía presentada por pasos (src/res.js, studio/docs/SPEC-T-F1-07.md, sección 7)
 // Cada comprobación cuenta los recursos de dos formas: el registro G.Res.shown() y una regex por recurso sobre TC.snap.
