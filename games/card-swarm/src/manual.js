@@ -87,6 +87,13 @@
     if (e.k === 'card') return !!G.Fusion.unlockedCard(e.id);
     var cs = SV().combosSeen || {}; return !!cs[e.id];
   };
+  // v10 (A10k): carta o fusión vista solo prestada en el reto diario (daily.reto.lent, kits.js). La carta sigue cerrada; la fusión ya está en combosSeen
+  M.lent = function (e) {
+    var L = (SV().daily && SV().daily.reto && SV().daily.reto.lent) || {}, m = e.k === 'card' ? L.c : L.f;
+    if (!m || !m[e.id]) return false;
+    return e.k === 'card' ? !M.isKnown(e) : true;
+  };
+  function lentTxt() { return G.Daily ? G.Daily.t('manualLent') : 'Lo viste prestado en el reto.'; }
   function visible() {
     var q = st.q.trim().toLowerCase();
     return M.entries().filter(function (e) {
@@ -390,6 +397,7 @@
     G.ManualArt.icon(c, 'lock', VIEW.x + VIEW.w / 2, VIEW.y + 96, 34);
     G.txt(c, '???', VIEW.x + VIEW.w / 2, VIEW.y + 154, 30, '#a89cc0', 'center');
     G.txt(c, e.k === 'fx' ? 'Aún no has creado esta fusión' : 'Aún no has desbloqueado esta carta', VIEW.x + VIEW.w / 2, VIEW.y + 198, 17, '#c8c0d8', 'center');
+    if (M.lent(e)) G.txt(c, lentTxt(), VIEW.x + VIEW.w / 2, VIEW.y + 226, 17, '#ffd24a', 'center');   // A10k
   }
   // texto completo de una entrada conocida desde y (vista TEXTO; la FICHA solo enseña el principio)
   function bodyText(c, e, y) {
@@ -435,9 +443,10 @@
       c.strokeStyle = on ? '#ffe9a0' : kn ? tagCol(en.tag) : '#3a2f48'; c.lineWidth = on ? 3 : 2; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       if (kn) { chip(c, en.tag, r.x + 18, r.y + r.h / 2); if (en.tag2) chip(c, en.tag2, r.x + 34, r.y + r.h / 2); }
       else G.ManualArt.icon(c, 'lock', r.x + 22, r.y + r.h / 2, 9);
-      var nx = r.x + (en.tag2 ? 50 : 36), nw = isNew(en);
-      G.txt(c, fitTxt(c, kn ? en.name : '???', r.x + r.w - (nw ? 68 : 8) - nx, 17), nx, r.y + r.h / 2, 17, kn ? '#fff' : '#a89cc0', 'left');   // el nombre no pisa la marca NUEVO
+      var nx = r.x + (en.tag2 ? 50 : 36), nw = isNew(en), ln = !nw && M.lent(en);
+      G.txt(c, fitTxt(c, kn ? en.name : '???', r.x + r.w - (nw ? 68 : ln ? 112 : 8) - nx, 17), nx, r.y + r.h / 2, 17, kn ? '#fff' : '#a89cc0', 'left');   // el nombre no pisa la marca NUEVO / PRESTADO
       if (nw) { c.fillStyle = '#ffd24a'; c.fillRect(r.x + r.w - 64, r.y + 21, 60, 24); G.txt(c, 'NUEVO', r.x + r.w - 34, r.y + 33, 17, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }
+      else if (ln) { c.fillStyle = '#c8a03a'; c.fillRect(r.x + r.w - 108, r.y + 21, 104, 24); G.txt(c, 'PRESTADO', r.x + r.w - 56, r.y + 33, 17, '#2a1a00', 'center', 'rgba(0,0,0,0)'); }   // A10k: visto solo en el reto
     }
     LIM = 420;
     if (!l.length) para(c, 98, '', 'Nada coincide con el filtro o la búsqueda (solo se busca en lo descubierto).', '#c8c0d8', 17, 8, 18, 280);
@@ -450,6 +459,7 @@
     if (st.view) {   // ---- vista TEXTO: nombre y todo el texto a lo ancho
       seenMark(e); LIM = 448;
       G.txt(c, e.name, 312, 92, 20, '#ffd27a', 'left');
+      if (M.lent(e)) { G.txt(c, lentTxt(), 946, 92, 17, '#ffd24a', 'right'); }   // A10k (a la derecha del nombre)
       bodyText(c, e, 122);
       return;
     }
@@ -488,6 +498,7 @@
       return;
     }
     seenMark(e);
+    if (M.lent(e)) { G.txt(c, lentTxt(), 946, y - 28, 17, '#ffd24a', 'right'); }   // A10k: junto al nombre (fusión creada solo en el reto)
     para(c, y, '', e.k === 'fx' ? e.rec.desc : e.def.desc, '#e8dff8', 17, 2, 312, 634);
   };
 })();

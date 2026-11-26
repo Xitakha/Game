@@ -57,7 +57,7 @@
   // v13 (T-F1-05 / T-F1-06): reto diario, objetivos y racha. Sin textos largos: el texto para compartir se genera al vuelo
   function freshDaily() {
     return { maxDay: 0, claims: {},
-      reto: { seenDay: 0, official: null, live: null, retry: { day: 0, best: 0, medal: 0 }, extraDay: 0, hist: [], best: null, medals: { part: 0, bronce: 0, plata: 0, oro: 0 }, firstSeen: 0, kit: { seenWeek: 0 } },
+      reto: { seenDay: 0, official: null, live: null, retry: { day: 0, best: 0, medal: 0 }, extraDay: 0, hist: [], best: null, medals: { part: 0, bronce: 0, plata: 0, oro: 0 }, firstSeen: 0, kit: { seenWeek: 0 }, lent: { c: {}, f: {} } },
       obj: { day: 0, list: [], rerollDay: 0, yday: [], week: 0, wlist: [], wprev: [], wpaid: { brasas: 0, parts: 0, rare: 0, trim: 0 }, wdays: {}, wfuse: {} },
       streak: { n: 0, best: 0, last: 0, wood: 2, woodAcc: 0, miles: {} } };
   }
@@ -188,7 +188,8 @@
     var R = dy.reto;
     if (isObj(R)) {
       num(R, 'seenDay', 0, DMAX, P + 'reto.'); num(R, 'extraDay', 0, DMAX, P + 'reto.'); num(R, 'firstSeen', 0, 1, P + 'reto.');
-      ['retry', 'medals', 'kit'].forEach(function (k) { obj(R, k, P + 'reto.'); });
+      ['retry', 'medals', 'kit', 'lent'].forEach(function (k) { obj(R, k, P + 'reto.'); });
+      if (isObj(R.lent)) { obj(R.lent, 'c', P + 'reto.lent.'); obj(R.lent, 'f', P + 'reto.lent.'); map(R.lent, 'c', 0, 1, P + 'reto.lent.'); map(R.lent, 'f', 0, 1, P + 'reto.lent.'); }   // cartas y fusiones vistas solo prestadas (Manual, A10k)
       if (isObj(R.retry)) { num(R.retry, 'day', 0, DMAX, P + 'reto.retry.'); num(R.retry, 'best', 0, SC, P + 'reto.retry.'); num(R.retry, 'medal', 0, 3, P + 'reto.retry.'); }
       if (isObj(R.medals)) map(R, 'medals', 0, 1e6, P + 'reto.');
       if (isObj(R.kit)) num(R.kit, 'seenWeek', 0, 2e5, P + 'reto.kit.');

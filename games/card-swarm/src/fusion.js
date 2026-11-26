@@ -168,7 +168,11 @@
         if (replaceIdx != null) { p.ash += P.replaceAsh; if (!G.Res || G.Res.visible('ceniza')) fx.num(p.x, p.y - 30, '+' + P.replaceAsh + ' Ceniza', '#ff9a3c'); snd('fx_replace', 0); }
         p.actives[at] = newSlot(r, 1);
       }
-      try { G.Save.data.combosSeen[r.id] = 1; G.Save.save(); } catch (e0) { /* sin guardado */ }
+      try {
+        var cs0 = G.Save.data.combosSeen, was = !!cs0[r.id]; cs0[r.id] = 1;
+        if (G.Kit && G.Kit.cur) { if (!was) G.Kit.noteLent('f', r.id); } else if (G.Kit && G.Kit.lent) delete G.Kit.lent().f[r.id];   // v10: fusión vista solo prestada (Manual, A10k)
+        G.Save.save();
+      } catch (e0) { /* sin guardado */ }
       F.fused++; F.stats.fusions.push({ id: r.id, lvl: lvlUp ? 2 : 1, t: Math.round(G.runT) }); if (F.stats.firstFusionT == null) F.stats.firstFusionT = Math.round(G.runT);
       C.recalc(false);
       if (P.fuseHeal > 0 && !p.dead) G.Player.heal(p, P.fuseHeal, 'fusion');
